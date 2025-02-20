@@ -8,7 +8,7 @@ export const generateStoryWithGroq = async (name: string, date: Date | undefined
         'Authorization': `Bearer ${localStorage.getItem('GROQ_API_KEY')}`
       },
       body: JSON.stringify({
-        model: "mixtral-8x7b-32768",
+        model: "mixtral-8x7b-32768",  // One of Groq's fastest models
         messages: [
           {
             role: "system",
@@ -16,11 +16,13 @@ export const generateStoryWithGroq = async (name: string, date: Date | undefined
           },
           {
             role: "user",
-            content: `Create a SHORT, HILARIOUS story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're the opposite gender. Include:\n- An absurd career twist\n- A ridiculous hobby\n- An unexpected viral moment\n- A celebrity encounter gone wrong\nMake it silly and super shareable! Max 3 paragraphs, use markdown to highlight the funniest parts.`
+            content: `Create a SHORT, HILARIOUS story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're the opposite gender. Include:\n- An absurd career twist\n- A ridiculous hobby\n- An unexpected viral moment\n- A celebrity encounter gone wrong\nMake it silly and super shareable! Max 3 paragraphs, use markdown to highlight the funniest parts.\n\nIMPORTANT: Change their name to something that sounds similar but matches their alternate gender (e.g. Daniel → Danielle, Jessica → Jesse).`
           }
         ],
         temperature: 0.95,
-        max_tokens: 2000
+        max_tokens: 2000,
+        top_p: 0.9,  // Added for faster responses
+        frequency_penalty: 0.5  // Encourage more diverse name choices
       })
     });
 
