@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -21,8 +21,19 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const { toast } = useToast();
-  const [apiKey, setApiKey] = useState<string>("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('RUNWARE_API_KEY') || "");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(() => !localStorage.getItem('RUNWARE_API_KEY'));
+
+  const handleSaveKey = () => {
+    if (apiKey) {
+      localStorage.setItem('RUNWARE_API_KEY', apiKey);
+      setShowApiKeyInput(false);
+      toast({
+        title: "API Key Saved",
+        description: "Your Runware API key has been saved successfully.",
+      });
+    }
+  };
 
   const generateChapters = async () => {
     if (!apiKey) {
@@ -64,9 +75,8 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
         try {
           const illustration = await runwareService.generateImage({
             positivePrompt: `Cute, cartoonish illustration for book chapter: ${title}. Based on the content: ${content.substring(0, 100)}... Style: fun, whimsical, colorful, digital art`,
+            numberResults: 1,
             outputFormat: "WEBP",
-            width: 1024,
-            height: 768,
           });
 
           processedChapters.push({
@@ -122,7 +132,7 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
           </p>
           {apiKey && (
             <Button
-              onClick={() => setShowApiKeyInput(false)}
+              onClick={handleSaveKey}
               variant="outline"
               size="sm"
             >

@@ -13,7 +13,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const { toast } = useToast();
-  const [apiKeySet, setApiKeySet] = useState(!!localStorage.getItem('GROQ_API_KEY'));
+  const [apiKeySet, setApiKeySet] = useState(() => !!localStorage.getItem('GROQ_API_KEY'));
 
   const handleSetApiKey = () => {
     const apiKey = prompt("Please enter your Groq API key:");
