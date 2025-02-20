@@ -113,7 +113,7 @@ export class RunwareService {
       const message = [{
         taskType: "imageInference",
         taskUUID,
-        model: params.model || "runware:100@1",
+        model: params.model || "runware:1@dev", // Changed default model to Flux 1 Dev
         width: 1024,
         height: 1024,
         numberResults: params.numberResults || 1,
@@ -130,7 +130,7 @@ export class RunwareService {
         delete message[0].seed;
       }
 
-      if (message[0].model === "runware:100@1") {
+      if (message[0].model === "runware:1@dev") {
         delete message[0].promptWeighting;
       }
 
