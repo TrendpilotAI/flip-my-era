@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -168,9 +167,12 @@ const Index = () => {
                 selected={date}
                 onSelect={setDate}
                 className="rounded-md border"
-                fromYear={1900}
-                toYear={2024}
-                captionLayout="dropdown"
+                fromDate={new Date(1900, 0, 1)}
+                toDate={new Date(2024, 11, 31)}
+                captionLayout="dropdown-buttons"
+                disabled={(date) =>
+                  date > new Date() || date < new Date(1900, 0, 1)
+                }
               />
             </div>
           </div>
