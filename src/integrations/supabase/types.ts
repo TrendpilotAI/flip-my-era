@@ -100,6 +100,41 @@ export type Database = {
           },
         ]
       }
+      published_stories: {
+        Row: {
+          chapters: Json
+          created_at: string
+          id: string
+          original_story: string
+          story_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          chapters: Json
+          created_at?: string
+          id?: string
+          original_story: string
+          story_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chapters?: Json
+          created_at?: string
+          id?: string
+          original_story?: string
+          story_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_stories_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stories: {
         Row: {
           birth_date: string | null

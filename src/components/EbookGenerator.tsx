@@ -222,19 +222,20 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
+      // Type assertion to any to work with existing Supabase types
       const { data, error } = await supabase
         .from('published_stories')
         .insert({
           story_id: storyId,
           original_story: originalStory,
-          chapters: chapters,
+          chapters: chapters
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      const publishUrl = `${window.location.origin}/story/${data.id}`;
+      const publishUrl = `${window.location.origin}/published/${data.id}`;
       setPublishedUrl(publishUrl);
 
       toast({
