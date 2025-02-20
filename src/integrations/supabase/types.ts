@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           created_at: string
           deepseek_api_key: string | null
+          groq_api_key: string | null
           id: string
           runware_api_key: string | null
           updated_at: string
@@ -20,6 +21,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deepseek_api_key?: string | null
+          groq_api_key?: string | null
           id?: string
           runware_api_key?: string | null
           updated_at?: string
@@ -27,6 +29,7 @@ export type Database = {
         Update: {
           created_at?: string
           deepseek_api_key?: string | null
+          groq_api_key?: string | null
           id?: string
           runware_api_key?: string | null
           updated_at?: string

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2, Image as ImageIcon, Share2, Save, Globe } from "lucide-react";
@@ -6,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import { RunwareService } from "@/utils/runware";
 import { supabase } from "@/integrations/supabase/client";
-import { generateWithDeepseek } from "@/utils/deepseek";
+import { generateWithDeepseek, generateWithGroq } from "@/utils/deepseek";
 
 interface Chapter {
   title: string;
@@ -63,10 +62,10 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   };
 
   const generateChapters = async () => {
-    if (!localStorage.getItem('DEEPSEEK_API_KEY')) {
+    if (!localStorage.getItem('GROQ_API_KEY')) {
       toast({
         title: "API Key Required",
-        description: "Please configure your API keys in settings first.",
+        description: "Please configure your Groq API key in settings first.",
         variant: "destructive",
       });
       return;
@@ -75,12 +74,12 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     setIsGenerating(true);
     const loadingToast = toast({
       title: "Creating your ebook chapters...",
-      description: "Generating the story content...",
+      description: "Generating the story content with Groq...",
     });
 
     try {
       const prompt = `Based on this story premise:\n\n${originalStory}\n\nGenerate 5 short, hilarious chapters that expand this into a novella. Each chapter should be 2-3 paragraphs long. Include chapter titles. Keep the same humorous tone. Format in markdown with # for chapter titles.`;
-      const chaptersContent = await generateWithDeepseek(prompt);
+      const chaptersContent = await generateWithGroq(prompt);
       if (!chaptersContent) throw new Error("Failed to generate chapters");
 
       const chapterSections = chaptersContent.split(/(?=# )/g).filter(Boolean);
@@ -182,7 +181,6 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   };
 
   const handleSaveAsPDF = async () => {
-    // Convert the story to PDF format
     const content = document.createElement('div');
     content.innerHTML = `
       <h1>Original Story</h1>
@@ -222,7 +220,6 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      // Type assertion to any to work with existing Supabase types
       const { data, error } = await supabase
         .from('published_stories')
         .insert({
@@ -268,7 +265,6 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         console.error("Error sharing:", error);
       }
     } else {
-      // Fallback to copying to clipboard
       navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
       toast({
         title: "Copied to clipboard!",
