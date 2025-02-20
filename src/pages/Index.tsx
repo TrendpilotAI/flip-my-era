@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Repeat, Book } from "lucide-react";
 import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
+import { EbookGenerator } from "@/components/EbookGenerator";
 
 const Index = () => {
   const [name, setName] = useState("");
@@ -79,7 +79,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-purple-400 via-pink-500 to-red-500 py-12 px-4 relative overflow-hidden">
-      {/* Decorative background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1"
@@ -177,13 +176,6 @@ const Index = () => {
                   <Repeat className="h-6 w-6" />
                   Again!
                 </Button>
-                <Button
-                  onClick={handleEbookPrompt}
-                  className="text-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
-                >
-                  <Book className="h-6 w-6" />
-                  Create Ebook Prompt
-                </Button>
               </div>
               <Button
                 variant="outline"
@@ -198,6 +190,13 @@ const Index = () => {
               >
                 Share Result
               </Button>
+            </div>
+
+            <div className="mt-12">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">
+                Expand Your Story
+              </h3>
+              <EbookGenerator originalStory={result} />
             </div>
           </div>
         )}
