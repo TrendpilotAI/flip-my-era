@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Loader2, Repeat, Book } from "lucide-react";
 import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [name, setName] = useState("");
@@ -16,6 +16,7 @@ const Index = () => {
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState("");
   const [showApiKeyInput, setShowApiKeyInput] = useState(true);
+  const [storyId, setStoryId] = useState<string>("");
 
   const handleSaveKey = () => {
     if (apiKey) {
@@ -49,6 +50,29 @@ const Index = () => {
     
     if (story) {
       setResult(story);
+      
+      const { data, error } = await supabase
+        .from('stories')
+        .insert({
+          name,
+          birth_date: date?.toISOString(),
+          initial_story: story,
+          prompt: `Generate a story about ${name}'s alternate life${date ? ` born on ${date.toISOString().split('T')[0]}` : ''}`
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error saving story:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save your story. But you can still continue.",
+          variant: "destructive",
+        });
+      } else {
+        setStoryId(data.id);
+      }
+
       toast({
         title: "Alternate life discovered!",
         description: "Your parallel universe self has been revealed!",
@@ -212,7 +236,7 @@ const Index = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-6">
                 3. Create an Illustrated Ebook
               </h3>
-              <EbookGenerator originalStory={result} />
+              <EbookGenerator originalStory={result} storyId={storyId} />
             </div>
           </div>
         )}

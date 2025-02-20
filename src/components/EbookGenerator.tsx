@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2, Image as ImageIcon } from "lucide-react";
@@ -7,18 +6,21 @@ import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
 import { RunwareService } from "@/utils/runware";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Chapter {
   title: string;
   content: string;
   imageUrl?: string;
+  id?: string;
 }
 
 interface EbookGeneratorProps {
   originalStory: string;
+  storyId: string;
 }
 
-export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
+export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -36,9 +38,41 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
         description: "Your Runware API key has been saved successfully.",
       });
       
-      // Generate the prompt after saving the API key
       const prompt = `Based on this story premise:\n\n${originalStory}\n\nGenerate 5 short, hilarious chapters that expand this into a novella. Each chapter should be 2-3 paragraphs long. Include chapter titles. Keep the same humorous tone. Format in markdown with # for chapter titles.`;
       setGeneratedPrompt(prompt);
+    }
+  };
+
+  const saveChapter = async (chapter: Chapter, index: number) => {
+    const { data, error } = await supabase
+      .from('chapters')
+      .insert({
+        story_id: storyId,
+        title: chapter.title,
+        content: chapter.content,
+        chapter_number: index + 1
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error saving chapter:", error);
+      return null;
+    }
+    return data.id;
+  };
+
+  const saveChapterImage = async (chapterId: string, imageUrl: string, prompt: string) => {
+    const { error } = await supabase
+      .from('chapter_images')
+      .insert({
+        chapter_id: chapterId,
+        image_url: imageUrl,
+        prompt_used: prompt
+      });
+
+    if (error) {
+      console.error("Error saving chapter image:", error);
     }
   };
 
@@ -71,7 +105,17 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
         return { title, content };
       });
 
-      setChapters(initialChapters);
+      const chaptersWithIds = await Promise.all(
+        initialChapters.map(async (chapter, index) => {
+          const chapterId = await saveChapter(chapter, index);
+          return {
+            ...chapter,
+            id: chapterId
+          };
+        })
+      );
+
+      setChapters(chaptersWithIds);
       loadingToast.dismiss();
       toast({
         title: "Chapters Created!",
@@ -104,11 +148,17 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
       });
 
       try {
+        const prompt = `Cute, cartoonish illustration for book chapter: ${chapter.title}. Based on the content: ${chapter.content.substring(0, 100)}... Style: fun, whimsical, colorful, digital art`;
+        
         const illustration = await runwareService.generateImage({
-          positivePrompt: `Cute, cartoonish illustration for book chapter: ${chapter.title}. Based on the content: ${chapter.content.substring(0, 100)}... Style: fun, whimsical, colorful, digital art`,
+          positivePrompt: prompt,
           numberResults: 1,
           outputFormat: "WEBP",
         });
+
+        if (chapter.id) {
+          await saveChapterImage(chapter.id, illustration.imageURL, prompt);
+        }
 
         updatedChapters[i] = {
           ...chapter,

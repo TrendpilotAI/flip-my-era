@@ -9,7 +9,100 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chapter_images: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          image_url: string
+          prompt_used: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          prompt_used: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          prompt_used?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_images_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chapters: {
+        Row: {
+          chapter_number: number
+          content: string
+          created_at: string
+          id: string
+          story_id: string
+          title: string
+        }
+        Insert: {
+          chapter_number: number
+          content: string
+          created_at?: string
+          id?: string
+          story_id: string
+          title: string
+        }
+        Update: {
+          chapter_number?: number
+          content?: string
+          created_at?: string
+          id?: string
+          story_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          id: string
+          initial_story: string
+          name: string
+          prompt: string
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          id?: string
+          initial_story: string
+          name: string
+          prompt: string
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          id?: string
+          initial_story?: string
+          name?: string
+          prompt?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
