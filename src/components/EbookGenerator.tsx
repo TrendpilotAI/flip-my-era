@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Book, Loader2 } from "lucide-react";
+import { Book, Loader2, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
@@ -20,10 +20,12 @@ interface EbookGeneratorProps {
 
 export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const { toast } = useToast();
   const [apiKey, setApiKey] = useState("");
   const [showApiKeyInput, setShowApiKeyInput] = useState(true);
+  const [generatedPrompt, setGeneratedPrompt] = useState("");
 
   const handleSaveKey = () => {
     if (apiKey) {
@@ -33,6 +35,10 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
         title: "API Key Saved",
         description: "Your Runware API key has been saved successfully.",
       });
+      
+      // Generate the prompt after saving the API key
+      const prompt = `Based on this story premise:\n\n${originalStory}\n\nGenerate 5 short, hilarious chapters that expand this into a novella. Each chapter should be 2-3 paragraphs long. Include chapter titles. Keep the same humorous tone. Format in markdown with # for chapter titles.`;
+      setGeneratedPrompt(prompt);
     }
   };
 
@@ -48,60 +54,84 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
 
     setIsGenerating(true);
     const loadingToast = toast({
-      title: "Creating your ebook...",
-      description: "Generating chapters and illustrations...",
+      title: "Creating your ebook chapters...",
+      description: "Generating the story content...",
     });
 
     try {
-      const chapterPrompt = `Based on this story premise:\n\n${originalStory}\n\nGenerate 5 short, hilarious chapters that expand this into a novella. Each chapter should be 2-3 paragraphs long. Include chapter titles. Keep the same humorous tone. Format in markdown with # for chapter titles.`;
-      
-      const chaptersContent = await generateStoryWithGroq(chapterPrompt, undefined);
+      const chaptersContent = await generateStoryWithGroq(generatedPrompt, undefined);
       if (!chaptersContent) throw new Error("Failed to generate chapters");
 
       const chapterSections = chaptersContent.split(/(?=# )/g).filter(Boolean);
       
-      const runwareService = new RunwareService(apiKey);
-
-      const processedChapters: Chapter[] = [];
-      for (const section of chapterSections) {
+      const initialChapters = chapterSections.map(section => {
         const titleMatch = section.match(/# (.*)\n/);
         const title = titleMatch ? titleMatch[1] : "Untitled Chapter";
         const content = section.replace(/# .*\n/, "").trim();
+        return { title, content };
+      });
 
-        try {
-          const illustration = await runwareService.generateImage({
-            positivePrompt: `Cute, cartoonish illustration for book chapter: ${title}. Based on the content: ${content.substring(0, 100)}... Style: fun, whimsical, colorful, digital art`,
-            numberResults: 1,
-            outputFormat: "WEBP",
-          });
-
-          processedChapters.push({
-            title,
-            content,
-            imageUrl: illustration.imageURL,
-          });
-        } catch (error) {
-          console.error("Failed to generate image for chapter:", error);
-          processedChapters.push({ title, content });
-        }
-      }
-
-      setChapters(processedChapters);
+      setChapters(initialChapters);
       loadingToast.dismiss();
       toast({
-        title: "Ebook Created!",
-        description: "Your hilarious ebook is ready to read!",
+        title: "Chapters Created!",
+        description: "Now we can generate illustrations for each chapter.",
       });
     } catch (error) {
-      console.error("Error generating ebook:", error);
+      console.error("Error generating chapters:", error);
       toast({
         title: "Error",
-        description: "Failed to generate the ebook. Please try again.",
+        description: "Failed to generate the chapters. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const generateImages = async () => {
+    if (!chapters.length) return;
+
+    setIsGeneratingImages(true);
+    const runwareService = new RunwareService(apiKey);
+    const updatedChapters = [...chapters];
+
+    for (let i = 0; i < chapters.length; i++) {
+      const chapter = chapters[i];
+      const loadingToast = toast({
+        title: `Generating illustration for Chapter ${i + 1}`,
+        description: `Creating artwork for: ${chapter.title}`,
+      });
+
+      try {
+        const illustration = await runwareService.generateImage({
+          positivePrompt: `Cute, cartoonish illustration for book chapter: ${chapter.title}. Based on the content: ${chapter.content.substring(0, 100)}... Style: fun, whimsical, colorful, digital art`,
+          numberResults: 1,
+          outputFormat: "WEBP",
+        });
+
+        updatedChapters[i] = {
+          ...chapter,
+          imageUrl: illustration.imageURL,
+        };
+
+        setChapters(updatedChapters);
+        loadingToast.dismiss();
+      } catch (error) {
+        console.error("Failed to generate image for chapter:", error);
+        toast({
+          title: "Error",
+          description: `Failed to generate image for Chapter ${i + 1}`,
+          variant: "destructive",
+        });
+      }
+    }
+
+    setIsGeneratingImages(false);
+    toast({
+      title: "Ebook Complete!",
+      description: "All chapters and illustrations have been generated!",
+    });
   };
 
   return (
@@ -136,26 +166,54 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
         </div>
       )}
 
-      <Button
-        onClick={generateChapters}
-        disabled={isGenerating || !apiKey}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-      >
-        {isGenerating ? (
-          <>
-            <Loader2 className="h-6 w-6 animate-spin" />
-            Creating Your Ebook...
-          </>
-        ) : (
-          <>
-            <Book className="h-6 w-6" />
-            Create an Ebook
-          </>
-        )}
-      </Button>
+      {generatedPrompt && !chapters.length && (
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Story Generation Prompt</h3>
+          <div className="bg-gray-100 p-4 rounded-lg">
+            <pre className="whitespace-pre-wrap text-sm">{generatedPrompt}</pre>
+          </div>
+          <Button
+            onClick={generateChapters}
+            disabled={isGenerating}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                Generating Chapters...
+              </>
+            ) : (
+              <>
+                <Book className="h-6 w-6 mr-2" />
+                Generate Chapters
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       {chapters.length > 0 && (
-        <div className="space-y-12">
+        <div className="space-y-6">
+          {!chapters.some(chapter => chapter.imageUrl) && (
+            <Button
+              onClick={generateImages}
+              disabled={isGeneratingImages}
+              className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white mb-8"
+            >
+              {isGeneratingImages ? (
+                <>
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  Generating Illustrations...
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="h-6 w-6 mr-2" />
+                  Generate Chapter Illustrations
+                </>
+              )}
+            </Button>
+          )}
+
           {chapters.map((chapter, index) => (
             <div
               key={index}
@@ -163,12 +221,20 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
               style={{ animationDelay: `${index * 200}ms` }}
             >
               <h2 className="text-2xl font-bold text-gray-900">{chapter.title}</h2>
-              {chapter.imageUrl && (
+              {chapter.imageUrl ? (
                 <img
                   src={chapter.imageUrl}
                   alt={`Illustration for ${chapter.title}`}
                   className="w-full h-auto rounded-lg shadow-lg mb-6"
                 />
+              ) : (
+                <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mb-6">
+                  {isGeneratingImages ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-gray-400" />
+                  )}
+                </div>
               )}
               <div className="prose prose-lg prose-pink max-w-none">
                 <ReactMarkdown>{chapter.content}</ReactMarkdown>
