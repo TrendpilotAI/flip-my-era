@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -100,8 +99,8 @@ const Index = () => {
 
         {showApiKeyInput ? (
           <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
-            <h2 className="text-xl font-semibold text-gray-900">Enter Your Groq API Key</h2>
-            <p className="text-gray-600">To generate stories, you'll need a Groq API key.</p>
+            <h2 className="text-xl font-semibold text-gray-900">1. Enter Your Groq API Key</h2>
+            <p className="text-gray-600">To generate stories, you'll need a Groq API key. This will be saved for future use.</p>
             <div className="space-y-4">
               <Input
                 type="password"
@@ -114,6 +113,7 @@ const Index = () => {
                 <Button
                   onClick={handleSaveKey}
                   disabled={!apiKey}
+                  className="w-full"
                 >
                   Save API Key
                 </Button>
@@ -121,7 +121,7 @@ const Index = () => {
                   href="https://console.groq.com/keys"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-500 hover:underline"
+                  className="text-sm text-blue-500 hover:underline text-center"
                 >
                   Get your Groq API key here
                 </a>
@@ -130,6 +130,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
+            <h2 className="text-xl font-semibold text-gray-900">2. Enter Your Details</h2>
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="block text-base font-medium text-gray-700">
@@ -158,8 +159,8 @@ const Index = () => {
 
             <Button
               onClick={handleSubmit}
-              disabled={loading}
-              className="w-full btn-primary mt-6"
+              disabled={loading || !name}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
             >
               {loading ? (
                 <>
@@ -174,7 +175,7 @@ const Index = () => {
         )}
 
         {result && (
-          <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] backdrop-blur-lg">
+          <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/95 backdrop-blur-lg">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Your Alternate Life
             </h2>
@@ -208,7 +209,7 @@ const Index = () => {
 
             <div className="mt-12">
               <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                Expand Your Story
+                3. Create an Illustrated Ebook
               </h3>
               <EbookGenerator originalStory={result} />
             </div>

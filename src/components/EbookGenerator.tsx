@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2 } from "lucide-react";
@@ -53,26 +52,21 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
     });
 
     try {
-      // Generate chapter content
       const chapterPrompt = `Based on this story premise:\n\n${originalStory}\n\nGenerate 5 short, hilarious chapters that expand this into a novella. Each chapter should be 2-3 paragraphs long. Include chapter titles. Keep the same humorous tone. Format in markdown with # for chapter titles.`;
       
       const chaptersContent = await generateStoryWithGroq(chapterPrompt, undefined);
       if (!chaptersContent) throw new Error("Failed to generate chapters");
 
-      // Split content into chapters
       const chapterSections = chaptersContent.split(/(?=# )/g).filter(Boolean);
       
-      // Initialize Runware service
       const runwareService = new RunwareService(apiKey);
 
-      // Process each chapter
       const processedChapters: Chapter[] = [];
       for (const section of chapterSections) {
         const titleMatch = section.match(/# (.*)\n/);
         const title = titleMatch ? titleMatch[1] : "Untitled Chapter";
         const content = section.replace(/# .*\n/, "").trim();
 
-        // Generate illustration for chapter
         try {
           const illustration = await runwareService.generateImage({
             positivePrompt: `Cute, cartoonish illustration for book chapter: ${title}. Based on the content: ${content.substring(0, 100)}... Style: fun, whimsical, colorful, digital art`,
@@ -113,8 +107,8 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
     <div className="space-y-8">
       {showApiKeyInput && (
         <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Enter Your Runware API Key</h3>
-          <p className="text-gray-600">To generate chapter illustrations, you'll need a Runware API key.</p>
+          <h3 className="text-lg font-semibold text-gray-900">First, Enter Your Runware API Key</h3>
+          <p className="text-gray-600">To generate chapter illustrations, you'll need a Runware API key. This will be saved for future use.</p>
           <Input
             type="password"
             placeholder="Enter your Runware API key"
@@ -125,8 +119,7 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
             <Button
               onClick={handleSaveKey}
               disabled={!apiKey}
-              variant="outline"
-              size="sm"
+              className="w-full"
             >
               Save API Key
             </Button>
@@ -134,7 +127,7 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
               href="https://runware.ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-500 hover:underline"
+              className="text-sm text-blue-500 hover:underline text-center"
             >
               Get your Runware API key here
             </a>
