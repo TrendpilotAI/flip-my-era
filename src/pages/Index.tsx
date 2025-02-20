@@ -1,5 +1,5 @@
+
 import { useState } from "react";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +62,11 @@ const Index = () => {
     setLoading(false);
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.valueAsDate;
+    setDate(selectedDate || undefined);
+  };
+
   const handleEbookPrompt = () => {
     const ebookPrompt = `Create a full ebook based on the following story premise:\n\n${result}\n\nExpand this into a complete novella with:\n- Detailed character development\n- Rich world-building\n- Multiple engaging plot arcs\n- Vivid descriptions\n- Meaningful dialogue\n- Emotional depth\n- A satisfying conclusion`;
     
@@ -111,40 +116,12 @@ const Index = () => {
               <label className="block text-base font-medium text-gray-700">
                 Your Birthday
               </label>
-              <div className="flex justify-center w-full">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md border-0"
-                  classNames={{
-                    months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                    month: "space-y-4",
-                    caption: "flex justify-center pt-1 relative items-center px-8",
-                    caption_label: "text-sm font-medium",
-                    nav: "space-x-1 flex items-center",
-                    nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                    nav_button_previous: "absolute left-1",
-                    nav_button_next: "absolute right-1",
-                    table: "w-full border-collapse space-y-1",
-                    head_row: "flex",
-                    head_cell: "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
-                    row: "flex w-full mt-2",
-                    cell: "text-center text-sm relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 p-0",
-                    day: "h-8 w-8 p-0 font-normal",
-                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                    day_today: "bg-accent text-accent-foreground",
-                    day_outside: "text-muted-foreground opacity-50",
-                    day_disabled: "text-muted-foreground opacity-50",
-                    day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                    day_hidden: "invisible",
-                  }}
-                  defaultMonth={date || new Date(1990, 0)}
-                  fromYear={1900}
-                  toYear={new Date().getFullYear()}
-                  captionLayout="dropdown"
-                />
-              </div>
+              <Input
+                type="date"
+                onChange={handleDateChange}
+                className="input-field text-base py-2"
+                max={new Date().toISOString().split('T')[0]}
+              />
             </div>
           </div>
 

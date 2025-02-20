@@ -8,7 +8,7 @@ export const generateStoryWithGroq = async (name: string, date: Date | undefined
         'Authorization': `Bearer ${localStorage.getItem('GROQ_API_KEY')}`
       },
       body: JSON.stringify({
-        model: "mixtral-8x7b-32768",  // One of Groq's fastest models
+        model: "llama2-70b-4096",  // Switching to llama model
         messages: [
           {
             role: "system",
@@ -21,8 +21,8 @@ export const generateStoryWithGroq = async (name: string, date: Date | undefined
         ],
         temperature: 0.95,
         max_tokens: 2000,
-        top_p: 0.9,  // Added for faster responses
-        frequency_penalty: 0.5  // Encourage more diverse name choices
+        top_p: 0.9,
+        frequency_penalty: 0.5
       })
     });
 
