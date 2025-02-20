@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Repeat } from "lucide-react";
+import { Loader2, Repeat, Book } from "lucide-react";
 import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
 
@@ -61,6 +60,16 @@ const Index = () => {
       });
     }
     setLoading(false);
+  };
+
+  const handleEbookPrompt = () => {
+    const ebookPrompt = `Create a full ebook based on the following story premise:\n\n${result}\n\nExpand this into a complete novella with:\n- Detailed character development\n- Rich world-building\n- Multiple engaging plot arcs\n- Vivid descriptions\n- Meaningful dialogue\n- Emotional depth\n- A satisfying conclusion`;
+    
+    navigator.clipboard.writeText(ebookPrompt);
+    toast({
+      title: "Ebook Prompt Created!",
+      description: "The expanded story prompt has been copied to your clipboard. Use this with your favorite AI writing tool to generate a full ebook!",
+    });
   };
 
   return (
@@ -163,14 +172,23 @@ const Index = () => {
             <div className="prose prose-lg prose-pink max-w-none">
               <ReactMarkdown>{result}</ReactMarkdown>
             </div>
-            <div className="mt-6 flex justify-between items-center">
-              <Button
-                onClick={handleSubmit}
-                className="text-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
-              >
-                <Repeat className="h-6 w-6" />
-                Again!
-              </Button>
+            <div className="mt-6 flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSubmit}
+                  className="text-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+                >
+                  <Repeat className="h-6 w-6" />
+                  Again!
+                </Button>
+                <Button
+                  onClick={handleEbookPrompt}
+                  className="text-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+                >
+                  <Book className="h-6 w-6" />
+                  Create Ebook Prompt
+                </Button>
+              </div>
               <Button
                 variant="outline"
                 onClick={() => {
