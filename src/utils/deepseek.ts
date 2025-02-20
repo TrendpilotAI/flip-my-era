@@ -1,0 +1,37 @@
+
+export const generateStoryWithDeepSeek = async (name: string, date: Date | undefined) => {
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('DEEPSEEK_API_KEY')}`
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: "You are a creative alternate reality generator. Given a name and birthdate, you determine the person's opposite gender and create a whimsical story about their alternate life in a parallel universe. Make it fun, absurd, and engaging."
+          },
+          {
+            role: "user",
+            content: `Generate a story about an alternate reality version of someone named ${name}${date ? ` born on ${date.toLocaleDateString()}` : ''}. First determine if the name is typically masculine or feminine, then create a story about their life as the opposite gender. Include interesting details about their profession, location, hobbies, and quirks.`
+          }
+        ],
+        temperature: 0.9,
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate story');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error generating story:', error);
+    return null;
+  }
+};
