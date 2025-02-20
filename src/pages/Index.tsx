@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -109,7 +110,7 @@ const Index = () => {
                   defaultMonth={date || new Date(1990, 0)}
                   fromYear={1900}
                   toYear={new Date().getFullYear()}
-                  captionLayout="dropdown-buttons"
+                  captionLayout="dropdown"
                   showOutsideDays={false}
                   fixedWeeks
                   ISOWeek
