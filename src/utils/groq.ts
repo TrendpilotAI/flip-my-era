@@ -8,7 +8,7 @@ export const generateStoryWithGroq = async (name: string, date: Date | undefined
         'Authorization': `Bearer ${localStorage.getItem('GROQ_API_KEY')}`
       },
       body: JSON.stringify({
-        model: "llama2-70b-4096",  // Switching to llama model
+        model: "llama-3.3-70b-specdec",  // Using the latest llama model for better performance
         messages: [
           {
             role: "system",
