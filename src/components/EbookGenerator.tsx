@@ -1,11 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Book, Loader2, Image as ImageIcon } from "lucide-react";
+import { Book, Loader2, Image as ImageIcon, Share2, Save, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
 import { RunwareService } from "@/utils/runware";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { generateWithDeepseek } from "@/utils/deepseek";
 
@@ -24,25 +23,11 @@ interface EbookGeneratorProps {
 export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const { toast } = useToast();
-  const [apiKey, setApiKey] = useState("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
   const [generatedPrompt, setGeneratedPrompt] = useState("");
-
-  const handleSaveKey = () => {
-    if (apiKey) {
-      localStorage.setItem('RUNWARE_API_KEY', apiKey);
-      setShowApiKeyInput(false);
-      toast({
-        title: "API Key Saved",
-        description: "Your Runware API key has been saved successfully.",
-      });
-      
-      const prompt = `Based on this story premise:\n\n${originalStory}\n\nGenerate 5 short, hilarious chapters that expand this into a novella. Each chapter should be 2-3 paragraphs long. Include chapter titles. Keep the same humorous tone. Format in markdown with # for chapter titles.`;
-      setGeneratedPrompt(prompt);
-    }
-  };
+  const [publishedUrl, setPublishedUrl] = useState("");
 
   const saveChapter = async (chapter: Chapter, index: number) => {
     const { data, error } = await supabase
@@ -94,7 +79,8 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     });
 
     try {
-      const chaptersContent = await generateWithDeepseek(generatedPrompt);
+      const prompt = `Based on this story premise:\n\n${originalStory}\n\nGenerate 5 short, hilarious chapters that expand this into a novella. Each chapter should be 2-3 paragraphs long. Include chapter titles. Keep the same humorous tone. Format in markdown with # for chapter titles.`;
+      const chaptersContent = await generateWithDeepseek(prompt);
       if (!chaptersContent) throw new Error("Failed to generate chapters");
 
       const chapterSections = chaptersContent.split(/(?=# )/g).filter(Boolean);
@@ -137,8 +123,18 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   const generateImages = async () => {
     if (!chapters.length) return;
 
+    const runwareKey = localStorage.getItem('RUNWARE_API_KEY');
+    if (!runwareKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please configure your Runware API key in settings first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGeneratingImages(true);
-    const runwareService = new RunwareService(apiKey);
+    const runwareService = new RunwareService(runwareKey);
     const updatedChapters = [...chapters];
 
     for (let i = 0; i < chapters.length; i++) {
@@ -185,66 +181,123 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     });
   };
 
+  const handleSaveAsPDF = async () => {
+    // Convert the story to PDF format
+    const content = document.createElement('div');
+    content.innerHTML = `
+      <h1>Original Story</h1>
+      ${originalStory}
+      ${chapters.map(chapter => `
+        <h2>${chapter.title}</h2>
+        ${chapter.content}
+        ${chapter.imageUrl ? `<img src="${chapter.imageUrl}" alt="${chapter.title}" />` : ''}
+      `).join('')}
+    `;
+
+    try {
+      const blob = new Blob([content.innerHTML], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'story.html';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Story Saved!",
+        description: "Your story has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving story:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save the story. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      const { data, error } = await supabase
+        .from('published_stories')
+        .insert({
+          story_id: storyId,
+          original_story: originalStory,
+          chapters: chapters,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const publishUrl = `${window.location.origin}/story/${data.id}`;
+      setPublishedUrl(publishUrl);
+
+      toast({
+        title: "Story Published!",
+        description: "Your story is now available online.",
+      });
+    } catch (error) {
+      console.error("Error publishing story:", error);
+      toast({
+        title: "Error",
+        description: "Failed to publish the story. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setIsPublishing(false);
+  };
+
+  const handleShare = async () => {
+    const shareUrl = publishedUrl || window.location.href;
+    const shareText = `Check out my alternate universe story: ${originalStory.substring(0, 100)}...`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'My Alternate Universe Story',
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (error) {
+        console.error("Error sharing:", error);
+      }
+    } else {
+      // Fallback to copying to clipboard
+      navigator.clipboard.writeText(`${shareText}\n\n${shareUrl}`);
+      toast({
+        title: "Copied to clipboard!",
+        description: "Share the link with your friends!",
+      });
+    }
+  };
+
   return (
     <div className="space-y-8">
-      {showApiKeyInput && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">First, Enter Your Runware API Key</h3>
-          <p className="text-gray-600">To generate chapter illustrations, you'll need a Runware API key. This will be saved for future use.</p>
-          <Input
-            type="password"
-            placeholder="Enter your Runware API key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={handleSaveKey}
-              disabled={!apiKey}
-              className="w-full"
-            >
-              Save API Key
-            </Button>
-            <a
-              href="https://runware.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-500 hover:underline text-center"
-            >
-              Get your Runware API key here
-            </a>
-          </div>
-        </div>
-      )}
-
-      {generatedPrompt && !chapters.length && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Story Generation Prompt</h3>
-          <div className="bg-gray-100 p-4 rounded-lg">
-            <pre className="whitespace-pre-wrap text-sm">{generatedPrompt}</pre>
-          </div>
-          <Button
-            onClick={generateChapters}
-            disabled={isGenerating}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                Generating Chapters...
-              </>
-            ) : (
-              <>
-                <Book className="h-6 w-6 mr-2" />
-                Generate Chapters
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-
-      {chapters.length > 0 && (
-        <div className="space-y-6">
+      {!chapters.length ? (
+        <Button
+          onClick={generateChapters}
+          disabled={isGenerating}
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              Generating Chapters...
+            </>
+          ) : (
+            <>
+              <Book className="h-6 w-6 mr-2" />
+              Generate Chapters
+            </>
+          )}
+        </Button>
+      ) : (
+        <>
           <Button
             onClick={generateImages}
             disabled={isGeneratingImages || chapters.some(chapter => chapter.imageUrl)}
@@ -292,7 +345,32 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
               )}
             </div>
           ))}
-        </div>
+
+          <div className="flex flex-wrap gap-4 mt-8">
+            <Button
+              onClick={handleSaveAsPDF}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <Save className="h-5 w-5 mr-2" />
+              Save as PDF
+            </Button>
+            <Button
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className="flex-1 bg-purple-500 hover:bg-purple-600 text-white"
+            >
+              <Globe className="h-5 w-5 mr-2" />
+              {isPublishing ? "Publishing..." : "Publish Online"}
+            </Button>
+            <Button
+              onClick={handleShare}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+            >
+              <Share2 className="h-5 w-5 mr-2" />
+              Share Story
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
