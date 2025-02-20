@@ -78,8 +78,27 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-purple-400 via-pink-500 to-red-500 py-12 px-4">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-purple-400 via-pink-500 to-red-500 py-12 px-4 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img
+          src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1"
+          alt=""
+          className="absolute -right-20 -top-20 w-64 h-64 object-cover rounded-full opacity-20 rotate-12 transform scale-75"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1582562124811-c09040d0a901"
+          alt=""
+          className="absolute -left-32 top-1/3 w-96 h-96 object-cover rounded-full opacity-20 -rotate-12 transform scale-75"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1"
+          alt=""
+          className="absolute -right-40 bottom-1/4 w-80 h-80 object-cover rounded-full opacity-20 rotate-45 transform scale-75"
+        />
+      </div>
+
+      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         <div className="text-center space-y-4 animate-fadeIn">
           <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">
             GenderFlipLife
@@ -98,7 +117,7 @@ const Index = () => {
           )}
         </div>
 
-        <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95">
+        <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="block text-base font-medium text-gray-700">
@@ -142,7 +161,7 @@ const Index = () => {
         </div>
 
         {result && (
-          <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms]">
+          <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] backdrop-blur-lg">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Your Alternate Life
             </h2>
