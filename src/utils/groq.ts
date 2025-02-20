@@ -12,15 +12,15 @@ export const generateStoryWithGroq = async (name: string, date: Date | undefined
         messages: [
           {
             role: "system",
-            content: "You are a creative alternate reality generator. Given a name and birthdate, you determine the person's opposite gender and create a whimsical story about their alternate life in a parallel universe. Make it fun, absurd, and engaging. Use markdown formatting to structure your response with paragraphs, emphasis, and proper spacing."
+            content: "You are a viral story generator specializing in short, hilarious alternate reality tales. Your stories should be punchy, absurd, and incredibly shareable - think TikTok or Twitter viral content. Use humor, pop culture references, and unexpected twists. Keep it concise, engaging, and make people want to share it with friends. Use markdown for emphasis on the funniest parts."
           },
           {
             role: "user",
-            content: `Generate a story about an alternate reality version of someone named ${name}${date ? ` born on ${date.toLocaleDateString()}` : ''}. First determine if the name is typically masculine or feminine, then create a story about their life as the opposite gender. Include interesting details about their profession, location, hobbies, and quirks. Format the response with proper markdown, including paragraphs and emphasis where appropriate.`
+            content: `Create a SHORT, HILARIOUS story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're the opposite gender. Include:\n- An absurd career twist\n- A ridiculous hobby\n- An unexpected viral moment\n- A celebrity encounter gone wrong\nMake it silly and super shareable! Max 3 paragraphs, use markdown to highlight the funniest parts.`
           }
         ],
-        temperature: 0.9,
-        max_tokens: 4000
+        temperature: 0.95,
+        max_tokens: 2000
       })
     });
 
