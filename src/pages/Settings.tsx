@@ -4,12 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const Settings = () => {
   const [deepseekKey, setDeepseekKey] = useState("");
   const [runwareKey, setRunwareKey] = useState("");
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSettings();
@@ -53,6 +56,9 @@ const Settings = () => {
         title: "Settings Saved",
         description: "Your API keys have been saved successfully.",
       });
+      
+      // Navigate back to the main page after successful save
+      navigate('/');
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
@@ -67,6 +73,15 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        <Button
+          variant="ghost"
+          className="mb-6 text-white hover:bg-white/20"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Stories
+        </Button>
+
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 space-y-6">
           <h1 className="text-3xl font-bold text-gray-900">API Settings</h1>
           <p className="text-gray-600">
@@ -115,13 +130,15 @@ const Settings = () => {
             </div>
           </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-          >
-            {saving ? "Saving..." : "Save Settings"}
-          </Button>
+          <div className="space-y-4">
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+            >
+              {saving ? "Saving..." : "Save Settings"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
