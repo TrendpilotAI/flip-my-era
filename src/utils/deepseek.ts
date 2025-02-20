@@ -12,11 +12,11 @@ export const generateStoryWithDeepSeek = async (name: string, date: Date | undef
         messages: [
           {
             role: "system",
-            content: "You are a creative alternate reality generator. Given a name and birthdate, you determine the person's opposite gender and create a whimsical story about their alternate life in a parallel universe. Make it fun, absurd, and engaging."
+            content: "You are a creative alternate reality generator. Given a name and birthdate, you determine the person's opposite gender and create a whimsical story about their alternate life in a parallel universe. Make it fun, absurd, and engaging. Use markdown formatting to structure your response with paragraphs, emphasis, and proper spacing."
           },
           {
             role: "user",
-            content: `Generate a story about an alternate reality version of someone named ${name}${date ? ` born on ${date.toLocaleDateString()}` : ''}. First determine if the name is typically masculine or feminine, then create a story about their life as the opposite gender. Include interesting details about their profession, location, hobbies, and quirks.`
+            content: `Generate a story about an alternate reality version of someone named ${name}${date ? ` born on ${date.toLocaleDateString()}` : ''}. First determine if the name is typically masculine or feminine, then create a story about their life as the opposite gender. Include interesting details about their profession, location, hobbies, and quirks. Format the response with proper markdown, including paragraphs and emphasis where appropriate.`
           }
         ],
         temperature: 0.9,

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Repeat } from "lucide-react";
 import { generateStoryWithDeepSeek } from "@/utils/deepseek";
+import ReactMarkdown from "react-markdown";
 
 const Index = () => {
   const [name, setName] = useState("");
@@ -159,7 +160,9 @@ const Index = () => {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Your Alternate Life
             </h2>
-            <p className="text-lg text-gray-700 leading-relaxed">{result}</p>
+            <div className="prose prose-lg prose-pink max-w-none">
+              <ReactMarkdown>{result}</ReactMarkdown>
+            </div>
             <div className="mt-6 flex justify-between items-center">
               <Button
                 onClick={handleSubmit}
