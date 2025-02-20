@@ -75,7 +75,7 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
       loadingToast.dismiss();
       toast({
         title: "Chapters Created!",
-        description: "Now we can generate illustrations for each chapter.",
+        description: "Your ebook chapters are ready. Click 'Generate Images' to add illustrations.",
       });
     } catch (error) {
       console.error("Error generating chapters:", error);
@@ -194,25 +194,25 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
 
       {chapters.length > 0 && (
         <div className="space-y-6">
-          {!chapters.some(chapter => chapter.imageUrl) && (
-            <Button
-              onClick={generateImages}
-              disabled={isGeneratingImages}
-              className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white mb-8"
-            >
-              {isGeneratingImages ? (
-                <>
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                  Generating Illustrations...
-                </>
-              ) : (
-                <>
-                  <ImageIcon className="h-6 w-6 mr-2" />
-                  Generate Chapter Illustrations
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            onClick={generateImages}
+            disabled={isGeneratingImages || chapters.some(chapter => chapter.imageUrl)}
+            className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white mb-8"
+          >
+            {isGeneratingImages ? (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                Generating Illustrations...
+              </>
+            ) : chapters.some(chapter => chapter.imageUrl) ? (
+              "Images Generated!"
+            ) : (
+              <>
+                <ImageIcon className="h-6 w-6 mr-2" />
+                Generate Images for All Chapters
+              </>
+            )}
+          </Button>
 
           {chapters.map((chapter, index) => (
             <div
@@ -221,14 +221,17 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
               style={{ animationDelay: `${index * 200}ms` }}
             >
               <h2 className="text-2xl font-bold text-gray-900">{chapter.title}</h2>
+              <div className="prose prose-lg prose-pink max-w-none">
+                <ReactMarkdown>{chapter.content}</ReactMarkdown>
+              </div>
               {chapter.imageUrl ? (
                 <img
                   src={chapter.imageUrl}
                   alt={`Illustration for ${chapter.title}`}
-                  className="w-full h-auto rounded-lg shadow-lg mb-6"
+                  className="w-full h-auto rounded-lg shadow-lg mt-6"
                 />
               ) : (
-                <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mb-6">
+                <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mt-6">
                   {isGeneratingImages ? (
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   ) : (
@@ -236,9 +239,6 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
                   )}
                 </div>
               )}
-              <div className="prose prose-lg prose-pink max-w-none">
-                <ReactMarkdown>{chapter.content}</ReactMarkdown>
-              </div>
             </div>
           ))}
         </div>
