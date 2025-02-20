@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2, Image as ImageIcon, Share2, Save, Globe } from "lucide-react";
@@ -5,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import { RunwareService } from "@/utils/runware";
 import { supabase } from "@/integrations/supabase/client";
-import { generateWithDeepseek, generateWithGroq } from "@/utils/deepseek";
+import { generateWithDeepseek } from "@/utils/deepseek";
+import { generateWithGroq } from "@/utils/groq";
 
 interface Chapter {
   title: string;
@@ -220,12 +222,20 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
+      // Convert chapters to a JSON-compatible format
+      const jsonChapters = chapters.map(chapter => ({
+        title: chapter.title,
+        content: chapter.content,
+        imageUrl: chapter.imageUrl || null,
+        id: chapter.id || null
+      }));
+
       const { data, error } = await supabase
         .from('published_stories')
         .insert({
           story_id: storyId,
           original_story: originalStory,
-          chapters: chapters
+          chapters: jsonChapters
         })
         .select()
         .single();
