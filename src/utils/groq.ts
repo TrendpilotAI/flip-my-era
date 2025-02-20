@@ -1,14 +1,14 @@
 
-export const generateStoryWithDeepSeek = async (name: string, date: Date | undefined) => {
+export const generateStoryWithGroq = async (name: string, date: Date | undefined) => {
   try {
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('DEEPSEEK_API_KEY')}`
+        'Authorization': `Bearer ${localStorage.getItem('GROQ_API_KEY')}`
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "mixtral-8x7b-32768",
         messages: [
           {
             role: "system",
@@ -20,7 +20,7 @@ export const generateStoryWithDeepSeek = async (name: string, date: Date | undef
           }
         ],
         temperature: 0.9,
-        max_tokens: 500
+        max_tokens: 4000
       })
     });
 

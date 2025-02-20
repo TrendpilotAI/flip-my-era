@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Repeat } from "lucide-react";
-import { generateStoryWithDeepSeek } from "@/utils/deepseek";
+import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
 
 const Index = () => {
@@ -14,16 +14,16 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const { toast } = useToast();
-  const [apiKeySet, setApiKeySet] = useState(!!localStorage.getItem('DEEPSEEK_API_KEY'));
+  const [apiKeySet, setApiKeySet] = useState(!!localStorage.getItem('GROQ_API_KEY'));
 
   const handleSetApiKey = () => {
-    const apiKey = prompt("Please enter your DeepSeek API key:");
+    const apiKey = prompt("Please enter your Groq API key:");
     if (apiKey) {
-      localStorage.setItem('DEEPSEEK_API_KEY', apiKey);
+      localStorage.setItem('GROQ_API_KEY', apiKey);
       setApiKeySet(true);
       toast({
         title: "API Key Saved",
-        description: "Your DeepSeek API key has been saved successfully.",
+        description: "Your Groq API key has been saved successfully.",
       });
     }
   };
@@ -32,7 +32,7 @@ const Index = () => {
     if (!apiKeySet) {
       toast({
         title: "API Key Required",
-        description: "Please set your DeepSeek API key first.",
+        description: "Please set your Groq API key first.",
         variant: "destructive",
       });
       return;
@@ -44,7 +44,7 @@ const Index = () => {
       description: "Scanning infinite realities for your alternate life...",
     });
 
-    const story = await generateStoryWithDeepSeek(name, date);
+    const story = await generateStoryWithGroq(name, date);
     loadingToast.dismiss();
     
     if (story) {
@@ -79,7 +79,7 @@ const Index = () => {
               variant="outline"
               className="bg-white/20 text-white hover:bg-white/30"
             >
-              Set DeepSeek API Key
+              Set Groq API Key
             </Button>
           )}
         </div>
