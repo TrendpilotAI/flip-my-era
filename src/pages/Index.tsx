@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,8 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const { toast } = useToast();
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('GROQ_API_KEY') || "");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(() => !localStorage.getItem('GROQ_API_KEY'));
+  const [apiKey, setApiKey] = useState("");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
 
   const handleSaveKey = () => {
     if (apiKey) {

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2 } from "lucide-react";
@@ -21,8 +22,8 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const { toast } = useToast();
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('RUNWARE_API_KEY') || "");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(() => !localStorage.getItem('RUNWARE_API_KEY'));
+  const [apiKey, setApiKey] = useState("");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
 
   const handleSaveKey = () => {
     if (apiKey) {
