@@ -168,11 +168,11 @@ const Index = () => {
                 onSelect={setDate}
                 className="rounded-md border"
                 fromDate={new Date(1900, 0, 1)}
-                toDate={new Date(2024, 11, 31)}
-                captionLayout="dropdown-buttons"
+                toDate={new Date()}
                 disabled={(date) =>
                   date > new Date() || date < new Date(1900, 0, 1)
                 }
+                initialFocus
               />
             </div>
           </div>
