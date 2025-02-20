@@ -34,7 +34,8 @@
   }
 
   body {
-    @apply bg-background text-foreground font-inter antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
     font-feature-settings: "ss01" 1, "ss02" 1, "cv01" 1, "cv03" 1;
   }
 }
