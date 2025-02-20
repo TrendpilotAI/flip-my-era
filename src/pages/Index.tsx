@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,13 +14,13 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const { toast } = useToast();
-  const [apiKeySet, setApiKeySet] = useState(() => !!localStorage.getItem('GROQ_API_KEY'));
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('GROQ_API_KEY') || "");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(() => !localStorage.getItem('GROQ_API_KEY'));
 
-  const handleSetApiKey = () => {
-    const apiKey = prompt("Please enter your Groq API key:");
+  const handleSaveKey = () => {
     if (apiKey) {
       localStorage.setItem('GROQ_API_KEY', apiKey);
-      setApiKeySet(true);
+      setShowApiKeyInput(false);
       toast({
         title: "API Key Saved",
         description: "Your Groq API key has been saved successfully.",
@@ -28,10 +29,10 @@ const Index = () => {
   };
 
   const handleSubmit = async () => {
-    if (!apiKeySet) {
+    if (!apiKey) {
       toast({
         title: "API Key Required",
-        description: "Please set your Groq API key first.",
+        description: "Please enter your Groq API key first.",
         variant: "destructive",
       });
       return;
@@ -67,16 +68,6 @@ const Index = () => {
     setDate(selectedDate || undefined);
   };
 
-  const handleEbookPrompt = () => {
-    const ebookPrompt = `Create a full ebook based on the following story premise:\n\n${result}\n\nExpand this into a complete novella with:\n- Detailed character development\n- Rich world-building\n- Multiple engaging plot arcs\n- Vivid descriptions\n- Meaningful dialogue\n- Emotional depth\n- A satisfying conclusion`;
-    
-    navigator.clipboard.writeText(ebookPrompt);
-    toast({
-      title: "Ebook Prompt Created!",
-      description: "The expanded story prompt has been copied to your clipboard. Use this with your favorite AI writing tool to generate a full ebook!",
-    });
-  };
-
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-purple-400 via-pink-500 to-red-500 py-12 px-4 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -105,59 +96,82 @@ const Index = () => {
           <p className="text-lg text-white/90">
             Discover your absurd alternate life in a parallel universe!
           </p>
-          {!apiKeySet && (
-            <Button
-              onClick={handleSetApiKey}
-              variant="outline"
-              className="bg-white/20 text-white hover:bg-white/30"
-            >
-              Set Groq API Key
-            </Button>
-          )}
         </div>
 
-        <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="block text-base font-medium text-gray-700">
-                Your Name
-              </label>
+        {showApiKeyInput ? (
+          <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
+            <h2 className="text-xl font-semibold text-gray-900">Enter Your Groq API Key</h2>
+            <p className="text-gray-600">To generate stories, you'll need a Groq API key.</p>
+            <div className="space-y-4">
               <Input
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input-field text-base py-2"
+                type="password"
+                placeholder="Enter your Groq API key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="text-base py-2"
               />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-base font-medium text-gray-700">
-                Your Birthday
-              </label>
-              <Input
-                type="date"
-                onChange={handleDateChange}
-                className="input-field text-base py-2"
-                max={new Date().toISOString().split('T')[0]}
-              />
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={handleSaveKey}
+                  disabled={!apiKey}
+                >
+                  Save API Key
+                </Button>
+                <a
+                  href="https://console.groq.com/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-500 hover:underline"
+                >
+                  Get your Groq API key here
+                </a>
+              </div>
             </div>
           </div>
+        ) : (
+          <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-base font-medium text-gray-700">
+                  Your Name
+                </label>
+                <Input
+                  placeholder="Enter your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="input-field text-base py-2"
+                />
+              </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !apiKeySet}
-            className="w-full btn-primary mt-6"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Flipping Your Life...
-              </>
-            ) : (
-              "Flip Your Life!"
-            )}
-          </Button>
-        </div>
+              <div className="space-y-2">
+                <label className="block text-base font-medium text-gray-700">
+                  Your Birthday
+                </label>
+                <Input
+                  type="date"
+                  onChange={handleDateChange}
+                  className="input-field text-base py-2"
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full btn-primary mt-6"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Flipping Your Life...
+                </>
+              ) : (
+                "Flip Your Life!"
+              )}
+            </Button>
+          </div>
+        )}
 
         {result && (
           <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] backdrop-blur-lg">

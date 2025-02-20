@@ -1,11 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateStoryWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
 import { RunwareService } from "@/utils/runware";
+import { Input } from "@/components/ui/input";
 
 interface Chapter {
   title: string;
@@ -111,34 +112,33 @@ export const EbookGenerator = ({ originalStory }: EbookGeneratorProps) => {
   return (
     <div className="space-y-8">
       {showApiKeyInput && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 space-y-4">
-          <input
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Enter Your Runware API Key</h3>
+          <p className="text-gray-600">To generate chapter illustrations, you'll need a Runware API key.</p>
+          <Input
             type="password"
             placeholder="Enter your Runware API key"
-            className="w-full px-4 py-2 border rounded"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
           />
-          <p className="text-sm text-gray-600">
-            Get your API key from{" "}
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleSaveKey}
+              disabled={!apiKey}
+              variant="outline"
+              size="sm"
+            >
+              Save API Key
+            </Button>
             <a
               href="https://runware.ai"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
+              className="text-sm text-blue-500 hover:underline"
             >
-              Runware.ai
+              Get your Runware API key here
             </a>
-          </p>
-          {apiKey && (
-            <Button
-              onClick={handleSaveKey}
-              variant="outline"
-              size="sm"
-            >
-              Save Key
-            </Button>
-          )}
+          </div>
         </div>
       )}
 
