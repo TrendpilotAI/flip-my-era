@@ -84,42 +84,66 @@ const Index = () => {
         </div>
 
         <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms]">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-base font-medium text-gray-700">
                 Your Name
               </label>
               <Input
                 placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input-field"
+                className="input-field text-base py-2"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label className="block text-base font-medium text-gray-700">
                 Your Birthday
               </label>
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md border"
-                fromDate={new Date(1900, 0, 1)}
-                toDate={new Date()}
-                disabled={(date) =>
-                  date > new Date() || date < new Date(1900, 0, 1)
-                }
-                initialFocus
-              />
+              <div className="p-4 bg-white rounded-lg shadow-sm">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  className="rounded-md border-0"
+                  classNames={{
+                    months: "space-y-4 sm:space-y-0",
+                    month: "space-y-4",
+                    caption: "flex justify-center pt-1 relative items-center",
+                    caption_label: "text-sm font-medium",
+                    nav: "space-x-1 flex items-center",
+                    nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex",
+                    head_cell: "text-gray-500 rounded-md w-9 font-normal text-[0.8rem]",
+                    row: "flex w-full mt-2",
+                    cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                    day_today: "bg-accent text-accent-foreground",
+                    day_outside: "text-gray-400 opacity-50",
+                    day_disabled: "text-gray-400 opacity-50",
+                    day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                    day_hidden: "invisible",
+                  }}
+                  fromDate={new Date(1900, 0, 1)}
+                  toDate={new Date()}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date(1900, 0, 1)
+                  }
+                  initialFocus
+                />
+              </div>
             </div>
           </div>
 
           <Button
             onClick={handleSubmit}
             disabled={loading || !apiKeySet}
-            className="w-full btn-primary"
+            className="w-full btn-primary mt-6"
           >
             {loading ? (
               <>
