@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import { RunwareService } from "@/utils/runware";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { generateWithDeepseek } from "@/utils/deepseek";
 
 interface Chapter {
   title: string;
@@ -77,10 +78,10 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   };
 
   const generateChapters = async () => {
-    if (!apiKey) {
+    if (!localStorage.getItem('DEEPSEEK_API_KEY')) {
       toast({
         title: "API Key Required",
-        description: "Please enter your Runware API key first.",
+        description: "Please configure your API keys in settings first.",
         variant: "destructive",
       });
       return;
@@ -93,7 +94,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     });
 
     try {
-      const chaptersContent = await generateStoryWithGroq(generatedPrompt, undefined);
+      const chaptersContent = await generateWithDeepseek(generatedPrompt);
       if (!chaptersContent) throw new Error("Failed to generate chapters");
 
       const chapterSections = chaptersContent.split(/(?=# )/g).filter(Boolean);

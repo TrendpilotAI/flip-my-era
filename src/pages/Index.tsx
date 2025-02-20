@@ -1,12 +1,14 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Repeat, Book } from "lucide-react";
-import { generateStoryWithGroq } from "@/utils/groq";
+import { Loader2, Repeat } from "lucide-react";
+import { generateWithDeepseek } from "@/utils/deepseek";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [name, setName] = useState("");
@@ -14,28 +16,42 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const { toast } = useToast();
-  const [apiKey, setApiKey] = useState("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
   const [storyId, setStoryId] = useState<string>("");
+  const navigate = useNavigate();
 
-  const handleSaveKey = () => {
-    if (apiKey) {
-      localStorage.setItem('GROQ_API_KEY', apiKey);
-      setShowApiKeyInput(false);
+  useEffect(() => {
+    checkApiKeys();
+  }, []);
+
+  const checkApiKeys = async () => {
+    const { data } = await supabase
+      .from('api_settings')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!data?.deepseek_api_key || !data?.runware_api_key) {
       toast({
-        title: "API Key Saved",
-        description: "Your Groq API key has been saved successfully.",
+        title: "API Keys Required",
+        description: "Please configure your API keys in settings first.",
+        variant: "destructive",
       });
+      navigate('/settings');
+    } else {
+      localStorage.setItem('DEEPSEEK_API_KEY', data.deepseek_api_key);
+      localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
     }
   };
 
   const handleSubmit = async () => {
-    if (!apiKey) {
+    if (!localStorage.getItem('DEEPSEEK_API_KEY')) {
       toast({
         title: "API Key Required",
-        description: "Please enter your Groq API key first.",
+        description: "Please configure your API keys in settings first.",
         variant: "destructive",
       });
+      navigate('/settings');
       return;
     }
 
@@ -45,7 +61,9 @@ const Index = () => {
       description: "Scanning infinite realities for your alternate life...",
     });
 
-    const story = await generateStoryWithGroq(name, date);
+    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're the opposite gender. Include:\n- An absurd career twist\n- A ridiculous hobby\n- An unexpected viral moment\n- A celebrity encounter gone wrong\nMake it silly and super shareable! Max 3 paragraphs.`;
+    
+    const story = await generateWithDeepseek(prompt);
     loadingToast.dismiss();
     
     if (story) {
@@ -57,7 +75,7 @@ const Index = () => {
           name,
           birth_date: date?.toISOString(),
           initial_story: story,
-          prompt: `Generate a story about ${name}'s alternate life${date ? ` born on ${date.toISOString().split('T')[0]}` : ''}`
+          prompt
         })
         .select()
         .single();
@@ -122,82 +140,49 @@ const Index = () => {
           </p>
         </div>
 
-        {showApiKeyInput ? (
-          <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
-            <h2 className="text-xl font-semibold text-gray-900">1. Enter Your Groq API Key</h2>
-            <p className="text-gray-600">To generate stories, you'll need a Groq API key. This will be saved for future use.</p>
-            <div className="space-y-4">
+        <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
+          <h2 className="text-xl font-semibold text-gray-900">Enter Your Details</h2>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="block text-base font-medium text-gray-700">
+                Your Name
+              </label>
               <Input
-                type="password"
-                placeholder="Enter your Groq API key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="text-base py-2"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="input-field text-base py-2"
               />
-              <div className="flex flex-col gap-2">
-                <Button
-                  onClick={handleSaveKey}
-                  disabled={!apiKey}
-                  className="w-full"
-                >
-                  Save API Key
-                </Button>
-                <a
-                  href="https://console.groq.com/keys"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-500 hover:underline text-center"
-                >
-                  Get your Groq API key here
-                </a>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
-            <h2 className="text-xl font-semibold text-gray-900">2. Enter Your Details</h2>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="block text-base font-medium text-gray-700">
-                  Your Name
-                </label>
-                <Input
-                  placeholder="Enter your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="input-field text-base py-2"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-base font-medium text-gray-700">
-                  Your Birthday
-                </label>
-                <Input
-                  type="date"
-                  onChange={handleDateChange}
-                  className="input-field text-base py-2"
-                  max={new Date().toISOString().split('T')[0]}
-                />
-              </div>
             </div>
 
-            <Button
-              onClick={handleSubmit}
-              disabled={loading || !name}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Flipping Your Life...
-                </>
-              ) : (
-                "Flip Your Life!"
-              )}
-            </Button>
+            <div className="space-y-2">
+              <label className="block text-base font-medium text-gray-700">
+                Your Birthday
+              </label>
+              <Input
+                type="date"
+                onChange={handleDateChange}
+                className="input-field text-base py-2"
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
           </div>
-        )}
+
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !name}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Flipping Your Life...
+              </>
+            ) : (
+              "Flip Your Life!"
+            )}
+          </Button>
+        </div>
 
         {result && (
           <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/95 backdrop-blur-lg">
@@ -234,7 +219,7 @@ const Index = () => {
 
             <div className="mt-12">
               <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                3. Create an Illustrated Ebook
+                Create an Illustrated Ebook
               </h3>
               <EbookGenerator originalStory={result} storyId={storyId} />
             </div>

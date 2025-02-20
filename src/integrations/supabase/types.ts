@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_settings: {
+        Row: {
+          created_at: string
+          deepseek_api_key: string | null
+          id: string
+          runware_api_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deepseek_api_key?: string | null
+          id?: string
+          runware_api_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deepseek_api_key?: string | null
+          id?: string
+          runware_api_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chapter_images: {
         Row: {
           chapter_id: string
