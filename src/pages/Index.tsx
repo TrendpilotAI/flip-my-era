@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,8 @@ import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { StoriesList } from "@/components/StoriesList";
 
 const getStarSign = (date: Date) => {
   const month = date.getMonth() + 1;
@@ -107,6 +108,47 @@ const Index = () => {
       localStorage.setItem('DEEPSEEK_API_KEY', data.deepseek_api_key);
       localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
     }
+  };
+
+  const saveStory = async () => {
+    if (!result || !name) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .insert({
+          name,
+          birth_date: date?.toISOString(),
+          initial_story: result,
+          prompt: `Create a story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''}`,
+          title: `${name}'s Alternate Life Story`
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setStoryId(data.id);
+      toast({
+        title: "Story saved!",
+        description: "Your story has been saved successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving story",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStorySelect = (story: any) => {
+    setName(story.name);
+    if (story.birth_date) {
+      setDate(new Date(story.birth_date));
+    }
+    setResult(story.initial_story);
+    setStoryId(story.id);
   };
 
   const handleSubmit = async () => {
@@ -208,7 +250,21 @@ const Index = () => {
         </div>
 
         <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
-          <h2 className="text-xl font-semibold text-gray-900">Enter Your Details</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900">Enter Your Details</h2>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">Load Saved Story</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Your Saved Stories</DialogTitle>
+                </DialogHeader>
+                <StoriesList onStorySelect={handleStorySelect} />
+              </DialogContent>
+            </Dialog>
+          </div>
+
           <div className="space-y-6">
             <div className="space-y-2">
               <label className="block text-base font-medium text-gray-700">
@@ -265,9 +321,18 @@ const Index = () => {
 
         {result && (
           <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/95 backdrop-blur-lg">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Your Alternate Life
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-gray-900">
+                Your Alternate Life
+              </h2>
+              <Button
+                onClick={saveStory}
+                variant="outline"
+                className="bg-white"
+              >
+                Save Story
+              </Button>
+            </div>
             <div className="prose prose-lg prose-pink max-w-none">
               <ReactMarkdown>{result}</ReactMarkdown>
             </div>

@@ -179,6 +179,8 @@ export type Database = {
           initial_story: string
           name: string
           prompt: string
+          title: string | null
+          user_id: string | null
         }
         Insert: {
           birth_date?: string | null
@@ -187,6 +189,8 @@ export type Database = {
           initial_story: string
           name: string
           prompt: string
+          title?: string | null
+          user_id?: string | null
         }
         Update: {
           birth_date?: string | null
@@ -195,6 +199,8 @@ export type Database = {
           initial_story?: string
           name?: string
           prompt?: string
+          title?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
