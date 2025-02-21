@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -37,16 +36,16 @@ export const useStoryGeneration = () => {
 
   const getRandomViralTropes = () => {
     const tropes = [
-      "an epic monologue that unexpectedly goes viral",
-      "a witty exchange that becomes the internet's favorite quote",
-      "a dramatic scene worthy of a Netflix adaptation",
-      "a meet-cute straight out of a romantic comedy",
-      "a perfectly timed one-liner that changes everything",
-      "a heartfelt confession that resonates worldwide",
-      "a quirky dialogue that spawns countless memes",
-      "a poetic moment captured in perfect timing",
-      "a cinematic scene that feels like a movie script",
-      "a theatrical twist that leaves audiences breathless"
+      "a breathtaking moment of serendipity",
+      "an unforgettable twist of fate",
+      "a chance encounter that changes everything",
+      "a magical revelation under starlight",
+      "an extraordinary coincidence that sparks wonder",
+      "a beautiful misunderstanding that leads to love",
+      "a moment of clarity amidst chaos",
+      "a destined meeting in an unexpected place",
+      "a life-changing decision made in a heartbeat",
+      "a perfect alignment of cosmic events"
     ];
     const selected = new Set();
     while (selected.size < 2) {
@@ -57,16 +56,16 @@ export const useStoryGeneration = () => {
 
   const getRandomSceneSettings = () => {
     const settings = [
-      "a fairy-lit rooftop at sunset",
-      "a bustling coffee shop during golden hour",
-      "a secret garden hidden in plain sight",
-      "a vintage bookstore with a magical secret",
-      "a rainy street with neon reflections",
-      "a dreamy beach at twilight",
-      "an enchanted city park at midnight",
-      "a cozy apartment with string lights",
-      "a charming old theater with history",
-      "a whimsical art gallery opening"
+      "a hidden garden blooming with fairy lights and midnight flowers",
+      "a cozy bookstore café where time seems to stand still",
+      "a rooftop overlooking a city painted in sunset hues",
+      "a secret beach where the waves whisper ancient stories",
+      "an enchanted forest path lined with glowing butterflies",
+      "a vintage jazz club frozen in a golden era",
+      "a charming street corner where magic feels possible",
+      "a moonlit balcony overlooking a sleeping city",
+      "a hidden courtyard filled with fairy lights and memories",
+      "a mystical art gallery where paintings come alive"
     ];
     return settings[Math.floor(Math.random() * settings.length)];
   };
@@ -106,60 +105,50 @@ export const useStoryGeneration = () => {
       }
     };
 
-    const prompt = `Create a captivating, cinematic story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} written in a dynamic, script-like style with engaging dialogue and vivid scene descriptions. ${getGenderContext()}.
+    const prompt = `Create a beautifully written story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in the style of an enchanting novel, with rich descriptions and flowing narrative. ${getGenderContext()}.
 
 Setting: ${sceneSettings}
 
-Story Structure:
-[Set the scene with rich, atmospheric details]
-
-Act 1: The Setup
-- Open with a vivid scene description
-- Introduce ${name} through action and dialogue
-- Establish the dreamy, magical atmosphere
-
-Example format:
-[Scene description in italics]
-Character: "Dialogue in quotes"
-*Action or emotional beat in asterisks*
-[Atmospheric details in brackets]
-
-Act 2: The Journey
-- Mix dialogue with internal monologue
-- Create cinematic moments
-- Build emotional resonance through interaction
-
-Act 3: The Resolution
-- Deliver powerful dialogue
-- Create a visually stunning climax
-- End with both words and atmosphere
+Story Elements:
+- Open with vivid, sensory descriptions that transport readers
+- Use elegant, flowing prose that creates a dreamy atmosphere
+- Include meaningful dialogue wrapped in descriptive narrative
+- Paint pictures with words, focusing on emotions and atmosphere
+- Create a story that feels like a cherished book passage
 
 Character Elements:
 - Personality: ${selectedPersonality.title} (${selectedPersonality.traits.join(", ")})
 - Zodiac Influence: ${starSign ? `${starSign} - ${starSignTraits}` : 'Unknown'}
-- Character Voice: ${selectedPersonality.description}
+- Inner Voice: ${selectedPersonality.description}
 
-Viral Moments:
+Key Moments:
 - Primary Scene: ${viralTropes[0]}
 - Supporting Scene: ${viralTropes[1]}
 
 Writing Style:
-1. Use script-like formatting for dialogue
-2. Include atmospheric scene descriptions in brackets
-3. Add emotional beats and actions in asterisks
-4. Create quotable lines of dialogue
-5. Mix narrative with theatrical elements
-6. Balance dreamy atmosphere with genuine emotion
+1. Use beautiful, descriptive prose
+2. Integrate dialogue naturally within paragraphs
+3. Create vivid imagery through careful word choice
+4. Build emotional resonance through detailed observations
+5. Maintain a dreamy, enchanting tone
+6. Include poetic descriptions of settings and feelings
+
+Structure:
+First Paragraph: Set the scene with rich detail and introduce ${name} through elegant description and meaningful action.
+
+Second Paragraph: Develop the story through a mix of internal thoughts, external dialogue, and atmospheric description. Focus on the emotional journey and the magic of the moment.
+
+Final Paragraph: Bring the story to a satisfying close with poetic imagery and profound realization, ending with a beautiful observation or meaningful exchange that lingers in the reader's mind.
 
 Requirements:
-- Write in a format that mixes narrative with script elements
-- Include at least 3 pieces of memorable dialogue
-- Create vivid scene descriptions
-- Add stage directions for emotional moments
-- Maintain an uplifting, magical tone
-- End with a powerful line of dialogue or poetic description
+- Write in flowing, novel-like prose
+- Include natural dialogue within descriptive paragraphs
+- Create cinematic imagery through words
+- Build emotional depth through detailed observation
+- Maintain an enchanting, uplifting tone
+- End with a powerful, quotable moment
 
-The story should be structured in 3 acts, each with a mix of dialogue, scene description, and emotional beats. Make it feel like a beautiful scene from a movie or play while maintaining its shareability and emotional impact.`;
+The story should read like a beloved passage from a beautiful book, with each paragraph building on the last to create a complete, shareable moment that captures both the magic of storytelling and the power of human connection.`;
 
     try {
       const story = await generateWithGroq(prompt);
