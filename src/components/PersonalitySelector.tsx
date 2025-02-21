@@ -1,6 +1,7 @@
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import type { PersonalityTypeKey } from "@/types/personality";
 
 interface PersonalityType {
   title: string;
@@ -11,8 +12,6 @@ interface PersonalityType {
 interface PersonalityTypes {
   [key: string]: PersonalityType;
 }
-
-type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
 
 interface PersonalitySelectorProps {
   personalityTypes: PersonalityTypes;
