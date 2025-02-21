@@ -172,7 +172,7 @@ export class RunwareService {
       const message = [{
         taskType: "imageInference",
         taskUUID,
-        model: "runwayml/stable-diffusion-v1-5",  // Updated model identifier
+        model: "runware:100@1",  // Updated to correct AIR identifier
         width: 1024,
         height: 1024,
         numberResults: params.numberResults || 1,
