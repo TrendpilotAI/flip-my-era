@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { generateWithGroq } from '@/utils/groq';
@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getStarSign, starSignCharacteristics } from '@/utils/starSigns';
 import type { PersonalityTypeKey } from '@/types/personality';
 import { personalityTypes } from '@/types/personality';
+import { detectGender, getFlippedGender, GenderInfo } from '@/utils/genderUtils';
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -17,10 +18,17 @@ export const useStoryGeneration = () => {
   const [result, setResult] = useState("");
   const [personalityType, setPersonalityType] = useState<PersonalityTypeKey>("dreamer");
   const [gender, setGender] = useState<GenderType>("same");
+  const [detectedGender, setDetectedGender] = useState<GenderInfo>({ gender: 'unknown', probability: 0 });
   const [storyId, setStoryId] = useState<string>("");
   
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (name) {
+      detectGender(name).then(setDetectedGender);
+    }
+  }, [name]);
 
   const handleStorySelect = async (story: any) => {
     setResult(story.initial_story);
@@ -29,16 +37,16 @@ export const useStoryGeneration = () => {
 
   const getRandomViralTropes = () => {
     const tropes = [
-      "unexpected inheritance from a mysterious relative",
-      "accidentally becoming a social media sensation",
-      "mistaken identity leading to hilarious consequences",
-      "finding a magical object in a thrift store",
-      "becoming an accidental influencer",
-      "starting a viral trend without meaning to",
-      "getting involved in a celebrity's life through a series of coincidences",
-      "discovering a hidden talent that goes viral",
-      "accidentally solving a decades-old mystery",
-      "becoming the subject of a viral meme"
+      "unexpected rise to viral fame through a misunderstanding",
+      "dramatic public redemption after a viral mishap",
+      "accidental social media influence leading to a movement",
+      "mysterious stranger changing everything overnight",
+      "plot twist revealing hidden talents that shock everyone",
+      "redemption arc that inspires millions online",
+      "going from rock bottom to trending worldwide",
+      "viral video that changes the trajectory of life",
+      "unexpected heroic moment caught on camera",
+      "shocking family secret revealed through DNA test"
     ];
     const selected = new Set();
     while (selected.size < 2) {
@@ -70,43 +78,53 @@ export const useStoryGeneration = () => {
     const viralTropes = getRandomViralTropes();
     
     const getGenderContext = () => {
+      const originalGender = detectedGender.gender;
       switch (gender) {
         case "flip":
-          return "Write the story with the protagonist's gender flipped from their original gender, incorporating this change naturally into the narrative";
+          return `Write the story with the protagonist's gender as ${getFlippedGender(originalGender)}, incorporating this change naturally into the narrative. Use appropriate pronouns and gender-specific references throughout.`;
         case "neutral":
-          return "Write the story using gender-neutral language and pronouns (they/them) for the protagonist";
+          return "Write the story using gender-neutral language and they/them pronouns for the protagonist";
         default:
-          return "Maintain the protagonist's original gender identity in the story";
+          return `Write the story with the protagonist's gender as ${originalGender}, using appropriate pronouns throughout.`;
       }
     };
 
-    const prompt = `Create a uniquely hilarious and viral-worthy story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} that blends their ${selectedPersonality.title.toLowerCase()} personality with unexpected plot twists and social media potential. ${getGenderContext()}.
+    const prompt = `Create an emotionally powerful and highly shareable story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} that will resonate deeply with social media audiences. ${getGenderContext()}.
 
-Personality Foundation:
-- Core traits: ${selectedPersonality.traits.join(", ")}
-- Zodiac influence (${starSign}): ${starSignTraits}
-- Character essence: ${selectedPersonality.description}
+Story Structure:
+1. Opening Hook: Start with an attention-grabbing moment that makes readers need to know what happens next
+2. Rising Action: Build tension through a series of increasingly dramatic events
+3. Hero's Journey: Transform the protagonist from ordinary to extraordinary
+4. Plot Twist: Include a shocking revelation that changes everything
+5. Redemption Arc: Show a powerful journey of growth and transformation
+6. Viral Moment: Incorporate a highly shareable, memorable scene
+7. Emotional Resolution: End with a powerful message that inspires sharing
 
-Viral Elements (incorporate organically):
-- Primary plot twist: ${viralTropes[0]}
-- Secondary element: ${viralTropes[1]}
+Character Foundation:
+- Personality Type: ${selectedPersonality.title} (${selectedPersonality.traits.join(", ")})
+- Zodiac Influence (${starSign}): ${starSignTraits}
+- Character Essence: ${selectedPersonality.description}
 
-Story Guidelines:
-1. Blend modern humor with relatable moments that would make great TikTok or Instagram content
-2. Include at least one "wait for it..." moment that would make readers want to share the story
-3. Weave in subtle references to current pop culture and internet trends
-4. Create memorable, quotable lines that could become memes
-5. Include a surprising twist that connects to their zodiac traits
-6. Make the story feel both personal and universally relatable
+Viral Elements:
+- Primary Plot Device: ${viralTropes[0]}
+- Secondary Element: ${viralTropes[1]}
+
+Writing Guidelines:
+1. Create strong emotional peaks and valleys
+2. Include highly quotable dialogue
+3. Write visually descriptive scenes perfect for TikTok adaptation
+4. Add unexpected twists that make readers gasp
+5. Incorporate current social media trends and cultural references
+6. End with a powerful message that resonates universally
 
 Style Requirements:
-- Keep the tone light and entertaining while maintaining emotional authenticity
-- Use vivid, sensory details that paint a picture
-- Include dialogue that sounds natural and quotable
-- Break the fourth wall occasionally with humorous asides
-- Maintain a balance between humor and heart
+- Use vivid, emotional language that creates strong mental images
+- Include dialogue that sounds authentic and memorable
+- Create "share-worthy" moments that readers will want to discuss
+- Maintain a balance between drama and authenticity
+- Write in a way that feels both personal and universally relatable
 
-The story should be 3 paragraphs long, each building on the previous one to create a satisfying arc that makes readers want to share it with their friends. Make it feel like a story that could go viral on social media while still being deeply personal to ${name}'s character.`;
+The story should be 3 paragraphs long, following a clear dramatic arc that builds to an emotional climax. Make it impossible not to share!`;
     
     try {
       const story = await generateWithGroq(prompt);
