@@ -3,7 +3,7 @@ import { GenderInfo, getFlippedGender } from './genderUtils';
 import { starSignCharacteristics } from './starSigns';
 import { personalityTypes } from '@/types/personality';
 
-export const getRandomViralTropes = () => {
+export const getRandomViralTropes = (): string[] => {
   const tropes = [
     "a breathtaking moment of serendipity",
     "an unforgettable twist of fate",
@@ -16,7 +16,7 @@ export const getRandomViralTropes = () => {
     "a life-changing decision made in a heartbeat",
     "a perfect alignment of cosmic events"
   ];
-  const selected = new Set();
+  const selected = new Set<string>();
   while (selected.size < 2) {
     selected.add(tropes[Math.floor(Math.random() * tropes.length)]);
   }

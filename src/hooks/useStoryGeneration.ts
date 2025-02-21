@@ -64,7 +64,7 @@ export const useStoryGeneration = () => {
     try {
       const starSign = date ? getStarSign(date) : null;
       const selectedPersonality = personalityTypes[personalityType];
-      const viralTropes = getRandomViralTropes();
+      const viralTropes: string[] = getRandomViralTropes();
       const sceneSettings = getRandomSceneSettings();
       
       const prompt = generateStoryPrompt(
