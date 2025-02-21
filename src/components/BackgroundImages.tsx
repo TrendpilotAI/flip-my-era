@@ -20,16 +20,44 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
-      <div className="absolute left-20 top-48 w-40 h-48 bg-white p-2 shadow-xl 
-        -rotate-6 transform hover:rotate-0 transition-transform duration-500 animate-float 
-        [animation-delay:2s]">
+      {/* New Polaroid - Cat */}
+      <div className="absolute right-32 top-48 w-44 h-52 bg-white p-2 shadow-xl 
+        rotate-3 transform hover:rotate-0 transition-transform duration-500 animate-float 
+        [animation-delay:1.2s]">
         <img
           src="https://images.unsplash.com/photo-1582562124811-c09040d0a901"
           alt=""
           className="w-full h-[85%] object-cover"
         />
         <div className="h-[15%] flex items-center justify-center">
-          <span className="font-handwriting text-sm text-gray-600">Cozy memories 🌟</span>
+          <span className="font-handwriting text-sm text-gray-600">Feline friend 🐱</span>
+        </div>
+      </div>
+
+      {/* New Polaroid - String Lights */}
+      <div className="absolute left-10 top-24 w-40 h-48 bg-white p-2 shadow-xl 
+        -rotate-6 transform hover:rotate-0 transition-transform duration-500">
+        <img
+          src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07"
+          alt=""
+          className="w-full h-[85%] object-cover"
+        />
+        <div className="h-[15%] flex items-center justify-center">
+          <span className="font-handwriting text-sm text-gray-600">Magical nights ⭐</span>
+        </div>
+      </div>
+
+      {/* New Polaroid - Autumn Leaves */}
+      <div className="absolute left-40 bottom-32 w-44 h-52 bg-white p-2 shadow-xl 
+        rotate-6 transform hover:rotate-0 transition-transform duration-500 animate-float 
+        [animation-delay:2.5s]">
+        <img
+          src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1"
+          alt=""
+          className="w-full h-[85%] object-cover"
+        />
+        <div className="h-[15%] flex items-center justify-center">
+          <span className="font-handwriting text-sm text-gray-600">Sweet autumn 🍁</span>
         </div>
       </div>
 
