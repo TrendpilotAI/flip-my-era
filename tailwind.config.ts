@@ -21,6 +21,7 @@ export default {
     extend: {
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
+        handwriting: ['Dancing Script', 'cursive'],
       },
       colors: {
         border: "hsl(var(--border))",
