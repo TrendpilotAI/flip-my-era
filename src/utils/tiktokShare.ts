@@ -15,16 +15,24 @@ interface TikTokAuthResponse {
   open_id: string;
 }
 
-// Use environment variable through import.meta.env instead of Deno
-const TIKTOK_CLIENT_KEY = import.meta.env.VITE_TIKTOK_CLIENT_KEY;
 const REDIRECT_URI = `${window.location.origin}/auth/tiktok/callback`;
 
-export const initTikTokAuth = () => {
+export const initTikTokAuth = async () => {
+  // Fetch the client key from Supabase edge function
+  const { data: { key }, error } = await supabase.functions.invoke('tiktok-auth', {
+    body: { action: 'get_client_key' }
+  });
+
+  if (error || !key) {
+    console.error('Error fetching TikTok client key:', error);
+    throw new Error('Failed to initialize TikTok auth');
+  }
+
   const csrfState = Math.random().toString(36).substring(7);
   localStorage.setItem('tiktok_csrf_state', csrfState);
   
   const authUrl = new URL('https://www.tiktok.com/auth/authorize/');
-  authUrl.searchParams.append('client_key', TIKTOK_CLIENT_KEY!);
+  authUrl.searchParams.append('client_key', key);
   authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
   authUrl.searchParams.append('state', csrfState);
   authUrl.searchParams.append('response_type', 'code');
@@ -40,7 +48,7 @@ export const handleTikTokCallback = async (code: string, state: string) => {
   }
   
   const { data, error } = await supabase.functions.invoke('tiktok-auth', {
-    body: { code }
+    body: { code, action: 'handle_callback' }
   });
 
   if (error) throw error;
@@ -62,7 +70,7 @@ export const shareToTikTok = async ({ text, hashtags = [], videoUrl, musicUrl, t
   const accessToken = localStorage.getItem('tiktok_access_token');
   
   if (!accessToken) {
-    initTikTokAuth();
+    await initTikTokAuth();
     return;
   }
   
