@@ -33,6 +33,28 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
+      {/* Ferris Wheel Background Element */}
+      <div className="absolute right-0 bottom-0 w-64 h-64 opacity-20 animate-float [animation-delay:2.5s]">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F97316] to-[#D946EF] rounded-full blur-2xl opacity-30"></div>
+        <img
+          src="https://images.unsplash.com/photo-1500673922987-e212871fec22"
+          alt=""
+          className="w-full h-full object-cover rounded-2xl transform rotate-12"
+        />
+      </div>
+
+      {/* Concert Lights Effect */}
+      <div className="absolute left-0 bottom-1/4 w-full h-32">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#D946EF] via-[#FFDEE2] to-[#E5DEFF] opacity-10 blur-3xl"></div>
+      </div>
+
+      {/* Cotton Candy Cloud */}
+      <div className="absolute right-1/4 top-20 w-32 h-32 bg-gradient-to-br 
+        from-[#FFDEE2] to-[#E5DEFF] opacity-30 rounded-full blur-lg animate-float 
+        [animation-delay:3s]">
+        <div className="absolute inset-0 bg-white/50 rounded-full blur-sm"></div>
+      </div>
+
       {/* Gradient overlays */}
       <div className="absolute right-1/4 -top-20 w-64 h-64 rounded-full 
         bg-gradient-to-r from-[#FFE29F] to-[#FF719A] opacity-20 blur-xl animate-float" />
@@ -60,20 +82,15 @@ export const BackgroundImages = () => {
         from-[#FFD700] to-[#FFDEE2] opacity-10 rounded-full blur-md animate-float 
         [animation-delay:0.5s]" />
 
-      {/* Mountain landscape */}
-      <div className="absolute -left-10 top-20 w-64 h-40">
-        <img
-          src="https://images.unsplash.com/photo-1501854140801-50d01698950b"
-          alt=""
-          className="w-full h-full object-cover rounded-2xl opacity-30 scale-90 blur-[2px] 
-            animate-float [animation-delay:2.5s]"
-        />
-      </div>
-
       {/* Additional decorative elements */}
       <div className="absolute right-40 bottom-40 w-20 h-20 
         bg-gradient-to-r from-[#fdfcfb] to-[#e2d1c3] opacity-40 rounded-full blur-sm 
         animate-float [animation-delay:3s]" />
+
+      {/* Concert stage lights effect */}
+      <div className="absolute bottom-0 left-1/4 w-1/2 h-40">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#D946EF]/20 via-[#F97316]/20 to-[#D946EF]/20 blur-3xl animate-float [animation-delay:2s]"></div>
+      </div>
     </div>
   );
 };
