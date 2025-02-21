@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -111,6 +112,36 @@ const Index = () => {
     } else {
       localStorage.setItem('GROQ_API_KEY', data.groq_api_key);
       localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
+    }
+  };
+
+  const handleStorySelect = async (story: any) => {
+    setResult(story.initial_story);
+    setStoryId(story.id);
+  };
+
+  const saveStory = async () => {
+    if (!result || !storyId) return;
+
+    try {
+      const { error } = await supabase
+        .from('stories')
+        .update({ initial_story: result })
+        .eq('id', storyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Story Saved",
+        description: "Your story has been saved successfully.",
+      });
+    } catch (error) {
+      console.error("Error saving story:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save your story. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

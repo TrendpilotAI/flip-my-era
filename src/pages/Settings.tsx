@@ -8,9 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 const Settings = () => {
-  const [grokKey, setGrokKey] = useState("");
-  const [runwareKey, setRunwareKey] = useState("");
   const [groqKey, setGroqKey] = useState("");
+  const [runwareKey, setRunwareKey] = useState("");
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -28,14 +27,12 @@ const Settings = () => {
       .single();
 
     if (data) {
-      setGrokKey(data.grok_api_key || '');
-      setRunwareKey(data.runware_api_key || '');
       setGroqKey(data.groq_api_key || '');
+      setRunwareKey(data.runware_api_key || '');
       
       // Store in localStorage for immediate use
-      if (data.grok_api_key) localStorage.setItem('GROK_API_KEY', data.grok_api_key);
-      if (data.runware_api_key) localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
       if (data.groq_api_key) localStorage.setItem('GROQ_API_KEY', data.groq_api_key);
+      if (data.runware_api_key) localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
     }
   };
 
@@ -45,17 +42,15 @@ const Settings = () => {
       const { error } = await supabase
         .from('api_settings')
         .insert({
-          grok_api_key: grokKey,
-          runware_api_key: runwareKey,
-          groq_api_key: groqKey
+          groq_api_key: groqKey,
+          runware_api_key: runwareKey
         });
 
       if (error) throw error;
 
       // Update localStorage
-      localStorage.setItem('GROK_API_KEY', grokKey);
-      localStorage.setItem('RUNWARE_API_KEY', runwareKey);
       localStorage.setItem('GROQ_API_KEY', groqKey);
+      localStorage.setItem('RUNWARE_API_KEY', runwareKey);
 
       toast({
         title: "Settings Saved",
@@ -110,26 +105,6 @@ const Settings = () => {
                 className="text-sm text-blue-500 hover:underline mt-1 block"
               >
                 Get your Groq API key
-              </a>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Grok API Key
-              </label>
-              <Input
-                type="password"
-                value={grokKey}
-                onChange={(e) => setGrokKey(e.target.value)}
-                placeholder="Enter your Grok API key"
-              />
-              <a
-                href="https://grok.x"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-500 hover:underline mt-1 block"
-              >
-                Get your Grok API key
               </a>
             </div>
 
