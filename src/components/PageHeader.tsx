@@ -17,7 +17,7 @@ export const PageHeader = () => {
         </span>
         <br />
         <span className="text-sm mt-2 block text-[#7E69AB] italic font-handwriting text-lg">
-          Discover your parallel universe story, beautifully illustrated and bound into your own keepsake memory book
+          Discover your parallel universe story, crafted into a beautiful digital e-memory book - because we all deserve a romantic, nostalgic, and friendly alternate reality
         </span>
       </p>
       <div className="flex justify-center gap-2 mt-4">
@@ -28,7 +28,7 @@ export const PageHeader = () => {
           🌟 Unique Stories
         </span>
         <span className="px-3 py-1 rounded-full bg-[#D3E4FD]/50 text-[#7E69AB] text-sm hover:bg-[#D3E4FD]/70 transition-colors">
-          📖 Memory Books
+          📖 E-Memory Books
         </span>
       </div>
     </div>
