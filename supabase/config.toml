@@ -58,6 +58,9 @@ backend = "postgres"
 [functions]
 enabled = true
 
+[functions.text-to-speech]
+verify_jwt = false
+
 [functions.tiktok-auth]
 verify_jwt = false
 
@@ -66,7 +69,3 @@ verify_jwt = true
 
 [functions.tiktok-share-analytics]
 verify_jwt = true
-
-[functions.text-to-speech]
-verify_jwt = false
-
