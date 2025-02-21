@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { generateWithGroq } from "@/utils/groq";
@@ -7,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { StoryForm } from "@/components/StoryForm";
 import { StoryResult } from "@/components/StoryResult";
 import { getStarSign, starSignCharacteristics } from "@/utils/starSigns";
+import { SparkleEffect } from "@/components/SparkleEffect";
 
 type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
 
@@ -163,6 +163,8 @@ Make the story feel like a cherished memory that's both deeply personal and univ
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
+      <SparkleEffect />
+      
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1518112166137-85f9979a43aa"

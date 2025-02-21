@@ -83,6 +83,14 @@ export default {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        fadeOut: {
+          "0%": { opacity: "1", scale: "1" },
+          "100%": { opacity: "0", scale: "0" },
+        },
+        "spin-slow": {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -90,6 +98,8 @@ export default {
         float: "float 3s ease-in-out infinite",
         shimmer: "shimmer 2s linear infinite",
         fadeIn: "fadeIn 0.5s ease-out forwards",
+        fadeOut: "fadeOut 1s ease-out forwards",
+        "spin-slow": "spin-slow 3s linear infinite",
       },
     },
   },
