@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Repeat, Video, Music } from "lucide-react";
+import { Repeat, Video, Music, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,21 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
     });
   };
 
+  // Extract moral from the story based on common themes
+  const getMoralOfStory = (story: string): string => {
+    if (story.toLowerCase().includes("dream") || story.toLowerCase().includes("goal")) {
+      return "Never be afraid to dream big and chase your goals. Your unique path is what makes your story special.";
+    } else if (story.toLowerCase().includes("friend") || story.toLowerCase().includes("community")) {
+      return "True connections and authentic friendships can transform your life in unexpected ways.";
+    } else if (story.toLowerCase().includes("challenge") || story.toLowerCase().includes("overcome")) {
+      return "Every challenge you face is an opportunity to grow stronger and discover your true potential.";
+    } else if (story.toLowerCase().includes("change") || story.toLowerCase().includes("transform")) {
+      return "Embrace change as a catalyst for growth. Your ability to adapt is your superpower.";
+    } else {
+      return "Your unique journey shapes who you are. Trust yourself and keep writing your own story.";
+    }
+  };
+
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
       <div className="flex justify-between items-center mb-4">
@@ -33,6 +48,19 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
       <div className="prose prose-lg prose-pink max-w-none">
         <ReactMarkdown>{result}</ReactMarkdown>
       </div>
+
+      <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="h-6 w-6 text-purple-500" />
+          <h3 className="text-xl font-semibold text-[#4A4A4A]">
+            Moral of the Story
+          </h3>
+        </div>
+        <p className="text-gray-700 italic">
+          {getMoralOfStory(result)}
+        </p>
+      </div>
+
       {relevantSong && (
         <div className="mt-8 p-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl border border-pink-100">
           <h3 className="text-xl font-semibold text-[#4A4A4A] mb-4">
