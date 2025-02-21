@@ -6,12 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { getStarSign, starSignCharacteristics } from '@/utils/starSigns';
 import type { PersonalityTypeKey } from '@/types/personality';
 import { personalityTypes } from '@/types/personality';
-import { detectGender, getFlippedGender, GenderInfo } from '@/utils/genderUtils';
+import { detectGender, getFlippedGender, transformName, GenderInfo } from '@/utils/genderUtils';
 
 type GenderType = "same" | "flip" | "neutral";
 
 export const useStoryGeneration = () => {
   const [name, setName] = useState("");
+  const [transformedName, setTransformedName] = useState("");
   const [date, setDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
@@ -28,6 +29,13 @@ export const useStoryGeneration = () => {
       detectGender(name).then(setDetectedGender);
     }
   }, [name]);
+
+  useEffect(() => {
+    if (name && detectedGender) {
+      const newTransformedName = transformName(name, detectedGender, gender);
+      setTransformedName(newTransformedName);
+    }
+  }, [name, detectedGender, gender]);
 
   const handleStorySelect = async (story: any) => {
     setResult(story.initial_story);
@@ -97,15 +105,15 @@ export const useStoryGeneration = () => {
       const originalGender = detectedGender.gender;
       switch (gender) {
         case "flip":
-          return `Write the story with the protagonist's gender as ${getFlippedGender(originalGender)}, incorporating this change naturally into the narrative. Use appropriate pronouns and gender-specific references throughout.`;
+          return `Write the story with the protagonist's name as ${transformedName} and gender as ${getFlippedGender(originalGender)}, incorporating this change naturally into the narrative. Use appropriate pronouns and gender-specific references throughout.`;
         case "neutral":
-          return "Write the story using gender-neutral language and they/them pronouns for the protagonist";
+          return `Write the story with the protagonist's name as ${transformedName} using gender-neutral language and they/them pronouns throughout.`;
         default:
-          return `Write the story with the protagonist's gender as ${originalGender}, using appropriate pronouns throughout.`;
+          return `Write the story with the protagonist's name as ${transformedName} and gender as ${originalGender}, using appropriate pronouns throughout.`;
       }
     };
 
-    const prompt = `Create a beautifully written story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in the style of an enchanting novel, with rich descriptions and flowing narrative. ${getGenderContext()}.
+    const prompt = `Create a beautifully written story about ${transformedName}${date ? ` (born ${date.toLocaleDateString()})` : ''} in the style of an enchanting novel, with rich descriptions and flowing narrative. ${getGenderContext()}.
 
 Setting: ${sceneSettings}
 
@@ -134,7 +142,7 @@ Writing Style:
 6. Include poetic descriptions of settings and feelings
 
 Structure:
-First Paragraph: Set the scene with rich detail and introduce ${name} through elegant description and meaningful action.
+First Paragraph: Set the scene with rich detail and introduce ${transformedName} through elegant description and meaningful action.
 
 Second Paragraph: Develop the story through a mix of internal thoughts, external dialogue, and atmospheric description. Focus on the emotional journey and the magic of the moment.
 
@@ -156,7 +164,7 @@ The story should read like a beloved passage from a beautiful book, with each pa
       
       if (story) {
         setResult(story);
-        await saveStory(story, name, date, prompt);
+        await saveStory(story, transformedName, date, prompt);
         toast({
           title: "Alternate life discovered!",
           description: "Your parallel universe self has been revealed!",
@@ -201,6 +209,7 @@ The story should read like a beloved passage from a beautiful book, with each pa
   return {
     name,
     setName,
+    transformedName,
     date,
     setDate,
     loading,
