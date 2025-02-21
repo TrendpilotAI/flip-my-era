@@ -37,22 +37,38 @@ export const useStoryGeneration = () => {
 
   const getRandomViralTropes = () => {
     const tropes = [
-      "unexpected rise to viral fame through a misunderstanding",
-      "dramatic public redemption after a viral mishap",
-      "accidental social media influence leading to a movement",
-      "mysterious stranger changing everything overnight",
-      "plot twist revealing hidden talents that shock everyone",
-      "redemption arc that inspires millions online",
-      "going from rock bottom to trending worldwide",
-      "viral video that changes the trajectory of life",
-      "unexpected heroic moment caught on camera",
-      "shocking family secret revealed through DNA test"
+      "an unexpected meet-cute that goes hilariously wrong before turning magical",
+      "accidentally becoming a meme sensation while trying to impress a crush",
+      "a sarcastic twist of fate that leads to finding true love",
+      "a quirky misunderstanding that sparks a viral romance",
+      "an embarrassing moment turned into an inspiring love story",
+      "a witty comeback that changes everything",
+      "finding love through a series of comedic mishaps",
+      "a heartwarming redemption story with unexpected humor",
+      "a chance encounter that becomes an internet phenomenon",
+      "a dramatic confession gone viral for all the right reasons"
     ];
     const selected = new Set();
     while (selected.size < 2) {
       selected.add(tropes[Math.floor(Math.random() * tropes.length)]);
     }
     return Array.from(selected);
+  };
+
+  const getRandomEmotionalElements = () => {
+    const elements = [
+      "a bittersweet reunion that brings tears and laughter",
+      "an unexpected act of kindness that changes multiple lives",
+      "a moment of vulnerability that resonates with millions",
+      "a heartfelt revelation that challenges everything",
+      "a touching gesture that breaks the internet",
+      "a profound realization wrapped in humor",
+      "an epic romantic gesture with a twist of irony",
+      "a deeply moving connection formed through shared laughter",
+      "a powerful transformation sparked by a funny coincidence",
+      "a life-changing decision made with both heart and humor"
+    ];
+    return elements[Math.floor(Math.random() * elements.length)];
   };
 
   const handleSubmit = async () => {
@@ -76,6 +92,7 @@ export const useStoryGeneration = () => {
     const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
     const selectedPersonality = personalityTypes[personalityType];
     const viralTropes = getRandomViralTropes();
+    const emotionalElement = getRandomEmotionalElements();
     
     const getGenderContext = () => {
       const originalGender = detectedGender.gender;
@@ -89,43 +106,46 @@ export const useStoryGeneration = () => {
       }
     };
 
-    const prompt = `Create an emotionally powerful and highly shareable story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} that will resonate deeply with social media audiences. ${getGenderContext()}.
+    const prompt = `Create a captivating, humorous, and emotionally resonant story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} that perfectly balances wit, romance, and profound meaning. ${getGenderContext()}.
 
 Story Structure:
-1. Opening Hook: Start with an attention-grabbing moment that makes readers need to know what happens next
-2. Rising Action: Build tension through a series of increasingly dramatic events
-3. Hero's Journey: Transform the protagonist from ordinary to extraordinary
-4. Plot Twist: Include a shocking revelation that changes everything
-5. Redemption Arc: Show a powerful journey of growth and transformation
-6. Viral Moment: Incorporate a highly shareable, memorable scene
-7. Emotional Resolution: End with a powerful message that inspires sharing
+1. Opening Hook: Begin with a witty, attention-grabbing moment that hints at deeper meaning
+2. Rising Action: Build tension through a series of both humorous and touching events
+3. Hero's Journey: Transform the protagonist through both laughter and tears
+4. Plot Twist: Include a surprising revelation that's both funny and profound
+5. Romantic Element: Weave in a unique love story that subverts expectations
+6. Viral Moment: Create a scene that's simultaneously hilarious and deeply moving
+7. Emotional Resolution: End with a powerful message that combines humor and heart
 
 Character Foundation:
 - Personality Type: ${selectedPersonality.title} (${selectedPersonality.traits.join(", ")})
 - Zodiac Influence (${starSign}): ${starSignTraits}
 - Character Essence: ${selectedPersonality.description}
+- Emotional Core: ${emotionalElement}
 
 Viral Elements:
 - Primary Plot Device: ${viralTropes[0]}
 - Secondary Element: ${viralTropes[1]}
 
 Writing Guidelines:
-1. Create strong emotional peaks and valleys
-2. Include highly quotable dialogue
-3. Write visually descriptive scenes perfect for TikTok adaptation
-4. Add unexpected twists that make readers gasp
-5. Incorporate current social media trends and cultural references
-6. End with a powerful message that resonates universally
+1. Balance humor with genuine emotion
+2. Include witty, quotable dialogue that also touches the heart
+3. Create scenes that are both funny and profound
+4. Add unexpected twists that make readers laugh and cry
+5. Mix current trends with timeless emotional truths
+6. End with a message that's both clever and deeply meaningful
 
 Style Requirements:
-- Use vivid, emotional language that creates strong mental images
-- Include dialogue that sounds authentic and memorable
-- Create "share-worthy" moments that readers will want to discuss
-- Maintain a balance between drama and authenticity
-- Write in a way that feels both personal and universally relatable
+- Blend humor and heart in every scene
+- Include both laugh-out-loud moments and touching revelations
+- Create moments that are simultaneously funny and profound
+- Mix witty observations with emotional depth
+- Balance romantic elements with comedic timing
+- Add a dash of edgy humor while maintaining emotional authenticity
+- Make the story both wildly entertaining and genuinely moving
 
-The story should be 3 paragraphs long, following a clear dramatic arc that builds to an emotional climax. Make it impossible not to share!`;
-    
+The story should be 3 paragraphs long, perfectly balancing humor, romance, and emotional depth. Each paragraph should contain both witty observations and touching moments, creating a story that's impossible not to share because it makes readers feel everything!`;
+
     try {
       const story = await generateWithGroq(prompt);
       loadingToast.dismiss();
