@@ -1,10 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Repeat, Video, Music, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { findRelevantSong, openSongInPreferredPlatform } from "@/utils/taylorSwiftSongs";
+import { shareToTikTok } from "@/utils/tiktokShare";
 
 interface StoryResultProps {
   result: string;
@@ -17,13 +17,25 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
   const relevantSong = findRelevantSong(result);
 
   const handleTikTokShare = async () => {
-    toast({
-      title: "Coming Soon!",
-      description: "TikTok video generation will be available in a future update. For now, you can copy the story and create your own TikTok video!",
-    });
+    try {
+      await shareToTikTok({
+        text: result.slice(0, 300) + "...", // TikTok has character limits
+        hashtags: ["alternateTimeline", "whatIf", "storytelling"],
+      });
+      
+      toast({
+        title: "Opening TikTok",
+        description: "Create your video with the story text!",
+      });
+    } catch (error) {
+      toast({
+        title: "Couldn't open TikTok",
+        description: "Please try copying the story and sharing manually.",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Extract moral from the story based on common themes
   const getMoralOfStory = (story: string): string => {
     if (story.toLowerCase().includes("dream") || story.toLowerCase().includes("goal")) {
       return "Never be afraid to dream big and chase your goals. Your unique path is what makes your story special.";
@@ -85,7 +97,6 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
         <EbookGenerator originalStory={result} storyId={storyId} />
       </div>
 
-      {/* Move secondary actions to the bottom */}
       <div className="mt-8 pt-8 border-t border-[#E5DEFF]">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <Button
