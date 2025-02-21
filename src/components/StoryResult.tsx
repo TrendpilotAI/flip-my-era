@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Repeat, TiktokIcon } from "lucide-react";
+import { Repeat, Video } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
@@ -44,7 +44,7 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
             onClick={handleTikTokShare}
             className="text-lg bg-black text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
           >
-            <TiktokIcon className="h-6 w-6" />
+            <Video className="h-6 w-6" />
             Make TikTok
           </Button>
         </div>
