@@ -225,41 +225,43 @@ const Index = () => {
   const starSign = date ? getStarSign(date) : null;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-purple-400 via-pink-500 to-red-500 py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <img
-          src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1"
+          src="https://images.unsplash.com/photo-1518112166137-85f9979a43aa"
           alt=""
-          className="absolute -right-20 -top-20 w-64 h-64 object-cover rounded-full opacity-20 rotate-12 transform scale-75"
+          className="absolute -right-20 -top-20 w-64 h-64 object-cover rounded-full opacity-20 rotate-12 transform scale-75 blur-sm"
         />
         <img
-          src="https://images.unsplash.com/photo-1582562124811-c09040d0a901"
+          src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205"
           alt=""
-          className="absolute -left-32 top-1/3 w-96 h-96 object-cover rounded-full opacity-20 -rotate-12 transform scale-75"
+          className="absolute -left-32 top-1/3 w-96 h-96 object-cover rounded-full opacity-20 -rotate-12 transform scale-75 blur-sm"
         />
         <img
-          src="https://images.unsplash.com/photo-1535268647677-300dbf3d78d1"
+          src="https://images.unsplash.com/photo-1565945887714-d5139f4eb0ce"
           alt=""
-          className="absolute -right-40 bottom-1/4 w-80 h-80 object-cover rounded-full opacity-20 rotate-45 transform scale-75"
+          className="absolute -right-40 bottom-1/4 w-80 h-80 object-cover rounded-full opacity-20 rotate-45 transform scale-75 blur-sm"
         />
       </div>
 
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         <div className="text-center space-y-4 animate-fadeIn">
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">
+          <h1 className="text-4xl md:text-5xl font-bold text-[#4A4A4A] drop-shadow-lg">
             FlipMyEra
           </h1>
-          <p className="text-lg text-white/90">
-            Discover your absurd alternate life in a parallel universe!
+          <p className="text-lg text-[#6B6B6B]">
+            Travel back to a more hopeful timeline ✨
           </p>
         </div>
 
-        <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur-lg">
+        <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">Enter Your Details</h2>
+            <h2 className="text-xl font-semibold text-[#4A4A4A]">Discover Your Alternate Timeline</h2>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="outline">Load Saved Story</Button>
+                <Button variant="outline" className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10">
+                  Load Saved Story
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -272,32 +274,32 @@ const Index = () => {
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-base font-medium text-gray-700">
+              <label className="block text-base font-medium text-[#4A4A4A]">
                 Your Name
               </label>
               <Input
                 placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input-field text-base py-2"
+                className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-base font-medium text-gray-700">
+              <label className="block text-base font-medium text-[#4A4A4A]">
                 Your Birthday
               </label>
               <Input
                 type="date"
                 onChange={handleDateChange}
-                className="input-field text-base py-2"
+                className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
                 max={new Date().toISOString().split('T')[0]}
               />
             </div>
 
             <div className="space-y-4">
-              <label className="block text-base font-medium text-gray-700">
-                Desired Gender in Alternate Universe
+              <label className="block text-base font-medium text-[#4A4A4A]">
+                Choose Your Alternate Reality Self
               </label>
               <RadioGroup
                 value={desiredGender}
@@ -309,8 +311,8 @@ const Index = () => {
                     key={gender}
                     className={`flex items-center space-x-2 rounded-lg border p-4 cursor-pointer transition-colors ${
                       desiredGender === gender
-                        ? "border-purple-500 bg-purple-50"
-                        : "border-gray-200 hover:border-purple-200"
+                        ? "border-[#E5DEFF] bg-[#E5DEFF]/20"
+                        : "border-gray-200 hover:border-[#E5DEFF]/50"
                     }`}
                   >
                     <RadioGroupItem value={gender} id={gender} />
@@ -324,18 +326,18 @@ const Index = () => {
 
             {starSign && (
               <div className="mt-6 text-center animate-fadeIn">
-                <div className="text-lg font-medium text-gray-700">Your Star Sign</div>
+                <div className="text-lg font-medium text-[#4A4A4A]">Your Star Sign</div>
                 <div className="flex items-center justify-center gap-8 mt-4">
                   <div className="w-1/3">
                     <StarSignIcon sign={starSign} />
-                    <div className="mt-2 text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
+                    <div className="mt-2 text-2xl font-bold bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-transparent bg-clip-text">
                       {starSign}
                     </div>
                   </div>
                   <div className="w-2/3 text-left">
                     <ul className="list-disc list-inside space-y-2">
                       {starSignCharacteristics[starSign].traits.map((trait, index) => (
-                        <li key={index} className="text-gray-700">{trait}</li>
+                        <li key={index} className="text-[#4A4A4A]">{trait}</li>
                       ))}
                     </ul>
                   </div>
@@ -347,29 +349,29 @@ const Index = () => {
           <Button
             onClick={handleSubmit}
             disabled={loading || !name}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+            className="w-full bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] hover:opacity-90 transition-opacity"
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Flipping Your Life...
+                Time Traveling...
               </>
             ) : (
-              "Flip Your Life!"
+              "Take Me Back!"
             )}
           </Button>
         </div>
 
         {result && (
-          <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/95 backdrop-blur-lg">
+          <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Your Alternate Life
+              <h2 className="text-2xl font-semibold text-[#4A4A4A]">
+                Your Pre-2020 Timeline
               </h2>
               <Button
                 onClick={saveStory}
                 variant="outline"
-                className="bg-white"
+                className="bg-white border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
               >
                 Save Story
               </Button>
@@ -381,10 +383,10 @@ const Index = () => {
               <div className="flex gap-2">
                 <Button
                   onClick={handleSubmit}
-                  className="text-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+                  className="text-lg bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
                 >
                   <Repeat className="h-6 w-6" />
-                  Again!
+                  Try Another Timeline!
                 </Button>
               </div>
               <Button
@@ -393,18 +395,18 @@ const Index = () => {
                   navigator.clipboard.writeText(result);
                   toast({
                     title: "Copied to clipboard!",
-                    description: "Share your alternate life with friends!",
+                    description: "Share your alternate timeline with friends!",
                   });
                 }}
-                className="text-sm"
+                className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
               >
-                Share Result
+                Share Story
               </Button>
             </div>
 
             <div className="mt-12">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">
-                Create an Illustrated Ebook
+              <h3 className="text-xl font-semibold text-[#4A4A4A] mb-6">
+                Create an Illustrated Story
               </h3>
               <EbookGenerator originalStory={result} storyId={storyId} />
             </div>
