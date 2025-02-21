@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 interface TikTokShareOptions {
   videoUrl?: string;
   text: string;
@@ -13,7 +15,8 @@ interface TikTokAuthResponse {
   open_id: string;
 }
 
-const TIKTOK_CLIENT_KEY = Deno.env.get('TIKTOK_CLIENT_KEY');
+// Use environment variable through import.meta.env instead of Deno
+const TIKTOK_CLIENT_KEY = import.meta.env.VITE_TIKTOK_CLIENT_KEY;
 const REDIRECT_URI = `${window.location.origin}/auth/tiktok/callback`;
 
 export const initTikTokAuth = () => {
