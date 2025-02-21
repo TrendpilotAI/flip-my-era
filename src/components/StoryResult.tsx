@@ -1,9 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import { Repeat, Video } from "lucide-react";
+import { Repeat, Video, Music } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
+import { findRelevantSong } from "@/utils/taylorSwiftSongs";
 
 interface StoryResultProps {
   result: string;
@@ -13,6 +14,7 @@ interface StoryResultProps {
 
 export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultProps) => {
   const { toast } = useToast();
+  const relevantSong = findRelevantSong(result);
 
   const handleTikTokShare = async () => {
     toast({
@@ -27,6 +29,17 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
         <h2 className="text-2xl font-semibold text-[#4A4A4A]">
           Your Pre-2020 Timeline
         </h2>
+        {relevantSong && (
+          <a
+            href={relevantSong.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full hover:opacity-90 transition-opacity"
+          >
+            <Music className="h-4 w-4" />
+            <span>Listen to "{relevantSong.title}"</span>
+          </a>
+        )}
       </div>
       <div className="prose prose-lg prose-pink max-w-none">
         <ReactMarkdown>{result}</ReactMarkdown>
