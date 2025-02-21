@@ -45,15 +45,21 @@ export const StoryResult = ({
     });
 
     try {
+      // Trim the text if it's too long
+      const trimmedText = result.slice(0, 4000); // ElevenLabs has a text limit
+
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: result }
+        body: { text: trimmedText }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
 
       loadingToast.dismiss();
       
-      if (data.audioContent) {
+      if (data?.audioContent) {
         const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
         audioRef.current = audio;
         
@@ -61,11 +67,28 @@ export const StoryResult = ({
           setIsNarrating(false);
         };
 
-        audio.play();
-        toast({
-          title: "Story time!",
-          description: "Sit back and enjoy your bedtime story...",
-        });
+        audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          setIsNarrating(false);
+          toast({
+            title: "Playback failed",
+            description: "There was an error playing the narration.",
+            variant: "destructive",
+          });
+        };
+
+        try {
+          await audio.play();
+          toast({
+            title: "Story time!",
+            description: "Sit back and enjoy your bedtime story...",
+          });
+        } catch (playError) {
+          console.error('Play error:', playError);
+          throw new Error('Failed to start audio playback');
+        }
+      } else {
+        throw new Error('No audio content received');
       }
     } catch (error) {
       loadingToast.dismiss();
@@ -73,7 +96,7 @@ export const StoryResult = ({
       console.error('Error generating narration:', error);
       toast({
         title: "Narration failed",
-        description: "Sorry, I couldn't tell the story right now. Please try again.",
+        description: error.message || "Sorry, I couldn't tell the story right now. Please try again.",
         variant: "destructive",
       });
     }
