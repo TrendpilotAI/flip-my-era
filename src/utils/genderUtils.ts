@@ -31,6 +31,92 @@ export const getFlippedGender = (gender: string): string => {
   }
 };
 
+const getMaleToFemaleMapping = (name: string): string => {
+  const mappings: { [key: string]: string } = {
+    'alexander': 'alexandra',
+    'andrew': 'andrea',
+    'anthony': 'antonia',
+    'benjamin': 'beatrice',
+    'charles': 'charlotte',
+    'christopher': 'christine',
+    'daniel': 'danielle',
+    'david': 'diana',
+    'edward': 'emma',
+    'eric': 'erica',
+    'francis': 'frances',
+    'frederick': 'frederica',
+    'george': 'georgia',
+    'henry': 'henrietta',
+    'james': 'jamie',
+    'john': 'joan',
+    'joseph': 'josephine',
+    'kevin': 'katherine',
+    'louis': 'louise',
+    'matthew': 'matilda',
+    'michael': 'michelle',
+    'nicholas': 'nicole',
+    'patrick': 'patricia',
+    'paul': 'paula',
+    'peter': 'petra',
+    'philip': 'philippa',
+    'richard': 'rachel',
+    'robert': 'roberta',
+    'samuel': 'samantha',
+    'stephen': 'stephanie',
+    'thomas': 'thomasina',
+    'timothy': 'tina',
+    'victor': 'victoria',
+    'william': 'willow'
+  };
+  
+  const lowercaseName = name.toLowerCase();
+  return mappings[lowercaseName] || name + 'a';
+};
+
+const getFemaleToMaleMapping = (name: string): string => {
+  const mappings: { [key: string]: string } = {
+    'alexandra': 'alexander',
+    'andrea': 'andrew',
+    'antonia': 'anthony',
+    'beatrice': 'benjamin',
+    'charlotte': 'charles',
+    'christine': 'christopher',
+    'danielle': 'daniel',
+    'diana': 'david',
+    'emma': 'edward',
+    'erica': 'eric',
+    'frances': 'francis',
+    'frederica': 'frederick',
+    'georgia': 'george',
+    'henrietta': 'henry',
+    'jamie': 'james',
+    'joan': 'john',
+    'josephine': 'joseph',
+    'katherine': 'kevin',
+    'louise': 'louis',
+    'matilda': 'matthew',
+    'michelle': 'michael',
+    'nicole': 'nicholas',
+    'patricia': 'patrick',
+    'paula': 'paul',
+    'petra': 'peter',
+    'philippa': 'philip',
+    'rachel': 'richard',
+    'roberta': 'robert',
+    'samantha': 'samuel',
+    'stephanie': 'stephen',
+    'thomasina': 'thomas',
+    'tina': 'timothy',
+    'victoria': 'victor',
+    'willow': 'william'
+  };
+  
+  const lowercaseName = name.toLowerCase();
+  // Remove common feminine endings to find male equivalent
+  const withoutEnding = lowercaseName.replace(/(a|ie|ette|ina|ey)$/, '');
+  return mappings[lowercaseName] || withoutEnding;
+};
+
 export const transformName = (originalName: string, detectedGender: GenderInfo, genderType: "same" | "flip" | "neutral"): string => {
   const [firstName, ...restOfName] = originalName.split(' ');
   const lastName = restOfName.join(' ');
@@ -40,41 +126,21 @@ export const transformName = (originalName: string, detectedGender: GenderInfo, 
   }
 
   if (genderType === "flip") {
-    const flippedFirstNames = {
-      male: {
-        'John': 'Jane',
-        'Michael': 'Michelle',
-        'David': 'Diana',
-        'Robert': 'Roberta',
-        'William': 'Willow',
-        'James': 'Jamie',
-        'Joseph': 'Josephine',
-        'Daniel': 'Danielle',
-        'Thomas': 'Thomasina',
-        'Christopher': 'Christina'
-      },
-      female: {
-        'Mary': 'Mark',
-        'Patricia': 'Patrick',
-        'Jennifer': 'Jeffrey',
-        'Elizabeth': 'Elias',
-        'Linda': 'Linden',
-        'Barbara': 'Barrett',
-        'Susan': 'Samuel',
-        'Margaret': 'Marcus',
-        'Jessica': 'Jesse',
-        'Sarah': 'Samuel'
-      }
-    };
-
     const gender = detectedGender.gender;
-    if (gender === 'male' || gender === 'female') {
-      const nameMap = flippedFirstNames[gender];
-      const keys = Object.keys(nameMap);
-      const randomIndex = Math.floor(Math.random() * keys.length);
-      const newFirstName = nameMap[keys[randomIndex]];
-      return `${newFirstName} ${lastName}`;
+    let newFirstName = firstName;
+    
+    if (gender === 'male') {
+      newFirstName = getMaleToFemaleMapping(firstName);
+    } else if (gender === 'female') {
+      newFirstName = getFemaleToMaleMapping(firstName);
     }
+    
+    // Preserve the case of the original name
+    if (firstName[0] === firstName[0].toUpperCase()) {
+      newFirstName = newFirstName.charAt(0).toUpperCase() + newFirstName.slice(1).toLowerCase();
+    }
+    
+    return `${newFirstName} ${lastName}`;
   }
 
   if (genderType === "neutral") {
