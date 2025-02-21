@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 const Settings = () => {
-  const [deepseekKey, setDeepseekKey] = useState("");
+  const [grokKey, setGrokKey] = useState("");
   const [runwareKey, setRunwareKey] = useState("");
   const [groqKey, setGroqKey] = useState("");
   const [saving, setSaving] = useState(false);
@@ -28,12 +28,12 @@ const Settings = () => {
       .single();
 
     if (data) {
-      setDeepseekKey(data.deepseek_api_key || '');
+      setGrokKey(data.grok_api_key || '');
       setRunwareKey(data.runware_api_key || '');
       setGroqKey(data.groq_api_key || '');
       
       // Store in localStorage for immediate use
-      if (data.deepseek_api_key) localStorage.setItem('DEEPSEEK_API_KEY', data.deepseek_api_key);
+      if (data.grok_api_key) localStorage.setItem('GROK_API_KEY', data.grok_api_key);
       if (data.runware_api_key) localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
       if (data.groq_api_key) localStorage.setItem('GROQ_API_KEY', data.groq_api_key);
     }
@@ -45,7 +45,7 @@ const Settings = () => {
       const { error } = await supabase
         .from('api_settings')
         .insert({
-          deepseek_api_key: deepseekKey,
+          grok_api_key: grokKey,
           runware_api_key: runwareKey,
           groq_api_key: groqKey
         });
@@ -53,7 +53,7 @@ const Settings = () => {
       if (error) throw error;
 
       // Update localStorage
-      localStorage.setItem('DEEPSEEK_API_KEY', deepseekKey);
+      localStorage.setItem('GROK_API_KEY', grokKey);
       localStorage.setItem('RUNWARE_API_KEY', runwareKey);
       localStorage.setItem('GROQ_API_KEY', groqKey);
 
@@ -115,21 +115,21 @@ const Settings = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                DeepSeek API Key (optional)
+                Grok API Key
               </label>
               <Input
                 type="password"
-                value={deepseekKey}
-                onChange={(e) => setDeepseekKey(e.target.value)}
-                placeholder="Enter your DeepSeek API key"
+                value={grokKey}
+                onChange={(e) => setGrokKey(e.target.value)}
+                placeholder="Enter your Grok API key"
               />
               <a
-                href="https://deepseek.com/api"
+                href="https://grok.x"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-500 hover:underline mt-1 block"
               >
-                Get your DeepSeek API key
+                Get your Grok API key
               </a>
             </div>
 

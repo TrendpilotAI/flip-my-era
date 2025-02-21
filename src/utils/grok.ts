@@ -1,8 +1,8 @@
 
-export const generateWithDeepseek = async (prompt: string) => {
+export const generateWithGrok = async (prompt: string) => {
   const apiKey = localStorage.getItem('GROK_API_KEY');
   if (!apiKey) {
-    throw new Error('Grok API key not found');
+    throw new Error('Please configure your Grok API key in settings first');
   }
 
   try {
@@ -37,6 +37,6 @@ export const generateWithDeepseek = async (prompt: string) => {
     return data.choices[0].message.content;
   } catch (error) {
     console.error('Error generating with Grok:', error);
-    return null;
+    throw new Error('Failed to generate content. Please check your API key and try again.');
   }
 };
