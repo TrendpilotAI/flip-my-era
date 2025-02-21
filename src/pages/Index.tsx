@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { StoriesList } from "@/components/StoriesList";
+import { starSignCharacteristics } from "@/utils/starSigns";
 
 const getStarSign = (date: Date) => {
   const month = date.getMonth() + 1;
@@ -168,7 +169,8 @@ const Index = () => {
       description: "Scanning infinite realities for your alternate life...",
     });
 
-    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're the opposite gender. Include:\n- An absurd career twist\n- A ridiculous hobby\n- An unexpected viral moment\n- A celebrity encounter gone wrong\nMake it silly and super shareable! Max 3 paragraphs.`;
+    const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
+    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're the opposite gender. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. The story should include:\n- An absurd career twist that reflects their star sign traits\n- A ridiculous hobby that aligns with their zodiac characteristics\n- An unexpected viral moment that showcases their astrological nature\n- A celebrity encounter gone wrong that highlights their star sign's typical behavior\nMake it silly and super shareable! Max 3 paragraphs.`;
     
     const story = await generateWithDeepseek(prompt);
     loadingToast.dismiss();
@@ -293,11 +295,20 @@ const Index = () => {
             {starSign && (
               <div className="mt-6 text-center animate-fadeIn">
                 <div className="text-lg font-medium text-gray-700">Your Star Sign</div>
-                <div className="mt-2">
-                  <StarSignIcon sign={starSign} />
-                </div>
-                <div className="mt-2 text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
-                  {starSign}
+                <div className="flex items-center justify-center gap-8 mt-4">
+                  <div className="w-1/3">
+                    <StarSignIcon sign={starSign} />
+                    <div className="mt-2 text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
+                      {starSign}
+                    </div>
+                  </div>
+                  <div className="w-2/3 text-left">
+                    <ul className="list-disc list-inside space-y-2">
+                      {starSignCharacteristics[starSign].traits.map((trait, index) => (
+                        <li key={index} className="text-gray-700">{trait}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             )}
