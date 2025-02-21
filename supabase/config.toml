@@ -1,15 +1,11 @@
 
-# A string used to distinguish different Supabase projects on the same host. Defaults to the working
-# directory name when running `supabase init`.
 project_id = "alternate-timelines"
 
 [api]
 enabled = true
-# Port to use for the API URL.
 port = 54321
 schemas = ["public", "storage", "graphql_public"]
 extra_search_path = ["public", "extensions"]
-# max_rows = 1000
 
 [db]
 port = 54322
@@ -31,8 +27,6 @@ enabled = true
 port = 54323
 api_url = "http://localhost"
 
-# Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
-# are monitored, and you can view the emails that would have been sent from the web interface.
 [inbucket]
 enabled = true
 port = 54324
@@ -41,7 +35,6 @@ pop3_port = 54326
 
 [storage]
 enabled = true
-# The maximum file size allowed (e.g. "5MB", "500KB")
 file_size_limit = "50MiB"
 
 [auth]
@@ -62,12 +55,14 @@ port = 54327
 vector_port = 54328
 backend = "postgres"
 
-# Configure Edge Functions
 [functions]
 enabled = true
+
 [functions.tiktok-auth]
 verify_jwt = false
+
 [functions.generate-video]
 verify_jwt = true
+
 [functions.tiktok-share-analytics]
 verify_jwt = true
