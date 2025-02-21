@@ -12,6 +12,11 @@ import { saveStory } from '@/utils/storyPersistence';
 
 type GenderType = "same" | "flip" | "neutral";
 
+interface StoryState {
+  content: string;
+  id: string;
+}
+
 export const useStoryGeneration = () => {
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
@@ -22,6 +27,7 @@ export const useStoryGeneration = () => {
   const [gender, setGender] = useState<GenderType>("same");
   const [detectedGender, setDetectedGender] = useState<GenderInfo>({ gender: 'unknown', probability: 0 });
   const [storyId, setStoryId] = useState<string>("");
+  const [previousStory, setPreviousStory] = useState<StoryState | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -40,6 +46,7 @@ export const useStoryGeneration = () => {
   }, [name, detectedGender, gender]);
 
   const handleStorySelect = async (story: any) => {
+    setPreviousStory({ content: result, id: storyId });
     setResult(story.initial_story);
     setStoryId(story.id);
   };
@@ -55,7 +62,13 @@ export const useStoryGeneration = () => {
       return;
     }
 
+    // Save current story before generating new one
+    if (result && storyId) {
+      setPreviousStory({ content: result, id: storyId });
+    }
+
     setLoading(true);
+    setResult(""); // Clear current story while loading
     const loadingToast = toast({
       title: "Accessing the multiverse...",
       description: "Scanning infinite realities for your alternate life...",
@@ -102,6 +115,18 @@ export const useStoryGeneration = () => {
     setLoading(false);
   };
 
+  const handleUndo = () => {
+    if (previousStory) {
+      setResult(previousStory.content);
+      setStoryId(previousStory.id);
+      setPreviousStory(null);
+      toast({
+        title: "Story restored",
+        description: "Previous timeline has been restored.",
+      });
+    }
+  };
+
   return {
     name,
     setName,
@@ -115,7 +140,9 @@ export const useStoryGeneration = () => {
     gender,
     setGender,
     storyId,
+    previousStory,
     handleStorySelect,
-    handleSubmit
+    handleSubmit,
+    handleUndo
   };
 };

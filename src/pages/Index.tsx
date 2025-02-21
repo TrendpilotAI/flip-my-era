@@ -22,8 +22,10 @@ const Index = () => {
     gender,
     setGender,
     storyId,
+    previousStory,
     handleStorySelect,
-    handleSubmit
+    handleSubmit,
+    handleUndo
   } = useStoryGeneration();
 
   return (
@@ -54,6 +56,8 @@ const Index = () => {
             result={result}
             storyId={storyId}
             onRegenerateClick={handleSubmit}
+            onUndoClick={handleUndo}
+            hasPreviousStory={!!previousStory}
           />
         )}
       </div>
