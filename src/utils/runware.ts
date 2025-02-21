@@ -1,3 +1,4 @@
+
 export interface GenerateImageParams {
   positivePrompt: string;
   model?: string;
@@ -171,7 +172,7 @@ export class RunwareService {
       const message = [{
         taskType: "imageInference",
         taskUUID,
-        model: "flux:1@dev",
+        model: "runwayml/stable-diffusion-v1-5",  // Updated model identifier
         width: 1024,
         height: 1024,
         numberResults: params.numberResults || 1,
