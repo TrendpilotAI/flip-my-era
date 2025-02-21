@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { generateWithGroq } from "@/utils/groq";
@@ -6,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { StoryForm } from "@/components/StoryForm";
 import { StoryResult } from "@/components/StoryResult";
 import { getStarSign, starSignCharacteristics } from "@/utils/starSigns";
+
+type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
 
 const personalityTypes = {
   "dreamer": {
@@ -33,14 +36,14 @@ const personalityTypes = {
     traits: ["Ambitious", "Determined", "Goal-oriented"],
     description: "Striving for success and recognition"
   }
-};
+} as const;
 
 const Index = () => {
   const [name, setName] = useState("");
   const [date, setDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
-  const [personalityType, setPersonalityType] = useState<keyof typeof personalityTypes>("dreamer");
+  const [personalityType, setPersonalityType] = useState<PersonalityTypeKey>("dreamer");
   const { toast } = useToast();
   const [storyId, setStoryId] = useState<string>("");
   const navigate = useNavigate();
