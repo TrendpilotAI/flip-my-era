@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -75,6 +76,7 @@ Make the story feel like a cherished memory that's both deeply personal and univ
       }
     } catch (error) {
       console.error("Error generating story:", error);
+      loadingToast.dismiss();
       toast({
         title: "Error",
         description: "Failed to generate your alternate life story. Please try again.",

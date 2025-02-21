@@ -13,7 +13,7 @@ export const generateWithGroq = async (prompt: string) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "mixtral-8x7b-32768",
+        model: "llama2-70b-4096",
         messages: [
           {
             role: "system",
@@ -25,18 +25,22 @@ export const generateWithGroq = async (prompt: string) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 2000,
+        top_p: 1,
+        stop: null
       })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate content');
+      const errorData = await response.json();
+      console.error('Groq API error:', errorData);
+      throw new Error(`Failed to generate content: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
     console.error('Error generating with Groq:', error);
-    throw new Error('Failed to generate content. Please check your API key and try again.');
+    throw error;
   }
 };
