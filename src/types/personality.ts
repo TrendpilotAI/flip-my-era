@@ -1,5 +1,5 @@
 
-export type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
+export type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever" | "creator" | "activist";
 
 export const personalityTypes = {
   "dreamer": {
@@ -26,5 +26,15 @@ export const personalityTypes = {
     title: "The Grindset Guru",
     traits: ["Ambitious", "Determined", "Goal-oriented"],
     description: "Striving for success and recognition"
+  },
+  "creator": {
+    title: "The Content Wizard",
+    traits: ["Trendsetting", "Tech-savvy", "Authentic"],
+    description: "Creating and sharing content that resonates with others"
+  },
+  "activist": {
+    title: "The Based Revolutionary",
+    traits: ["Passionate", "Outspoken", "Community-focused"],
+    description: "Fighting for causes and speaking truth to power"
   }
 } as const;
