@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -102,7 +101,7 @@ const Index = () => {
       .limit(1)
       .single();
 
-    if (!data?.deepseek_api_key || !data?.runware_api_key) {
+    if (!data?.groq_api_key || !data?.runware_api_key) {
       toast({
         title: "API Keys Required",
         description: "Please configure your API keys in settings first.",
@@ -110,54 +109,13 @@ const Index = () => {
       });
       navigate('/settings');
     } else {
-      localStorage.setItem('DEEPSEEK_API_KEY', data.deepseek_api_key);
+      localStorage.setItem('GROQ_API_KEY', data.groq_api_key);
       localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
     }
   };
 
-  const saveStory = async () => {
-    if (!result || !name) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('stories')
-        .insert({
-          name,
-          birth_date: date?.toISOString(),
-          initial_story: result,
-          prompt: `Create a story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''}`,
-          title: `${name}'s Alternate Life Story`
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      setStoryId(data.id);
-      toast({
-        title: "Story saved!",
-        description: "Your story has been saved successfully.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error saving story",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStorySelect = (story: any) => {
-    setName(story.name);
-    if (story.birth_date) {
-      setDate(new Date(story.birth_date));
-    }
-    setResult(story.initial_story);
-    setStoryId(story.id);
-  };
-
   const handleSubmit = async () => {
-    if (!localStorage.getItem('DEEPSEEK_API_KEY')) {
+    if (!localStorage.getItem('GROQ_API_KEY')) {
       toast({
         title: "API Key Required",
         description: "Please configure your API keys in settings first.",
@@ -173,42 +131,46 @@ const Index = () => {
       description: "Scanning infinite realities for your alternate life...",
     });
 
+    const starSign = date ? getStarSign(date) : null;
     const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
     const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're ${desiredGender}. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. The story should include:\n- An absurd career twist that reflects their star sign traits\n- A ridiculous hobby that aligns with their zodiac characteristics\n- An unexpected viral moment that showcases their astrological nature\n- A celebrity encounter gone wrong that highlights their star sign's typical behavior\nMake it silly and super shareable! Max 3 paragraphs.`;
     
-    const story = await generateWithDeepseek(prompt);
-    loadingToast.dismiss();
-    
-    if (story) {
-      setResult(story);
+    try {
+      const story = await generateWithGroq(prompt);
+      loadingToast.dismiss();
       
-      const { data, error } = await supabase
-        .from('stories')
-        .insert({
-          name,
-          birth_date: date?.toISOString(),
-          initial_story: story,
-          prompt
-        })
-        .select()
-        .single();
+      if (story) {
+        setResult(story);
+        
+        const { data, error } = await supabase
+          .from('stories')
+          .insert({
+            name,
+            birth_date: date?.toISOString(),
+            initial_story: story,
+            prompt
+          })
+          .select()
+          .single();
 
-      if (error) {
-        console.error("Error saving story:", error);
+        if (error) {
+          console.error("Error saving story:", error);
+          toast({
+            title: "Error",
+            description: "Failed to save your story. But you can still continue.",
+            variant: "destructive",
+          });
+        } else {
+          setStoryId(data.id);
+        }
+
         toast({
-          title: "Error",
-          description: "Failed to save your story. But you can still continue.",
-          variant: "destructive",
+          title: "Alternate life discovered!",
+          description: "Your parallel universe self has been revealed!",
         });
-      } else {
-        setStoryId(data.id);
       }
-
-      toast({
-        title: "Alternate life discovered!",
-        description: "Your parallel universe self has been revealed!",
-      });
-    } else {
+    } catch (error) {
+      console.error("Error generating story:", error);
       toast({
         title: "Error",
         description: "Failed to generate your alternate life story. Please try again.",
