@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { StoriesList } from "@/components/StoriesList";
 import { starSignCharacteristics } from "@/utils/starSigns";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const getStarSign = (date: Date) => {
   const month = date.getMonth() + 1;
@@ -82,6 +84,7 @@ const Index = () => {
   const [date, setDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
+  const [desiredGender, setDesiredGender] = useState<string>("girl");
   const { toast } = useToast();
   const [storyId, setStoryId] = useState<string>("");
   const navigate = useNavigate();
@@ -170,7 +173,7 @@ const Index = () => {
     });
 
     const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
-    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're the opposite gender. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. The story should include:\n- An absurd career twist that reflects their star sign traits\n- A ridiculous hobby that aligns with their zodiac characteristics\n- An unexpected viral moment that showcases their astrological nature\n- A celebrity encounter gone wrong that highlights their star sign's typical behavior\nMake it silly and super shareable! Max 3 paragraphs.`;
+    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're ${desiredGender}. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. The story should include:\n- An absurd career twist that reflects their star sign traits\n- A ridiculous hobby that aligns with their zodiac characteristics\n- An unexpected viral moment that showcases their astrological nature\n- A celebrity encounter gone wrong that highlights their star sign's typical behavior\nMake it silly and super shareable! Max 3 paragraphs.`;
     
     const story = await generateWithDeepseek(prompt);
     loadingToast.dismiss();
@@ -244,7 +247,7 @@ const Index = () => {
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         <div className="text-center space-y-4 animate-fadeIn">
           <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">
-            GenderFlipLife
+            FlipMyEra
           </h1>
           <p className="text-lg text-white/90">
             Discover your absurd alternate life in a parallel universe!
@@ -290,6 +293,33 @@ const Index = () => {
                 className="input-field text-base py-2"
                 max={new Date().toISOString().split('T')[0]}
               />
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-base font-medium text-gray-700">
+                Desired Gender in Alternate Universe
+              </label>
+              <RadioGroup
+                value={desiredGender}
+                onValueChange={setDesiredGender}
+                className="grid grid-cols-2 md:grid-cols-3 gap-4"
+              >
+                {["girl", "boy", "trans", "lesbian", "patriot"].map((gender) => (
+                  <div
+                    key={gender}
+                    className={`flex items-center space-x-2 rounded-lg border p-4 cursor-pointer transition-colors ${
+                      desiredGender === gender
+                        ? "border-purple-500 bg-purple-50"
+                        : "border-gray-200 hover:border-purple-200"
+                    }`}
+                  >
+                    <RadioGroupItem value={gender} id={gender} />
+                    <Label htmlFor={gender} className="cursor-pointer capitalize">
+                      {gender}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
             </div>
 
             {starSign && (
