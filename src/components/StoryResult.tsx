@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Repeat, Undo, Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -38,18 +37,15 @@ export const StoryResult = ({
       return;
     }
 
-    setIsNarrating(true);
     const loadingToast = toast({
       title: "Preparing narration...",
       description: "Getting ready to tell your bedtime story...",
     });
 
     try {
-      // Trim the text if it's too long
-      const trimmedText = result.slice(0, 4000); // ElevenLabs has a text limit
-
+      console.log('Calling text-to-speech function...');
       const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: trimmedText }
+        body: { text: result.slice(0, 4000) }
       });
 
       if (error) {
@@ -57,43 +53,40 @@ export const StoryResult = ({
         throw error;
       }
 
-      loadingToast.dismiss();
-      
-      if (data?.audioContent) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-        audioRef.current = audio;
-        
-        audio.onended = () => {
-          setIsNarrating(false);
-        };
-
-        audio.onerror = (e) => {
-          console.error('Audio playback error:', e);
-          setIsNarrating(false);
-          toast({
-            title: "Playback failed",
-            description: "There was an error playing the narration.",
-            variant: "destructive",
-          });
-        };
-
-        try {
-          await audio.play();
-          toast({
-            title: "Story time!",
-            description: "Sit back and enjoy your bedtime story...",
-          });
-        } catch (playError) {
-          console.error('Play error:', playError);
-          throw new Error('Failed to start audio playback');
-        }
-      } else {
+      if (!data?.audioContent) {
         throw new Error('No audio content received');
       }
+
+      console.log('Received audio content, creating audio element...');
+      const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setIsNarrating(false);
+      };
+
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        setIsNarrating(false);
+        toast({
+          title: "Playback failed",
+          description: "There was an error playing the narration.",
+          variant: "destructive",
+        });
+      };
+
+      setIsNarrating(true);
+      await audio.play();
+      
+      loadingToast.dismiss();
+      toast({
+        title: "Story time!",
+        description: "Sit back and enjoy your bedtime story...",
+      });
     } catch (error) {
+      console.error('Narration error:', error);
       loadingToast.dismiss();
       setIsNarrating(false);
-      console.error('Error generating narration:', error);
       toast({
         title: "Narration failed",
         description: error.message || "Sorry, I couldn't tell the story right now. Please try again.",
