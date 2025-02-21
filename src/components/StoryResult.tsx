@@ -93,24 +93,35 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
         <ReactMarkdown>{result}</ReactMarkdown>
       </div>
 
-      {/* TikTok Template Quick Access */}
+      {/* TikTok Template Selection */}
       <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-6">
           <Video className="h-6 w-6 text-purple-500" />
           <h3 className="text-xl font-semibold text-[#4A4A4A]">
             Share Your Story
           </h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.entries(TIKTOK_TEMPLATES).map(([key, template]) => (
             <button
               key={key}
               onClick={() => handleTikTokShare()}
-              className="p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow border border-purple-100"
+              className="group relative p-6 rounded-xl bg-white border border-purple-100 shadow-sm 
+                hover:shadow-md transition-all duration-300 hover:border-purple-200 
+                hover:transform hover:-translate-y-1"
             >
-              <h4 className="font-semibold text-[#4A4A4A]">{template.name}</h4>
-              <p className="text-sm text-gray-600 mt-1">{template.description}</p>
-              <p className="text-xs text-gray-500 mt-2">{template.duration}s</p>
+              <div className="space-y-3">
+                <h4 className="font-semibold text-lg text-[#4A4A4A] group-hover:text-purple-600 
+                  transition-colors">{template.name}</h4>
+                <p className="text-sm text-gray-600 leading-relaxed">{template.description}</p>
+                <div className="flex items-center gap-2 text-xs text-purple-500 font-medium pt-2">
+                  <Video className="h-4 w-4" />
+                  <span>{template.duration}s</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 
+                group-hover:from-purple-500/5 group-hover:to-pink-500/5 rounded-xl transition-all 
+                duration-300" />
             </button>
           ))}
         </div>
@@ -171,7 +182,8 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <Button
             onClick={onRegenerateClick}
-            className="text-lg bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+            className="text-lg bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] 
+              px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
           >
             <Repeat className="h-6 w-6" />
             Try Another Timeline!
