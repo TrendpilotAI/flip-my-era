@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Book, Loader2, Image as ImageIcon, Share2, Save, Globe } from "lucide-react";
@@ -146,16 +145,21 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
       });
 
       try {
-        const prompt = `Cute, cartoonish illustration for book chapter: ${chapter.title}. Based on the content: ${chapter.content.substring(0, 100)}... Style: fun, whimsical, colorful, digital art`;
+        const basePrompt = "Create a photo-realistic, vibrant and happy scene with subtle whimsical elements that spark joy and escapism. The image should be cinematic, well-lit, with rich details and emotional depth.";
+        const scenePrompt = `${basePrompt} Scene depicts: ${chapter.title}. Based on: ${chapter.content.substring(0, 150)}`;
         
         const illustration = await runwareService.generateImage({
-          positivePrompt: prompt,
+          positivePrompt: scenePrompt,
+          model: "flux:1@dev",
           numberResults: 1,
           outputFormat: "WEBP",
+          CFGScale: 7.5,
+          scheduler: "FlowMatchEulerDiscreteScheduler",
+          strength: 0.85,
         });
 
         if (chapter.id) {
-          await saveChapterImage(chapter.id, illustration.imageURL, prompt);
+          await saveChapterImage(chapter.id, illustration.imageURL, scenePrompt);
         }
 
         updatedChapters[i] = {
@@ -222,7 +226,6 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      // Convert chapters to a JSON-compatible format
       const jsonChapters = chapters.map(chapter => ({
         title: chapter.title,
         content: chapter.content,
@@ -328,21 +331,33 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           {chapters.map((chapter, index) => (
             <div
               key={index}
-              className="bg-white/90 backdrop-blur-sm rounded-lg p-6 space-y-6 animate-fadeIn"
+              className="bg-white/90 backdrop-blur-sm rounded-lg p-8 space-y-6 animate-fadeIn"
               style={{ animationDelay: `${index * 200}ms` }}
             >
-              <h2 className="text-2xl font-bold text-gray-900">{chapter.title}</h2>
-              <div className="prose prose-lg prose-pink max-w-none">
-                <ReactMarkdown>{chapter.content}</ReactMarkdown>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{chapter.title}</h2>
+              <div className="prose prose-lg prose-pink max-w-none space-y-6">
+                {chapter.content.split('\n\n').map((paragraph, pIndex) => (
+                  <p key={pIndex} className="leading-relaxed">
+                    {paragraph.startsWith('"') ? (
+                      <span className="text-blue-600 italic">
+                        {paragraph}
+                      </span>
+                    ) : (
+                      paragraph
+                    )}
+                  </p>
+                ))}
               </div>
               {chapter.imageUrl ? (
-                <img
-                  src={chapter.imageUrl}
-                  alt={`Illustration for ${chapter.title}`}
-                  className="w-full h-auto rounded-lg shadow-lg mt-6"
-                />
+                <div className="mt-8">
+                  <img
+                    src={chapter.imageUrl}
+                    alt={`Illustration for ${chapter.title}`}
+                    className="w-full h-auto rounded-lg shadow-lg"
+                  />
+                </div>
               ) : (
-                <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mt-6">
+                <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mt-8">
                   {isGeneratingImages ? (
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   ) : (
