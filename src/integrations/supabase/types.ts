@@ -204,6 +204,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tiktok_shares: {
+        Row: {
+          created_at: string
+          id: string
+          music_url: string | null
+          text_snippet: string | null
+          user_id: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          music_url?: string | null
+          text_snippet?: string | null
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          music_url?: string | null
+          text_snippet?: string | null
+          user_id?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
