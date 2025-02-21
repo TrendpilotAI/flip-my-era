@@ -1,19 +1,19 @@
 
 export const generateWithDeepseek = async (prompt: string) => {
-  const apiKey = localStorage.getItem('DEEPSEEK_API_KEY');
+  const apiKey = localStorage.getItem('GROK_API_KEY');
   if (!apiKey) {
-    throw new Error('DeepSeek API key not found');
+    throw new Error('Grok API key not found');
   }
 
   try {
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch('https://api.grok.x/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "llama-70b-chat",
         messages: [
           {
             role: "system",
@@ -36,7 +36,7 @@ export const generateWithDeepseek = async (prompt: string) => {
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
-    console.error('Error generating with DeepSeek:', error);
+    console.error('Error generating with Grok:', error);
     return null;
   }
 };

@@ -1,4 +1,3 @@
-
 export interface GenerateImageParams {
   positivePrompt: string;
   model?: string;
@@ -41,7 +40,6 @@ export class RunwareService {
         
         this.ws.onopen = async () => {
           console.log("WebSocket connected, waiting for ready state...");
-          // Wait for the connection to be fully ready
           await this.waitForReadyState();
           console.log("WebSocket ready, authenticating...");
           try {
@@ -124,7 +122,6 @@ export class RunwareService {
         }
       }, 100);
 
-      // Set a timeout to prevent infinite waiting
       setTimeout(() => {
         clearInterval(checkState);
         resolve();
@@ -146,7 +143,6 @@ export class RunwareService {
         ...(this.connectionSessionUUID && { connectionSessionUUID: this.connectionSessionUUID }),
       }];
       
-      // Set up a one-time authentication callback
       const authCallback = (event: MessageEvent) => {
         const response = JSON.parse(event.data);
         if (response.data?.[0]?.taskType === "authentication") {
@@ -161,7 +157,6 @@ export class RunwareService {
   }
 
   async generateImage(params: GenerateImageParams): Promise<GeneratedImage> {
-    // Wait for connection and authentication before proceeding
     await this.connectionPromise;
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isAuthenticated) {
@@ -176,7 +171,7 @@ export class RunwareService {
       const message = [{
         taskType: "imageInference",
         taskUUID,
-        model: "runware:100@1", // Always use this model
+        model: "flux:1@dev",
         width: 1024,
         height: 1024,
         numberResults: params.numberResults || 1,
