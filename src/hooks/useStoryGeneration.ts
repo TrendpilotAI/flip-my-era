@@ -37,16 +37,16 @@ export const useStoryGeneration = () => {
 
   const getRandomViralTropes = () => {
     const tropes = [
-      "an unexpected meet-cute that goes hilariously wrong before turning magical",
-      "accidentally becoming a meme sensation while trying to impress a crush",
-      "a sarcastic twist of fate that leads to finding true love",
-      "a quirky misunderstanding that sparks a viral romance",
-      "an embarrassing moment turned into an inspiring love story",
-      "a witty comeback that changes everything",
-      "finding love through a series of comedic mishaps",
-      "a heartwarming redemption story with unexpected humor",
-      "a chance encounter that becomes an internet phenomenon",
-      "a dramatic confession gone viral for all the right reasons"
+      "an epic monologue that unexpectedly goes viral",
+      "a witty exchange that becomes the internet's favorite quote",
+      "a dramatic scene worthy of a Netflix adaptation",
+      "a meet-cute straight out of a romantic comedy",
+      "a perfectly timed one-liner that changes everything",
+      "a heartfelt confession that resonates worldwide",
+      "a quirky dialogue that spawns countless memes",
+      "a poetic moment captured in perfect timing",
+      "a cinematic scene that feels like a movie script",
+      "a theatrical twist that leaves audiences breathless"
     ];
     const selected = new Set();
     while (selected.size < 2) {
@@ -55,20 +55,20 @@ export const useStoryGeneration = () => {
     return Array.from(selected);
   };
 
-  const getRandomEmotionalElements = () => {
-    const elements = [
-      "a bittersweet reunion that brings tears and laughter",
-      "an unexpected act of kindness that changes multiple lives",
-      "a moment of vulnerability that resonates with millions",
-      "a heartfelt revelation that challenges everything",
-      "a touching gesture that breaks the internet",
-      "a profound realization wrapped in humor",
-      "an epic romantic gesture with a twist of irony",
-      "a deeply moving connection formed through shared laughter",
-      "a powerful transformation sparked by a funny coincidence",
-      "a life-changing decision made with both heart and humor"
+  const getRandomSceneSettings = () => {
+    const settings = [
+      "a fairy-lit rooftop at sunset",
+      "a bustling coffee shop during golden hour",
+      "a secret garden hidden in plain sight",
+      "a vintage bookstore with a magical secret",
+      "a rainy street with neon reflections",
+      "a dreamy beach at twilight",
+      "an enchanted city park at midnight",
+      "a cozy apartment with string lights",
+      "a charming old theater with history",
+      "a whimsical art gallery opening"
     ];
-    return elements[Math.floor(Math.random() * elements.length)];
+    return settings[Math.floor(Math.random() * settings.length)];
   };
 
   const handleSubmit = async () => {
@@ -92,7 +92,7 @@ export const useStoryGeneration = () => {
     const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
     const selectedPersonality = personalityTypes[personalityType];
     const viralTropes = getRandomViralTropes();
-    const emotionalElement = getRandomEmotionalElements();
+    const sceneSettings = getRandomSceneSettings();
     
     const getGenderContext = () => {
       const originalGender = detectedGender.gender;
@@ -106,45 +106,60 @@ export const useStoryGeneration = () => {
       }
     };
 
-    const prompt = `Create a captivating, humorous, and emotionally resonant story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} that perfectly balances wit, romance, and profound meaning. ${getGenderContext()}.
+    const prompt = `Create a captivating, cinematic story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} written in a dynamic, script-like style with engaging dialogue and vivid scene descriptions. ${getGenderContext()}.
+
+Setting: ${sceneSettings}
 
 Story Structure:
-1. Opening Hook: Begin with a witty, attention-grabbing moment that hints at deeper meaning
-2. Rising Action: Build tension through a series of both humorous and touching events
-3. Hero's Journey: Transform the protagonist through both laughter and tears
-4. Plot Twist: Include a surprising revelation that's both funny and profound
-5. Romantic Element: Weave in a unique love story that subverts expectations
-6. Viral Moment: Create a scene that's simultaneously hilarious and deeply moving
-7. Emotional Resolution: End with a powerful message that combines humor and heart
+[Set the scene with rich, atmospheric details]
 
-Character Foundation:
-- Personality Type: ${selectedPersonality.title} (${selectedPersonality.traits.join(", ")})
-- Zodiac Influence (${starSign}): ${starSignTraits}
-- Character Essence: ${selectedPersonality.description}
-- Emotional Core: ${emotionalElement}
+Act 1: The Setup
+- Open with a vivid scene description
+- Introduce ${name} through action and dialogue
+- Establish the dreamy, magical atmosphere
 
-Viral Elements:
-- Primary Plot Device: ${viralTropes[0]}
-- Secondary Element: ${viralTropes[1]}
+Example format:
+[Scene description in italics]
+Character: "Dialogue in quotes"
+*Action or emotional beat in asterisks*
+[Atmospheric details in brackets]
 
-Writing Guidelines:
-1. Balance humor with genuine emotion
-2. Include witty, quotable dialogue that also touches the heart
-3. Create scenes that are both funny and profound
-4. Add unexpected twists that make readers laugh and cry
-5. Mix current trends with timeless emotional truths
-6. End with a message that's both clever and deeply meaningful
+Act 2: The Journey
+- Mix dialogue with internal monologue
+- Create cinematic moments
+- Build emotional resonance through interaction
 
-Style Requirements:
-- Blend humor and heart in every scene
-- Include both laugh-out-loud moments and touching revelations
-- Create moments that are simultaneously funny and profound
-- Mix witty observations with emotional depth
-- Balance romantic elements with comedic timing
-- Add a dash of edgy humor while maintaining emotional authenticity
-- Make the story both wildly entertaining and genuinely moving
+Act 3: The Resolution
+- Deliver powerful dialogue
+- Create a visually stunning climax
+- End with both words and atmosphere
 
-The story should be 3 paragraphs long, perfectly balancing humor, romance, and emotional depth. Each paragraph should contain both witty observations and touching moments, creating a story that's impossible not to share because it makes readers feel everything!`;
+Character Elements:
+- Personality: ${selectedPersonality.title} (${selectedPersonality.traits.join(", ")})
+- Zodiac Influence: ${starSign ? `${starSign} - ${starSignTraits}` : 'Unknown'}
+- Character Voice: ${selectedPersonality.description}
+
+Viral Moments:
+- Primary Scene: ${viralTropes[0]}
+- Supporting Scene: ${viralTropes[1]}
+
+Writing Style:
+1. Use script-like formatting for dialogue
+2. Include atmospheric scene descriptions in brackets
+3. Add emotional beats and actions in asterisks
+4. Create quotable lines of dialogue
+5. Mix narrative with theatrical elements
+6. Balance dreamy atmosphere with genuine emotion
+
+Requirements:
+- Write in a format that mixes narrative with script elements
+- Include at least 3 pieces of memorable dialogue
+- Create vivid scene descriptions
+- Add stage directions for emotional moments
+- Maintain an uplifting, magical tone
+- End with a powerful line of dialogue or poetic description
+
+The story should be structured in 3 acts, each with a mix of dialogue, scene description, and emotional beats. Make it feel like a beautiful scene from a movie or play while maintaining its shareability and emotional impact.`;
 
     try {
       const story = await generateWithGroq(prompt);
