@@ -11,7 +11,7 @@ export const BackgroundImages = () => {
       <div className="absolute -right-20 top-32 w-48 h-56 bg-white p-2 shadow-xl 
         rotate-12 transform hover:rotate-6 transition-transform duration-500">
         <img
-          src="photo-1506744038136-46273834b3fb"
+          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb"
           alt=""
           className="w-full h-[85%] object-cover"
         />
@@ -24,7 +24,7 @@ export const BackgroundImages = () => {
         -rotate-6 transform hover:rotate-0 transition-transform duration-500 animate-float 
         [animation-delay:2s]">
         <img
-          src="photo-1582562124811-c09040d0a901"
+          src="https://images.unsplash.com/photo-1582562124811-c09040d0a901"
           alt=""
           className="w-full h-[85%] object-cover"
         />
@@ -44,7 +44,7 @@ export const BackgroundImages = () => {
       {/* Starry night effect */}
       <div className="absolute right-20 bottom-1/4 w-80 h-80">
         <img
-          src="photo-1470813740244-df37b8c1edcb"
+          src="https://images.unsplash.com/photo-1470813740244-df37b8c1edcb"
           alt=""
           className="w-full h-full object-cover rounded-full opacity-20 rotate-45 
             transform scale-75 blur-sm animate-float [animation-delay:2s]"
@@ -63,7 +63,7 @@ export const BackgroundImages = () => {
       {/* Mountain landscape */}
       <div className="absolute -left-10 top-20 w-64 h-40">
         <img
-          src="photo-1501854140801-50d01698950b"
+          src="https://images.unsplash.com/photo-1501854140801-50d01698950b"
           alt=""
           className="w-full h-full object-cover rounded-2xl opacity-30 scale-90 blur-[2px] 
             animate-float [animation-delay:2.5s]"
