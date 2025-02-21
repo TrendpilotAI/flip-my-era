@@ -13,19 +13,19 @@ export const generateWithGroq = async (prompt: string) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "mixtral-8x7b-32768",
+        model: "deepseek-r1-70b-distil-llama",
         messages: [
           {
             role: "system",
-            content: "You are a creative writer specializing in humorous alternate reality stories and chapter generation."
+            content: "You are a creative writer specializing in beautiful, novel-like stories with rich descriptions and flowing narratives."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.7,
-        max_tokens: 2000,
+        temperature: 0.75,
+        max_tokens: 2500,
         top_p: 1,
         stop: null
       })
