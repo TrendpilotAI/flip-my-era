@@ -1,10 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { Repeat, Video, Music, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { findRelevantSong, openSongInPreferredPlatform } from "@/utils/taylorSwiftSongs";
-import { shareToTikTok } from "@/utils/tiktokShare";
+import { shareToTikTok, TIKTOK_TEMPLATES } from "@/utils/tiktokShare";
 
 interface StoryResultProps {
   result: string;
@@ -18,14 +19,20 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
 
   const handleTikTokShare = async () => {
     try {
+      const songDetails = relevantSong ? {
+        musicUrl: relevantSong.spotifyUrl, // TikTok will handle music integration
+      } : {};
+
       await shareToTikTok({
         text: result.slice(0, 300) + "...", // TikTok has character limits
         hashtags: ["alternateTimeline", "whatIf", "storytelling"],
+        template: 'story', // Default to story template
+        ...songDetails,
       });
       
       toast({
         title: "Opening TikTok",
-        description: "Create your video with the story text!",
+        description: "Your story video is being created! Add final touches in TikTok.",
       });
     } catch (error) {
       toast({
@@ -59,6 +66,29 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
       </div>
       <div className="prose prose-lg prose-pink max-w-none">
         <ReactMarkdown>{result}</ReactMarkdown>
+      </div>
+
+      {/* TikTok Template Quick Access */}
+      <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+        <div className="flex items-center gap-2 mb-4">
+          <Video className="h-6 w-6 text-purple-500" />
+          <h3 className="text-xl font-semibold text-[#4A4A4A]">
+            Share Your Story
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Object.entries(TIKTOK_TEMPLATES).map(([key, template]) => (
+            <button
+              key={key}
+              onClick={() => handleTikTokShare()}
+              className="p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow border border-purple-100"
+            >
+              <h4 className="font-semibold text-[#4A4A4A]">{template.name}</h4>
+              <p className="text-sm text-gray-600 mt-1">{template.description}</p>
+              <p className="text-xs text-gray-500 mt-2">{template.duration}s</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
@@ -106,29 +136,19 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
             <Repeat className="h-6 w-6" />
             Try Another Timeline!
           </Button>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleTikTokShare}
-              variant="outline"
-              className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
-            >
-              <Video className="h-4 w-4 mr-2" />
-              Make TikTok
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(result);
-                toast({
-                  title: "Copied to clipboard!",
-                  description: "Share your alternate timeline with friends!",
-                });
-              }}
-              className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
-            >
-              Share Story
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              navigator.clipboard.writeText(result);
+              toast({
+                title: "Copied to clipboard!",
+                description: "Share your alternate timeline with friends!",
+              });
+            }}
+            className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
+          >
+            Share Story
+          </Button>
         </div>
       </div>
     </div>
