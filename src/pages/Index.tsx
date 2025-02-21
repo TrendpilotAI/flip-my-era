@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -80,12 +79,40 @@ const StarSignIcon = ({ sign }: { sign: string }) => {
   );
 };
 
+const personalityTypes = {
+  "dreamer": {
+    title: "The Dreamer",
+    traits: ["Imaginative", "Creative", "Idealistic"],
+    description: "Always looking for new possibilities and meanings in life"
+  },
+  "adventurer": {
+    title: "The Adventurer",
+    traits: ["Spontaneous", "Energetic", "Risk-taking"],
+    description: "Seeking thrills and new experiences"
+  },
+  "analyst": {
+    title: "The Analyst",
+    traits: ["Logical", "Strategic", "Detail-oriented"],
+    description: "Finding patterns and solving complex problems"
+  },
+  "nurturer": {
+    title: "The Nurturer",
+    traits: ["Empathetic", "Supportive", "Compassionate"],
+    description: "Taking care of others and building connections"
+  },
+  "achiever": {
+    title: "The Achiever",
+    traits: ["Ambitious", "Determined", "Goal-oriented"],
+    description: "Striving for success and recognition"
+  }
+};
+
 const Index = () => {
   const [name, setName] = useState("");
   const [date, setDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
-  const [desiredGender, setDesiredGender] = useState<string>("girl");
+  const [personalityType, setPersonalityType] = useState<keyof typeof personalityTypes>("dreamer");
   const { toast } = useToast();
   const [storyId, setStoryId] = useState<string>("");
   const navigate = useNavigate();
@@ -164,7 +191,14 @@ const Index = () => {
 
     const starSign = date ? getStarSign(date) : null;
     const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
-    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe where they're ${desiredGender}. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. The story should include:\n- An absurd career twist that reflects their star sign traits\n- A ridiculous hobby that aligns with their zodiac characteristics\n- An unexpected viral moment that showcases their astrological nature\n- A celebrity encounter gone wrong that highlights their star sign's typical behavior\nMake it silly and super shareable! Max 3 paragraphs.`;
+    const selectedPersonality = personalityTypes[personalityType];
+    
+    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe. They are ${selectedPersonality.title.toLowerCase()}, characterized by being ${selectedPersonality.traits.join(", ")}. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. The story should include:
+- An absurd career twist that combines their ${selectedPersonality.title.toLowerCase()} personality (${selectedPersonality.description}) with their star sign traits
+- A ridiculous hobby that reflects both their personality type and zodiac characteristics
+- An unexpected viral moment that showcases their unique combination of ${selectedPersonality.title.toLowerCase()} tendencies and astrological nature
+- A celebrity encounter gone wrong that highlights how their personality type and star sign interact in chaos
+Make it silly and super shareable! Max 3 paragraphs.`;
     
     try {
       const story = await generateWithGroq(prompt);
@@ -293,26 +327,39 @@ const Index = () => {
 
             <div className="space-y-4">
               <label className="block text-base font-medium text-[#4A4A4A]">
-                Choose Your Alternate Reality Self
+                Choose Your Personality Type
               </label>
               <RadioGroup
-                value={desiredGender}
-                onValueChange={setDesiredGender}
-                className="grid grid-cols-2 md:grid-cols-3 gap-4"
+                value={personalityType}
+                onValueChange={(value: keyof typeof personalityTypes) => setPersonalityType(value)}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                {["girl", "boy", "trans", "lesbian", "patriot"].map((gender) => (
+                {Object.entries(personalityTypes).map(([key, type]) => (
                   <div
-                    key={gender}
-                    className={`flex items-center space-x-2 rounded-lg border p-4 cursor-pointer transition-colors ${
-                      desiredGender === gender
+                    key={key}
+                    className={`flex flex-col space-y-2 rounded-lg border p-4 cursor-pointer transition-colors ${
+                      personalityType === key
                         ? "border-[#E5DEFF] bg-[#E5DEFF]/20"
                         : "border-gray-200 hover:border-[#E5DEFF]/50"
                     }`}
                   >
-                    <RadioGroupItem value={gender} id={gender} />
-                    <Label htmlFor={gender} className="cursor-pointer capitalize">
-                      {gender}
-                    </Label>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value={key} id={key} />
+                      <Label htmlFor={key} className="cursor-pointer font-semibold">
+                        {type.title}
+                      </Label>
+                    </div>
+                    <p className="text-sm text-gray-600 ml-6">{type.description}</p>
+                    <div className="ml-6 flex flex-wrap gap-2">
+                      {type.traits.map((trait, index) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-[#E5DEFF]/30 text-purple-700 px-2 py-1 rounded-full"
+                        >
+                          {trait}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </RadioGroup>
