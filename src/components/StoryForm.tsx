@@ -8,8 +8,8 @@ import { StarSignDisplay } from "./StarSignDisplay";
 import { PersonalitySelector } from "./PersonalitySelector";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import type { PersonalityTypeKey } from "@/types/personality";
 
-type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
 type GenderType = "same" | "flip" | "neutral";
 
 interface StoryFormProps {
