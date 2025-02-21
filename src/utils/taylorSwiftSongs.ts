@@ -3,6 +3,7 @@ interface TaylorSwiftSong {
   title: string;
   spotifyUrl: string;
   appleMusicUrl: string;
+  previewUrl: string;
   keywords: string[];
   mood: string;
 }
@@ -12,6 +13,7 @@ const taylorSwiftSongs: TaylorSwiftSong[] = [
     title: "22",
     spotifyUrl: "spotify:track:6sGiAzpxVlbJkXYyIHnHhj",
     appleMusicUrl: "https://music.apple.com/us/album/22-taylors-version/1621836955?i=1621837276",
+    previewUrl: "https://p.scdn.co/mp3-preview/4a2fa8c529c93e012a1e8617099e2460dac88411",
     keywords: ["young", "fun", "party", "night out", "friends", "carefree", "happy"],
     mood: "Celebrating the joy of youth and friendship"
   },
@@ -19,6 +21,7 @@ const taylorSwiftSongs: TaylorSwiftSong[] = [
     title: "Love Story",
     spotifyUrl: "spotify:track:3CeCwYWvdfXbZLXFhBrbnf",
     appleMusicUrl: "https://music.apple.com/us/album/love-story-taylors-version/1552791073?i=1552791076",
+    previewUrl: "https://p.scdn.co/mp3-preview/5a7dd8e0c981069f84503c79c3e6fb3d8e1f2d9f",
     keywords: ["romance", "love", "destiny", "magical", "fairy tale", "dream"],
     mood: "Finding your own fairy tale ending"
   },
@@ -26,6 +29,7 @@ const taylorSwiftSongs: TaylorSwiftSong[] = [
     title: "Shake It Off",
     spotifyUrl: "spotify:track:0cqRj7pUJDkTCEsJkx8snD",
     appleMusicUrl: "https://music.apple.com/us/album/shake-it-off/1600775006?i=1600775320",
+    previewUrl: "https://p.scdn.co/mp3-preview/8d59c419d2fec71f68b46c78b923fc01c8e5ffb1",
     keywords: ["haters", "criticism", "confidence", "resilience", "media", "strong"],
     mood: "Rising above negativity with confidence"
   },
@@ -33,6 +37,7 @@ const taylorSwiftSongs: TaylorSwiftSong[] = [
     title: "Anti-Hero",
     spotifyUrl: "spotify:track:0V3wPSX9ygBnCm8psDIegu",
     appleMusicUrl: "https://music.apple.com/us/album/anti-hero/1645937257?i=1645937570",
+    previewUrl: "https://p.scdn.co/mp3-preview/e4a8aa172e2324f9cacf31e02939c65517c5d23f",
     keywords: ["self-reflection", "struggle", "identity", "mystery", "viral", "growth"],
     mood: "Embracing your authentic self"
   },
@@ -40,6 +45,7 @@ const taylorSwiftSongs: TaylorSwiftSong[] = [
     title: "Long Live",
     spotifyUrl: "spotify:track:1CmUZGtH29Kx36C1Hleqlz",
     appleMusicUrl: "https://music.apple.com/us/album/long-live/1590368448?i=1590368736",
+    previewUrl: "https://p.scdn.co/mp3-preview/d811b1df9db4703d11f833f3b35a39da209c45da",
     keywords: ["triumph", "victory", "achievement", "success", "accomplishment"],
     mood: "Celebrating your victories and achievements"
   }

@@ -6,6 +6,7 @@ import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { findRelevantSong, openSongInPreferredPlatform } from "@/utils/taylorSwiftSongs";
 import { shareToTikTok, TIKTOK_TEMPLATES } from "@/utils/tiktokShare";
+import { useEffect, useRef } from "react";
 
 interface StoryResultProps {
   result: string;
@@ -16,17 +17,41 @@ interface StoryResultProps {
 export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultProps) => {
   const { toast } = useToast();
   const relevantSong = findRelevantSong(result);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (relevantSong) {
+      // Create and play audio when component mounts or result changes
+      audioRef.current = new Audio(relevantSong.previewUrl);
+      audioRef.current.volume = 0.3; // Set a reasonable volume
+      audioRef.current.play().catch(error => {
+        console.log("Autoplay prevented:", error);
+        toast({
+          title: "Music Available",
+          description: `Click to play "${relevantSong.title}" which matches your story's mood!`,
+        });
+      });
+    }
+
+    // Cleanup function to stop audio when component unmounts or result changes
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [result, relevantSong]);
 
   const handleTikTokShare = async () => {
     try {
       const songDetails = relevantSong ? {
-        musicUrl: relevantSong.spotifyUrl, // TikTok will handle music integration
+        musicUrl: relevantSong.spotifyUrl,
       } : {};
 
       await shareToTikTok({
-        text: result.slice(0, 300) + "...", // TikTok has character limits
+        text: result.slice(0, 300) + "...",
         hashtags: ["alternateTimeline", "whatIf", "storytelling"],
-        template: 'story', // Default to story template
+        template: 'story',
         ...songDetails,
       });
       
@@ -108,13 +133,28 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <p className="text-gray-600">{relevantSong.mood}</p>
-              <button
-                onClick={() => openSongInPreferredPlatform(relevantSong)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full hover:opacity-90 transition-opacity"
-              >
-                <Music className="h-5 w-5" />
-                <span className="font-semibold">Listen to "{relevantSong.title}"</span>
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    if (audioRef.current?.paused) {
+                      audioRef.current?.play();
+                    } else {
+                      audioRef.current?.pause();
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200 transition-colors"
+                >
+                  <Music className="h-5 w-5" />
+                  <span className="font-medium">Preview</span>
+                </button>
+                <button
+                  onClick={() => openSongInPreferredPlatform(relevantSong)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full hover:opacity-90 transition-opacity"
+                >
+                  <Music className="h-5 w-5" />
+                  <span className="font-semibold">Listen to "{relevantSong.title}"</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
