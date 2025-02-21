@@ -13,7 +13,7 @@ export const generateWithGroq = async (prompt: string) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "llama2-70b-4096",
+        model: "llama3.3-70b-veratile",
         messages: [
           {
             role: "system",
