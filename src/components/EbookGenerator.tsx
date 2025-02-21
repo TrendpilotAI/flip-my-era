@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Book, Loader2, Image as ImageIcon, Share2, Save, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import ReactMarkdown from "react-markdown";
 import { RunwareService } from "@/utils/runware";
 import { supabase } from "@/integrations/supabase/client";
-import { generateWithDeepseek } from "@/utils/deepseek";
 import { generateWithGroq } from "@/utils/groq";
+import { ChapterView } from "./ebook/ChapterView";
+import { ActionButtons } from "./ebook/ActionButtons";
+import { GenerateButton } from "./ebook/GenerateButton";
 
 interface Chapter {
   title: string;
@@ -26,7 +25,6 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   const [isPublishing, setIsPublishing] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const { toast } = useToast();
-  const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [publishedUrl, setPublishedUrl] = useState("");
 
   const saveChapter = async (chapter: Chapter, index: number) => {
@@ -289,109 +287,35 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   return (
     <div className="space-y-8">
       {!chapters.length ? (
-        <Button
+        <GenerateButton
+          type="chapters"
           onClick={generateChapters}
-          disabled={isGenerating}
-          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              Generating Chapters...
-            </>
-          ) : (
-            <>
-              <Book className="h-6 w-6 mr-2" />
-              Generate Chapters
-            </>
-          )}
-        </Button>
+          isGenerating={isGenerating}
+        />
       ) : (
         <>
-          <Button
+          <GenerateButton
+            type="images"
             onClick={generateImages}
-            disabled={isGeneratingImages || chapters.some(chapter => chapter.imageUrl)}
-            className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white mb-8"
-          >
-            {isGeneratingImages ? (
-              <>
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                Generating Illustrations...
-              </>
-            ) : chapters.some(chapter => chapter.imageUrl) ? (
-              "Images Generated!"
-            ) : (
-              <>
-                <ImageIcon className="h-6 w-6 mr-2" />
-                Generate Images for All Chapters
-              </>
-            )}
-          </Button>
+            isGenerating={isGeneratingImages}
+            hasImages={chapters.some(chapter => chapter.imageUrl)}
+          />
 
           {chapters.map((chapter, index) => (
-            <div
+            <ChapterView
               key={index}
-              className="bg-white/90 backdrop-blur-sm rounded-lg p-8 space-y-6 animate-fadeIn"
-              style={{ animationDelay: `${index * 200}ms` }}
-            >
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">{chapter.title}</h2>
-              <div className="prose prose-lg prose-pink max-w-none space-y-6">
-                {chapter.content.split('\n\n').map((paragraph, pIndex) => (
-                  <p key={pIndex} className="leading-relaxed">
-                    {paragraph.startsWith('"') ? (
-                      <span className="text-blue-600 italic">
-                        {paragraph}
-                      </span>
-                    ) : (
-                      paragraph
-                    )}
-                  </p>
-                ))}
-              </div>
-              {chapter.imageUrl ? (
-                <div className="mt-8">
-                  <img
-                    src={chapter.imageUrl}
-                    alt={`Illustration for ${chapter.title}`}
-                    className="w-full h-auto rounded-lg shadow-lg"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mt-8">
-                  {isGeneratingImages ? (
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  ) : (
-                    <ImageIcon className="h-8 w-8 text-gray-400" />
-                  )}
-                </div>
-              )}
-            </div>
+              chapter={chapter}
+              index={index}
+              isGeneratingImages={isGeneratingImages}
+            />
           ))}
 
-          <div className="flex flex-wrap gap-4 mt-8">
-            <Button
-              onClick={handleSaveAsPDF}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-            >
-              <Save className="h-5 w-5 mr-2" />
-              Save as PDF
-            </Button>
-            <Button
-              onClick={handlePublish}
-              disabled={isPublishing}
-              className="flex-1 bg-purple-500 hover:bg-purple-600 text-white"
-            >
-              <Globe className="h-5 w-5 mr-2" />
-              {isPublishing ? "Publishing..." : "Publish Online"}
-            </Button>
-            <Button
-              onClick={handleShare}
-              className="flex-1 bg-green-500 hover:bg-green-600 text-white"
-            >
-              <Share2 className="h-5 w-5 mr-2" />
-              Share Story
-            </Button>
-          </div>
+          <ActionButtons
+            onSave={handleSaveAsPDF}
+            onPublish={handlePublish}
+            onShare={handleShare}
+            isPublishing={isPublishing}
+          />
         </>
       )}
     </div>
