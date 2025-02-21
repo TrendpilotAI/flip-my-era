@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { generateWithGroq } from "@/utils/groq";
@@ -6,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { StoryForm } from "@/components/StoryForm";
 import { StoryResult } from "@/components/StoryResult";
+import { getStarSign, starSignCharacteristics } from "@/utils/starSigns";
 
 const personalityTypes = {
   "dreamer": {
@@ -96,12 +96,15 @@ const Index = () => {
     const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
     const selectedPersonality = personalityTypes[personalityType];
     
-    const prompt = `Create a hilarious story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe. They are ${selectedPersonality.title.toLowerCase()}, characterized by being ${selectedPersonality.traits.join(", ")}. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. The story should include:
-- An absurd career twist that combines their ${selectedPersonality.title.toLowerCase()} personality (${selectedPersonality.description}) with their star sign traits
-- A ridiculous hobby that reflects both their personality type and zodiac characteristics
-- An unexpected viral moment that showcases their unique combination of ${selectedPersonality.title.toLowerCase()} tendencies and astrological nature
-- A celebrity encounter gone wrong that highlights how their personality type and star sign interact in chaos
-Make it silly and super shareable! Max 3 paragraphs.`;
+    const prompt = `Create a whimsical story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} in an alternate universe, incorporating themes of self-discovery and personal growth. They are ${selectedPersonality.title.toLowerCase()}, characterized by being ${selectedPersonality.traits.join(", ")}. Include their zodiac sign (${starSign}) characteristics: ${starSignTraits}. 
+
+The story should weave together:
+- A surprising career transformation that reflects their ${selectedPersonality.title.toLowerCase()} personality (${selectedPersonality.description}) and star sign traits, perhaps involving a midnight decision or a chance encounter during autumn
+- An unexpected hobby that connects to their personality type and zodiac characteristics, maybe involving vintage items or creating something by candlelight
+- A viral moment that captures their ${selectedPersonality.title.toLowerCase()} tendencies and astrological nature, possibly during a rainy day or involving a mysterious old scarf
+- A serendipitous celebrity encounter that goes hilariously wrong, perhaps at a cafe or during a winter evening
+
+Focus on themes of reinvention, finding one's path, and embracing authenticity. Include subtle references to seasons changing, midnight adventures, and unexpected encounters that change everything. Make it feel both magical and relatable, with a touch of nostalgic americana. Max 3 paragraphs.`;
     
     try {
       const story = await generateWithGroq(prompt);
@@ -168,9 +171,7 @@ Make it silly and super shareable! Max 3 paragraphs.`;
         />
       </div>
 
-      <div className="max
-
-w-4xl mx-auto space-y-8 relative z-10">
+      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         <div className="text-center space-y-4 animate-fadeIn">
           <h1 className="text-4xl md:text-5xl font-bold text-[#4A4A4A] drop-shadow-lg">
             FlipMyEra
