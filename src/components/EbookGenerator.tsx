@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { RunwareService } from "@/utils/runware";
@@ -186,13 +187,116 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
 
   const handleSaveAsPDF = async () => {
     const content = document.createElement('div');
+    
+    // Add CSS styles for PDF export
+    const styles = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@400;700&display=swap');
+        
+        body {
+          font-family: 'Inter', sans-serif;
+          line-height: 1.6;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 40px;
+          color: #333;
+        }
+        
+        h1 {
+          font-size: 32px;
+          font-weight: bold;
+          text-align: center;
+          margin: 40px 0;
+          color: #8B5CF6;
+          font-family: 'Inter', sans-serif;
+          page-break-before: always;
+          page-break-after: avoid;
+        }
+        
+        h2 {
+          font-size: 24px;
+          font-weight: 600;
+          margin: 30px 0;
+          color: #7E69AB;
+          page-break-before: always;
+          page-break-after: avoid;
+        }
+        
+        p {
+          margin: 16px 0;
+          text-align: justify;
+          orphans: 3;
+          widows: 3;
+        }
+        
+        img {
+          max-width: 100%;
+          height: auto;
+          margin: 20px auto;
+          page-break-inside: avoid;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .original-story {
+          font-style: italic;
+          color: #6B6B6B;
+          margin: 30px 0;
+          padding: 20px;
+          border-left: 4px solid #D946EF;
+          background-color: #fafafa;
+        }
+        
+        .chapter {
+          margin-bottom: 40px;
+          page-break-before: always;
+        }
+        
+        .book-title {
+          text-align: center;
+          font-size: 48px;
+          font-weight: bold;
+          color: #D946EF;
+          margin: 60px 0;
+          font-family: 'Dancing Script', cursive;
+        }
+        
+        .cover-page {
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          page-break-after: always;
+        }
+      </style>
+    `;
+
     content.innerHTML = `
-      <h1>Original Story</h1>
-      ${originalStory}
-      ${chapters.map(chapter => `
-        <h2>${chapter.title}</h2>
-        ${chapter.content}
-        ${chapter.imageUrl ? `<img src="${chapter.imageUrl}" alt="${chapter.title}" />` : ''}
+      ${styles}
+      <div class="cover-page">
+        <h1 class="book-title">FlipMyEra Story</h1>
+        <p style="font-family: 'Dancing Script', cursive; font-size: 24px; color: #7E69AB;">
+          Your alternate timeline adventure
+        </p>
+      </div>
+      
+      <div class="original-story">
+        <h2>Original Timeline</h2>
+        <p>${originalStory}</p>
+      </div>
+      
+      ${chapters.map((chapter, index) => `
+        <div class="chapter">
+          <h2>${chapter.title}</h2>
+          ${chapter.content.split('\n\n').map(paragraph => `
+            <p>${paragraph}</p>
+          `).join('')}
+          ${chapter.imageUrl ? `
+            <img src="${chapter.imageUrl}" alt="${chapter.title}" style="page-break-inside: avoid;" />
+          ` : ''}
+        </div>
       `).join('')}
     `;
 
@@ -201,7 +305,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'story.html';
+      link.download = 'FlipMyEra-Story.html';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -209,7 +313,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
 
       toast({
         title: "Story Saved!",
-        description: "Your story has been downloaded successfully.",
+        description: "Your story has been downloaded as a beautifully formatted document. Open it in a web browser and use the print function to save as PDF.",
       });
     } catch (error) {
       console.error("Error saving story:", error);
