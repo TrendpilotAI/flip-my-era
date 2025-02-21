@@ -19,6 +19,8 @@ const Index = () => {
     result,
     personalityType,
     setPersonalityType,
+    gender,
+    setGender,
     storyId,
     handleStorySelect,
     handleSubmit
@@ -43,6 +45,8 @@ const Index = () => {
           personalityTypes={personalityTypes}
           personalityType={personalityType}
           setPersonalityType={setPersonalityType}
+          gender={gender}
+          setGender={setGender}
         />
 
         {result && (

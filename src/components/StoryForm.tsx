@@ -6,8 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { StoriesList } from "@/components/StoriesList";
 import { StarSignDisplay } from "./StarSignDisplay";
 import { PersonalitySelector } from "./PersonalitySelector";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
+type GenderType = "same" | "flip" | "neutral";
 
 interface StoryFormProps {
   name: string;
@@ -20,6 +23,8 @@ interface StoryFormProps {
   personalityTypes: any;
   personalityType: PersonalityTypeKey;
   setPersonalityType: (type: PersonalityTypeKey) => void;
+  gender: GenderType;
+  setGender: (gender: GenderType) => void;
 }
 
 export const StoryForm = ({
@@ -33,6 +38,8 @@ export const StoryForm = ({
   personalityTypes,
   personalityType,
   setPersonalityType,
+  gender,
+  setGender,
 }: StoryFormProps) => {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.valueAsDate;
@@ -81,6 +88,30 @@ export const StoryForm = ({
             className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
             max={new Date().toISOString().split('T')[0]}
           />
+        </div>
+
+        <div className="space-y-4">
+          <label className="block text-base font-medium text-[#4A4A4A]">
+            Gender in Your Story
+          </label>
+          <RadioGroup
+            value={gender}
+            onValueChange={(value: GenderType) => setGender(value)}
+            className="grid grid-cols-3 gap-4"
+          >
+            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-[#E5DEFF]/10">
+              <RadioGroupItem value="same" id="same" />
+              <Label htmlFor="same">Keep Same</Label>
+            </div>
+            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-[#E5DEFF]/10">
+              <RadioGroupItem value="flip" id="flip" />
+              <Label htmlFor="flip">Flip It!</Label>
+            </div>
+            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-[#E5DEFF]/10">
+              <RadioGroupItem value="neutral" id="neutral" />
+              <Label htmlFor="neutral">Gender Neutral</Label>
+            </div>
+          </RadioGroup>
         </div>
 
         <PersonalitySelector

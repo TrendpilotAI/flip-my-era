@@ -8,12 +8,15 @@ import { getStarSign, starSignCharacteristics } from '@/utils/starSigns';
 import type { PersonalityTypeKey } from '@/types/personality';
 import { personalityTypes } from '@/types/personality';
 
+type GenderType = "same" | "flip" | "neutral";
+
 export const useStoryGeneration = () => {
   const [name, setName] = useState("");
   const [date, setDate] = useState<Date>();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const [personalityType, setPersonalityType] = useState<PersonalityTypeKey>("dreamer");
+  const [gender, setGender] = useState<GenderType>("same");
   const [storyId, setStoryId] = useState<string>("");
   
   const navigate = useNavigate();
@@ -22,6 +25,26 @@ export const useStoryGeneration = () => {
   const handleStorySelect = async (story: any) => {
     setResult(story.initial_story);
     setStoryId(story.id);
+  };
+
+  const getRandomViralTropes = () => {
+    const tropes = [
+      "unexpected inheritance from a mysterious relative",
+      "accidentally becoming a social media sensation",
+      "mistaken identity leading to hilarious consequences",
+      "finding a magical object in a thrift store",
+      "becoming an accidental influencer",
+      "starting a viral trend without meaning to",
+      "getting involved in a celebrity's life through a series of coincidences",
+      "discovering a hidden talent that goes viral",
+      "accidentally solving a decades-old mystery",
+      "becoming the subject of a viral meme"
+    ];
+    const selected = new Set();
+    while (selected.size < 2) {
+      selected.add(tropes[Math.floor(Math.random() * tropes.length)]);
+    }
+    return Array.from(selected);
   };
 
   const handleSubmit = async () => {
@@ -44,23 +67,46 @@ export const useStoryGeneration = () => {
     const starSign = date ? getStarSign(date) : null;
     const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
     const selectedPersonality = personalityTypes[personalityType];
+    const viralTropes = getRandomViralTropes();
     
-    const prompt = `Create an enchanting and emotionally resonant story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} that deeply reflects their inner world as ${selectedPersonality.title.toLowerCase()}. Their personality shines through as someone who is ${selectedPersonality.traits.join(", ")}, while their zodiac sign (${starSign}) adds layers of ${starSignTraits} to their character.
+    const getGenderContext = () => {
+      switch (gender) {
+        case "flip":
+          return "Write the story with the protagonist's gender flipped from their original gender, incorporating this change naturally into the narrative";
+        case "neutral":
+          return "Write the story using gender-neutral language and pronouns (they/them) for the protagonist";
+        default:
+          return "Maintain the protagonist's original gender identity in the story";
+      }
+    };
 
-Weave together these elements in a way that feels both magical and deeply authentic:
+    const prompt = `Create a uniquely hilarious and viral-worthy story about ${name}${date ? ` (born ${date.toLocaleDateString()})` : ''} that blends their ${selectedPersonality.title.toLowerCase()} personality with unexpected plot twists and social media potential. ${getGenderContext()}.
 
-For a ${selectedPersonality.title.toLowerCase()}, create:
-- A pivotal moment of transformation that perfectly embodies their ${selectedPersonality.description}. Perhaps it happens during a quiet dawn or in a cozy coffee shop where the scent of cinnamon and old books mingles with possibility
-- An unexpected passion that emerges from their unique way of seeing the world - ${selectedPersonality.traits[0]} souls often find beauty in overlooked places, like antique music boxes or forgotten garden paths
-- A serendipitous encounter that challenges them to embrace their ${selectedPersonality.traits[1]} nature - maybe involving a mysterious diary entry or a chance meeting on a train platform at dusk
-- A moment of recognition where their ${selectedPersonality.traits[2]} spirit helps them discover something extraordinary in the ordinary
+Personality Foundation:
+- Core traits: ${selectedPersonality.traits.join(", ")}
+- Zodiac influence (${starSign}): ${starSignTraits}
+- Character essence: ${selectedPersonality.description}
 
-Include subtle references to:
-- The way seasons mirror their emotional journey (autumn leaves dancing as they make a life-changing decision, or winter frost patterns speaking to their analytical mind)
-- Small, magical details that feel deeply personal (handwritten notes in margin of old books, the way streetlights reflect in puddles, the sound of wind chimes at midnight)
-- The courage it takes to be authentically yourself, especially when that self is beautifully different
+Viral Elements (incorporate organically):
+- Primary plot twist: ${viralTropes[0]}
+- Secondary element: ${viralTropes[1]}
 
-Make the story feel like a cherished memory that's both deeply personal and universally relatable, as if we're all just one magical moment away from discovering our true path. Keep it to 3 paragraphs, each one building on the emotional resonance of their personality type and zodiac traits.`;
+Story Guidelines:
+1. Blend modern humor with relatable moments that would make great TikTok or Instagram content
+2. Include at least one "wait for it..." moment that would make readers want to share the story
+3. Weave in subtle references to current pop culture and internet trends
+4. Create memorable, quotable lines that could become memes
+5. Include a surprising twist that connects to their zodiac traits
+6. Make the story feel both personal and universally relatable
+
+Style Requirements:
+- Keep the tone light and entertaining while maintaining emotional authenticity
+- Use vivid, sensory details that paint a picture
+- Include dialogue that sounds natural and quotable
+- Break the fourth wall occasionally with humorous asides
+- Maintain a balance between humor and heart
+
+The story should be 3 paragraphs long, each building on the previous one to create a satisfying arc that makes readers want to share it with their friends. Make it feel like a story that could go viral on social media while still being deeply personal to ${name}'s character.`;
     
     try {
       const story = await generateWithGroq(prompt);
@@ -119,6 +165,8 @@ Make the story feel like a cherished memory that's both deeply personal and univ
     result,
     personalityType,
     setPersonalityType,
+    gender,
+    setGender,
     storyId,
     handleStorySelect,
     handleSubmit
