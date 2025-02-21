@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Repeat, Undo } from "lucide-react";
+import { Repeat, Undo, Volume2, VolumeX } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import { findRelevantSong } from "@/utils/taylorSwiftSongs";
@@ -8,6 +8,8 @@ import { MoralSection } from "./story/MoralSection";
 import { TikTokShareSection } from "./story/TikTokShareSection";
 import { SongPreviewSection } from "./story/SongPreviewSection";
 import { IllustratedStorySection } from "./story/IllustratedStorySection";
+import { useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoryResultProps {
   result: string;
@@ -26,6 +28,56 @@ export const StoryResult = ({
 }: StoryResultProps) => {
   const { toast } = useToast();
   const relevantSong = findRelevantSong(result);
+  const [isNarrating, setIsNarrating] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleNarration = async () => {
+    if (isNarrating && audioRef.current) {
+      audioRef.current.pause();
+      setIsNarrating(false);
+      return;
+    }
+
+    setIsNarrating(true);
+    const loadingToast = toast({
+      title: "Preparing narration...",
+      description: "Getting ready to tell your bedtime story...",
+    });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: { text: result }
+      });
+
+      if (error) throw error;
+
+      loadingToast.dismiss();
+      
+      if (data.audioContent) {
+        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+        audioRef.current = audio;
+        
+        audio.onended = () => {
+          setIsNarrating(false);
+        };
+
+        audio.play();
+        toast({
+          title: "Story time!",
+          description: "Sit back and enjoy your bedtime story...",
+        });
+      }
+    } catch (error) {
+      loadingToast.dismiss();
+      setIsNarrating(false);
+      console.error('Error generating narration:', error);
+      toast({
+        title: "Narration failed",
+        description: "Sorry, I couldn't tell the story right now. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
@@ -33,6 +85,25 @@ export const StoryResult = ({
         <h2 className="text-2xl font-semibold text-[#4A4A4A]">
           Your Pre-2020 Timeline
         </h2>
+        <Button
+          onClick={handleNarration}
+          variant="outline"
+          className={`text-lg border-[#E5DEFF] hover:bg-[#E5DEFF]/10 flex items-center gap-2 ${
+            isNarrating ? 'bg-[#E5DEFF]/20' : ''
+          }`}
+        >
+          {isNarrating ? (
+            <>
+              <VolumeX className="h-5 w-5" />
+              Stop Narration
+            </>
+          ) : (
+            <>
+              <Volume2 className="h-5 w-5" />
+              Read as Bedtime Story
+            </>
+          )}
+        </Button>
       </div>
       
       {/* Story Content */}
