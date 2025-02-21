@@ -1,4 +1,3 @@
-
 export const BackgroundImages = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -58,6 +57,34 @@ export const BackgroundImages = () => {
         />
         <div className="h-[15%] flex items-center justify-center">
           <span className="font-handwriting text-sm text-gray-600">Sweet autumn 🍁</span>
+        </div>
+      </div>
+
+      {/* New Polaroid - Festival Lights */}
+      <div className="absolute right-48 bottom-48 w-44 h-52 bg-white p-2 shadow-xl 
+        -rotate-12 transform hover:rotate-0 transition-transform duration-500 animate-float 
+        [animation-delay:1.8s]">
+        <img
+          src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30"
+          alt=""
+          className="w-full h-[85%] object-cover"
+        />
+        <div className="h-[15%] flex items-center justify-center">
+          <span className="font-handwriting text-sm text-gray-600">Festival vibes 🎪</span>
+        </div>
+      </div>
+
+      {/* New Polaroid - Vintage Diner */}
+      <div className="absolute left-64 top-20 w-40 h-48 bg-white p-2 shadow-xl 
+        rotate-9 transform hover:rotate-0 transition-transform duration-500 animate-float 
+        [animation-delay:3.2s]">
+        <img
+          src="https://images.unsplash.com/photo-1564758866811-4780aa0a1f49"
+          alt=""
+          className="w-full h-[85%] object-cover"
+        />
+        <div className="h-[15%] flex items-center justify-center">
+          <span className="font-handwriting text-sm text-gray-600">Midnight memories 🌙</span>
         </div>
       </div>
 
