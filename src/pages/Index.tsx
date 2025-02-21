@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Repeat } from "lucide-react";
-import { generateWithDeepseek } from "@/utils/deepseek";
+import { generateWithGroq } from "@/utils/groq";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { supabase } from "@/integrations/supabase/client";
