@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Repeat } from "lucide-react";
+import { Repeat, TiktokIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,13 @@ interface StoryResultProps {
 
 export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultProps) => {
   const { toast } = useToast();
+
+  const handleTikTokShare = async () => {
+    toast({
+      title: "Coming Soon!",
+      description: "TikTok video generation will be available in a future update. For now, you can copy the story and create your own TikTok video!",
+    });
+  };
 
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
@@ -32,6 +39,13 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
           >
             <Repeat className="h-6 w-6" />
             Try Another Timeline!
+          </Button>
+          <Button
+            onClick={handleTikTokShare}
+            className="text-lg bg-black text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+          >
+            <TiktokIcon className="h-6 w-6" />
+            Make TikTok
           </Button>
         </div>
         <Button
