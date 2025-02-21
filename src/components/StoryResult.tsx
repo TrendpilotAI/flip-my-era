@@ -29,21 +29,31 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
         <h2 className="text-2xl font-semibold text-[#4A4A4A]">
           Your Pre-2020 Timeline
         </h2>
-        {relevantSong && (
-          <a
-            href={relevantSong.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full hover:opacity-90 transition-opacity"
-          >
-            <Music className="h-4 w-4" />
-            <span>Listen to "{relevantSong.title}"</span>
-          </a>
-        )}
       </div>
       <div className="prose prose-lg prose-pink max-w-none">
         <ReactMarkdown>{result}</ReactMarkdown>
       </div>
+      {relevantSong && (
+        <div className="mt-8 p-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl border border-pink-100">
+          <h3 className="text-xl font-semibold text-[#4A4A4A] mb-4">
+            Your Song Recommendation:
+          </h3>
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <p className="text-gray-600">{relevantSong.mood}</p>
+              <a
+                href={relevantSong.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full hover:opacity-90 transition-opacity"
+              >
+                <Music className="h-5 w-5" />
+                <span className="font-semibold">Listen to "{relevantSong.title}"</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mt-6 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex gap-2">
           <Button
