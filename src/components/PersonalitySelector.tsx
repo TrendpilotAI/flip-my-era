@@ -12,10 +12,12 @@ interface PersonalityTypes {
   [key: string]: PersonalityType;
 }
 
+type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
+
 interface PersonalitySelectorProps {
   personalityTypes: PersonalityTypes;
-  selectedType: string;
-  onSelect: (value: string) => void;
+  selectedType: PersonalityTypeKey;
+  onSelect: (value: PersonalityTypeKey) => void;
 }
 
 export const PersonalitySelector = ({
@@ -30,7 +32,7 @@ export const PersonalitySelector = ({
       </label>
       <RadioGroup
         value={selectedType}
-        onValueChange={onSelect}
+        onValueChange={(value: PersonalityTypeKey) => onSelect(value)}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         {Object.entries(personalityTypes).map(([key, type]) => (
@@ -43,7 +45,7 @@ export const PersonalitySelector = ({
             }`}
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value={key} id={key} />
+              <RadioGroupItem value={key as PersonalityTypeKey} id={key} />
               <Label htmlFor={key} className="cursor-pointer font-semibold">
                 {type.title}
               </Label>

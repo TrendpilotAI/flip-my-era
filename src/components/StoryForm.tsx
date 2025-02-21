@@ -7,6 +7,8 @@ import { StoriesList } from "@/components/StoriesList";
 import { StarSignDisplay } from "./StarSignDisplay";
 import { PersonalitySelector } from "./PersonalitySelector";
 
+type PersonalityTypeKey = "dreamer" | "adventurer" | "analyst" | "nurturer" | "achiever";
+
 interface StoryFormProps {
   name: string;
   setName: (name: string) => void;
@@ -16,8 +18,8 @@ interface StoryFormProps {
   handleSubmit: () => void;
   handleStorySelect: (story: any) => void;
   personalityTypes: any;
-  personalityType: string;
-  setPersonalityType: (type: string) => void;
+  personalityType: PersonalityTypeKey;
+  setPersonalityType: (type: PersonalityTypeKey) => void;
 }
 
 export const StoryForm = ({
