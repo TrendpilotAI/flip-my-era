@@ -1,7 +1,8 @@
 
 interface TaylorSwiftSong {
   title: string;
-  url: string;
+  spotifyUrl: string;
+  appleMusicUrl: string;
   keywords: string[];
   mood: string;
 }
@@ -9,45 +10,38 @@ interface TaylorSwiftSong {
 const taylorSwiftSongs: TaylorSwiftSong[] = [
   {
     title: "22",
-    url: "https://www.taylorswift.com/chapters/red-taylors-version/22",
+    spotifyUrl: "spotify:track:6sGiAzpxVlbJkXYyIHnHhj",
+    appleMusicUrl: "https://music.apple.com/us/album/22-taylors-version/1621836955?i=1621837276",
     keywords: ["young", "fun", "party", "night out", "friends", "carefree", "happy"],
     mood: "Celebrating the joy of youth and friendship"
   },
   {
     title: "Love Story",
-    url: "https://www.taylorswift.com/chapters/fearless-taylors-version/love-story",
+    spotifyUrl: "spotify:track:3CeCwYWvdfXbZLXFhBrbnf",
+    appleMusicUrl: "https://music.apple.com/us/album/love-story-taylors-version/1552791073?i=1552791076",
     keywords: ["romance", "love", "destiny", "magical", "fairy tale", "dream"],
     mood: "Finding your own fairy tale ending"
   },
   {
     title: "Shake It Off",
-    url: "https://www.taylorswift.com/chapters/1989-taylors-version/shake-it-off",
+    spotifyUrl: "spotify:track:0cqRj7pUJDkTCEsJkx8snD",
+    appleMusicUrl: "https://music.apple.com/us/album/shake-it-off/1600775006?i=1600775320",
     keywords: ["haters", "criticism", "confidence", "resilience", "media", "strong"],
     mood: "Rising above negativity with confidence"
   },
   {
     title: "Anti-Hero",
-    url: "https://www.taylorswift.com/chapters/midnights/anti-hero",
+    spotifyUrl: "spotify:track:0V3wPSX9ygBnCm8psDIegu",
+    appleMusicUrl: "https://music.apple.com/us/album/anti-hero/1645937257?i=1645937570",
     keywords: ["self-reflection", "struggle", "identity", "mystery", "viral", "growth"],
     mood: "Embracing your authentic self"
   },
   {
-    title: "Blank Space",
-    url: "https://www.taylorswift.com/chapters/1989-taylors-version/blank-space",
-    keywords: ["fame", "reputation", "celebrity", "scandal", "media attention"],
-    mood: "Taking control of your narrative"
-  },
-  {
     title: "Long Live",
-    url: "https://www.taylorswift.com/chapters/speak-now/long-live",
+    spotifyUrl: "spotify:track:1CmUZGtH29Kx36C1Hleqlz",
+    appleMusicUrl: "https://music.apple.com/us/album/long-live/1590368448?i=1590368736",
     keywords: ["triumph", "victory", "achievement", "success", "accomplishment"],
     mood: "Celebrating your victories and achievements"
-  },
-  {
-    title: "Change",
-    url: "https://www.taylorswift.com/chapters/fearless-taylors-version/change",
-    keywords: ["transformation", "overcome", "breakthrough", "victory", "change"],
-    mood: "Embracing personal transformation"
   }
 ];
 
@@ -59,4 +53,19 @@ export const findRelevantSong = (text: string): TaylorSwiftSong | null => {
       lowercaseText.includes(keyword.toLowerCase())
     )
   ) || null;
+};
+
+export const openSongInPreferredPlatform = (song: TaylorSwiftSong) => {
+  // Try to open Spotify first
+  window.location.href = song.spotifyUrl;
+  
+  // If Spotify doesn't open within 1 second, try Apple Music
+  setTimeout(() => {
+    if (document.hidden) {
+      // User switched to Spotify
+      return;
+    }
+    // Fallback to Apple Music
+    window.location.href = song.appleMusicUrl;
+  }, 1000);
 };

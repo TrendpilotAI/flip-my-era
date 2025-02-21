@@ -4,7 +4,7 @@ import { Repeat, Video, Music, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { EbookGenerator } from "@/components/EbookGenerator";
 import { useToast } from "@/hooks/use-toast";
-import { findRelevantSong } from "@/utils/taylorSwiftSongs";
+import { findRelevantSong, openSongInPreferredPlatform } from "@/utils/taylorSwiftSongs";
 
 interface StoryResultProps {
   result: string;
@@ -63,27 +63,31 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
 
       {relevantSong && (
         <div className="mt-8 p-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl border border-pink-100">
-          <h3 className="text-xl font-semibold text-[#4A4A4A] mb-4">
-            Your Song Recommendation:
-          </h3>
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <p className="text-gray-600">{relevantSong.mood}</p>
-              <a
-                href={relevantSong.url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => openSongInPreferredPlatform(relevantSong)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full hover:opacity-90 transition-opacity"
               >
                 <Music className="h-5 w-5" />
                 <span className="font-semibold">Listen to "{relevantSong.title}"</span>
-              </a>
+              </button>
             </div>
           </div>
         </div>
       )}
-      <div className="mt-6 flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-2">
+
+      <div className="mt-12">
+        <h3 className="text-xl font-semibold text-[#4A4A4A] mb-6">
+          Create an Illustrated Story
+        </h3>
+        <EbookGenerator originalStory={result} storyId={storyId} />
+      </div>
+
+      {/* Move secondary actions to the bottom */}
+      <div className="mt-8 pt-8 border-t border-[#E5DEFF]">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
           <Button
             onClick={onRegenerateClick}
             className="text-lg bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
@@ -91,34 +95,30 @@ export const StoryResult = ({ result, storyId, onRegenerateClick }: StoryResultP
             <Repeat className="h-6 w-6" />
             Try Another Timeline!
           </Button>
-          <Button
-            onClick={handleTikTokShare}
-            className="text-lg bg-black text-white px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
-          >
-            <Video className="h-6 w-6" />
-            Make TikTok
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleTikTokShare}
+              variant="outline"
+              className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
+            >
+              <Video className="h-4 w-4 mr-2" />
+              Make TikTok
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(result);
+                toast({
+                  title: "Copied to clipboard!",
+                  description: "Share your alternate timeline with friends!",
+                });
+              }}
+              className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
+            >
+              Share Story
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            navigator.clipboard.writeText(result);
-            toast({
-              title: "Copied to clipboard!",
-              description: "Share your alternate timeline with friends!",
-            });
-          }}
-          className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
-        >
-          Share Story
-        </Button>
-      </div>
-
-      <div className="mt-12">
-        <h3 className="text-xl font-semibold text-[#4A4A4A] mb-6">
-          Create an Illustrated Story
-        </h3>
-        <EbookGenerator originalStory={result} storyId={storyId} />
       </div>
     </div>
   );
