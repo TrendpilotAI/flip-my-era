@@ -10,6 +10,9 @@ export const PageHeader = () => {
         </h1>
         <p className="text-xl text-gray-700 max-w-2xl mx-auto">
           Transform your life story into a whimsical journey through time. Discover how your path might have unfolded in a different era.
+          <span className="block mt-2 text-lg italic text-purple-600">
+            Because we all deserve a happier, carefree era.
+          </span>
         </p>
       </div>
 
