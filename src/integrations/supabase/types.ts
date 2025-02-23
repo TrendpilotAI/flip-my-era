@@ -36,6 +36,47 @@ export type Database = {
         }
         Relationships: []
       }
+      books: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          preview: boolean | null
+          status: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          preview?: boolean | null
+          status?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          preview?: boolean | null
+          status?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "books_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapter_images: {
         Row: {
           chapter_id: string

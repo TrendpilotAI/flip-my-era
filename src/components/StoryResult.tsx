@@ -1,15 +1,11 @@
+
 import { Button } from "@/components/ui/button";
-import { Repeat, Undo, Volume2, VolumeX } from "lucide-react";
+import { Repeat, Undo } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from "@/hooks/use-toast";
 import { findRelevantSong } from "@/utils/taylorSwiftSongs";
 import { MoralSection } from "./story/MoralSection";
-import { TikTokShareSection } from "./story/TikTokShareSection";
-import { SongPreviewSection } from "./story/SongPreviewSection";
-import { IllustratedStorySection } from "./story/IllustratedStorySection";
 import { EnhancedSongPreview } from "./story/EnhancedSongPreview";
-import { useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface StoryResultProps {
   result: string;
@@ -28,102 +24,36 @@ export const StoryResult = ({
 }: StoryResultProps) => {
   const { toast } = useToast();
   const relevantSong = findRelevantSong(result);
-  const [isNarrating, setIsNarrating] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const handleNarration = async () => {
-    if (isNarrating && audioRef.current) {
-      audioRef.current.pause();
-      setIsNarrating(false);
-      return;
-    }
+  // Extract a title from the story content
+  const getStoryTitle = (content: string) => {
+    const firstLine = content.split('\n')[0];
+    return firstLine.replace(/^#\s*/, '').slice(0, 50);
+  };
 
-    const loadingToast = toast({
-      title: "Preparing narration...",
-      description: "Getting ready to tell your bedtime story...",
-    });
-
-    try {
-      console.log('Calling text-to-speech function...');
-      const { data, error } = await supabase.functions.invoke('text-to-speech', {
-        body: { text: result.slice(0, 4000) }
-      });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw error;
-      }
-
-      if (!data?.audioContent) {
-        throw new Error('No audio content received');
-      }
-
-      console.log('Received audio content, creating audio element...');
-      const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-      audioRef.current = audio;
-      
-      audio.onended = () => {
-        setIsNarrating(false);
-      };
-
-      audio.onerror = (e) => {
-        console.error('Audio playback error:', e);
-        setIsNarrating(false);
-        toast({
-          title: "Playback failed",
-          description: "There was an error playing the narration.",
-          variant: "destructive",
-        });
-      };
-
-      setIsNarrating(true);
-      await audio.play();
-      
-      loadingToast.dismiss();
-      toast({
-        title: "Story time!",
-        description: "Sit back and enjoy your bedtime story...",
-      });
-    } catch (error) {
-      console.error('Narration error:', error);
-      loadingToast.dismiss();
-      setIsNarrating(false);
-      toast({
-        title: "Narration failed",
-        description: error.message || "Sorry, I couldn't tell the story right now. Please try again.",
-        variant: "destructive",
-      });
+  // Get era description based on story content
+  const getEraDescription = (content: string) => {
+    if (content.toLowerCase().includes('90s')) {
+      return "Journey back to the vibrant era of the 1990s";
+    } else if (content.toLowerCase().includes('80s')) {
+      return "Step into the bold and colorful world of the 1980s";
+    } else {
+      return "Experience your life in a simpler, pre-2020 timeline";
     }
   };
 
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold text-[#4A4A4A]">
-          Your Pre-2020 Timeline
+      <div className="text-center mb-8 pb-6 border-b border-[#E5DEFF]">
+        <h2 className="text-3xl font-bold text-[#4A4A4A] mb-2">
+          {getStoryTitle(result)}
         </h2>
-        <Button
-          onClick={handleNarration}
-          variant="outline"
-          className={`text-lg border-[#E5DEFF] hover:bg-[#E5DEFF]/10 flex items-center gap-2 ${
-            isNarrating ? 'bg-[#E5DEFF]/20' : ''
-          }`}
-        >
-          {isNarrating ? (
-            <>
-              <VolumeX className="h-5 w-5" />
-              Stop Narration
-            </>
-          ) : (
-            <>
-              <Volume2 className="h-5 w-5" />
-              Read as Bedtime Story
-            </>
-          )}
-        </Button>
+        <p className="text-lg text-purple-600 italic">
+          {getEraDescription(result)}
+        </p>
       </div>
       
-      <div className="prose prose-lg prose-pink max-w-none mb-8">
+      <div className="prose prose-lg prose-pink max-w-none mb-8 font-serif leading-relaxed">
         <ReactMarkdown>{result}</ReactMarkdown>
       </div>
 
@@ -135,7 +65,7 @@ export const StoryResult = ({
               px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
           >
             <Repeat className="h-6 w-6" />
-            Try Another Timeline!
+            Try Another Timeline
           </Button>
           {hasPreviousStory && onUndoClick && (
             <Button
@@ -148,30 +78,30 @@ export const StoryResult = ({
             </Button>
           )}
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            navigator.clipboard.writeText(result);
-            toast({
-              title: "Copied to clipboard!",
-              description: "Share your alternate timeline with friends!",
-            });
-          }}
-          className="text-sm border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
-        >
-          Share Story
-        </Button>
       </div>
 
       {result && (
         <>
           <MoralSection story={result} />
           <EnhancedSongPreview story={result} />
-          <TikTokShareSection 
-            story={result} 
-            songUrl={relevantSong?.spotifyUrl} 
-          />
-          <IllustratedStorySection story={result} storyId={storyId} />
+          
+          <div className="mt-12 text-center">
+            <Button 
+              className="w-full max-w-2xl text-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white 
+                py-6 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg"
+              onClick={() => {
+                toast({
+                  title: "Coming Soon!",
+                  description: "Create an account to generate your full E-Memory Book.",
+                });
+              }}
+            >
+              Create my Personalized Era E-Memory Book
+            </Button>
+            <p className="mt-4 text-sm text-gray-600">
+              Transform this preview into a complete, personalized memory book
+            </p>
+          </div>
         </>
       )}
     </div>
