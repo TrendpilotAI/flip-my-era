@@ -6,8 +6,8 @@ export const BackgroundImages = () => {
       <div className="absolute -left-32 top-1/3 w-96 h-96 bg-gradient-to-r 
         from-[#D3E4FD] to-[#FFDEE2] opacity-20 rounded-full blur-3xl animate-float" />
       
-      {/* Top Row Polaroids */}
-      <div className="absolute left-10 top-24 w-40 h-48 bg-white p-2 shadow-xl 
+      {/* Top Row Polaroids - Moved further down */}
+      <div className="absolute left-10 top-96 w-40 h-48 bg-white p-2 shadow-xl 
         -rotate-6 transform hover:rotate-0 transition-transform duration-500">
         <img
           src="https://images.unsplash.com/photo-1500375592092-40eb2168fd21"
@@ -19,7 +19,7 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
-      <div className="absolute left-64 top-20 w-44 h-52 bg-white p-2 shadow-xl 
+      <div className="absolute left-64 top-[450px] w-44 h-52 bg-white p-2 shadow-xl 
         rotate-3 transform hover:rotate-0 transition-transform duration-500">
         <img
           src="https://images.unsplash.com/photo-1535916707207-35f97e715e1c"
@@ -32,7 +32,7 @@ export const BackgroundImages = () => {
       </div>
 
       {/* Middle Row Polaroids */}
-      <div className="absolute right-48 top-48 w-44 h-52 bg-white p-2 shadow-xl 
+      <div className="absolute right-48 top-[500px] w-44 h-52 bg-white p-2 shadow-xl 
         -rotate-3 transform hover:rotate-0 transition-transform duration-500">
         <img
           src="https://images.unsplash.com/photo-1514912885225-5c9ec8507d68"
@@ -44,7 +44,7 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
-      <div className="absolute left-32 top-96 w-40 h-48 bg-white p-2 shadow-xl 
+      <div className="absolute left-32 top-[600px] w-40 h-48 bg-white p-2 shadow-xl 
         rotate-6 transform hover:rotate-0 transition-transform duration-500">
         <img
           src="https://images.unsplash.com/photo-1520262454473-a1a82276a574"
