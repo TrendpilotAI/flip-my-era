@@ -25,8 +25,8 @@ export const BackgroundImages = () => {
         `}
       </style>
       
-      {/* Top Row Polaroids */}
-      <div className="absolute left-10 top-[200px] w-40 h-48 bg-white p-2 shadow-xl 
+      {/* Top Row Polaroids - Moved away from title area */}
+      <div className="absolute left-10 top-[480px] w-40 h-48 bg-white p-2 shadow-xl 
         -rotate-6 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1500375592092-40eb2168fd21"
@@ -38,7 +38,7 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
-      <div className="absolute left-64 top-[180px] w-44 h-52 bg-white p-2 shadow-xl 
+      <div className="absolute left-64 top-[520px] w-44 h-52 bg-white p-2 shadow-xl 
         rotate-3 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1515238152791-8216bfdf89a7"
@@ -51,7 +51,7 @@ export const BackgroundImages = () => {
       </div>
 
       {/* Middle Row Polaroids */}
-      <div className="absolute right-48 top-[250px] w-44 h-52 bg-white p-2 shadow-xl 
+      <div className="absolute right-48 top-[500px] w-44 h-52 bg-white p-2 shadow-xl 
         -rotate-3 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1514912885225-5c9ec8507d68"
@@ -63,7 +63,7 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
-      <div className="absolute left-32 top-[350px] w-40 h-48 bg-white p-2 shadow-xl 
+      <div className="absolute left-32 top-[550px] w-40 h-48 bg-white p-2 shadow-xl 
         rotate-6 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1544642899-f0d6e5f6ed6f"
@@ -76,7 +76,7 @@ export const BackgroundImages = () => {
       </div>
 
       {/* New Additional Polaroids */}
-      <div className="absolute right-20 top-[180px] w-40 h-48 bg-white p-2 shadow-xl 
+      <div className="absolute right-20 top-[480px] w-40 h-48 bg-white p-2 shadow-xl 
         rotate-[-5deg] transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1506744038136-46273834b3fb"
@@ -88,7 +88,7 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
-      <div className="absolute left-[400px] top-[220px] w-44 h-52 bg-white p-2 shadow-xl 
+      <div className="absolute left-[400px] top-[520px] w-44 h-52 bg-white p-2 shadow-xl 
         rotate-[8deg] transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1517022812141-23620dba5c23"
@@ -100,7 +100,7 @@ export const BackgroundImages = () => {
         </div>
       </div>
 
-      <div className="absolute right-[300px] top-[160px] w-40 h-48 bg-white p-2 shadow-xl 
+      <div className="absolute right-[300px] top-[460px] w-40 h-48 bg-white p-2 shadow-xl 
         -rotate-[12deg] transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1582562124811-c09040d0a901"
