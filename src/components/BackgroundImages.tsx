@@ -6,9 +6,28 @@ export const BackgroundImages = () => {
       <div className="absolute -left-32 top-1/3 w-96 h-96 bg-gradient-to-r 
         from-[#D3E4FD] to-[#FFDEE2] opacity-20 rounded-full blur-3xl animate-float" />
       
-      {/* Top Row Polaroids - Moved further down */}
+      {/* Polaroid Base Styles */}
+      <style>
+        {`
+          .polaroid::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #D32F2F;
+            border-radius: 50%;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1;
+          }
+        `}
+      </style>
+      
+      {/* Top Row Polaroids */}
       <div className="absolute left-10 top-96 w-40 h-48 bg-white p-2 shadow-xl 
-        -rotate-6 transform hover:rotate-0 transition-transform duration-500">
+        -rotate-6 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1500375592092-40eb2168fd21"
           alt="Beach waves"
@@ -20,10 +39,10 @@ export const BackgroundImages = () => {
       </div>
 
       <div className="absolute left-64 top-[450px] w-44 h-52 bg-white p-2 shadow-xl 
-        rotate-3 transform hover:rotate-0 transition-transform duration-500">
+        rotate-3 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
-          src="https://images.unsplash.com/photo-1535916707207-35f97e715e1c"
-          alt="Sparklers"
+          src="https://images.unsplash.com/photo-1515238152791-8216bfdf89a7"
+          alt="Girls night out"
           className="w-full h-[85%] object-cover"
         />
         <div className="h-[15%] flex items-center justify-center">
@@ -33,7 +52,7 @@ export const BackgroundImages = () => {
 
       {/* Middle Row Polaroids */}
       <div className="absolute right-48 top-[500px] w-44 h-52 bg-white p-2 shadow-xl 
-        -rotate-3 transform hover:rotate-0 transition-transform duration-500">
+        -rotate-3 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1514912885225-5c9ec8507d68"
           alt="Concert lights"
@@ -45,10 +64,10 @@ export const BackgroundImages = () => {
       </div>
 
       <div className="absolute left-32 top-[600px] w-40 h-48 bg-white p-2 shadow-xl 
-        rotate-6 transform hover:rotate-0 transition-transform duration-500">
+        rotate-6 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
-          src="https://images.unsplash.com/photo-1520262454473-a1a82276a574"
-          alt="Sunset beach"
+          src="https://images.unsplash.com/photo-1544642899-f0d6e5f6ed6f"
+          alt="Friends at sunset beach"
           className="w-full h-[85%] object-cover"
         />
         <div className="h-[15%] flex items-center justify-center">
@@ -58,7 +77,7 @@ export const BackgroundImages = () => {
 
       {/* Bottom Row Polaroids */}
       <div className="absolute right-32 bottom-32 w-44 h-52 bg-white p-2 shadow-xl 
-        rotate-6 transform hover:rotate-0 transition-transform duration-500">
+        rotate-6 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07"
           alt="Starry night"
@@ -70,7 +89,7 @@ export const BackgroundImages = () => {
       </div>
 
       <div className="absolute left-40 bottom-32 w-44 h-52 bg-white p-2 shadow-xl 
-        -rotate-12 transform hover:rotate-0 transition-transform duration-500">
+        -rotate-12 transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1514912885225-5c9ec8507d68"
           alt="Concert lights"
@@ -82,7 +101,7 @@ export const BackgroundImages = () => {
       </div>
 
       <div className="absolute right-96 bottom-48 w-40 h-48 bg-white p-2 shadow-xl 
-        rotate-[-8deg] transform hover:rotate-0 transition-transform duration-500">
+        rotate-[-8deg] transform hover:rotate-0 transition-transform duration-500 polaroid">
         <img
           src="https://images.unsplash.com/photo-1533230387233-b3a92f523721"
           alt="Festival crowd"
