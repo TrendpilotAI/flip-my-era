@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -9,6 +8,7 @@ import { PersonalitySelector } from "./PersonalitySelector";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { PersonalityTypeKey } from "@/types/personality";
+import { supabase } from "@/integrations/supabase/client";
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -52,7 +52,17 @@ export const StoryForm = ({
         <h2 className="text-xl font-semibold text-[#4A4A4A]">Discover Your Alternate Timeline</h2>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10">
+            <Button 
+              variant="outline" 
+              className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
+              onClick={async () => {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                  window.location.href = "/auth";
+                  return;
+                }
+              }}
+            >
               Load Saved Story
             </Button>
           </DialogTrigger>

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Repeat, Undo } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -6,6 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { findRelevantSong } from "@/utils/taylorSwiftSongs";
 import { MoralSection } from "./story/MoralSection";
 import { EnhancedSongPreview } from "./story/EnhancedSongPreview";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 
 interface StoryResultProps {
   result: string;
@@ -23,7 +24,26 @@ export const StoryResult = ({
   hasPreviousStory 
 }: StoryResultProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const relevantSong = findRelevantSong(result);
+
+  const handleCreateEbook = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create your E-Memory Book.",
+      });
+      navigate("/auth");
+      return;
+    }
+    
+    // Check credits logic will be implemented in the next step
+    toast({
+      title: "Coming Soon!",
+      description: "Create an account to generate your full E-Memory Book.",
+    });
+  };
 
   // Extract a title from the story content
   const getStoryTitle = (content: string) => {
@@ -89,12 +109,7 @@ export const StoryResult = ({
             <Button 
               className="w-full max-w-2xl text-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white 
                 py-6 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg"
-              onClick={() => {
-                toast({
-                  title: "Coming Soon!",
-                  description: "Create an account to generate your full E-Memory Book.",
-                });
-              }}
+              onClick={handleCreateEbook}
             >
               Create my Personalized Era E-Memory Book
             </Button>
