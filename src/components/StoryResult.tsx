@@ -7,6 +7,7 @@ import { MoralSection } from "./story/MoralSection";
 import { TikTokShareSection } from "./story/TikTokShareSection";
 import { SongPreviewSection } from "./story/SongPreviewSection";
 import { IllustratedStorySection } from "./story/IllustratedStorySection";
+import { EnhancedSongPreview } from "./story/EnhancedSongPreview";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -122,12 +123,10 @@ export const StoryResult = ({
         </Button>
       </div>
       
-      {/* Story Content */}
       <div className="prose prose-lg prose-pink max-w-none mb-8">
         <ReactMarkdown>{result}</ReactMarkdown>
       </div>
 
-      {/* Actions Section */}
       <div className="flex flex-wrap gap-4 items-center justify-between mb-8 pt-4 border-t border-[#E5DEFF]">
         <div className="flex gap-2">
           <Button
@@ -167,11 +166,11 @@ export const StoryResult = ({
       {result && (
         <>
           <MoralSection story={result} />
+          <EnhancedSongPreview story={result} />
           <TikTokShareSection 
             story={result} 
             songUrl={relevantSong?.spotifyUrl} 
           />
-          <SongPreviewSection story={result} />
           <IllustratedStorySection story={result} storyId={storyId} />
         </>
       )}
