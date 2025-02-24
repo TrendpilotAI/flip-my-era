@@ -75,3 +75,4 @@ verify_jwt = true
 
 [functions.tiktok-share-analytics]
 verify_jwt = true
+
