@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Mail, Key, Loader2 } from "lucide-react";
+import { Sparkles, Mail, Key, Loader2, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -11,6 +11,7 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -19,18 +20,25 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
     setLoading(true);
 
     try {
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) throw error;
-
       if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          phone,
+          options: {
+            data: {
+              phone: phone
+            }
+          }
+        });
+        if (error) throw error;
         toast({
           title: "Welcome aboard! ✨",
           description: "Check your email to confirm your account.",
         });
       } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
         toast({
           title: "Welcome back! ✨",
           description: "Successfully signed in.",
@@ -90,6 +98,22 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
               />
             </div>
           </div>
+
+          {isSignUp && (
+            <div className="space-y-2">
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Input
+                  type="tel"
+                  placeholder="Phone Number"
+                  className="pl-10"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <Button
             type="submit"
