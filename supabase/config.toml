@@ -63,3 +63,4 @@ verify_jwt = false
 
 [functions.migrate-email-templates]
 verify_jwt = false
+
