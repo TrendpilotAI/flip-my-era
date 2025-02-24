@@ -42,7 +42,7 @@ const Auth = () => {
       const { data, error } = await supabase.functions.invoke('brevo-email', {
         body: {
           to: userEmail,
-          templateId: 1,
+          templateId: 1,  // Assuming this is your welcome template ID in Brevo
           params: {
             username: username,
             app_name: "FlipMyEra",
