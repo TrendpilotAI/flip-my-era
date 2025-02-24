@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Repeat, Undo } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -6,7 +7,7 @@ import { findRelevantSong } from "@/utils/taylorSwiftSongs";
 import { MoralSection } from "./story/MoralSection";
 import { EnhancedSongPreview } from "./story/EnhancedSongPreview";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoryResultProps {
   result: string;
