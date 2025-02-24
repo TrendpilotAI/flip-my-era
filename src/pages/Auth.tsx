@@ -37,6 +37,27 @@ const Auth = () => {
     }
   }, []);
 
+  const sendWelcomeEmail = async (userEmail: string, username: string) => {
+    try {
+      const response = await supabase.functions.invoke('brevo-email', {
+        body: {
+          to: userEmail,
+          templateId: 1, // Replace with your Brevo template ID
+          params: {
+            username: username,
+            app_name: "FlipMyEra",
+          }
+        }
+      });
+
+      if (response.error) {
+        console.error("Error sending welcome email:", response.error);
+      }
+    } catch (error) {
+      console.error("Error invoking email function:", error);
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!turnstileToken) {
@@ -52,17 +73,24 @@ const Auth = () => {
     try {
       if (isSignUp) {
         console.log("Signing up with captcha token:", turnstileToken);
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             captchaToken: turnstileToken
           }
         });
+        
         if (error) throw error;
+
+        // Send welcome email
+        if (data.user) {
+          await sendWelcomeEmail(email, email.split('@')[0]);
+        }
+
         toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link.",
+          title: "Welcome aboard! ✨",
+          description: "Check your email to confirm your account.",
         });
       } else {
         console.log("Signing in with captcha token:", turnstileToken);
@@ -75,7 +103,7 @@ const Auth = () => {
         });
         if (error) throw error;
         toast({
-          title: "Welcome back!",
+          title: "Welcome back! ✨",
           description: "Successfully signed in.",
         });
         navigate("/");
