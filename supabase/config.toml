@@ -58,9 +58,6 @@ backend = "postgres"
 [functions]
 enabled = true
 
-[functions.hello]
-verify_jwt = false
-
 [functions.brevo-email]
 verify_jwt = false
 
