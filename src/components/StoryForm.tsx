@@ -9,9 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { PersonalityTypeKey } from "@/types/personality";
 import { supabase } from "@/integrations/supabase/client";
-
 type GenderType = "same" | "flip" | "neutral";
-
 interface StoryFormProps {
   name: string;
   setName: (name: string) => void;
@@ -26,7 +24,6 @@ interface StoryFormProps {
   gender: GenderType;
   setGender: (gender: GenderType) => void;
 }
-
 export const StoryForm = ({
   name,
   setName,
@@ -39,30 +36,28 @@ export const StoryForm = ({
   personalityType,
   setPersonalityType,
   gender,
-  setGender,
+  setGender
 }: StoryFormProps) => {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.valueAsDate;
     setDate(selectedDate || undefined);
   };
-
-  return (
-    <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+  return <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-[#4A4A4A]">Discover Your Alternate Timeline</h2>
         <Dialog>
           <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10"
-              onClick={async () => {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) {
-                  window.location.href = "/auth";
-                  return;
-                }
-              }}
-            >
+            <Button variant="outline" className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10" onClick={async () => {
+            const {
+              data: {
+                session
+              }
+            } = await supabase.auth.getSession();
+            if (!session) {
+              window.location.href = "/auth";
+              return;
+            }
+          }}>
               Load Saved Story
             </Button>
           </DialogTrigger>
@@ -80,35 +75,19 @@ export const StoryForm = ({
           <label className="block text-base font-medium text-[#4A4A4A]">
             Your Name
           </label>
-          <Input
-            placeholder="Enter your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
-          />
+          <Input placeholder="Enter your name" value={name} onChange={e => setName(e.target.value)} className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]" />
         </div>
 
         <div className="space-y-2">
-          <label className="block text-base font-medium text-[#4A4A4A]">
-            Your Birthday
-          </label>
-          <Input
-            type="date"
-            onChange={handleDateChange}
-            className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
-            max={new Date().toISOString().split('T')[0]}
-          />
+          <label className="block text-base font-medium text-[#4A4A4A]">Your Character's Origin Story</label>
+          <Input type="date" onChange={handleDateChange} className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]" max={new Date().toISOString().split('T')[0]} />
         </div>
 
         <div className="space-y-4">
           <label className="block text-base font-medium text-[#4A4A4A]">
             Gender in Your Story
           </label>
-          <RadioGroup
-            value={gender}
-            onValueChange={(value: GenderType) => setGender(value)}
-            className="grid grid-cols-3 gap-4"
-          >
+          <RadioGroup value={gender} onValueChange={(value: GenderType) => setGender(value)} className="grid grid-cols-3 gap-4">
             <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-[#E5DEFF]/10">
               <RadioGroupItem value="same" id="same" />
               <Label htmlFor="same">Keep Same</Label>
@@ -124,29 +103,16 @@ export const StoryForm = ({
           </RadioGroup>
         </div>
 
-        <PersonalitySelector
-          personalityTypes={personalityTypes}
-          selectedType={personalityType}
-          onSelect={setPersonalityType}
-        />
+        <PersonalitySelector personalityTypes={personalityTypes} selectedType={personalityType} onSelect={setPersonalityType} />
 
         {date && <StarSignDisplay date={date} />}
       </div>
 
-      <Button
-        onClick={handleSubmit}
-        disabled={loading || !name}
-        className="w-full bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] hover:opacity-90 transition-opacity"
-      >
-        {loading ? (
-          <>
+      <Button onClick={handleSubmit} disabled={loading || !name} className="w-full bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] hover:opacity-90 transition-opacity">
+        {loading ? <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Time Traveling...
-          </>
-        ) : (
-          "Take Me Back!"
-        )}
+          </> : "Take Me Back!"}
       </Button>
-    </div>
-  );
+    </div>;
 };
