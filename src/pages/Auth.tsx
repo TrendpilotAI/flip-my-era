@@ -29,7 +29,7 @@ const Auth = () => {
   const initTurnstile = useCallback(() => {
     if (window.turnstile && !turnstileWidgetId.current) {
       turnstileWidgetId.current = window.turnstile.render('#turnstile-widget', {
-        sitekey: '1x00000000000000000000AA',
+        sitekey: '0x4AAAAAAA-Xwq8k7B8XTxwD',
         callback: function(token: string) {
           setTurnstileToken(token);
         },
@@ -97,7 +97,7 @@ const Auth = () => {
   };
 
   // Initialize Turnstile when component mounts
-  useState(() => {
+  useEffect(() => {
     initTurnstile();
   }, [initTurnstile]);
 

@@ -29,7 +29,7 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
   const initTurnstile = useCallback(() => {
     if (window.turnstile && !turnstileWidgetId.current) {
       turnstileWidgetId.current = window.turnstile.render('#dialog-turnstile-widget', {
-        sitekey: '1x00000000000000000000AA',
+        sitekey: '0x4AAAAAAA-Xwq8k7B8XTxwD',
         callback: function(token: string) {
           setTurnstileToken(token);
         },
