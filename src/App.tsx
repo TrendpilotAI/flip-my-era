@@ -7,6 +7,7 @@ import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import Stories from "@/pages/Stories";
 import Auth from "@/pages/Auth";
+import SettingsDashboard from "@/pages/SettingsDashboard";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings-dashboard" element={<SettingsDashboard />} />
           <Route path="/stories" element={<Stories />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="*" element={<NotFound />} />
