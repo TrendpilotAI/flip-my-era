@@ -39,10 +39,10 @@ const Auth = () => {
 
   const sendWelcomeEmail = async (userEmail: string, username: string) => {
     try {
-      const response = await supabase.functions.invoke('brevo-email', {
+      const { data, error } = await supabase.functions.invoke('brevo-email', {
         body: {
           to: userEmail,
-          templateId: 1, // Replace with your Brevo template ID
+          templateId: 1,
           params: {
             username: username,
             app_name: "FlipMyEra",
@@ -50,11 +50,16 @@ const Auth = () => {
         }
       });
 
-      if (response.error) {
-        console.error("Error sending welcome email:", response.error);
+      if (error) {
+        console.error("Error sending welcome email:", error);
+        throw error;
       }
+
+      console.log("Welcome email sent successfully:", data);
+      return data;
     } catch (error) {
       console.error("Error invoking email function:", error);
+      throw error;
     }
   };
 
@@ -83,9 +88,12 @@ const Auth = () => {
         
         if (error) throw error;
 
-        // Send welcome email
+        // Send welcome email using Brevo
         if (data.user) {
-          await sendWelcomeEmail(email, email.split('@')[0]);
+          await sendWelcomeEmail(email, email.split('@')[0]).catch(error => {
+            console.error("Failed to send welcome email:", error);
+            // Don't throw here - we still want to show the signup success message
+          });
         }
 
         toast({
