@@ -8,36 +8,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Default Supabase email templates with proper variables mapping
 const supabaseTemplates = {
   "confirm_signup": {
-    subject: "Confirm Your Signup",
+    subject: "Confirm Your Email",
     content: `<h2>Confirm Your Email</h2>
-      <p>Follow this link to confirm your email:</p>
-      <p><a href="{{ .ConfirmationURL }}">Confirm your email address</a></p>`,
+      <p>Follow this link to confirm your user account: {{ .ConfirmationURL }}</p>`,
   },
   "invite": {
-    subject: "You've Been Invited",
-    content: `<h2>You've Been Invited</h2>
-      <p>You've been invited to join. Follow this link to accept the invite:</p>
-      <p><a href="{{ .ConfirmationURL }}">Accept invitation</a></p>`,
+    subject: "You have been invited",
+    content: `<h2>You have been invited</h2>
+      <p>You have been invited to create a user account. Follow this link to accept the invite: {{ .ConfirmationURL }}</p>`,
   },
   "magic_link": {
-    subject: "Your Magic Link",
-    content: `<h2>Magic Link Login</h2>
-      <p>Follow this link to log in:</p>
-      <p><a href="{{ .ConfirmationURL }}">Log in</a></p>`,
+    subject: "Your Login Link",
+    content: `<h2>Magic Link</h2>
+      <p>Follow this link to login: {{ .ConfirmationURL }}</p>`,
   },
-  "reset_password": {
+  "recovery": {
     subject: "Reset Your Password",
     content: `<h2>Reset Password</h2>
-      <p>Follow this link to reset the password for your account:</p>
-      <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>`,
+      <p>Follow this link to reset the password for your user account: {{ .ConfirmationURL }}</p>`,
   },
-  "change_email": {
+  "email_change": {
     subject: "Confirm Email Change",
     content: `<h2>Confirm Email Change</h2>
-      <p>Follow this link to confirm the email change for your account:</p>
-      <p><a href="{{ .ConfirmationURL }}">Change email</a></p>`,
+      <p>Follow this link to confirm the update of your email address: {{ .ConfirmationURL }}</p>`,
   }
 };
 
@@ -89,4 +85,3 @@ serve(async (req) => {
     );
   }
 });
-
