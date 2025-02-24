@@ -11,8 +11,9 @@ const corsHeaders = {
 
 interface EmailRequest {
   to: string;
-  templateId: number;
-  params: Record<string, string>;
+  subject: string;
+  html: string;
+  params?: Record<string, string>;
 }
 
 serve(async (req) => {
@@ -26,8 +27,16 @@ serve(async (req) => {
       throw new Error('BREVO_API_KEY is not set');
     }
 
-    const { to, templateId, params } = await req.json() as EmailRequest;
-    console.log('Received request:', { to, templateId, params });
+    const { to, subject, html, params } = await req.json() as EmailRequest;
+    console.log('Received request:', { to, subject, params });
+
+    // Replace any parameters in the HTML content
+    let processedHtml = html;
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        processedHtml = processedHtml.replace(new RegExp(`{{${key}}}`, 'g'), value);
+      });
+    }
 
     const response = await fetch(BREVO_API_URL, {
       method: 'POST',
@@ -37,9 +46,13 @@ serve(async (req) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
+        sender: {
+          name: "FlipMyEra",
+          email: "noreply@flipmyera.com"
+        },
         to: [{ email: to }],
-        templateId: templateId,
-        params: params,
+        subject: subject,
+        htmlContent: processedHtml,
       }),
     });
 
