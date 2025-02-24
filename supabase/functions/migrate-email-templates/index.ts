@@ -1,14 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || '';
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Default Supabase email templates with proper variables mapping
 const supabaseTemplates = {
   "confirm_signup": {
     subject: "Confirm Your Email",
@@ -38,38 +37,57 @@ const supabaseTemplates = {
 };
 
 serve(async (req) => {
+  console.log('Function started');
+  
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    if (!BREVO_API_KEY) {
+      console.error('BREVO_API_KEY is not set');
+      throw new Error('BREVO_API_KEY is not set');
+    }
+
+    console.log('Starting template migration');
     const templateResponses = [];
 
     // Create templates in Brevo
     for (const [name, template] of Object.entries(supabaseTemplates)) {
       console.log(`Creating template: ${name}`);
       
-      const response = await fetch('https://api.brevo.com/v3/smtp/templates', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'api-key': BREVO_API_KEY,
-        },
-        body: JSON.stringify({
-          name: name,
-          subject: template.subject,
-          htmlContent: template.content,
-          isActive: true,
-        }),
-      });
+      try {
+        const response = await fetch('https://api.brevo.com/v3/smtp/templates', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'api-key': BREVO_API_KEY,
+          },
+          body: JSON.stringify({
+            name: name,
+            subject: template.subject,
+            htmlContent: template.content,
+            isActive: true,
+          }),
+        });
 
-      const data = await response.json();
-      console.log(`Template ${name} response:`, data);
-      templateResponses.push({ name, ...data });
+        const data = await response.json();
+        console.log(`Template ${name} response:`, data);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to create template ${name}: ${JSON.stringify(data)}`);
+        }
+        
+        templateResponses.push({ name, ...data });
+      } catch (error) {
+        console.error(`Error creating template ${name}:`, error);
+        throw error;
+      }
     }
 
+    console.log('All templates created successfully');
     return new Response(JSON.stringify(templateResponses), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
@@ -77,7 +95,11 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in migrate-email-templates function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack,
+        name: error.name 
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
