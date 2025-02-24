@@ -1,6 +1,7 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { StoriesList } from "@/components/StoriesList";
 import { StarSignDisplay } from "./StarSignDisplay";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import type { PersonalityTypeKey } from "@/types/personality";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthDialog } from "./AuthDialog";
+import { useEffect, useState } from "react";
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -42,6 +44,22 @@ export const StoryForm = ({
   gender,
   setGender
 }: StoryFormProps) => {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    // Check initial auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSignedIn(!!session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsSignedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.valueAsDate;
     setDate(selectedDate || undefined);
@@ -58,17 +76,27 @@ export const StoryForm = ({
             </h2>
             <p className="text-purple-600 italic">Where your story gets its glitter filter...</p>
           </div>
-          <AuthDialog
-            trigger={
-              <Button 
-                variant="outline" 
-                className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
-              >
-                <span className="mr-2">Return to Your Era</span>
-                <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
-              </Button>
-            }
-          />
+          {isSignedIn ? (
+            <Button 
+              variant="outline" 
+              className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 group"
+            >
+              <User className="h-4 w-4 text-purple-500 mr-2" />
+              <span>Signed In</span>
+            </Button>
+          ) : (
+            <AuthDialog
+              trigger={
+                <Button 
+                  variant="outline" 
+                  className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
+                >
+                  <span className="mr-2">Return to Your Era</span>
+                  <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
+                </Button>
+              }
+            />
+          )}
         </div>
       </div>
 
@@ -91,12 +119,15 @@ export const StoryForm = ({
             <span>Your Character's Origin Story</span>
             <Sparkles className="h-4 w-4 text-purple-500" />
           </label>
-          <Input 
-            type="date" 
-            onChange={handleDateChange} 
-            className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]" 
-            max={new Date().toISOString().split('T')[0]} 
-          />
+          <div className="space-y-4">
+            <Input 
+              type="date" 
+              onChange={handleDateChange} 
+              className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]" 
+              max={new Date().toISOString().split('T')[0]} 
+            />
+            {date && <StarSignDisplay date={date} />}
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -125,8 +156,6 @@ export const StoryForm = ({
         </div>
 
         <PersonalitySelector personalityTypes={personalityTypes} selectedType={personalityType} onSelect={setPersonalityType} />
-
-        {date && <StarSignDisplay date={date} />}
       </div>
 
       <Button 
