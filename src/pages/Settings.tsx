@@ -15,8 +15,21 @@ const Settings = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    checkAuth();
     loadSettings();
   }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/');
+      toast({
+        title: "Access Denied",
+        description: "You must be an administrator to access settings.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const loadSettings = async () => {
     const { data, error } = await supabase
@@ -54,7 +67,7 @@ const Settings = () => {
 
       toast({
         title: "Settings Saved",
-        description: "Your API keys have been saved successfully.",
+        description: "API settings have been updated successfully.",
       });
       
       navigate('/');
@@ -84,7 +97,7 @@ const Settings = () => {
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 space-y-6">
           <h1 className="text-3xl font-bold text-gray-900">API Settings</h1>
           <p className="text-gray-600">
-            Configure your API keys for story generation and image creation.
+            Configure global API settings for story generation and image creation.
           </p>
 
           <div className="space-y-4">
