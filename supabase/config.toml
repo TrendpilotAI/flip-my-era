@@ -58,9 +58,20 @@ backend = "postgres"
 [functions]
 enabled = true
 
-[functions.mailgun-email]
+[functions.brevo-email]
 verify_jwt = false
 
 [functions.migrate-email-templates]
 verify_jwt = false
 
+[functions.text-to-speech]
+verify_jwt = false
+
+[functions.tiktok-auth]
+verify_jwt = false
+
+[functions.generate-video]
+verify_jwt = true
+
+[functions.tiktok-share-analytics]
+verify_jwt = true

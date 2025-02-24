@@ -1,103 +1,91 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const MAILGUN_API_KEY = Deno.env.get('MAILGUN_API_KEY');
-const MAILGUN_DOMAIN = 'flipmyera.com';
+const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || '';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const templates = [
-  {
-    name: 'welcome_email',
-    description: 'Welcome email for new users',
-    template: `
-      <h1>Welcome to FlipMyEra, {{username}}!</h1>
-      <p>We're excited to have you join us on this journey.</p>
-      <p>Get ready to explore all the amazing features {{app_name}} has to offer.</p>
-      <p>Best regards,<br>The FlipMyEra Team</p>
-    `,
+const supabaseTemplates = {
+  "confirm_signup": {
+    subject: "Confirm Your Signup",
+    content: `<h2>Confirm Your Email</h2>
+      <p>Follow this link to confirm your email:</p>
+      <p><a href="{{ .ConfirmationURL }}">Confirm your email address</a></p>`,
+  },
+  "invite": {
+    subject: "You've Been Invited",
+    content: `<h2>You've Been Invited</h2>
+      <p>You've been invited to join. Follow this link to accept the invite:</p>
+      <p><a href="{{ .ConfirmationURL }}">Accept invitation</a></p>`,
+  },
+  "magic_link": {
+    subject: "Your Magic Link",
+    content: `<h2>Magic Link Login</h2>
+      <p>Follow this link to log in:</p>
+      <p><a href="{{ .ConfirmationURL }}">Log in</a></p>`,
+  },
+  "reset_password": {
+    subject: "Reset Your Password",
+    content: `<h2>Reset Password</h2>
+      <p>Follow this link to reset the password for your account:</p>
+      <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>`,
+  },
+  "change_email": {
+    subject: "Confirm Email Change",
+    content: `<h2>Confirm Email Change</h2>
+      <p>Follow this link to confirm the email change for your account:</p>
+      <p><a href="{{ .ConfirmationURL }}">Change email</a></p>`,
   }
-];
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    if (!MAILGUN_API_KEY) {
-      throw new Error('MAILGUN_API_KEY is not set');
-    }
+    const templateResponses = [];
 
-    console.log('Starting template migration...', { domain: MAILGUN_DOMAIN });
-    const results = [];
-
-    for (const template of templates) {
-      console.log(`Migrating template: ${template.name}`);
+    // Create templates in Brevo
+    for (const [name, template] of Object.entries(supabaseTemplates)) {
+      console.log(`Creating template: ${name}`);
       
-      try {
-        const MAILGUN_API_URL = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/templates`;
-        
-        // First, try to create the template
-        const response = await fetch(MAILGUN_API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: template.name,
-            description: template.description,
-            template: template.template,
-            engine: 'handlebars',
-            version: {
-              template: template.template,
-              tag: 'v1',
-              active: 'yes',
-              description: 'Initial version'
-            }
-          }),
-        });
+      const response = await fetch('https://api.brevo.com/v3/smtp/templates', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': BREVO_API_KEY,
+        },
+        body: JSON.stringify({
+          name: name,
+          subject: template.subject,
+          htmlContent: template.content,
+          isActive: true,
+        }),
+      });
 
-        const responseText = await response.text();
-        console.log(`Mailgun API response for ${template.name}:`, responseText);
-
-        let result;
-        try {
-          result = JSON.parse(responseText);
-        } catch (e) {
-          result = { message: responseText };
-        }
-
-        results.push({
-          template: template.name,
-          success: response.ok,
-          result,
-        });
-      } catch (err) {
-        console.error(`Error migrating template ${template.name}:`, err);
-        results.push({
-          template: template.name,
-          success: false,
-          error: err.message,
-        });
-      }
+      const data = await response.json();
+      console.log(`Template ${name} response:`, data);
+      templateResponses.push({ name, ...data });
     }
 
-    console.log('Migration completed:', results);
-
-    return new Response(JSON.stringify({ success: true, results }), {
+    return new Response(JSON.stringify(templateResponses), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
     });
   } catch (error) {
-    console.error('Error in migrate-email-templates function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("Error in migrate-email-templates function:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    );
   }
 });
