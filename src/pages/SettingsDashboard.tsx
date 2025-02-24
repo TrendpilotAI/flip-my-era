@@ -71,9 +71,19 @@ const SettingsDashboard = () => {
                 </div>
               )}
               {activeSection === "billing" && (
-                <div className="space-y-6">
+                <div className="space-y-6 w-full">
                   <h3 className="text-2xl font-semibold text-gray-900">Plan & Billing</h3>
-                  <p className="text-gray-600">Billing settings coming soon...</p>
+                  <div className="w-full h-[800px] rounded-lg overflow-hidden border border-gray-200">
+                    <iframe
+                      src="https://flipmyera.samcart.com/customer_hub/login"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      title="SamCart Customer Portal"
+                      className="w-full h-full"
+                      allow="payment"
+                    />
+                  </div>
                 </div>
               )}
             </div>
