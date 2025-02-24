@@ -1,11 +1,20 @@
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Key, Loader2 } from "lucide-react";
+
+declare global {
+  interface Window {
+    turnstile: {
+      render: (element: string | HTMLElement, options: any) => string;
+      reset: (widgetId: string) => void;
+    };
+  }
+}
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -14,15 +23,48 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+
+  const initTurnstile = useCallback(() => {
+    if (window.turnstile && !turnstileWidgetId.current) {
+      turnstileWidgetId.current = window.turnstile.render('#turnstile-widget', {
+        sitekey: '1x00000000000000000000AA',
+        callback: function(token: string) {
+          setTurnstileToken(token);
+        },
+      });
+    }
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!turnstileToken) {
+      toast({
+        title: "Error",
+        description: "Please complete the Turnstile challenge",
+        variant: "destructive",
+      });
+      return;
+    }
     setLoading(true);
 
     try {
       const { error } = isSignUp
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              captchaToken: turnstileToken
+            }
+          })
+        : await supabase.auth.signInWithPassword({
+            email,
+            password,
+            options: {
+              captchaToken: turnstileToken
+            }
+          });
 
       if (error) throw error;
 
@@ -44,10 +86,20 @@ const Auth = () => {
         description: error.message,
         variant: "destructive",
       });
+      // Reset Turnstile widget on error
+      if (turnstileWidgetId.current) {
+        window.turnstile.reset(turnstileWidgetId.current);
+        setTurnstileToken(null);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Initialize Turnstile when component mounts
+  useState(() => {
+    initTurnstile();
+  }, [initTurnstile]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 py-12 px-4 sm:px-6 lg:px-8">
@@ -97,10 +149,12 @@ const Auth = () => {
             </div>
           </div>
 
+          <div id="turnstile-widget" className="flex justify-center"></div>
+
           <div>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || !turnstileToken}
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
             >
               {loading ? (
@@ -118,7 +172,13 @@ const Auth = () => {
             <Button
               type="button"
               variant="link"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                if (turnstileWidgetId.current) {
+                  window.turnstile.reset(turnstileWidgetId.current);
+                  setTurnstileToken(null);
+                }
+              }}
               className="text-sm text-gray-600 hover:text-gray-900"
             >
               {isSignUp
