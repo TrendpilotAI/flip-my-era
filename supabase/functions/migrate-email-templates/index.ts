@@ -33,43 +33,59 @@ serve(async (req) => {
       throw new Error('MAILGUN_API_KEY is not set');
     }
 
-    console.log('Starting template migration...');
+    console.log('Starting template migration...', { domain: MAILGUN_DOMAIN });
     const results = [];
 
     for (const template of templates) {
       console.log(`Migrating template: ${template.name}`);
       
-      const MAILGUN_API_URL = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/templates`;
-      
-      // First, try to create the template
-      const response = await fetch(MAILGUN_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: template.name,
-          description: template.description,
-          template: template.template,
-        }),
-      });
-
-      const responseText = await response.text();
-      console.log(`Mailgun API response for ${template.name}:`, responseText);
-
-      let result;
       try {
-        result = JSON.parse(responseText);
-      } catch (e) {
-        result = { message: responseText };
-      }
+        const MAILGUN_API_URL = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/templates`;
+        
+        // First, try to create the template
+        const response = await fetch(MAILGUN_API_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: template.name,
+            description: template.description,
+            template: template.template,
+            engine: 'handlebars',
+            version: {
+              template: template.template,
+              tag: 'v1',
+              active: 'yes',
+              description: 'Initial version'
+            }
+          }),
+        });
 
-      results.push({
-        template: template.name,
-        success: response.ok,
-        result,
-      });
+        const responseText = await response.text();
+        console.log(`Mailgun API response for ${template.name}:`, responseText);
+
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (e) {
+          result = { message: responseText };
+        }
+
+        results.push({
+          template: template.name,
+          success: response.ok,
+          result,
+        });
+      } catch (err) {
+        console.error(`Error migrating template ${template.name}:`, err);
+        results.push({
+          template: template.name,
+          success: false,
+          error: err.message,
+        });
+      }
     }
 
     console.log('Migration completed:', results);

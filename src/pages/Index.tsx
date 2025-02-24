@@ -15,7 +15,7 @@ const Index = () => {
       console.log('Starting template migration...');
       
       const { data, error } = await supabase.functions.invoke('migrate-email-templates', {
-        body: { timestamp: new Date().toISOString() } // Add a timestamp to prevent caching
+        body: { timestamp: new Date().toISOString() }
       });
       
       console.log('Migration response:', { data, error });
@@ -33,7 +33,7 @@ const Index = () => {
       console.log('Templates migrated successfully:', data);
       toast({
         title: "Success",
-        description: "Email templates migrated to Brevo",
+        description: "Email templates migrated to Mailgun",
       });
     } catch (err: any) {
       console.error('Caught error:', err);
@@ -65,7 +65,7 @@ const Index = () => {
               Migrating Templates...
             </>
           ) : (
-            "Migrate Email Templates to Brevo"
+            "Migrate Email Templates to Mailgun"
           )}
         </Button>
       </div>
