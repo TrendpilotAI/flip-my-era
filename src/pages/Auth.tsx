@@ -39,7 +39,7 @@ const Auth = () => {
 
   const sendWelcomeEmail = async (userEmail: string, username: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('brevo-email', {
+      const { data, error } = await supabase.functions.invoke('mailgun-email', {
         body: {
           to: userEmail,
           subject: "Welcome to FlipMyEra! 🎉",

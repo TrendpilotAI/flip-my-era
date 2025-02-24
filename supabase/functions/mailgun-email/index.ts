@@ -46,6 +46,7 @@ serve(async (req) => {
     formData.append('subject', subject);
     formData.append('html', processedHtml);
 
+    console.log('Sending email with Mailgun...');
     const response = await fetch(MAILGUN_API_URL, {
       method: 'POST',
       headers: {
@@ -54,20 +55,28 @@ serve(async (req) => {
       body: formData,
     });
 
+    const responseText = await response.text();
+    console.log('Mailgun API response:', responseText);
+
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Mailgun API error:', error);
-      throw new Error(`Mailgun API error: ${error}`);
+      console.error('Mailgun API error:', responseText);
+      throw new Error(`Mailgun API error: ${responseText}`);
     }
 
-    const result = await response.json();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      result = { message: responseText };
+    }
+
     console.log('Email sent successfully:', result);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in email function:', error);
+    console.error('Error in mailgun-email function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
