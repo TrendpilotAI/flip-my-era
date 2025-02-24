@@ -39,17 +39,16 @@ export const StoryResult = ({
       return;
     }
     
-    // Check credits logic will be implemented in the next step
     toast({
       title: "Coming Soon!",
       description: "Create an account to generate your full E-Memory Book.",
     });
   };
 
-  // Extract a title from the story content
+  // Extract title from the first line if it starts with #
   const getStoryTitle = (content: string) => {
     const firstLine = content.split('\n')[0];
-    return firstLine.replace(/^#\s*/, '').slice(0, 50);
+    return firstLine.startsWith('#') ? firstLine.replace(/^#\s*/, '') : firstLine.slice(0, 50);
   };
 
   // Get era description based on story content
@@ -63,6 +62,15 @@ export const StoryResult = ({
     }
   };
 
+  // Remove the title from the story content since we'll display it separately
+  const getStoryContent = (content: string) => {
+    const lines = content.split('\n');
+    if (lines[0].startsWith('#')) {
+      return lines.slice(1).join('\n').trim();
+    }
+    return content;
+  };
+
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
       <div className="text-center mb-8 pb-6 border-b border-[#E5DEFF]">
@@ -74,8 +82,19 @@ export const StoryResult = ({
         </p>
       </div>
       
-      <div className="prose prose-lg prose-pink max-w-none mb-8 font-serif leading-relaxed">
-        <ReactMarkdown>{result}</ReactMarkdown>
+      <div className="prose prose-lg prose-pink max-w-none mb-8 font-serif leading-relaxed space-y-6">
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => (
+              <p className="text-lg leading-relaxed text-gray-700 mb-6">{children}</p>
+            ),
+            strong: ({ children }) => (
+              <strong className="text-purple-700">{children}</strong>
+            ),
+          }}
+        >
+          {getStoryContent(result)}
+        </ReactMarkdown>
       </div>
 
       <div className="flex flex-wrap gap-4 items-center justify-between mb-8 pt-4 border-t border-[#E5DEFF]">
@@ -103,8 +122,8 @@ export const StoryResult = ({
 
       {result && (
         <>
-          <MoralSection story={result} />
-          <EnhancedSongPreview story={result} />
+          <MoralSection story={getStoryContent(result)} />
+          <EnhancedSongPreview story={getStoryContent(result)} />
           
           <div className="mt-12 text-center">
             <Button 

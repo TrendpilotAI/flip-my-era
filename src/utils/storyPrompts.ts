@@ -1,4 +1,3 @@
-
 import { GenderInfo, getFlippedGender } from './genderUtils';
 import { starSignCharacteristics } from './starSigns';
 import { personalityTypes } from '@/types/personality';
@@ -63,7 +62,9 @@ export const generateStoryPrompt = (
 ) => {
   const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
   
-  return `Create a beautifully written story about ${transformedName}${date ? ` (born ${date.toLocaleDateString()})` : ''} in the style of an enchanting novel, with rich descriptions and flowing narrative. ${getGenderContext(transformedName, detectedGender, gender)}.
+  return `Create an enchanting story with both a captivating title and narrative about ${transformedName}${date ? ` (born ${date.toLocaleDateString()})` : ''} in the style of an enchanting novel, with rich descriptions and flowing narrative. ${getGenderContext(transformedName, detectedGender, gender)}.
+
+First, generate a creative, whimsical title that captures the essence of the story. Format it with a # at the beginning to denote it as the title.
 
 Setting: ${sceneSettings}
 
@@ -84,7 +85,7 @@ Key Moments:
 - Supporting Scene: ${viralTropes[1]}
 
 Writing Style:
-1. Use beautiful, descriptive prose
+1. Use beautiful, descriptive prose with proper paragraph breaks for readability
 2. Integrate dialogue naturally within paragraphs
 3. Create vivid imagery through careful word choice
 4. Build emotional resonance through detailed observations
@@ -98,13 +99,8 @@ Second Paragraph: Develop the story through a mix of internal thoughts, external
 
 Final Paragraph: Bring the story to a satisfying close with poetic imagery and profound realization, ending with a beautiful observation or meaningful exchange that lingers in the reader's mind.
 
-Requirements:
-- Write in flowing, novel-like prose
-- Include natural dialogue within descriptive paragraphs
-- Create cinematic imagery through words
-- Build emotional depth through detailed observation
-- Maintain an enchanting, uplifting tone
-- End with a powerful, quotable moment
-
-The story should read like a beloved passage from a beautiful book, with each paragraph building on the last to create a complete, shareable moment that captures both the magic of storytelling and the power of human connection.`;
+Format the response with:
+1. Title at the top prefixed with #
+2. Story text broken into clear, well-spaced paragraphs
+3. Proper line breaks between paragraphs for readability`;
 };
