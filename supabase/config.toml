@@ -58,7 +58,7 @@ backend = "postgres"
 [functions]
 enabled = true
 
-[functions.brevo-email]
+[functions.mailgun-email]
 verify_jwt = false
 
 [functions.migrate-email-templates]
