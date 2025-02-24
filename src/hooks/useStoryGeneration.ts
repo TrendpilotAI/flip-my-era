@@ -25,6 +25,7 @@ export const useStoryGeneration = () => {
   const [result, setResult] = useState("");
   const [personalityType, setPersonalityType] = useState<PersonalityTypeKey>("dreamer");
   const [gender, setGender] = useState<GenderType>("same");
+  const [location, setLocation] = useState("");
   const [detectedGender, setDetectedGender] = useState<GenderInfo>({ gender: 'unknown', probability: 0 });
   const [storyId, setStoryId] = useState<string>("");
   const [previousStory, setPreviousStory] = useState<StoryState | null>(null);
@@ -62,13 +63,12 @@ export const useStoryGeneration = () => {
       return;
     }
 
-    // Save current story before generating new one
     if (result && storyId) {
       setPreviousStory({ content: result, id: storyId });
     }
 
     setLoading(true);
-    setResult(""); // Clear current story while loading
+    setResult("");
     const loadingToast = toast({
       title: "Accessing the multiverse...",
       description: "Scanning infinite realities for your alternate life...",
@@ -88,7 +88,8 @@ export const useStoryGeneration = () => {
         starSign,
         selectedPersonality,
         viralTropes,
-        sceneSettings
+        sceneSettings,
+        location
       );
 
       const story = await generateWithGroq(prompt);
@@ -139,6 +140,8 @@ export const useStoryGeneration = () => {
     setPersonalityType,
     gender,
     setGender,
+    location,
+    setLocation,
     storyId,
     previousStory,
     handleStorySelect,

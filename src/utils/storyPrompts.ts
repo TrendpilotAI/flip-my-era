@@ -58,15 +58,17 @@ export const generateStoryPrompt = (
   starSign: string | null,
   selectedPersonality: typeof personalityTypes[keyof typeof personalityTypes],
   viralTropes: string[],
-  sceneSettings: string
+  sceneSettings: string,
+  location: string
 ) => {
   const starSignTraits = starSign ? starSignCharacteristics[starSign].traits.join(", ") : "";
+  const locationContext = location ? `Set in the enchanting backdrop of ${location}, where` : 'In a place where';
   
   return `Create an enchanting story with both a captivating title and narrative about ${transformedName}${date ? ` (born ${date.toLocaleDateString()})` : ''} in the style of an enchanting novel, with rich descriptions and flowing narrative. ${getGenderContext(transformedName, detectedGender, gender)}.
 
 First, generate a creative, whimsical title that captures the essence of the story. Format it with a # at the beginning to denote it as the title.
 
-Setting: ${sceneSettings}
+${locationContext} ${sceneSettings}
 
 Story Elements:
 - Open with vivid, sensory descriptions that transport readers

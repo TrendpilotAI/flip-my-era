@@ -23,6 +23,8 @@ const Index = () => {
     setGender,
     storyId,
     previousStory,
+    location,
+    setLocation,
     handleStorySelect,
     handleSubmit,
     handleUndo
@@ -49,6 +51,8 @@ const Index = () => {
           setPersonalityType={setPersonalityType}
           gender={gender}
           setGender={setGender}
+          location={location}
+          setLocation={setLocation}
         />
 
         {result && (

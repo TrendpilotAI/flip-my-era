@@ -28,6 +28,8 @@ interface StoryFormProps {
   setPersonalityType: (type: PersonalityTypeKey) => void;
   gender: GenderType;
   setGender: (gender: GenderType) => void;
+  location: string;
+  setLocation: (location: string) => void;
 }
 
 export const StoryForm = ({
@@ -42,7 +44,9 @@ export const StoryForm = ({
   personalityType,
   setPersonalityType,
   gender,
-  setGender
+  setGender,
+  location,
+  setLocation
 }: StoryFormProps) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
 
@@ -110,6 +114,19 @@ export const StoryForm = ({
             placeholder="Enter your character name" 
             value={name} 
             onChange={e => setName(e.target.value)} 
+            className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-base font-medium text-[#4A4A4A] flex items-center gap-2">
+            <span>Story Location</span>
+            <Sparkles className="h-4 w-4 text-purple-500" />
+          </label>
+          <Input 
+            placeholder="Enter the story location (e.g., Paris, New York, Tokyo)" 
+            value={location} 
+            onChange={e => setLocation(e.target.value)} 
             className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
           />
         </div>
