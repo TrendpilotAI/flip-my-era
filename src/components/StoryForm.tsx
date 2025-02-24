@@ -152,7 +152,7 @@ export const StoryForm = ({
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Time Traveling...
           </>
-        ) : "Take Me Back!"}
+        ) : "Flip My Era"}
       </Button>
     </div>
   );
