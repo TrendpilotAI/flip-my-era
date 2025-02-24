@@ -1,5 +1,5 @@
 
-import { serve } from 'https://deno.fresh.dev/std@v9.6.1/http/server.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
