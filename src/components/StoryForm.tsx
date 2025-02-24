@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles } from "lucide-react";
@@ -10,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { PersonalityTypeKey } from "@/types/personality";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthDialog } from "./AuthDialog";
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -58,30 +58,17 @@ export const StoryForm = ({
             </h2>
             <p className="text-purple-600 italic">Where your story gets its glitter filter...</p>
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
+          <AuthDialog
+            trigger={
               <Button 
                 variant="outline" 
                 className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
-                onClick={async () => {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) {
-                    window.location.href = "/auth";
-                    return;
-                  }
-                }}
               >
                 <span className="mr-2">Return to Your Era</span>
                 <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Your Saved Stories</DialogTitle>
-              </DialogHeader>
-              <StoriesList onStorySelect={handleStorySelect} />
-            </DialogContent>
-          </Dialog>
+            }
+          />
         </div>
       </div>
 
