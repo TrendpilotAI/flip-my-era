@@ -1,12 +1,13 @@
+
 import { Sparkles, Clock, BookOpen } from "lucide-react";
 export const PageHeader = () => {
   return <div className="text-center space-y-8">
       <div className="space-y-4">
         <h1 className="text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 animate-shimmer pb-2 font-bold">✨ FlipMyEra ✨</h1>
         <p className="text-xl text-gray-700 max-w-2xl mx-auto">
-          Transform your life story into a whimsical journey through time. Discover how your path might have unfolded in a different era.
+          Rewrite your story in a kinder, pre-2020 timeline
           <span className="block mt-2 text-lg italic text-purple-600">
-            Because we all deserve a happier, carefree era.
+            Where festivals were endless, summers were perfect and dreams felt limitless.
           </span>
         </p>
       </div>
