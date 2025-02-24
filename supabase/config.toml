@@ -19,19 +19,10 @@ pool_mode = "transaction"
 default_pool_size = 15
 max_client_conn = 100
 
-[realtime]
-enabled = true
-
 [studio]
 enabled = true
 port = 54323
 api_url = "http://localhost"
-
-[inbucket]
-enabled = true
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
 
 [storage]
 enabled = true
