@@ -1,70 +1,46 @@
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
-import { SparkleEffect } from "@/components/SparkleEffect";
-import { BackgroundImages } from "@/components/BackgroundImages";
-import { PageHeader } from "@/components/PageHeader";
-import { StoryForm } from "@/components/StoryForm";
-import { StoryResult } from "@/components/StoryResult";
-import { useApiCheck } from "@/hooks/useApiCheck";
-import { useStoryGeneration } from "@/hooks/useStoryGeneration";
-import { personalityTypes } from "@/types/personality";
+const migrateTemplates = async () => {
+  try {
+    const { data, error } = await supabase.functions.invoke('migrate-email-templates');
+    
+    if (error) {
+      console.error('Error migrating templates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to migrate email templates",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    console.log('Templates migrated successfully:', data);
+    toast({
+      title: "Success",
+      description: "Email templates migrated to Brevo",
+    });
+  } catch (err) {
+    console.error('Error:', err);
+    toast({
+      title: "Error",
+      description: "Something went wrong",
+      variant: "destructive",
+    });
+  }
+};
+
+// Add a button to trigger the migration
 const Index = () => {
-  useApiCheck();
-  const {
-    name,
-    setName,
-    date,
-    setDate,
-    loading,
-    result,
-    personalityType,
-    setPersonalityType,
-    gender,
-    setGender,
-    storyId,
-    previousStory,
-    location,
-    setLocation,
-    handleStorySelect,
-    handleSubmit,
-    handleUndo
-  } = useStoryGeneration();
-
+  const { toast } = useToast();
+  
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
-      <SparkleEffect />
-      <BackgroundImages />
-
-      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
-        <PageHeader />
-
-        <StoryForm
-          name={name}
-          setName={setName}
-          date={date}
-          setDate={setDate}
-          loading={loading}
-          handleSubmit={handleSubmit}
-          handleStorySelect={handleStorySelect}
-          personalityTypes={personalityTypes}
-          personalityType={personalityType}
-          setPersonalityType={setPersonalityType}
-          gender={gender}
-          setGender={setGender}
-          location={location}
-          setLocation={setLocation}
-        />
-
-        {result && (
-          <StoryResult
-            result={result}
-            storyId={storyId}
-            onRegenerateClick={handleSubmit}
-            onUndoClick={handleUndo}
-            hasPreviousStory={!!previousStory}
-          />
-        )}
-      </div>
+    <div>
+      <h1>Welcome to the Index Page</h1>
+      <p>This is a basic index page.</p>
+      <Button onClick={migrateTemplates}>
+        Migrate Email Templates to Brevo
+      </Button>
     </div>
   );
 };
