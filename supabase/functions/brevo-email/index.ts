@@ -1,8 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+const MAILGUN_API_KEY = Deno.env.get('MAILGUN_API_KEY');
+const MAILGUN_DOMAIN = 'flipmyera.com'; // This should match your verified domain in Mailgun
+const MAILGUN_API_URL = `https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,8 +24,8 @@ serve(async (req) => {
   }
 
   try {
-    if (!BREVO_API_KEY) {
-      throw new Error('BREVO_API_KEY is not set');
+    if (!MAILGUN_API_KEY) {
+      throw new Error('MAILGUN_API_KEY is not set');
     }
 
     const { to, subject, html, params } = await req.json() as EmailRequest;
@@ -38,28 +39,25 @@ serve(async (req) => {
       });
     }
 
-    const response = await fetch(BREVO_API_URL, {
+    // Create form data for Mailgun API
+    const formData = new FormData();
+    formData.append('from', `FlipMyEra <noreply@${MAILGUN_DOMAIN}>`);
+    formData.append('to', to);
+    formData.append('subject', subject);
+    formData.append('html', processedHtml);
+
+    const response = await fetch(MAILGUN_API_URL, {
       method: 'POST',
       headers: {
-        'accept': 'application/json',
-        'api-key': BREVO_API_KEY,
-        'content-type': 'application/json',
+        'Authorization': `Basic ${btoa(`api:${MAILGUN_API_KEY}`)}`,
       },
-      body: JSON.stringify({
-        sender: {
-          name: "FlipMyEra",
-          email: "noreply@flipmyera.com"
-        },
-        to: [{ email: to }],
-        subject: subject,
-        htmlContent: processedHtml,
-      }),
+      body: formData,
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Brevo API error:', error);
-      throw new Error(`Brevo API error: ${error}`);
+      console.error('Mailgun API error:', error);
+      throw new Error(`Mailgun API error: ${error}`);
     }
 
     const result = await response.json();
@@ -69,7 +67,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in brevo-email function:', error);
+    console.error('Error in email function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
