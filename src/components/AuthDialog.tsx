@@ -31,6 +31,7 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
       turnstileWidgetId.current = window.turnstile.render('#dialog-turnstile-widget', {
         sitekey: '0x4AAAAAAA-Xwq8k7B8XTxwD',
         callback: function(token: string) {
+          console.log("Turnstile token received:", token);
           setTurnstileToken(token);
         },
       });
@@ -51,6 +52,7 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
 
     try {
       if (isSignUp) {
+        console.log("Dialog - Signing up with captcha token:", turnstileToken);
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -68,6 +70,7 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
           description: "Check your email to confirm your account.",
         });
       } else {
+        console.log("Dialog - Signing in with captcha token:", turnstileToken);
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -82,6 +85,7 @@ export const AuthDialog = ({ trigger }: { trigger: React.ReactNode }) => {
         });
       }
     } catch (error: any) {
+      console.error("Dialog auth error:", error);
       toast({
         title: "Oops!",
         description: error.message,

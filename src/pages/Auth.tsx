@@ -50,30 +50,30 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              captchaToken: turnstileToken
-            }
-          })
-        : await supabase.auth.signInWithPassword({
-            email,
-            password,
-            options: {
-              captchaToken: turnstileToken
-            }
-          });
-
-      if (error) throw error;
-
       if (isSignUp) {
+        console.log("Signing up with captcha token:", turnstileToken);
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            captchaToken: turnstileToken
+          }
+        });
+        if (error) throw error;
         toast({
           title: "Check your email",
           description: "We've sent you a confirmation link.",
         });
       } else {
+        console.log("Signing in with captcha token:", turnstileToken);
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+          options: {
+            captchaToken: turnstileToken
+          }
+        });
+        if (error) throw error;
         toast({
           title: "Welcome back!",
           description: "Successfully signed in.",
@@ -81,6 +81,7 @@ const Auth = () => {
         navigate("/");
       }
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
         title: "Error",
         description: error.message,
