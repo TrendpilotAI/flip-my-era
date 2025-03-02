@@ -6,13 +6,22 @@ import { useToast } from "@/hooks/use-toast";
 
 interface GoogleSignInButtonProps {
   className?: string;
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
 }
 
-export const GoogleSignInButton = ({ className }: GoogleSignInButtonProps) => {
+export const GoogleSignInButton = ({ 
+  className, 
+  onSuccess, 
+  onError 
+}: GoogleSignInButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
+    // Prevent multiple clicks
+    if (isLoading) return;
+    
     try {
       setIsLoading(true);
       
@@ -27,20 +36,36 @@ export const GoogleSignInButton = ({ className }: GoogleSignInButtonProps) => {
       if (error) {
         toast({
           title: "Google Sign In Failed",
-          description: error.message,
+          description: error.message || "An error occurred during sign in. Please try again.",
           variant: "destructive",
         });
+        
+        if (onError) {
+          onError(error);
+        }
+        
         setIsLoading(false);
+        return;
+      }
+      
+      if (onSuccess) {
+        onSuccess();
       }
       
       // No need to set loading to false on success as we're redirecting
     } catch (error) {
       console.error("Google sign in error:", error);
+      
       toast({
         title: "Something went wrong",
-        description: "Please try again later.",
+        description: error instanceof Error ? error.message : "Please try again later.",
         variant: "destructive",
       });
+      
+      if (onError && error instanceof Error) {
+        onError(error);
+      }
+      
       setIsLoading(false);
     }
   };
@@ -52,6 +77,7 @@ export const GoogleSignInButton = ({ className }: GoogleSignInButtonProps) => {
       className={className}
       onClick={handleGoogleSignIn}
       disabled={isLoading}
+      aria-label="Sign in with Google"
     >
       {isLoading ? (
         <>
@@ -60,7 +86,7 @@ export const GoogleSignInButton = ({ className }: GoogleSignInButtonProps) => {
         </>
       ) : (
         <>
-          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+          <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
               fill="#4285F4"

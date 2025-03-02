@@ -1,69 +1,87 @@
-# Welcome to your Lovable project
+# Flip My Era
 
-## Project info
+A modern web application that allows users to transform their stories across different eras and styles.
 
-**URL**: https://lovable.dev/projects/af100ce7-0bc8-49c6-9fdc-df9dbf69fe08
+## Features
 
-## How can I edit this code?
+- **Google Authentication**: Secure sign-in with Google OAuth
+- **Story Generation**: Create stories in different eras and styles
+- **User Dashboard**: Manage your stories and account settings
+- **Subscription Plans**: Access premium features with different subscription tiers
 
-There are several ways of editing your application.
+## Technologies Used
 
-**Use Lovable**
+- **Frontend**: React, TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase for authentication and database
+- **Deployment**: Netlify
+- **AI Integration**: OpenAI/Groq for story generation
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/af100ce7-0bc8-49c6-9fdc-df9dbf69fe08) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js 18 or higher
+- npm or yarn
+- Supabase account
+- Google OAuth credentials
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
+1. Clone the repository:
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+git clone https://github.com/TrendpilotAI/flip-my-era.git
+cd flip-my-era
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. Install dependencies:
+```sh
+npm install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. Create a `.env` file based on `.env.example`:
+```sh
+cp .env.example .env
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Fill in the environment variables in the `.env` file:
+```
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_APP_URL=http://localhost:8080
+```
+
+5. Start the development server:
+```sh
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+6. Open [http://localhost:8080](http://localhost:8080) in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Deployment
 
-**Use GitHub Codespaces**
+The application is configured for deployment on Netlify. The `netlify.toml` file contains the necessary configuration.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+To deploy:
 
-## What technologies are used for this project?
+1. Push your changes to the main branch
+2. Netlify will automatically build and deploy the application
 
-This project is built with .
+## Environment Variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The following environment variables are required:
 
-## How can I deploy this project?
+- `VITE_SUPABASE_URL`: Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+- `VITE_APP_URL`: The URL of your application (for OAuth redirects)
 
-Simply open [Lovable](https://lovable.dev/projects/af100ce7-0bc8-49c6-9fdc-df9dbf69fe08) and click on Share -> Publish.
+## Contributing
 
-## I want to use a custom domain - is that possible?
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Commit your changes: `git commit -m 'Add some feature'`
+4. Push to the branch: `git push origin feature/your-feature-name`
+5. Open a pull request
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

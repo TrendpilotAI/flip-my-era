@@ -5,8 +5,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
+
+// Determine if we're in development or production
+const isDevelopment = import.meta.env.MODE === 'development';
 
 // For local development, we'll modify the auth settings
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -15,8 +18,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    // Debug mode can help with authentication issues
-    debug: true
+    // Debug mode only in development
+    debug: isDevelopment
   },
   global: {
     // Disable headers that might be causing captcha issues
@@ -26,10 +29,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Log authentication setup for debugging
-console.log('Supabase Auth Configuration:', {
-  url: supabaseUrl,
-  authFlowType: 'pkce',
-  providers: ['google', 'email'],
-  debug: true
-});
+// Log authentication setup for debugging in development only
+if (isDevelopment) {
+  console.log('Supabase Auth Configuration:', {
+    url: supabaseUrl,
+    authFlowType: 'pkce',
+    providers: ['google', 'email'],
+    debug: isDevelopment
+  });
+}
+
+// Export a function to get the current session
+export const getCurrentSession = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.error('Error getting session:', error.message);
+    return null;
+  }
+  return data.session;
+};

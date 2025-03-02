@@ -127,17 +127,16 @@ export const signIn = async (email: string, password: string): Promise<{ user: A
 // Sign in with Google
 export const signInWithGoogle = async (): Promise<{ error: Error | null }> => {
   try {
-    console.log("Starting Google sign-in process");
+    // Get the current URL to use as the base for the redirect
+    const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
     
-    // Determine if we're in development or production
-    const isDevelopment = import.meta.env.DEV;
+    // Create a redirect URL that points to the auth callback page
+    const redirectUrl = new URL('/auth/callback', appUrl).toString();
     
-    // Use a specific redirect URL for development
-    const redirectUrl = isDevelopment 
-      ? `${window.location.protocol}//${window.location.hostname}:${window.location.port}/auth/callback`
-      : `${window.location.origin}/auth/callback`;
-    
-    console.log("Using redirect URL:", redirectUrl);
+    // Log the redirect URL in development mode
+    if (import.meta.env.MODE === 'development') {
+      console.log("Using redirect URL:", redirectUrl);
+    }
     
     // Get the Google auth URL from Supabase but don't redirect yet
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -159,7 +158,9 @@ export const signInWithGoogle = async (): Promise<{ error: Error | null }> => {
     
     // If we have a URL, redirect to it manually
     if (data?.url) {
-      console.log("Redirecting to Google OAuth URL:", data.url);
+      if (import.meta.env.MODE === 'development') {
+        console.log("Redirecting to Google OAuth URL:", data.url);
+      }
       // This will show the Google consent screen directly without showing the Supabase domain
       window.location.href = data.url;
     } else {

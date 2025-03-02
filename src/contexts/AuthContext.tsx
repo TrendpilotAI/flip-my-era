@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, getCurrentUser, signIn, signUp, signOut, signInWithGoogle } from "@/utils/auth";
 
@@ -23,45 +23,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isNewUser, setIsNewUser] = useState(false);
   const [lastAuthEvent, setLastAuthEvent] = useState<string | null>(null);
 
-  const refreshUser = async () => {
-    const { user: currentUser } = await getCurrentUser();
-    
-    // If this is a new user (first sign in), mark them as new
-    if (currentUser && !user && lastAuthEvent === "SIGNED_IN") {
-      setIsNewUser(true);
+  const refreshUser = useCallback(async () => {
+    try {
+      const { user: currentUser, error } = await getCurrentUser();
+      
+      if (error) {
+        console.error("Error refreshing user:", error);
+        return;
+      }
+      
+      // If this is a new user (first sign in), mark them as new
+      if (currentUser && !user && lastAuthEvent === "SIGNED_IN") {
+        setIsNewUser(true);
+      }
+      
+      setUser(currentUser);
+    } catch (error) {
+      console.error("Error in refreshUser:", error);
     }
-    
-    setUser(currentUser);
-    return;
-  };
+  }, [user, lastAuthEvent]);
 
   useEffect(() => {
     // Check for user on initial load
     const initAuth = async () => {
       setIsLoading(true);
-      await refreshUser();
-      setIsLoading(false);
+      try {
+        await refreshUser();
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     initAuth();
 
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state change:", event);
+      if (import.meta.env.MODE === 'development') {
+        console.log("Auth state change:", event);
+      }
+      
       setLastAuthEvent(event);
       
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        await refreshUser();
-      } else if (event === "SIGNED_OUT") {
-        setUser(null);
-        setIsNewUser(false);
+      // Handle different auth events
+      switch (event) {
+        case "SIGNED_IN":
+          await refreshUser();
+          break;
+        case "SIGNED_OUT":
+          setUser(null);
+          setIsNewUser(false);
+          break;
+        case "USER_UPDATED":
+          await refreshUser();
+          break;
+        case "PASSWORD_RECOVERY":
+          // Handle password recovery if needed
+          break;
+        default:
+          break;
       }
     });
 
+    // Clean up the listener on unmount
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshUser]);
 
   const handleSignIn = async (email: string, password: string) => {
     const { user: authUser, error } = await signIn(email, password);
