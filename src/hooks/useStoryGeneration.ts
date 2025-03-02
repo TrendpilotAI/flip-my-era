@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -8,7 +7,8 @@ import type { PersonalityTypeKey } from '@/types/personality';
 import { personalityTypes } from '@/types/personality';
 import { detectGender, transformName, GenderInfo } from '@/utils/genderUtils';
 import { getRandomViralTropes, getRandomSceneSettings, generateStoryPrompt } from '@/utils/storyPrompts';
-import { saveStory } from '@/utils/storyPersistence';
+import { saveStory, getLocalStory, getUserPreferences } from '@/utils/storyPersistence';
+import { useAuth } from '@/contexts/AuthContext';
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -17,7 +17,15 @@ interface StoryState {
   id: string;
 }
 
+interface SavedStory {
+  id?: string;
+  storyId?: string;
+  initial_story: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 export const useStoryGeneration = () => {
+  const { isAuthenticated } = useAuth();
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
   const [date, setDate] = useState<Date>();
@@ -29,9 +37,44 @@ export const useStoryGeneration = () => {
   const [detectedGender, setDetectedGender] = useState<GenderInfo>({ gender: 'unknown', probability: 0 });
   const [storyId, setStoryId] = useState<string>("");
   const [previousStory, setPreviousStory] = useState<StoryState | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Load saved preferences and story data on initial render
+  useEffect(() => {
+    const loadSavedData = () => {
+      try {
+        // Load user preferences
+        const preferences = getUserPreferences();
+        if (preferences) {
+          if (preferences.name) setName(preferences.name);
+          if (preferences.birth_date) setDate(new Date(preferences.birth_date));
+          if (preferences.gender as GenderType) setGender(preferences.gender as GenderType);
+          if (preferences.personalityType as PersonalityTypeKey) {
+            setPersonalityType(preferences.personalityType as PersonalityTypeKey);
+          }
+          if (preferences.location) setLocation(preferences.location);
+        }
+        
+        // Load the most recent story
+        const savedStory = getLocalStory();
+        if (savedStory) {
+          setResult(savedStory.initial_story);
+          if (savedStory.storyId) setStoryId(savedStory.storyId);
+        }
+        
+        console.log("Loaded saved preferences and story data");
+      } catch (error) {
+        console.error("Error loading saved data:", error);
+      } finally {
+        setIsInitialized(true);
+      }
+    };
+    
+    loadSavedData();
+  }, []);
 
   useEffect(() => {
     if (name) {
@@ -41,19 +84,29 @@ export const useStoryGeneration = () => {
 
   useEffect(() => {
     if (name && detectedGender) {
-      const newTransformedName = transformName(name, detectedGender, gender);
-      setTransformedName(newTransformedName);
+      const updateTransformedName = async () => {
+        try {
+          const newTransformedName = await transformName(name, detectedGender, gender);
+          setTransformedName(newTransformedName);
+        } catch (error: unknown) {
+          console.error('Error transforming name:', error);
+          // Fallback to original name if transformation fails
+          setTransformedName(name);
+        }
+      };
+      
+      updateTransformedName();
     }
   }, [name, detectedGender, gender]);
 
-  const handleStorySelect = async (story: any) => {
+  const handleStorySelect = async (story: SavedStory) => {
     setPreviousStory({ content: result, id: storyId });
     setResult(story.initial_story);
-    setStoryId(story.id);
+    setStoryId(story.id || story.storyId || '');
   };
 
   const handleSubmit = async () => {
-    if (!localStorage.getItem('GROQ_API_KEY')) {
+    if (!localStorage.getItem('GROQ_API_KEY') && !import.meta.env.VITE_GROQ_API_KEY) {
       toast({
         title: "API Key Required",
         description: "Please configure your API keys in settings first.",
@@ -97,8 +150,18 @@ export const useStoryGeneration = () => {
       
       if (story) {
         setResult(story);
-        const savedStory = await saveStory(story, transformedName, date, prompt);
-        setStoryId(savedStory.id);
+        
+        // Save additional data along with the story
+        const additionalData = {
+          transformedName,
+          gender,
+          personalityType,
+          location
+        };
+        
+        const savedStory = await saveStory(story, name, date, prompt, additionalData);
+        setStoryId(savedStory.id || savedStory.storyId);
+        
         toast({
           title: "Alternate life discovered!",
           description: "Your parallel universe self has been revealed!",
@@ -144,6 +207,8 @@ export const useStoryGeneration = () => {
     setLocation,
     storyId,
     previousStory,
+    isAuthenticated,
+    isInitialized,
     handleStorySelect,
     handleSubmit,
     handleUndo

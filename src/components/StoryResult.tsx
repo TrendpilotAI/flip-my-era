@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Repeat, Undo } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -8,6 +7,8 @@ import { MoralSection } from "./story/MoralSection";
 import { EnhancedSongPreview } from "./story/EnhancedSongPreview";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { EbookGenerator } from "./EbookGenerator";
 
 interface StoryResultProps {
   result: string;
@@ -27,22 +28,51 @@ export const StoryResult = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const relevantSong = findRelevantSong(result);
+  const [showEbookGenerator, setShowEbookGenerator] = useState(false);
 
   const handleCreateEbook = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Determine if we're in development or production
+        const isDevelopment = import.meta.env.DEV;
+        
+        // Save the current path, ensuring we use the correct port in development
+        const currentPath = window.location.pathname;
+        const returnPath = isDevelopment 
+          ? `${window.location.pathname}`
+          : currentPath;
+        
+        // Save the return path in session storage
+        sessionStorage.setItem('auth_return_path', JSON.stringify({
+          returnTo: returnPath,
+          storyId: storyId
+        }));
+        
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to create your E-Memory Book.",
+        });
+        navigate("/auth");
+        return;
+      }
+      
+      // User is authenticated, show the ebook generator
+      setShowEbookGenerator(true);
+      
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to create your E-Memory Book.",
+        title: "E-Book Generator Ready",
+        description: "Now you can create your personalized illustrated story!",
       });
-      navigate("/auth");
-      return;
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again or refresh the page.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Coming Soon!",
-      description: "Create an account to generate your full E-Memory Book.",
-    });
   };
 
   // Extract title from the first line if it starts with #
@@ -70,6 +100,11 @@ export const StoryResult = ({
     }
     return content;
   };
+
+  // If showing the ebook generator, render it instead of the story preview
+  if (showEbookGenerator) {
+    return <EbookGenerator originalStory={result} storyId={storyId} />;
+  }
 
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">

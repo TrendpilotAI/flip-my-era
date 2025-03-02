@@ -1,5 +1,5 @@
-
 import axios from 'axios';
+import { generateName } from '@/services/ai';
 
 export type GenderInfo = {
   gender: 'male' | 'female' | 'unknown';
@@ -117,7 +117,7 @@ const getFemaleToMaleMapping = (name: string): string => {
   return mappings[lowercaseName] || withoutEnding;
 };
 
-export const transformName = (originalName: string, detectedGender: GenderInfo, genderType: "same" | "flip" | "neutral"): string => {
+export const transformName = async (originalName: string, detectedGender: GenderInfo, genderType: "same" | "flip" | "neutral"): Promise<string> => {
   const [firstName, ...restOfName] = originalName.split(' ');
   const lastName = restOfName.join(' ');
 
@@ -125,55 +125,70 @@ export const transformName = (originalName: string, detectedGender: GenderInfo, 
     return originalName;
   }
 
-  if (genderType === "flip") {
-    const gender = detectedGender.gender;
-    let newFirstName = firstName;
-    
-    if (gender === 'male') {
-      newFirstName = getMaleToFemaleMapping(firstName);
-    } else if (gender === 'female') {
-      newFirstName = getFemaleToMaleMapping(firstName);
+  try {
+    if (genderType === "flip") {
+      const gender = detectedGender.gender;
+      const targetGender = gender === 'male' ? 'female' : 'male';
+      
+      // Use Groq to generate a name of the opposite gender
+      const newFirstName = await generateName({
+        originalName: firstName,
+        targetGender,
+        shouldBeSimilar: true
+      });
+      
+      return `${newFirstName} ${lastName}`;
     }
-    
-    // Preserve the case of the original name
-    if (firstName[0] === firstName[0].toUpperCase()) {
-      newFirstName = newFirstName.charAt(0).toUpperCase() + newFirstName.slice(1).toLowerCase();
+
+    if (genderType === "neutral") {
+      // Use Groq to generate a gender-neutral name
+      const newFirstName = await generateName({
+        originalName: firstName,
+        targetGender: 'neutral',
+        shouldBeSimilar: true
+      });
+      
+      return `${newFirstName} ${lastName}`;
     }
+  } catch (error) {
+    console.error('Error generating name with Groq:', error);
     
-    return `${newFirstName} ${lastName}`;
-  }
+    // Fallback to the legacy mapping if Groq fails
+    if (genderType === "flip") {
+      const gender = detectedGender.gender;
+      let newFirstName = firstName;
+      
+      if (gender === 'male') {
+        newFirstName = getMaleToFemaleMapping(firstName);
+      } else if (gender === 'female') {
+        newFirstName = getFemaleToMaleMapping(firstName);
+      }
+      
+      // Preserve the case of the original name
+      if (firstName[0] === firstName[0].toUpperCase()) {
+        newFirstName = newFirstName.charAt(0).toUpperCase() + newFirstName.slice(1).toLowerCase();
+      }
+      
+      return `${newFirstName} ${lastName}`;
+    }
 
-  if (genderType === "neutral") {
-    const neutralNames = [
-      'Sky',
-      'River',
-      'Storm',
-      'Sage',
-      'Rain',
-      'Phoenix',
-      'Winter',
-      'Echo',
-      'Ocean',
-      'Journey'
-    ];
+    if (genderType === "neutral") {
+      const neutralNames = [
+        'Sky',
+        'River',
+        'Storm',
+        'Sage',
+        'Rain',
+        'Phoenix',
+        'Winter',
+        'Echo',
+        'Ocean',
+        'Journey'
+      ];
 
-    const neutralLastNames = [
-      'Moonbeam',
-      'Stardust',
-      'Rainbow',
-      'Sunlight',
-      'Wildflower',
-      'Cloudwalker',
-      'Dreamweaver',
-      'Starlight',
-      'Skydancer',
-      'Earthsong'
-    ];
-
-    const randomFirstName = neutralNames[Math.floor(Math.random() * neutralNames.length)];
-    const randomLastName = neutralLastNames[Math.floor(Math.random() * neutralLastNames.length)];
-
-    return `${randomFirstName} ${randomLastName}`;
+      const randomFirstName = neutralNames[Math.floor(Math.random() * neutralNames.length)];
+      return `${randomFirstName} ${lastName}`;
+    }
   }
 
   return originalName;

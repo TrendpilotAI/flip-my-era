@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, User } from "lucide-react";
@@ -86,7 +85,7 @@ export const StoryForm = ({
               className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 group"
             >
               <User className="h-4 w-4 text-purple-500 mr-2" />
-              <span>Signed In</span>
+              <span>Welcome Back!</span>
             </Button>
           ) : (
             <AuthDialog
@@ -95,7 +94,7 @@ export const StoryForm = ({
                   variant="outline" 
                   className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
                 >
-                  <span className="mr-2">Return to Your Era</span>
+                  <span className="mr-2">Sign In / Register</span>
                   <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
                 </Button>
               }
@@ -133,7 +132,7 @@ export const StoryForm = ({
 
         <div className="space-y-2">
           <label className="block text-base font-medium text-[#4A4A4A] flex items-center gap-2">
-            <span>Your Character's Origin Story</span>
+            <span>Your Birthdate</span>
             <Sparkles className="h-4 w-4 text-purple-500" />
           </label>
           <div className="space-y-4">

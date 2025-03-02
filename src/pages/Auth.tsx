@@ -1,221 +1,296 @@
-
-import { useState, useRef, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Key, Loader2 } from "lucide-react";
+import { Loader2, Mail, Lock, User } from "lucide-react";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
-declare global {
-  interface Window {
-    turnstile: {
-      render: (element: string | HTMLElement, options: any) => string;
-      reset: (widgetId: string) => void;
-    };
-  }
+interface LocationState {
+  returnTo?: string;
+  storyId?: string;
 }
 
 const Auth = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { signIn, signUp, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("login");
+
+  // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileWidgetId = useRef<string | null>(null);
+  const [name, setName] = useState("");
 
-  const initTurnstile = useCallback(() => {
-    if (window.turnstile && !turnstileWidgetId.current) {
-      turnstileWidgetId.current = window.turnstile.render('#turnstile-widget', {
-        sitekey: '0x4AAAAAAA-Xwq8k7B8XTxwD',
-        callback: function(token: string) {
-          setTurnstileToken(token);
-        },
-      });
-    }
-  }, []);
+  // Get return path from location state if available
+  const state = location.state as LocationState;
+  const returnPath = state?.returnTo || "/";
 
-  const sendWelcomeEmail = async (userEmail: string, username: string) => {
-    try {
-      const response = await supabase.functions.invoke('brevo-email', {
-        body: {
-          to: userEmail,
-          templateId: 1, // Replace with your Brevo template ID
-          params: {
-            username: username,
-            app_name: "FlipMyEra",
-          }
-        }
-      });
-
-      if (response.error) {
-        console.error("Error sending welcome email:", response.error);
-      }
-    } catch (error) {
-      console.error("Error invoking email function:", error);
-    }
-  };
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!turnstileToken) {
-      toast({
-        title: "Error",
-        description: "Please complete the Turnstile challenge",
-        variant: "destructive",
-      });
-      return;
-    }
-    setLoading(true);
-
-    try {
-      if (isSignUp) {
-        console.log("Signing up with captcha token:", turnstileToken);
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            captchaToken: turnstileToken
-          }
-        });
-        
-        if (error) throw error;
-
-        // Send welcome email
-        if (data.user) {
-          await sendWelcomeEmail(email, email.split('@')[0]);
-        }
-
-        toast({
-          title: "Welcome aboard! ✨",
-          description: "Check your email to confirm your account.",
-        });
-      } else {
-        console.log("Signing in with captcha token:", turnstileToken);
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-          options: {
-            captchaToken: turnstileToken
-          }
-        });
-        if (error) throw error;
-        toast({
-          title: "Welcome back! ✨",
-          description: "Successfully signed in.",
-        });
-        navigate("/");
-      }
-    } catch (error: any) {
-      console.error("Auth error:", error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-      // Reset Turnstile widget on error
-      if (turnstileWidgetId.current) {
-        window.turnstile.reset(turnstileWidgetId.current);
-        setTurnstileToken(null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initialize Turnstile when component mounts
   useEffect(() => {
-    initTurnstile();
-  }, [initTurnstile]);
+    // If user is already authenticated, redirect them
+    if (isAuthenticated) {
+      navigate(returnPath);
+    }
+  }, [isAuthenticated, navigate, returnPath]);
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        toast({
+          title: "Sign In Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Welcome Back!",
+        description: "You've successfully signed in to your account.",
+      });
+      
+      // Redirect to the return path
+      navigate(returnPath);
+    } catch (error) {
+      console.error("Sign in error:", error);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await signUp(email, password, name);
+      
+      if (error) {
+        toast({
+          title: "Sign Up Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Account Created",
+        description: "Your account has been successfully created!",
+      });
+      
+      // Redirect to the return path
+      navigate(returnPath);
+    } catch (error) {
+      console.error("Sign up error:", error);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white/95 backdrop-blur-lg p-8 rounded-xl shadow-xl">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isSignUp ? "Create your account" : "Sign in to your account"}
-          </h2>
+    <div className="container flex items-center justify-center min-h-[80vh] py-8">
+      <div className="w-full max-w-md">
+        {/* FlipMyEra Branding */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+            FlipMyEra
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Sign in to access your alternate timelines
+          </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleAuth}>
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="pl-10"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <div className="relative">
-                <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="pl-10"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div id="turnstile-widget" className="flex justify-center"></div>
-
-          <div>
-            <Button
-              type="submit"
-              disabled={loading || !turnstileToken}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isSignUp ? "Creating account..." : "Signing in..."}
-                </>
-              ) : (
-                isSignUp ? "Sign up" : "Sign in"
-              )}
-            </Button>
-          </div>
-
-          <div className="text-center">
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                if (turnstileWidgetId.current) {
-                  window.turnstile.reset(turnstileWidgetId.current);
-                  setTurnstileToken(null);
-                }
-              }}
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              {isSignUp
-                ? "Already have an account? Sign in"
-                : "Don't have an account? Sign up"}
-            </Button>
-          </div>
-        </form>
+        
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="login">Sign In</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="login">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sign In to FlipMyEra</CardTitle>
+                <CardDescription>
+                  Enter your credentials to access your alternate timelines
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleSignIn}>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="your.email@example.com" 
+                        className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <Button 
+                        variant="link" 
+                        className="px-0 text-xs"
+                        type="button"
+                        onClick={() => navigate("/reset-password")}
+                      >
+                        Forgot password?
+                      </Button>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing In...
+                      </>
+                    ) : "Sign In"}
+                  </Button>
+                  <div className="relative w-full">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+                  <GoogleSignInButton className="w-full" />
+                </CardFooter>
+              </form>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="register">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create a FlipMyEra Account</CardTitle>
+                <CardDescription>
+                  Join us to explore your alternate timelines
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleSignUp}>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="name" 
+                        placeholder="Your Name" 
+                        className="pl-10"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email-register">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="email-register" 
+                        type="email" 
+                        placeholder="your.email@example.com" 
+                        className="pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password-register">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="password-register" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        className="pl-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : "Create Account"}
+                  </Button>
+                  <div className="relative w-full">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+                  <GoogleSignInButton className="w-full" />
+                </CardFooter>
+              </form>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
