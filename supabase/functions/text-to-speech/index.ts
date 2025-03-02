@@ -1,33 +1,35 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { 
+  handleCors, 
+  formatErrorResponse, 
+  formatSuccessResponse 
+} from "../_shared/utils.ts"
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+interface TextToSpeechRequest {
+  text: string;
 }
 
 serve(async (req) => {
   console.log('Text-to-speech function invoked');
 
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  const ELEVEN_LABS_API_KEY = Deno.env.get('ELEVEN_LABS_API_KEY');
-  const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Sarah's voice
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
-    const { text } = await req.json();
+    const { text } = await req.json() as TextToSpeechRequest;
     console.log('Received text length:', text?.length);
 
     if (!text) {
       throw new Error('No text provided');
     }
 
-    if (!ELEVEN_LABS_API_KEY) {
+    const apiKey = Deno.env.get('ELEVEN_LABS_API_KEY');
+    if (!apiKey) {
       throw new Error('ElevenLabs API key not found');
     }
+
+    const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Sarah's voice
 
     // Trim text to ElevenLabs limit
     const trimmedText = text.slice(0, 4000);
@@ -40,7 +42,7 @@ serve(async (req) => {
         headers: {
           'Accept': 'audio/mpeg',
           'Content-Type': 'application/json',
-          'xi-api-key': ELEVEN_LABS_API_KEY,
+          'xi-api-key': apiKey,
         },
         body: JSON.stringify({
           text: trimmedText,
@@ -63,30 +65,8 @@ serve(async (req) => {
     const audioBuffer = await elevenlabsResponse.arrayBuffer();
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
 
-    return new Response(
-      JSON.stringify({ audioContent: base64Audio }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
-    );
-
+    return formatSuccessResponse({ audioContent: base64Audio });
   } catch (error) {
-    console.error('Error in text-to-speech function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Unknown error occurred',
-        details: error.toString()
-      }),
-      { 
-        status: 400,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    return formatErrorResponse(error, 400);
   }
 });

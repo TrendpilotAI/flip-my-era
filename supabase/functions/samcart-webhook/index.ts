@@ -1,10 +1,11 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
+import { 
+  handleCors, 
+  initSupabaseClient, 
+  formatErrorResponse, 
+  formatSuccessResponse 
+} from "../_shared/utils.ts"
 
 interface SamCartWebhookPayload {
   type: string;
@@ -56,23 +57,15 @@ interface SamCartWebhookPayload {
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     // Parse the webhook payload
     const payload: SamCartWebhookPayload = await req.json();
     
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase environment variables');
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = initSupabaseClient();
     
     // Process the webhook based on the event type
     switch (payload.type) {
@@ -103,8 +96,12 @@ serve(async (req) => {
         break;
       
       case 'SubscriptionRestarted':
+        // Handle subscription restart
+        await handleSubscriptionRestart(supabase, payload);
+        break;
+        
       case 'SubscriptionRecovered':
-        // Handle subscription restart or recovery
+        // Handle subscription recovery
         await handleSubscriptionRestart(supabase, payload);
         break;
       
@@ -113,32 +110,15 @@ serve(async (req) => {
     }
     
     // Return a success response
-    return new Response(
-      JSON.stringify({ success: true, message: 'Webhook processed successfully' }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
-    );
+    return formatSuccessResponse({ message: 'Webhook processed successfully' });
   } catch (error) {
-    console.error('Error processing webhook:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false,
-        error: error.message || 'An unknown error occurred'
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
-    );
+    return formatErrorResponse(error);
   }
 });
 
 // Handler functions for different webhook events
 
-async function handleNewOrder(supabase: any, payload: SamCartWebhookPayload) {
+async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
   // Find user by email
   const { data: userData, error: userError } = await supabase
     .from('profiles')
@@ -202,7 +182,7 @@ async function handleNewOrder(supabase: any, payload: SamCartWebhookPayload) {
   }
 }
 
-async function handleRefund(supabase: any, payload: SamCartWebhookPayload) {
+async function handleRefund(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
   // Update order status to refunded
   const { error } = await supabase
     .from('orders')
@@ -244,7 +224,7 @@ async function handleRefund(supabase: any, payload: SamCartWebhookPayload) {
   }
 }
 
-async function handleSubscriptionPayment(supabase: any, payload: SamCartWebhookPayload) {
+async function handleSubscriptionPayment(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
   // Create a record for the subscription payment
   const { error } = await supabase
     .from('subscription_payments')
@@ -262,7 +242,7 @@ async function handleSubscriptionPayment(supabase: any, payload: SamCartWebhookP
   }
 }
 
-async function handleSubscriptionCancellation(supabase: any, payload: SamCartWebhookPayload) {
+async function handleSubscriptionCancellation(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
   // Find the user with this subscription
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
@@ -291,7 +271,7 @@ async function handleSubscriptionCancellation(supabase: any, payload: SamCartWeb
   }
 }
 
-async function handleFailedPayment(supabase: any, payload: SamCartWebhookPayload) {
+async function handleFailedPayment(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
   // Record the failed payment
   const { error } = await supabase
     .from('subscription_payments')
@@ -309,7 +289,7 @@ async function handleFailedPayment(supabase: any, payload: SamCartWebhookPayload
   }
 }
 
-async function handleSubscriptionRestart(supabase: any, payload: SamCartWebhookPayload) {
+async function handleSubscriptionRestart(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
   // Find the user with this subscription
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')

@@ -1,27 +1,34 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
+import { 
+  handleCors, 
+  initSupabaseClient, 
+  formatErrorResponse, 
+  formatSuccessResponse 
+} from "../_shared/utils.ts"
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+interface ShareAnalyticsRequest {
+  text: string;
+  videoUrl: string;
+  musicUrl?: string;
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+  // Handle CORS preflight requests
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
-    const { text, videoUrl, musicUrl } = await req.json()
+    const { text, videoUrl, musicUrl } = await req.json() as ShareAnalyticsRequest;
+
+    if (!text || !videoUrl) {
+      throw new Error('Missing required fields: text and videoUrl are required');
+    }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    const supabase = createClient(supabaseUrl!, supabaseKey!)
+    const supabase = initSupabaseClient();
 
     // Log the share event
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('tiktok_shares')
       .insert([
         {
@@ -30,22 +37,14 @@ serve(async (req) => {
           music_url: musicUrl,
           created_at: new Date().toISOString(),
         }
-      ])
+      ]);
 
-    if (error) throw error
+    if (error) {
+      throw new Error(`Database error: ${error.message}`);
+    }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return formatSuccessResponse({ message: 'Share analytics recorded successfully' });
   } catch (error) {
-    console.error('Error logging TikTok share:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
-    )
+    return formatErrorResponse(error);
   }
-})
+});

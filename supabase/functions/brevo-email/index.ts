@@ -1,23 +1,20 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { 
+  handleCors, 
+  formatErrorResponse, 
+  formatSuccessResponse 
+} from "../_shared/utils.ts";
 
 interface EmailRequest {
   to: string;
   templateId: number;
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     const { to, templateId, params } = await req.json() as EmailRequest;
@@ -26,12 +23,17 @@ serve(async (req) => {
     console.log("Using template:", templateId);
     console.log("With params:", params);
 
+    const brevoApiKey = Deno.env.get('BREVO_API_KEY');
+    if (!brevoApiKey) {
+      throw new Error('Missing Brevo API key');
+    }
+
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'api-key': Deno.env.get('BREVO_API_KEY') || '',
+        'api-key': brevoApiKey,
       },
       body: JSON.stringify({
         to: [{ email: to }],
@@ -47,18 +49,8 @@ serve(async (req) => {
       throw new Error(`Brevo API error: ${JSON.stringify(data)}`);
     }
 
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
+    return formatSuccessResponse(data);
   } catch (error) {
-    console.error("Error in brevo-email function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    );
+    return formatErrorResponse(error);
   }
 });
