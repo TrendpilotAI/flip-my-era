@@ -139,9 +139,6 @@ export const signInWithGoogle = async (): Promise<{ error: Error | null }> => {
     
     console.log("Using redirect URL:", redirectUrl);
     
-    // Instead of using the default Supabase OAuth flow, we'll construct a Google OAuth URL directly
-    // This will bypass the Supabase domain being shown to the user
-    
     // Get the Google auth URL from Supabase but don't redirect yet
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",

@@ -16,26 +16,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     flowType: 'pkce',
     // Debug mode can help with authentication issues
-    debug: true,
-    // Custom auth UI settings
-    ui: {
-      // These settings will be used by the Auth UI
-      theme: 'dark',
-      providers: ['google'],
-      // Hide Supabase branding
-      hideSupabaseBranding: true,
-      // Custom labels
-      labels: {
-        button: {
-          signIn: 'Sign in to FlipMyEra',
-          signUp: 'Create FlipMyEra Account'
-        },
-        header: {
-          signIn: 'Welcome to FlipMyEra',
-          signUp: 'Join FlipMyEra'
-        }
-      }
-    }
+    debug: true
   },
   global: {
     // Disable headers that might be causing captcha issues
