@@ -11,6 +11,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Determine if we're in development or production
 const isDevelopment = import.meta.env.MODE === 'development';
 
+// Get the current domain for auth configuration
+const getCurrentDomain = () => {
+  if (isDevelopment) {
+    return 'http://localhost:8080';
+  }
+  // For production, use the current domain
+  return window.location.origin;
+};
+
 // For local development, we'll modify the auth settings
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -19,7 +28,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     flowType: 'pkce',
     // Debug mode only in development
-    debug: isDevelopment
+    debug: isDevelopment,
   },
   global: {
     // Disable headers that might be causing captcha issues
@@ -35,7 +44,8 @@ if (isDevelopment) {
     url: supabaseUrl,
     authFlowType: 'pkce',
     providers: ['google', 'email'],
-    debug: isDevelopment
+    debug: isDevelopment,
+    redirectTo: getCurrentDomain() + '/auth/callback'
   });
 }
 

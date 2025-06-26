@@ -70,20 +70,21 @@ export const signIn = async (email: string, password: string): Promise<{ user: A
       console.error("Sign in error:", error);
       
       // If the error is related to captcha, try a different approach
-      if (error.message.includes("captcha") || error.message.includes("Captcha")) {
-        console.log("Captcha error detected, trying alternative sign-in method");
+      if (error.message.includes("captcha") || error.message.includes("Captcha") || error.message.includes("Invalid domain")) {
+        console.log("Captcha/domain error detected, trying alternative sign-in method");
         
         // Try signing in with email OTP as a fallback
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email,
           options: {
             shouldCreateUser: false,
+            emailRedirectTo: window.location.origin + '/auth/callback'
           }
         });
         
         if (otpError) {
           console.error("OTP sign in error:", otpError);
-          throw otpError;
+          throw new Error("Authentication failed due to domain configuration. Please try using Google Sign-In instead, or contact support if the issue persists.");
         }
         
         return { 
@@ -284,4 +285,4 @@ export const updateSubscription = async (
     console.error("Update subscription error:", error);
     return { error: error as Error };
   }
-}; 
+};

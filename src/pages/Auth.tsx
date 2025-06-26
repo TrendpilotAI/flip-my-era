@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User, AlertCircle } from "lucide-react";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 interface LocationState {
@@ -22,6 +23,7 @@ const Auth = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [showCaptchaHelp, setShowCaptchaHelp] = useState(false);
 
   // Form states
   const [email, setEmail] = useState("");
@@ -42,16 +44,27 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setShowCaptchaHelp(false);
 
     try {
       const { error } = await signIn(email, password);
       
       if (error) {
-        toast({
-          title: "Sign In Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        // Check if it's a captcha/domain error
+        if (error.message.includes("captcha") || error.message.includes("Invalid domain")) {
+          setShowCaptchaHelp(true);
+          toast({
+            title: "Authentication Issue",
+            description: "Please try Google Sign-In instead, or use the magic link that was sent to your email.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sign In Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return;
       }
       
@@ -77,16 +90,27 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setShowCaptchaHelp(false);
 
     try {
       const { error } = await signUp(email, password, name);
       
       if (error) {
-        toast({
-          title: "Sign Up Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        // Check if it's a captcha/domain error
+        if (error.message.includes("captcha") || error.message.includes("Invalid domain")) {
+          setShowCaptchaHelp(true);
+          toast({
+            title: "Authentication Issue",
+            description: "Please try Google Sign-In instead, or contact support if the issue persists.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Sign Up Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         return;
       }
       
@@ -121,6 +145,17 @@ const Auth = () => {
             Sign in to access your alternate timelines
           </p>
         </div>
+        
+        {/* Captcha Help Alert */}
+        {showCaptchaHelp && (
+          <Alert className="mb-6 border-orange-200 bg-orange-50">
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>Authentication Issue Detected:</strong> Due to domain configuration, email/password sign-in may not work. 
+              Please use <strong>Google Sign-In</strong> instead, or check your email for a magic link if you attempted to sign in.
+            </AlertDescription>
+          </Alert>
+        )}
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
