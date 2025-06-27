@@ -30,20 +30,6 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const handleSettingsClick = () => {
-    // Check if API keys are configured in localStorage
-    const groqKey = localStorage.getItem('GROQ_API_KEY');
-    const runwareKey = localStorage.getItem('RUNWARE_API_KEY');
-    
-    if (!groqKey) {
-      toast({
-        title: "API Configuration Recommended",
-        description: "Configure your Groq API key in settings for the best experience.",
-        variant: "default",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen">
       <nav className="fixed top-0 right-0 p-4 z-50 flex gap-2">

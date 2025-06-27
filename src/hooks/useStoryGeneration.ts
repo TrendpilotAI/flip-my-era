@@ -106,24 +106,6 @@ export const useStoryGeneration = () => {
   };
 
   const handleSubmit = async () => {
-    if (!localStorage.getItem('GROQ_API_KEY') && !import.meta.env.VITE_GROQ_API_KEY) {
-      toast({
-        title: "API Key Required",
-        description: "To generate stories, you need to configure your Groq API key. You can get one for free at console.groq.com",
-        variant: "destructive",
-      });
-      
-      // Show a dialog or modal instead of redirecting
-      const shouldConfigure = window.confirm(
-        "Would you like to configure your API keys now? You can get a free Groq API key at console.groq.com"
-      );
-      
-      if (shouldConfigure) {
-        navigate('/settings');
-      }
-      return;
-    }
-
     if (result && storyId) {
       setPreviousStory({ content: result, id: storyId });
     }
@@ -179,60 +161,36 @@ export const useStoryGeneration = () => {
       console.error("Error generating story:", error);
       loadingToast.dismiss();
       
-      // Handle specific API key missing error
+      // Handle specific API errors
       if (error instanceof Error) {
         if (error.message === 'GROQ_API_KEY_MISSING') {
           toast({
-            title: "API Key Required",
-            description: "To generate stories, you need to configure your Groq API key. You can get one for free at console.groq.com",
+            title: "Service Unavailable",
+            description: "Story generation service is currently unavailable. Please try again later.",
             variant: "destructive",
           });
-          
-          const shouldConfigure = window.confirm(
-            "Would you like to configure your API keys now? You can get a free Groq API key at console.groq.com"
-          );
-          
-          if (shouldConfigure) {
-            navigate('/settings');
-          }
         } else if (error.message === 'INVALID_API_KEY_FORMAT') {
           toast({
-            title: "Invalid API Key Format",
-            description: "Your Groq API key format is incorrect. Please check your settings and try again.",
+            title: "Service Error",
+            description: "There was an issue with the story generation service. Please try again later.",
             variant: "destructive",
           });
-          
-          const shouldConfigure = window.confirm(
-            "Would you like to update your API key? Make sure it starts with 'gsk_'"
-          );
-          
-          if (shouldConfigure) {
-            navigate('/settings');
-          }
         } else if (error.message === 'INVALID_API_KEY') {
           toast({
-            title: "Invalid API Key",
-            description: "Your Groq API key is invalid or expired. Please check your settings and try again.",
+            title: "Service Error",
+            description: "There was an issue with the story generation service. Please try again later.",
             variant: "destructive",
           });
-          
-          const shouldConfigure = window.confirm(
-            "Would you like to update your API key? You can get a new one at console.groq.com"
-          );
-          
-          if (shouldConfigure) {
-            navigate('/settings');
-          }
         } else if (error.message === 'RATE_LIMIT_EXCEEDED') {
           toast({
             title: "Rate Limit Exceeded",
-            description: "You've reached your API rate limit. Please try again in a few minutes.",
+            description: "You've reached the rate limit. Please try again in a few minutes.",
             variant: "destructive",
           });
         } else if (error.message.startsWith('API_ERROR:')) {
           toast({
-            title: "API Error",
-            description: error.message.replace('API_ERROR: ', ''),
+            title: "Service Error",
+            description: "There was an issue with the story generation service. Please try again later.",
             variant: "destructive",
           });
         } else {

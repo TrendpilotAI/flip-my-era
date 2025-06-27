@@ -1,5 +1,5 @@
 export const generateWithGroq = async (prompt: string) => {
-  const apiKey = localStorage.getItem('GROQ_API_KEY') || import.meta.env.VITE_GROQ_API_KEY;
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   
   if (!apiKey) {
     throw new Error('GROQ_API_KEY_MISSING');

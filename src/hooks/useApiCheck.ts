@@ -7,21 +7,6 @@ export const useApiCheck = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    checkApiKeys();
+    // No longer need to check API keys since they're handled via environment variables
   }, []);
-
-  const checkApiKeys = () => {
-    const groqKey = localStorage.getItem('GROQ_API_KEY');
-    const runwareKey = localStorage.getItem('RUNWARE_API_KEY');
-
-    if (!groqKey) {
-      toast({
-        title: "API Key Recommended",
-        description: "Configure your Groq API key in settings for the best experience.",
-        variant: "default",
-      });
-      // Don't automatically redirect, let user decide
-      // navigate('/settings');
-    }
-  };
 };
