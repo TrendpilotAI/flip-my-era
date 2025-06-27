@@ -45,8 +45,8 @@ cp .env.example .env
 
 4. Fill in the environment variables in the `.env` file:
 ```
-VITE_SUPABASE_URL=https://tusdijypopftcmlenahr.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1c2Rpanlwb3BmdGNtbGVuYWhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwMTg0MzgsImV4cCI6MjA1NTU5NDQzOH0.Q2IaqjCAz7lOqyJI8COveiyA_9W1kziBqwHK5JSJJMU
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_APP_URL=http://localhost:8080
 ```
 
