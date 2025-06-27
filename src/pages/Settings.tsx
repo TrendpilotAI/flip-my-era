@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 import { ArrowLeft } from "lucide-react";
 
 const Settings = () => {
@@ -13,15 +12,17 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useClerkAuth();
 
   useEffect(() => {
-    checkAuth();
-    loadSettings();
-  }, []);
+    if (!isLoading) {
+      checkAuth();
+      loadSettings();
+    }
+  }, [isLoading, isAuthenticated]);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!isAuthenticated) {
       navigate('/');
       toast({
         title: "Access Denied",
@@ -32,36 +33,18 @@ const Settings = () => {
   };
 
   const loadSettings = async () => {
-    const { data, error } = await supabase
-      .from('api_settings')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (data) {
-      setGroqKey(data.groq_api_key || '');
-      setRunwareKey(data.runware_api_key || '');
-      
-      // Store in localStorage for immediate use
-      if (data.groq_api_key) localStorage.setItem('GROQ_API_KEY', data.groq_api_key);
-      if (data.runware_api_key) localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
-    }
+    // Load from localStorage instead of database
+    const savedGroqKey = localStorage.getItem('GROQ_API_KEY') || '';
+    const savedRunwareKey = localStorage.getItem('RUNWARE_API_KEY') || '';
+    
+    setGroqKey(savedGroqKey);
+    setRunwareKey(savedRunwareKey);
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('api_settings')
-        .insert({
-          groq_api_key: groqKey,
-          runware_api_key: runwareKey
-        });
-
-      if (error) throw error;
-
-      // Update localStorage
+      // Save to localStorage instead of database
       localStorage.setItem('GROQ_API_KEY', groqKey);
       localStorage.setItem('RUNWARE_API_KEY', runwareKey);
 
@@ -97,7 +80,7 @@ const Settings = () => {
         <div className="bg-white/95 backdrop-blur-lg rounded-2xl p-8 space-y-6">
           <h1 className="text-3xl font-bold text-gray-900">API Settings</h1>
           <p className="text-gray-600">
-            Configure global API settings for story generation and image creation.
+            Configure API settings for story generation and image creation. These are stored locally in your browser.
           </p>
 
           <div className="space-y-4">
@@ -117,13 +100,13 @@ const Settings = () => {
                 rel="noopener noreferrer"
                 className="text-sm text-blue-500 hover:underline mt-1 block"
               >
-                Get your Groq API key
+                Get your Groq API key (free tier available)
               </a>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Runware API Key
+                Runware API Key (Optional)
               </label>
               <Input
                 type="password"

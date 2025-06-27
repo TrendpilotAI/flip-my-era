@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { EbookGenerator } from "./EbookGenerator";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 
 interface StoryResultProps {
   result: string;
@@ -27,14 +28,13 @@ export const StoryResult = ({
 }: StoryResultProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAuthenticated } = useClerkAuth();
   const relevantSong = findRelevantSong(result);
   const [showEbookGenerator, setShowEbookGenerator] = useState(false);
 
   const handleCreateEbook = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
+      if (!isAuthenticated) {
         // Determine if we're in development or production
         const isDevelopment = import.meta.env.DEV;
         

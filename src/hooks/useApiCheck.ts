@@ -1,8 +1,6 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useApiCheck = () => {
   const navigate = useNavigate();
@@ -12,24 +10,18 @@ export const useApiCheck = () => {
     checkApiKeys();
   }, []);
 
-  const checkApiKeys = async () => {
-    const { data } = await supabase
-      .from('api_settings')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+  const checkApiKeys = () => {
+    const groqKey = localStorage.getItem('GROQ_API_KEY');
+    const runwareKey = localStorage.getItem('RUNWARE_API_KEY');
 
-    if (!data?.groq_api_key || !data?.runware_api_key) {
+    if (!groqKey) {
       toast({
-        title: "API Keys Required",
-        description: "Please configure your API keys in settings first.",
-        variant: "destructive",
+        title: "API Key Recommended",
+        description: "Configure your Groq API key in settings for the best experience.",
+        variant: "default",
       });
-      navigate('/settings');
-    } else {
-      localStorage.setItem('GROQ_API_KEY', data.groq_api_key);
-      localStorage.setItem('RUNWARE_API_KEY', data.runware_api_key);
+      // Don't automatically redirect, let user decide
+      // navigate('/settings');
     }
   };
 };

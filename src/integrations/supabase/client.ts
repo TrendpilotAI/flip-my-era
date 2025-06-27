@@ -8,53 +8,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-// Determine if we're in development or production
-const isDevelopment = import.meta.env.MODE === 'development';
-
-// Get the current domain for auth configuration
-const getCurrentDomain = () => {
-  if (isDevelopment) {
-    return 'http://localhost:8080';
-  }
-  // For production, use the current domain
-  return window.location.origin;
-};
-
-// For local development, we'll modify the auth settings
+// Create Supabase client for database operations only (auth handled by Clerk)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    // Debug mode only in development
-    debug: isDevelopment,
-  },
   global: {
-    // Disable headers that might be causing captcha issues
     headers: {
       'X-Client-Info': 'supabase-js-web/2.x'
     }
   }
 });
-
-// Log authentication setup for debugging in development only
-if (isDevelopment) {
-  console.log('Supabase Auth Configuration:', {
-    url: supabaseUrl,
-    authFlowType: 'pkce',
-    providers: ['google', 'email'],
-    debug: isDevelopment,
-    redirectTo: getCurrentDomain() + '/auth/callback'
-  });
-}
-
-// Export a function to get the current session
-export const getCurrentSession = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    console.error('Error getting session:', error.message);
-    return null;
-  }
-  return data.session;
-};

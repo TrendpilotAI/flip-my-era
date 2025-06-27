@@ -8,7 +8,7 @@ import { personalityTypes } from '@/types/personality';
 import { detectGender, transformName, GenderInfo } from '@/utils/genderUtils';
 import { getRandomViralTropes, getRandomSceneSettings, generateStoryPrompt } from '@/utils/storyPrompts';
 import { saveStory, getLocalStory, getUserPreferences } from '@/utils/storyPersistence';
-import { useAuth } from '@/contexts/AuthContext';
+import { useClerkAuth } from '@/contexts/ClerkAuthContext';
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -25,7 +25,7 @@ interface SavedStory {
 }
 
 export const useStoryGeneration = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useClerkAuth();
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
   const [date, setDate] = useState<Date>();
@@ -109,10 +109,18 @@ export const useStoryGeneration = () => {
     if (!localStorage.getItem('GROQ_API_KEY') && !import.meta.env.VITE_GROQ_API_KEY) {
       toast({
         title: "API Key Required",
-        description: "Please configure your API keys in settings first.",
+        description: "To generate stories, you need to configure your Groq API key. You can get one for free at console.groq.com",
         variant: "destructive",
       });
-      navigate('/settings');
+      
+      // Show a dialog or modal instead of redirecting
+      const shouldConfigure = window.confirm(
+        "Would you like to configure your API keys now? You can get a free Groq API key at console.groq.com"
+      );
+      
+      if (shouldConfigure) {
+        navigate('/settings');
+      }
       return;
     }
 
@@ -170,11 +178,77 @@ export const useStoryGeneration = () => {
     } catch (error) {
       console.error("Error generating story:", error);
       loadingToast.dismiss();
-      toast({
-        title: "Error",
-        description: "Failed to generate your alternate life story. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Handle specific API key missing error
+      if (error instanceof Error) {
+        if (error.message === 'GROQ_API_KEY_MISSING') {
+          toast({
+            title: "API Key Required",
+            description: "To generate stories, you need to configure your Groq API key. You can get one for free at console.groq.com",
+            variant: "destructive",
+          });
+          
+          const shouldConfigure = window.confirm(
+            "Would you like to configure your API keys now? You can get a free Groq API key at console.groq.com"
+          );
+          
+          if (shouldConfigure) {
+            navigate('/settings');
+          }
+        } else if (error.message === 'INVALID_API_KEY_FORMAT') {
+          toast({
+            title: "Invalid API Key Format",
+            description: "Your Groq API key format is incorrect. Please check your settings and try again.",
+            variant: "destructive",
+          });
+          
+          const shouldConfigure = window.confirm(
+            "Would you like to update your API key? Make sure it starts with 'gsk_'"
+          );
+          
+          if (shouldConfigure) {
+            navigate('/settings');
+          }
+        } else if (error.message === 'INVALID_API_KEY') {
+          toast({
+            title: "Invalid API Key",
+            description: "Your Groq API key is invalid or expired. Please check your settings and try again.",
+            variant: "destructive",
+          });
+          
+          const shouldConfigure = window.confirm(
+            "Would you like to update your API key? You can get a new one at console.groq.com"
+          );
+          
+          if (shouldConfigure) {
+            navigate('/settings');
+          }
+        } else if (error.message === 'RATE_LIMIT_EXCEEDED') {
+          toast({
+            title: "Rate Limit Exceeded",
+            description: "You've reached your API rate limit. Please try again in a few minutes.",
+            variant: "destructive",
+          });
+        } else if (error.message.startsWith('API_ERROR:')) {
+          toast({
+            title: "API Error",
+            description: error.message.replace('API_ERROR: ', ''),
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to generate your alternate life story. Please try again.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to generate your alternate life story. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
     setLoading(false);
   };
