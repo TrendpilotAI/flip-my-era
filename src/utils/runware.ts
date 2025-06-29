@@ -85,7 +85,9 @@ Return ONLY the optimized prompt, no explanations or additional text.
     });
 
     if (!response.ok) {
-      throw new Error(`Groq API request failed: ${response.status}`);
+      // Don't expose detailed API error information
+      console.error('Groq API request failed with status:', response.status);
+      throw new Error('Failed to enhance prompt with AI service');
     }
 
     const data = await response.json();
@@ -99,7 +101,8 @@ Return ONLY the optimized prompt, no explanations or additional text.
     
     return enhancedPrompt;
   } catch (error) {
-    console.error('Failed to enhance prompt with Groq:', error);
+    // Log error without exposing sensitive information
+    console.error('Failed to enhance prompt with AI service');
     // Fallback to the basic prompt if enhancement fails
     return createEbookIllustrationPrompt(params);
   }
@@ -155,7 +158,7 @@ export class RunwareService {
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     if (!apiKey) {
-      console.warn('RUNWARE API key not provided. Image generation will fall back to other services.');
+      console.warn('RUNWARE service not configured. Image generation will fall back to other services.');
       return;
     }
     this.connectionPromise = this.connect();
@@ -186,7 +189,7 @@ export class RunwareService {
   private connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.apiKey) {
-        reject(new Error('RUNWARE API key not provided'));
+        reject(new Error('RUNWARE service not configured'));
         return;
       }
 
@@ -201,8 +204,8 @@ export class RunwareService {
             await this.authenticate();
             resolve();
           } catch (error) {
-            console.error("RUNWARE authentication failed:", error);
-            reject(error);
+            console.error("RUNWARE authentication failed");
+            reject(new Error("Authentication failed"));
           }
         };
 
@@ -234,8 +237,8 @@ export class RunwareService {
         };
 
         this.ws.onerror = (error) => {
-          console.error("RUNWARE WebSocket error:", error);
-          reject(error);
+          console.error("RUNWARE WebSocket connection error");
+          reject(new Error("WebSocket connection failed"));
         };
 
         this.ws.onclose = () => {

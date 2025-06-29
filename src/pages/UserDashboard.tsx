@@ -39,8 +39,10 @@ const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
-    loadStories();
-  }, []);
+    if (user?.id) {
+      loadStories();
+    }
+  }, [user?.id]);
 
   // Handle URL parameters for direct tab access
   useEffect(() => {
@@ -56,15 +58,16 @@ const UserDashboard = () => {
       const { data, error } = await supabase
         .from('stories')
         .select('*')
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
         .limit(6); // Show only recent stories
 
       if (error) throw error;
       setStories(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error loading stories",
-        description: error.message,
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {

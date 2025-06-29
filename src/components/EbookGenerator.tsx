@@ -255,7 +255,23 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           />
           <Button
             className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => samcartClient.redirectToCheckout({ productId: process.env.REACT_APP_SAMCART_EBOOK_PRODUCT_ID || storyId })}
+            onClick={() => {
+              try {
+                const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
+                samcartClient.redirectToCheckout({
+                  productId,
+                  redirectUrl: `${window.location.origin}/checkout/success`,
+                  cancelUrl: window.location.href
+                });
+              } catch (error) {
+                console.error('Failed to redirect to checkout:', error);
+                toast({
+                  title: "Checkout Error",
+                  description: "Unable to proceed to checkout. Please try again.",
+                  variant: "destructive",
+                });
+              }
+            }}
           >
             Buy this Ebook with SamCart
           </Button>
