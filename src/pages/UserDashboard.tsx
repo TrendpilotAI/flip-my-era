@@ -372,15 +372,24 @@ const UserDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="w-full h-[600px] rounded-lg overflow-hidden border border-gray-200">
-                  <iframe
-                    src="https://flipmyera.samcart.com/customer_hub/login"
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    title="SamCart Customer Portal"
-                    className="w-full h-full"
-                    allow="payment"
-                  />
+                  {loading ? (
+                    <div className="flex justify-center items-center h-[600px]">
+                      <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+                      <span className="ml-2">Loading billing portal...</span>
+                    </div>
+                  ) : (
+                    <iframe
+                      src="https://flipmyera.samcart.com/customer_hub/login"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      title="SamCart Customer Portal"
+                      className="w-full h-full"
+                      allow="payment"
+                      onLoad={() => setLoading(false)}
+                      onError={() => setError('Failed to load billing portal')}
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>
