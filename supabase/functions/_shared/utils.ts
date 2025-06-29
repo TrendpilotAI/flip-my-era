@@ -28,15 +28,20 @@ export function initSupabaseClient() {
 
 // Standard error response formatter
 export function formatErrorResponse(error: Error, status = 500) {
-  console.error(`Error in function:`, error);
+  // Log error details for debugging (avoid logging sensitive data)
+  console.error(`Function error occurred:`, error.message);
+  
+  // In production, avoid exposing detailed error information
+  const isDevelopment = Deno.env.get('ENVIRONMENT') === 'development';
   
   return new Response(
-    JSON.stringify({ 
+    JSON.stringify({
       success: false,
-      error: error.message || 'An unknown error occurred',
-      details: error.stack || null
+      error: isDevelopment ? error.message : 'An error occurred while processing your request',
+      // Only include stack trace in development
+      ...(isDevelopment && { details: error.stack })
     }),
-    { 
+    {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: status
     }

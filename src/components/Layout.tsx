@@ -51,22 +51,15 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/stories" className="flex items-center">
+                <Link to="/dashboard" className="flex items-center">
                   <BookOpen className="h-4 w-4 mr-2" />
-                  My Stories
+                  My Dashboard
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/upgrade" className="flex items-center">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Upgrade Plan
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/settings-dashboard" className="flex items-center">
+                <Link to="/dashboard?tab=billing" className="flex items-center">
                   <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                  Account & Billing
                 </Link>
               </DropdownMenuItem>
               {isAdmin && (

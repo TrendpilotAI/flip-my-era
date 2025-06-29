@@ -90,17 +90,22 @@ const Checkout = () => {
       if (!selectedPlanOption) {
         throw new Error("Invalid plan selected");
       }
+
+      // Validate user data before proceeding
+      if (!user?.email) {
+        throw new Error("User email is required for checkout");
+      }
       
-      // Prepare checkout options for SamCart
+      // Prepare checkout options for SamCart with input validation
       const checkoutOptions = {
         productId: selectedPlanOption.samcartProductId,
-        customerEmail: user?.email,
-        customerName: user?.name,
-        couponCode: couponCode || undefined,
-        redirectUrl: `${window.location.origin}/checkout/success?plan=${selectedPlan}`,
-        cancelUrl: `${window.location.origin}/checkout?plan=${selectedPlan}`,
+        customerEmail: user.email,
+        customerName: user.name || undefined,
+        couponCode: couponCode.trim() || undefined,
+        redirectUrl: `${window.location.origin}/checkout/success?plan=${encodeURIComponent(selectedPlan)}`,
+        cancelUrl: `${window.location.origin}/checkout?plan=${encodeURIComponent(selectedPlan)}`,
         metadata: {
-          userId: user?.id,
+          userId: user.id || 'anonymous',
           planId: selectedPlan,
           source: "website"
         }
@@ -118,13 +123,20 @@ const Checkout = () => {
         // samcartClient.redirectToCheckout(checkoutOptions);
         
         // For demo, we'll navigate to a success page
-        navigate("/checkout/success?plan=" + selectedPlan);
+        navigate("/checkout/success?plan=" + encodeURIComponent(selectedPlan));
       }, 1500);
     } catch (error) {
-      console.error("Checkout error:", error);
+      // Log error without exposing sensitive information
+      console.error("Checkout error occurred");
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error && error.message.includes('email')
+        ? "Please ensure you're logged in with a valid email address."
+        : "There was a problem initiating checkout. Please try again.";
+      
       toast({
         title: "Checkout Error",
-        description: "There was a problem initiating checkout. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsProcessing(false);

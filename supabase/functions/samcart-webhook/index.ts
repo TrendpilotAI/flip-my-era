@@ -112,7 +112,11 @@ serve(async (req) => {
     // Return a success response
     return formatSuccessResponse({ message: 'Webhook processed successfully' });
   } catch (error) {
-    return formatErrorResponse(error);
+    // Log error without exposing sensitive webhook data
+    console.error('Webhook processing error:', error instanceof Error ? error.message : 'Unknown error');
+    
+    // Return generic error response to prevent information leakage
+    return formatErrorResponse(new Error('Webhook processing failed'), 400);
   }
 });
 
@@ -127,7 +131,7 @@ async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookP
     .single();
   
   if (userError && userError.code !== 'PGRST116') {
-    console.error('Error finding user:', userError);
+    console.error('Database error occurred while finding user');
     return;
   }
   
@@ -149,7 +153,7 @@ async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookP
     });
   
   if (orderError) {
-    console.error('Error creating order record:', orderError);
+    console.error('Database error occurred while creating order record');
     return;
   }
   
@@ -176,7 +180,7 @@ async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookP
         .eq('id', userId);
       
       if (subscriptionError) {
-        console.error('Error updating subscription status:', subscriptionError);
+        console.error('Database error occurred while updating subscription status');
       }
     }
   }
