@@ -33,12 +33,16 @@ export async function enhancePromptWithGroq(params: EbookIllustrationParams): Pr
     const { chapterTitle, chapterContent, style = 'children', mood = 'happy' } = params;
     
     // Create a detailed prompt for Groq to enhance
-    const enhancementPrompt = `
-You are an expert AI prompt engineer specializing in creating optimized prompts for image generation models, specifically Flux1.1 Pro for children's book illustrations.
+    // Sanitize user inputs to prevent prompt injection
+    const sanitizedTitle = chapterTitle.replace(/[`"'\\]/g, '').substring(0, 100);
+    const sanitizedContent = chapterContent.replace(/[`"'\\]/g, '').substring(0, 500);
 
-Chapter Title: "${chapterTitle}"
-Chapter Content: "${chapterContent.substring(0, 500)}..."
-Style: ${style}
+    const enhancementPrompt = `
+    You are an expert AI prompt engineer specializing in creating optimized prompts for image generation models, specifically Flux1.1 Pro for children's book illustrations.
+
+    Chapter Title: "${sanitizedTitle}"
+    Chapter Content: "${sanitizedContent}..."
+    Style: ${style}
 Mood: ${mood}
 
 Please create a highly detailed, optimized prompt for generating a children's book illustration using Flux1.1 Pro. The prompt should:
