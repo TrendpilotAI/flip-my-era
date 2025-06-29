@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +93,7 @@ const features: PlanFeature[] = [
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const currentPlan = user?.subscription_status || "free";
 
   const handleSelectPlan = (planId: string) => {

@@ -174,3 +174,19 @@ export const getStoryById = async (storyId: string) => {
     throw error;
   }
 };
+
+// Update user subscription status
+export const updateSubscription = async (userId: string, subscriptionStatus: "free" | "basic" | "premium") => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ subscription_status: subscriptionStatus })
+      .eq('id', userId);
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    console.error("Error updating subscription:", error);
+    return { error: error as Error };
+  }
+};
