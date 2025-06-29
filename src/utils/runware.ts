@@ -89,6 +89,12 @@ Return ONLY the optimized prompt, no explanations or additional text.
     }
 
     const data = await response.json();
+
+    // Validate response structure
+    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+      throw new Error('Invalid response format from Groq API');
+    }
+
     const enhancedPrompt = data.choices[0].message.content.trim();
     
     return enhancedPrompt;
