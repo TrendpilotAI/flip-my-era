@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { BookOpen, LogOut, Settings, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, user, signOut } = useAuth();
+  const { isAuthenticated, user, signOut, UserButton } = useClerkAuth();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -30,26 +30,10 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const handleSettingsClick = async () => {
-    const { data: settings } = await supabase
-      .from('api_settings')
-      .select('*')
-      .limit(1)
-      .single();
-
-    if (!settings?.groq_api_key) {
-      toast({
-        title: "API Configuration Missing",
-        description: "Your account requires API configuration to access all features. Please contact support for assistance.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen">
       <nav className="fixed top-0 right-0 p-4 z-50 flex gap-2">
-        {isAuthenticated ? (
+        <SignedIn>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="bg-white/80 backdrop-blur-sm">
@@ -87,13 +71,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
+        </SignedIn>
+        <SignedOut>
           <Link to="/auth">
             <Button variant="outline" size="icon" className="bg-white/80 backdrop-blur-sm">
               <User className="h-5 w-5" />
             </Button>
           </Link>
-        )}
+        </SignedOut>
       </nav>
       {children}
     </div>

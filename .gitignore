@@ -25,8 +25,8 @@ dist-ssr
 *.sw?
 
 # Environment variables
-.env
-.env.*
+#.env
+#.env.*
 !.env.example
 
 # Build artifacts

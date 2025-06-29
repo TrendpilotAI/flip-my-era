@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -12,7 +12,7 @@ export const ProtectedRoute = ({
   children, 
   requiredSubscription 
 }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useClerkAuth();
   const location = useLocation();
 
   // Show loading state while checking authentication

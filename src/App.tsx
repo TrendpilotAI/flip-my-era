@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { ClerkAuthProvider } from "@/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "@/pages/Index";
 import Settings from "@/pages/Settings";
@@ -17,7 +17,7 @@ import ResetPassword from "@/pages/ResetPassword";
 
 function App() {
   return (
-    <AuthProvider>
+    <ClerkAuthProvider>
       <Router>
         <Layout>
           <Routes>
@@ -95,7 +95,7 @@ function App() {
         </Layout>
         <Toaster />
       </Router>
-    </AuthProvider>
+    </ClerkAuthProvider>
   );
 }
 

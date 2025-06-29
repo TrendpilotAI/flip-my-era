@@ -1,8 +1,13 @@
-
 export const generateWithGroq = async (prompt: string) => {
-  const apiKey = localStorage.getItem('GROQ_API_KEY');
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  
   if (!apiKey) {
-    throw new Error('Please configure your Groq API key in settings first');
+    throw new Error('GROQ_API_KEY_MISSING');
+  }
+
+  // Basic validation for API key format
+  if (!apiKey.startsWith('gsk_')) {
+    throw new Error('INVALID_API_KEY_FORMAT');
   }
 
   try {
@@ -13,7 +18,7 @@ export const generateWithGroq = async (prompt: string) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "mixtral-8x7b-32768",
+        model: "llama3-70b-8192",
         messages: [
           {
             role: "system",
@@ -34,7 +39,15 @@ export const generateWithGroq = async (prompt: string) => {
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Groq API error:', errorData);
-      throw new Error(`Failed to generate content: ${errorData.error?.message || 'Unknown error'}`);
+      
+      // Handle specific error cases
+      if (response.status === 401) {
+        throw new Error('INVALID_API_KEY');
+      } else if (response.status === 429) {
+        throw new Error('RATE_LIMIT_EXCEEDED');
+      } else {
+        throw new Error(`API_ERROR: ${errorData.error?.message || 'Unknown error'}`);
+      }
     }
 
     const data = await response.json();

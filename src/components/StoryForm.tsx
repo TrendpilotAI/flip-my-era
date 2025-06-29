@@ -9,8 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { PersonalityTypeKey } from "@/types/personality";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthDialog } from "./AuthDialog";
 import { useEffect, useState } from "react";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -47,21 +47,7 @@ export const StoryForm = ({
   location,
   setLocation
 }: StoryFormProps) => {
-  const [isSignedIn, setIsSignedIn] = useState(false);
-
-  useEffect(() => {
-    // Check initial auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsSignedIn(!!session);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsSignedIn(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const { isAuthenticated, SignInButton } = useClerkAuth();
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.valueAsDate;
@@ -79,7 +65,7 @@ export const StoryForm = ({
             </h2>
             <p className="text-purple-600 italic">Where your story gets its glitter filter...</p>
           </div>
-          {isSignedIn ? (
+          {isAuthenticated ? (
             <Button 
               variant="outline" 
               className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 group"
@@ -88,17 +74,15 @@ export const StoryForm = ({
               <span>Welcome Back!</span>
             </Button>
           ) : (
-            <AuthDialog
-              trigger={
-                <Button 
-                  variant="outline" 
-                  className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
-                >
-                  <span className="mr-2">Sign In / Register</span>
-                  <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
-                </Button>
-              }
-            />
+            <SignInButton mode="modal">
+              <Button 
+                variant="outline" 
+                className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
+              >
+                <span className="mr-2">Sign In / Register</span>
+                <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
+              </Button>
+            </SignInButton>
           )}
         </div>
       </div>
