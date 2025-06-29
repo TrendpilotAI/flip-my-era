@@ -9,6 +9,7 @@ import NotFound from "@/pages/NotFound";
 import Stories from "@/pages/Stories";
 import Auth from "@/pages/Auth";
 import SettingsDashboard from "@/pages/SettingsDashboard";
+import UserDashboard from "@/pages/UserDashboard";
 import Checkout from "@/pages/Checkout";
 import CheckoutSuccess from "@/pages/CheckoutSuccess";
 import UpgradePlan from "@/pages/UpgradePlan";
@@ -27,12 +28,22 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             
-            {/* Protected routes */}
+            {/* Protected routes - New unified dashboard */}
             <Route 
-              path="/settings" 
+              path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Settings />
+                  <UserDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Legacy routes - redirect to new dashboard */}
+            <Route 
+              path="/stories" 
+              element={
+                <ProtectedRoute>
+                  <UserDashboard />
                 </ProtectedRoute>
               } 
             />
@@ -40,15 +51,15 @@ function App() {
               path="/settings-dashboard" 
               element={
                 <ProtectedRoute>
-                  <SettingsDashboard />
+                  <UserDashboard />
                 </ProtectedRoute>
               } 
             />
             <Route 
-              path="/stories" 
+              path="/settings" 
               element={
                 <ProtectedRoute>
-                  <Stories />
+                  <UserDashboard />
                 </ProtectedRoute>
               } 
             />

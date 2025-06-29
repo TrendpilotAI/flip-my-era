@@ -1,4 +1,5 @@
 import { apiRequestWithRetry } from '@/utils/apiWithRetry';
+import { RunwareService, createEbookIllustrationPrompt, enhancePromptWithGroq, type EbookIllustrationParams } from '@/utils/runware';
 
 interface GenerateStoryOptions {
   prompt: string;
@@ -10,6 +11,15 @@ interface GenerateImageOptions {
   prompt: string;
   size?: string;
   quality?: string;
+  useRunware?: boolean;
+}
+
+interface GenerateEbookIllustrationOptions {
+  chapterTitle: string;
+  chapterContent: string;
+  style?: 'children' | 'fantasy' | 'adventure' | 'educational';
+  mood?: 'happy' | 'mysterious' | 'adventurous' | 'peaceful';
+  useEnhancedPrompts?: boolean;
 }
 
 interface GenerateNameOptions {
@@ -51,6 +61,25 @@ interface OpenAIImageData {
 interface OpenAIImageResponse {
   created: number;
   data: OpenAIImageData[];
+}
+
+// Initialize RUNWARE service
+const runwareService = new RunwareService(import.meta.env.VITE_RUNWARE_API_KEY || '');
+
+/**
+ * Check if RUNWARE is available and properly configured
+ */
+export async function isRunwareAvailable(): Promise<boolean> {
+  if (!runwareService.isConfigured()) {
+    return false;
+  }
+  
+  try {
+    return await runwareService.isConnected();
+  } catch (error) {
+    console.error('RUNWARE availability check failed:', error);
+    return false;
+  }
 }
 
 /**
@@ -172,11 +201,103 @@ export async function generateName(options: GenerateNameOptions): Promise<string
 }
 
 /**
+ * Generate an optimized illustration for an ebook chapter using RUNWARE Flux1.1 Pro with AI-enhanced prompts
+ */
+export async function generateEbookIllustration(options: GenerateEbookIllustrationOptions): Promise<string> {
+  try {
+    const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
+    
+    // Check if RUNWARE is available
+    const runwareAvailable = await isRunwareAvailable();
+    
+    if (runwareAvailable) {
+      // Use RUNWARE with Flux1.1 Pro for ebook illustrations
+      const illustration = await runwareService.generateEbookIllustration({
+        chapterTitle,
+        chapterContent,
+        style,
+        mood
+      });
+      
+      return illustration.imageURL;
+    } else {
+      console.warn('RUNWARE not available, falling back to OpenAI');
+      throw new Error('RUNWARE not available');
+    }
+  } catch (error) {
+    console.error('Failed to generate ebook illustration with RUNWARE:', error);
+    
+    // Fallback to OpenAI if RUNWARE fails
+    try {
+      const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
+      
+      let prompt: string;
+      
+      if (useEnhancedPrompts) {
+        // Try to use Groq-enhanced prompt
+        try {
+          prompt = await enhancePromptWithGroq({
+            chapterTitle,
+            chapterContent,
+            style,
+            mood
+          });
+        } catch (enhancementError) {
+          console.warn('Failed to enhance prompt with Groq, using basic prompt:', enhancementError);
+          prompt = createEbookIllustrationPrompt({
+            chapterTitle,
+            chapterContent,
+            style,
+            mood
+          });
+        }
+      } else {
+        // Use basic prompt
+        prompt = createEbookIllustrationPrompt({
+          chapterTitle,
+          chapterContent,
+          style,
+          mood
+        });
+      }
+      
+      return await generateImage({ prompt, useRunware: false });
+    } catch (fallbackError) {
+      console.error('Fallback image generation also failed:', fallbackError);
+      throw new Error('Ebook illustration generation failed. Please try again later.');
+    }
+  }
+}
+
+/**
  * Generate an image for a chapter with retry logic
  */
 export async function generateImage(options: GenerateImageOptions): Promise<string> {
   try {
-    const { prompt, size = '1024x1024', quality = 'standard' } = options;
+    const { prompt, size = '1024x1024', quality = 'standard', useRunware = false } = options;
+    
+    // Use RUNWARE if specified and available
+    if (useRunware) {
+      const runwareAvailable = await isRunwareAvailable();
+      if (runwareAvailable) {
+        try {
+          const illustration = await runwareService.generateImage({
+            positivePrompt: prompt,
+            model: "flux1.1-pro",
+            numberResults: 1,
+            outputFormat: "WEBP",
+            CFGScale: 7,
+            scheduler: "FlowMatchEulerDiscreteScheduler",
+            strength: 0.8,
+          });
+          return illustration.imageURL;
+        } catch (runwareError) {
+          console.warn('RUNWARE image generation failed, falling back to OpenAI:', runwareError);
+        }
+      } else {
+        console.warn('RUNWARE not available, using OpenAI');
+      }
+    }
     
     // First try with OpenAI
     try {

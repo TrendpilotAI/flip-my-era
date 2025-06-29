@@ -17,18 +17,26 @@ interface SamCartCheckoutOptions {
   affiliateId?: string;
   redirectUrl?: string;
   cancelUrl?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, string | number | boolean>;
+}
+
+interface SamCartCustomerPortalOptions {
+  customerEmail?: string;
+  customerId?: string;
+  returnUrl?: string;
 }
 
 class SamCartClient {
   private apiKey: string;
   private merchantId: string;
   private baseUrl: string;
+  private customerPortalUrl: string;
 
   constructor() {
     this.apiKey = import.meta.env.VITE_SAMCART_API_KEY || '';
     this.merchantId = import.meta.env.VITE_SAMCART_MERCHANT_ID || '';
     this.baseUrl = 'https://checkout.samcart.com/products';
+    this.customerPortalUrl = 'https://flipmyera.samcart.com/customer_hub';
     
     if (!this.apiKey || !this.merchantId) {
       console.warn('SamCart API key or Merchant ID not provided. Checkout functionality will be limited.');
@@ -78,6 +86,27 @@ class SamCartClient {
   }
 
   /**
+   * Generate customer portal URL
+   */
+  generateCustomerPortalUrl(options: SamCartCustomerPortalOptions = {}): string {
+    const { customerEmail, customerId, returnUrl } = options;
+    
+    let portalUrl = this.customerPortalUrl;
+    const params = new URLSearchParams();
+    
+    if (customerEmail) params.append('email', customerEmail);
+    if (customerId) params.append('customer_id', customerId);
+    if (returnUrl) params.append('return_url', returnUrl);
+    
+    const queryString = params.toString();
+    if (queryString) {
+      portalUrl += `?${queryString}`;
+    }
+    
+    return portalUrl;
+  }
+
+  /**
    * Redirect to SamCart checkout
    */
   redirectToCheckout(options: SamCartCheckoutOptions): void {
@@ -91,6 +120,29 @@ class SamCartClient {
   openCheckoutInNewTab(options: SamCartCheckoutOptions): void {
     const checkoutUrl = this.generateCheckoutUrl(options);
     window.open(checkoutUrl, '_blank');
+  }
+
+  /**
+   * Open customer portal in a new tab
+   */
+  openCustomerPortal(options: SamCartCustomerPortalOptions = {}): void {
+    const portalUrl = this.generateCustomerPortalUrl(options);
+    window.open(portalUrl, '_blank');
+  }
+
+  /**
+   * Redirect to customer portal
+   */
+  redirectToCustomerPortal(options: SamCartCustomerPortalOptions = {}): void {
+    const portalUrl = this.generateCustomerPortalUrl(options);
+    window.location.href = portalUrl;
+  }
+
+  /**
+   * Get customer portal iframe URL for embedding
+   */
+  getCustomerPortalIframeUrl(options: SamCartCustomerPortalOptions = {}): string {
+    return this.generateCustomerPortalUrl(options);
   }
 
   /**
@@ -122,6 +174,13 @@ class SamCartClient {
         imageUrl: '/images/family-plan.jpg'
       }
     ];
+  }
+
+  /**
+   * Check if customer portal is available
+   */
+  isCustomerPortalAvailable(): boolean {
+    return !!(this.merchantId && this.customerPortalUrl);
   }
 }
 
