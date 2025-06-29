@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { updateSubscription } from "@/utils/auth";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
+import { updateSubscription } from "@/utils/storyPersistence";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -10,7 +10,7 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser } = useClerkAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(true);
   const [planName, setPlanName] = useState("");

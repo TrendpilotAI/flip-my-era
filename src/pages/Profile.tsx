@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 
 type Profile = {
   id: string;
@@ -24,16 +24,17 @@ const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading } = useClerkAuth();
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (!isLoading) {
+      fetchProfile();
+    }
+  }, [isLoading, isAuthenticated, user]);
 
   const fetchProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+      if (!isAuthenticated || !user) {
         navigate('/auth');
         return;
       }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 import { samcartClient } from "@/integrations/samcart/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +66,7 @@ const planOptions: PlanOption[] = [
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string>("premium");
   const [couponCode, setCouponCode] = useState<string>("");

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { RunwareService } from "@/utils/runware";
 import { supabase } from "@/integrations/supabase/client";
 import { generateWithGroq } from "@/utils/groq";
 import { ChapterView } from "./ebook/ChapterView";

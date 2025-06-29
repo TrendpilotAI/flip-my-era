@@ -1,8 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { ClerkAuthProvider } from "@/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import Index from "@/pages/Index";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
@@ -15,10 +16,13 @@ import CheckoutSuccess from "@/pages/CheckoutSuccess";
 import UpgradePlan from "@/pages/UpgradePlan";
 import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
+import AdminDashboard from "@/pages/AdminDashboard";
+import AdminIntegrations from "@/pages/AdminIntegrations";
+import AdminUsers from "@/pages/AdminUsers";
 
 function App() {
   return (
-    <AuthProvider>
+    <ClerkAuthProvider>
       <Router>
         <Layout>
           <Routes>
@@ -64,6 +68,32 @@ function App() {
               } 
             />
             
+            {/* Admin routes */}
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/integrations" 
+              element={
+                <AdminRoute>
+                  <AdminIntegrations />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/users" 
+              element={
+                <AdminRoute>
+                  <AdminUsers />
+                </AdminRoute>
+              } 
+            />
+            
             {/* Checkout routes */}
             <Route 
               path="/checkout" 
@@ -106,7 +136,7 @@ function App() {
         </Layout>
         <Toaster />
       </Router>
-    </AuthProvider>
+    </ClerkAuthProvider>
   );
 }
 
