@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { BookOpen, LogOut, Settings, User } from "lucide-react";
+import { BookOpen, LogOut, Settings, User, Crown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useClerkAuth } from "@/contexts/ClerkAuthContext";
@@ -10,6 +10,11 @@ import { SignedIn, SignedOut } from "@clerk/clerk-react";
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user, signOut, UserButton } = useClerkAuth();
   const { toast } = useToast();
+
+  // Check if user is admin
+  const isAdmin = user?.email === "admin@flipmyera.com" || 
+                  user?.email === "danny.ijdo@gmail.com" ||
+                  user?.email?.includes("trendpilot");
 
   const handleSignOut = async () => {
     try {
@@ -64,6 +69,17 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                   Settings
                 </Link>
               </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center text-purple-600">
+                      <Crown className="h-4 w-4 mr-2" />
+                      Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="flex items-center text-red-500">
                 <LogOut className="h-4 w-4 mr-2" />
