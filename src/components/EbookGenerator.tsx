@@ -255,7 +255,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           />
           <Button
             className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => samcartClient.redirectToCheckout({ productId: 'ebook-product-id' })}
+            onClick={() => samcartClient.redirectToCheckout({ productId: process.env.REACT_APP_SAMCART_EBOOK_PRODUCT_ID || storyId })}
           >
             Buy this Ebook with SamCart
           </Button>
