@@ -8,6 +8,7 @@ export interface AuthUser {
   name?: string;
   avatar_url?: string;
   subscription_status?: "free" | "basic" | "premium";
+  created_at?: string;
 }
 
 interface AuthContextType {
@@ -30,7 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const { user: clerkUser, isLoaded } = useUser();
-  const { signOut: clerkSignOut } = useClerkAuthHook();
+  const { signOut: clerkSignOut, getToken } = useClerkAuthHook();
   const [isNewUser, setIsNewUser] = useState(false);
   const [userProfile, setUserProfile] = useState<AuthUser | null>(null);
 
@@ -39,58 +40,50 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     const syncUserProfile = async () => {
       if (clerkUser) {
         try {
+          const supabaseToken = await getToken({ template: 'supabase' });
+          await supabase.auth.setSession({ access_token: supabaseToken, refresh_token: '' });
+
+          const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+
+          if (!supabaseUser) {
+            throw new Error("Could not get Supabase user.");
+          }
+
           // Check if user profile exists in Supabase
           const { data: existingProfile, error: fetchError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', clerkUser.id)
+            .eq('id', supabaseUser.id)
             .single();
 
-          if (fetchError) {
-            if (fetchError.code === 'PGRST116') {
-              // Profile doesn't exist, try to create it
-              const { error: insertError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: clerkUser.id,
-                  email: clerkUser.primaryEmailAddress?.emailAddress || "",
-                  name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
-                  avatar_url: clerkUser.imageUrl,
-                  subscription_status: "free",
-                });
+          if (fetchError && fetchError.code !== 'PGRST116') {
+            throw fetchError;
+          }
 
-              if (insertError) {
-                console.error("Error creating user profile:", insertError);
-                // Fall back to Clerk data if Supabase fails
-                setUserProfile({
-                  id: clerkUser.id,
-                  email: clerkUser.primaryEmailAddress?.emailAddress || "",
-                  name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
-                  avatar_url: clerkUser.imageUrl,
-                  subscription_status: "free",
-                });
-              } else {
-                setIsNewUser(true);
-                setUserProfile({
-                  id: clerkUser.id,
-                  email: clerkUser.primaryEmailAddress?.emailAddress || "",
-                  name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
-                  avatar_url: clerkUser.imageUrl,
-                  subscription_status: "free",
-                });
-              }
-            } else {
-              // Other error (like 401), fall back to Clerk data
-              console.warn("Supabase profile sync failed, using Clerk data:", fetchError);
-              setUserProfile({
-                id: clerkUser.id,
+          if (!existingProfile) {
+            // Profile doesn't exist, create it
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: supabaseUser.id,
                 email: clerkUser.primaryEmailAddress?.emailAddress || "",
                 name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
                 avatar_url: clerkUser.imageUrl,
                 subscription_status: "free",
               });
-            }
-          } else if (existingProfile) {
+
+            if (insertError) throw insertError;
+
+            setIsNewUser(true);
+            setUserProfile({
+              id: supabaseUser.id,
+              email: clerkUser.primaryEmailAddress?.emailAddress || "",
+              name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
+              avatar_url: clerkUser.imageUrl,
+              subscription_status: "free",
+              created_at: supabaseUser.created_at,
+            });
+          } else {
             // Profile exists, update it with latest Clerk data
             const { error: updateError } = await supabase
               .from('profiles')
@@ -99,11 +92,9 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
                 name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
                 avatar_url: clerkUser.imageUrl,
               })
-              .eq('id', clerkUser.id);
+              .eq('id', supabaseUser.id);
 
-            if (updateError) {
-              console.error("Error updating user profile:", updateError);
-            }
+            if (updateError) throw updateError;
 
             setUserProfile({
               id: existingProfile.id,
@@ -111,6 +102,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               name: existingProfile.name,
               avatar_url: existingProfile.avatar_url,
               subscription_status: existingProfile.subscription_status || "free",
+              created_at: existingProfile.created_at,
             });
           }
         } catch (error) {
@@ -122,6 +114,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
             avatar_url: clerkUser.imageUrl,
             subscription_status: "free",
+            created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
           });
         }
       } else {
@@ -133,7 +126,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     if (isLoaded) {
       syncUserProfile();
     }
-  }, [clerkUser, isLoaded]);
+  }, [clerkUser, isLoaded, getToken]);
 
   // Use Supabase profile data if available, otherwise fall back to Clerk data
   const user: AuthUser | null = userProfile || (clerkUser ? {
@@ -142,16 +135,23 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
     avatar_url: clerkUser.imageUrl,
     subscription_status: "free", // Default to free, can be updated from database
+    created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
   } : null);
 
   const refreshUser = useCallback(async () => {
     // Refresh user profile from Supabase
     if (clerkUser) {
       try {
+        const supabaseToken = await getToken({ template: 'supabase' });
+        await supabase.auth.setSession({ access_token: supabaseToken, refresh_token: '' });
+        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+
+        if (!supabaseUser) return;
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', clerkUser.id)
+          .eq('id', supabaseUser.id)
           .single();
 
         if (profile) {
@@ -161,13 +161,14 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             name: profile.name,
             avatar_url: profile.avatar_url,
             subscription_status: profile.subscription_status || "free",
+            created_at: profile.created_at,
           });
         }
       } catch (error) {
         console.error("Error refreshing user profile:", error);
       }
     }
-  }, [clerkUser]);
+  }, [clerkUser, getToken]);
 
   const handleSignIn = async (email: string, password: string) => {
     // This will be handled by Clerk's SignInButton component
@@ -222,4 +223,4 @@ export const useClerkAuth = () => {
     throw new Error("useClerkAuth must be used within a ClerkAuthProvider");
   }
   return context;
-}; 
+};

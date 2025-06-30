@@ -6,7 +6,7 @@ import { StoryResult } from "@/components/StoryResult";
 import { useApiCheck } from "@/hooks/useApiCheck";
 import { useStoryGeneration } from "@/hooks/useStoryGeneration";
 import { personalityTypes } from "@/types/personality";
-import { useAuth } from "@/contexts/AuthContext";
+import { useClerkAuth as useAuth } from "@/contexts/ClerkAuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthDialog } from "@/components/AuthDialog";
