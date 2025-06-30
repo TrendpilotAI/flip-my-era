@@ -1,0 +1,76 @@
+# Context7 MCP Configuration for Flip My Era Project
+
+## Project Overview
+This is a React/TypeScript application called "Flip My Era" that generates alternate timeline stories based on user input. The app uses:
+- React with TypeScript
+- Vite as the build tool
+- Tailwind CSS for styling
+- Clerk for authentication
+- Supabase for backend/database
+- Shadcn/ui components
+
+## Key Technologies & Dependencies
+- React 18+
+- TypeScript
+- Vite
+- Tailwind CSS
+- Clerk Authentication
+- Supabase
+- Shadcn/ui components
+- Lucide React icons
+- React Router DOM
+
+## Project Structure
+```
+src/
+├── components/          # React components
+│   ├── ui/             # Shadcn/ui components
+│   ├── story/          # Story-related components
+│   └── ebook/          # Ebook-related components
+├── pages/              # Page components
+├── contexts/           # React contexts (ClerkAuthContext)
+├── hooks/              # Custom React hooks
+├── utils/              # Utility functions
+├── types/              # TypeScript type definitions
+├── services/           # API services
+└── integrations/       # Third-party integrations
+```
+
+## Authentication System
+- Uses Clerk for authentication
+- ClerkAuthContext provides useClerkAuth hook
+- Integrates with Supabase for user profiles
+- Supports Google OAuth
+
+## Database Schema (Supabase)
+- profiles table: user profiles with subscription status
+- stories table: user-generated stories
+- tiktok_shares table: TikTok sharing analytics
+
+## Key Features
+- Story generation based on personality types
+- User dashboard with story management
+- Ebook generation
+- TikTok sharing integration
+- Subscription management (free/basic/premium)
+
+## Development Guidelines
+- Use TypeScript for all new code
+- Follow the existing component structure
+- Use Shadcn/ui components for UI elements
+- Implement proper error handling
+- Use the existing authentication context
+- Follow the established naming conventions
+
+## Common Patterns
+- Components use the useClerkAuth hook for authentication
+- API calls use the supabase client from @/integrations/supabase/client
+- Toast notifications use the useToast hook
+- Form handling uses React state and controlled components
+- Styling uses Tailwind CSS classes
+
+## Important Notes
+- The app uses Clerk for authentication, not a custom auth system
+- All authentication-related imports should use ClerkAuthContext
+- The project has both frontend (React) and backend (Supabase functions) code
+- Environment variables should be configured for Clerk and Supabase 
