@@ -1,5 +1,5 @@
-import { generateWithGroq } from "@/utils/groq";
-import { apiRequestWithRetry } from '@/utils/apiWithRetry';
+import { generateWithGroq } from "@/modules/shared/utils/groq";
+import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
 import {
   TaylorSwiftTheme,
   StoryFormat,

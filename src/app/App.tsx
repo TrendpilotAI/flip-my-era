@@ -1,24 +1,22 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Layout } from "@/modules/shared/components/Layout";
+import { Layout, ProtectedRoute, AdminRoute } from "@/modules/shared";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
-import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
-import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
-import { AdminRoute } from "@/modules/shared/components/AdminRoute";
-import Index from "@/pages/Index";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/NotFound";
-import Stories from "@/pages/Stories";
-import Auth from "@/pages/Auth";
-import SettingsDashboard from "@/pages/SettingsDashboard";
-import UserDashboard from "@/pages/UserDashboard";
-import Checkout from "@/pages/Checkout";
-import CheckoutSuccess from "@/pages/CheckoutSuccess";
-import UpgradePlan from "@/pages/UpgradePlan";
-import AuthCallback from "@/pages/AuthCallback";
-import ResetPassword from "@/pages/ResetPassword";
-import AdminDashboard from "@/pages/AdminDashboard";
-import AdminIntegrations from "@/pages/AdminIntegrations";
-import AdminUsers from "@/pages/AdminUsers";
+import { ClerkAuthProvider } from "@/modules/auth";
+import Index from "@/app/pages/Index";
+import Settings from "@/modules/user/components/Settings";
+import NotFound from "@/app/pages/NotFound";
+import Stories from "@/modules/story/components/Stories";
+import Auth from "@/modules/auth/components/Auth";
+import SettingsDashboard from "@/modules/user/components/SettingsDashboard";
+import UserDashboard from "@/modules/user/components/UserDashboard";
+import Checkout from "@/app/pages/Checkout";
+import CheckoutSuccess from "@/app/pages/CheckoutSuccess";
+import UpgradePlan from "@/app/pages/UpgradePlan";
+import AuthCallback from "@/modules/auth/components/AuthCallback";
+import ResetPassword from "@/modules/auth/components/ResetPassword";
+import AdminDashboard from "@/app/pages/AdminDashboard";
+import AdminIntegrations from "@/app/pages/AdminIntegrations";
+import AdminUsers from "@/app/pages/AdminUsers";
 
 function App() {
   return (
