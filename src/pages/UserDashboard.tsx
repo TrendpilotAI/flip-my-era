@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useClerkAuth as useAuth } from "@/contexts/ClerkAuthContext";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ interface Story {
 }
 
 const UserDashboard = () => {
-  const { user } = useAuth();
+  const { user } = useClerkAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();

@@ -6,7 +6,7 @@ import { StoryResult } from "@/components/StoryResult";
 import { useApiCheck } from "@/hooks/useApiCheck";
 import { useStoryGeneration } from "@/hooks/useStoryGeneration";
 import { personalityTypes } from "@/types/personality";
-import { useClerkAuth as useAuth } from "@/contexts/ClerkAuthContext";
+import { useClerkAuth } from "@/contexts/ClerkAuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthDialog } from "@/components/AuthDialog";
@@ -14,7 +14,7 @@ import { BookOpen, Sparkles, User, Star } from "lucide-react";
 
 const Index = () => {
   useApiCheck();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useClerkAuth();
   const {
     name,
     setName,

@@ -10,15 +10,24 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, LogIn, UserPlus } from "lucide-react";
+import { Sparkles, LogIn, UserPlus, Loader2 } from "lucide-react";
 
 interface AuthDialogProps {
   trigger?: React.ReactNode;
+  onSuccess?: () => void;
 }
 
-export const AuthDialog = ({ trigger }: AuthDialogProps) => {
+export const AuthDialog = ({ trigger, onSuccess }: AuthDialogProps) => {
   const [open, setOpen] = useState(false);
-  const { SignInButton, SignUpButton } = useClerkAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const { SignInButton, SignUpButton, isAuthenticated } = useClerkAuth();
+
+  const handleSuccess = () => {
+    setOpen(false);
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
 
   const defaultTrigger = (
     <Button variant="outline" className="gap-2">
@@ -27,6 +36,11 @@ export const AuthDialog = ({ trigger }: AuthDialogProps) => {
     </Button>
   );
 
+  // If user is already authenticated, just render the trigger
+  if (isAuthenticated) {
+    return <>{trigger || defaultTrigger}</>;
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -34,12 +48,12 @@ export const AuthDialog = ({ trigger }: AuthDialogProps) => {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-500" />
+          <DialogTitle className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+            <Sparkles className="h-6 w-6 text-purple-500" />
             Welcome to Flip My Era
           </DialogTitle>
-          <DialogDescription>
-            Sign in to save your stories and access your personal dashboard
+          <DialogDescription className="text-lg text-gray-600">
+            Sign up to save your stories, access your personal dashboard, and unlock premium features
           </DialogDescription>
         </DialogHeader>
         
@@ -55,9 +69,22 @@ export const AuthDialog = ({ trigger }: AuthDialogProps) => {
                 Welcome back! Sign in to continue your storytelling journey.
               </p>
               <SignInButton mode="modal">
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                  onClick={() => setIsLoading(true)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing In...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Sign In
+                    </>
+                  )}
                 </Button>
               </SignInButton>
             </div>
@@ -69,9 +96,22 @@ export const AuthDialog = ({ trigger }: AuthDialogProps) => {
                 Join thousands of users creating amazing alternate timeline stories!
               </p>
               <SignUpButton mode="modal">
-                <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Create Account
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                  onClick={() => setIsLoading(true)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create Account
+                    </>
+                  )}
                 </Button>
               </SignUpButton>
             </div>
