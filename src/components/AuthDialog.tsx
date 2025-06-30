@@ -1,35 +1,50 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useClerkAuth } from "@/contexts/ClerkAuthContext";
-import { Loader2, Sparkles } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sparkles, LogIn, UserPlus, Loader2 } from "lucide-react";
 
 interface AuthDialogProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   onSuccess?: () => void;
 }
 
 export const AuthDialog = ({ trigger, onSuccess }: AuthDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { SignInButton, SignUpButton, isAuthenticated } = useClerkAuth();
 
   const handleSuccess = () => {
-    setIsOpen(false);
+    setOpen(false);
     if (onSuccess) {
       onSuccess();
     }
   };
 
+  const defaultTrigger = (
+    <Button variant="outline" className="gap-2">
+      <LogIn className="h-4 w-4" />
+      Sign In
+    </Button>
+  );
+
   // If user is already authenticated, just render the trigger
   if (isAuthenticated) {
-    return <>{trigger}</>;
+    return <>{trigger || defaultTrigger}</>;
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger}
+        {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -42,52 +57,73 @@ export const AuthDialog = ({ trigger, onSuccess }: AuthDialogProps) => {
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3">
-            <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
-              <Button 
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-                onClick={() => setIsLoading(true)}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating Account...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Create Account
-                  </>
-                )}
-              </Button>
-            </SignUpButton>
-            
-            <SignInButton mode="modal" afterSignInUrl="/dashboard">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setIsLoading(true)}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing In...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </SignInButton>
-          </div>
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
           
-          <div className="text-center text-sm text-gray-500">
-            <p>By signing up, you agree to our Terms of Service and Privacy Policy</p>
-          </div>
+          <TabsContent value="signin" className="space-y-4 mt-6">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-4">
+                Welcome back! Sign in to continue your storytelling journey.
+              </p>
+              <SignInButton mode="modal">
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                  onClick={() => setIsLoading(true)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing In...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Sign In
+                    </>
+                  )}
+                </Button>
+              </SignInButton>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="signup" className="space-y-4 mt-6">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-4">
+                Join thousands of users creating amazing alternate timeline stories!
+              </p>
+              <SignUpButton mode="modal">
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                  onClick={() => setIsLoading(true)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Create Account
+                    </>
+                  )}
+                </Button>
+              </SignUpButton>
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="text-center pt-4 border-t">
+          <p className="text-xs text-gray-500">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </p>
         </div>
       </DialogContent>
     </Dialog>
   );
-}; 
+};

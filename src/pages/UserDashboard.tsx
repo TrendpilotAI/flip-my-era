@@ -36,6 +36,7 @@ const UserDashboard = () => {
   const { toast } = useToast();
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
