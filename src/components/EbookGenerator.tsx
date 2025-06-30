@@ -6,8 +6,11 @@ import { ChapterView } from "./ebook/ChapterView";
 import { ActionButtons } from "./ebook/ActionButtons";
 import { GenerateButton } from "./ebook/GenerateButton";
 import { Button } from "@/components/ui/button";
-import { Book, Download, Loader2 } from "lucide-react";
-import { generateChapters, generateImage } from "@/services/ai";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Book, Download, Loader2, Sparkles } from "lucide-react";
+import { generateChapters, generateEbookIllustration } from "@/services/ai";
+import { samcartClient } from "@/integrations/samcart/client";
 
 interface Chapter {
   title: string;
@@ -29,6 +32,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   const [isPublishing, setIsPublishing] = useState(false);
   const [hasImages, setHasImages] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState<number | null>(null);
+  const [useEnhancedPrompts, setUseEnhancedPrompts] = useState(true);
 
   const generateChaptersFromStory = async () => {
     setIsGeneratingChapters(true);
@@ -75,22 +79,21 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     setIsGeneratingImages(true);
     
     try {
-      // Generate images for each chapter sequentially
+      // Generate images for each chapter sequentially using RUNWARE Flux1.1 Pro
       const updatedChapters = [...chapters];
       
       for (let i = 0; i < chapters.length; i++) {
         setCurrentImageIndex(i);
         const chapter = chapters[i];
         
-        // Create a prompt based on the chapter content
-        const imagePrompt = `Create a children's book illustration for a chapter titled "${chapter.title}". 
-                            The illustration should be colorful, engaging, and appropriate for children.
-                            Chapter content: ${chapter.content.substring(0, 300)}...`;
-        
         try {
-          // Use our AI service to generate an image
-          const imageUrl = await generateImage({
-            prompt: imagePrompt
+          // Use the new RUNWARE integration for ebook illustrations with AI-enhanced prompts
+          const imageUrl = await generateEbookIllustration({
+            chapterTitle: chapter.title,
+            chapterContent: chapter.content,
+            style: 'children', // Default to children's style
+            mood: 'happy', // Default to happy mood
+            useEnhancedPrompts: useEnhancedPrompts
           });
           
           // Update the chapter with the image URL
@@ -101,8 +104,19 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           
           // Update chapters state to show progress
           setChapters([...updatedChapters]);
+          
+          const promptType = useEnhancedPrompts ? "AI-enhanced" : "standard";
+          toast({
+            title: `Illustration ${i + 1} Generated`,
+            description: `Created beautiful illustration for "${chapter.title}" using Flux1.1 Pro with ${promptType} prompts.`,
+          });
         } catch (imageError) {
           console.error(`Error generating image for chapter ${i + 1}:`, imageError);
+          toast({
+            title: `Illustration ${i + 1} Failed`,
+            description: `Could not generate illustration for "${chapter.title}". Continuing with next chapter.`,
+            variant: "destructive",
+          });
           // Continue with next chapter even if one fails
         }
       }
@@ -110,9 +124,10 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
       setHasImages(true);
       setCurrentImageIndex(null);
       
+      const promptType = useEnhancedPrompts ? "AI-enhanced" : "standard";
       toast({
-        title: "Images Generated",
-        description: "Beautiful illustrations have been created for your story.",
+        title: "All Illustrations Generated",
+        description: `Beautiful illustrations have been created for your story using RUNWARE Flux1.1 Pro with ${promptType} prompts.`,
       });
     } catch (error) {
       console.error("Error generating images:", error);
@@ -181,7 +196,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
             Transform Your Story into an Illustrated Book
           </h3>
           <p className="text-gray-600 max-w-md mx-auto">
-            Our AI will transform your story into a beautifully illustrated children's book with multiple chapters.
+            Our AI will transform your story into a beautifully illustrated children's book with multiple chapters using RUNWARE Flux1.1 Pro.
           </p>
           <GenerateButton 
             type="chapters" 
@@ -191,6 +206,28 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         </div>
       ) : (
         <div className="space-y-8">
+          {/* AI-Enhanced Prompts Toggle */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                <div>
+                  <Label htmlFor="enhanced-prompts" className="text-sm font-medium text-gray-700">
+                    AI-Enhanced Prompts
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    Use Groq AI to create highly detailed, optimized prompts for better illustrations
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="enhanced-prompts"
+                checked={useEnhancedPrompts}
+                onCheckedChange={setUseEnhancedPrompts}
+              />
+            </div>
+          </div>
+
           <GenerateButton 
             type="images" 
             onClick={generateImagesForChapters} 
@@ -215,6 +252,28 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
             onShare={handleShare}
             isPublishing={isPublishing}
           />
+          <Button
+            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={() => {
+              try {
+                const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
+                samcartClient.redirectToCheckout({
+                  productId,
+                  redirectUrl: `${window.location.origin}/checkout/success`,
+                  cancelUrl: window.location.href
+                });
+              } catch (error) {
+                console.error('Failed to redirect to checkout:', error);
+                toast({
+                  title: "Checkout Error",
+                  description: "Unable to proceed to checkout. Please try again.",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            Buy this Ebook with SamCart
+          </Button>
         </div>
       )}
     </div>
