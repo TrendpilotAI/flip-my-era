@@ -95,11 +95,11 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: {
+        body: JSON.stringify({
           credits_required: creditsRequired,
           story_type: 'ebook',
           generation_id: storyId,
-        },
+        }),
       });
 
       if (error) {
@@ -191,7 +191,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         if (creditValidation.transactionId) {
           try {
             const storyType = useTaylorSwiftThemes ? `taylor-swift-${selectedTheme}-${selectedFormat}` : 'ebook';
-            const { error: ebookError } = await supabase
+            const { data: ebookGeneration, error: ebookError } = await supabase
               .from('ebook_generations')
               .insert({
                 user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
@@ -205,10 +205,48 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
                 story_type: storyType,
                 chapter_count: generatedChapters.length,
                 word_count: generatedChapters.reduce((total, ch) => total + ch.content.length, 0)
-              });
+              })
+              .select()
+              .single();
 
             if (ebookError) {
               console.error('Error creating ebook generation record:', ebookError);
+            } else {
+              // Save the actual book to memory_books table for user access
+              const { error: memoryBookError } = await supabase
+                .from('memory_books')
+                .insert({
+                  user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
+                  original_story_id: storyId,
+                  ebook_generation_id: ebookGeneration.id,
+                  title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${generatedChapters[0]?.title || 'Untitled'}`,
+                  description: `A ${storyFormats[selectedFormat].name.toLowerCase()}${useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : ''} generated from your story.`,
+                  chapters: generatedChapters,
+                  chapter_count: generatedChapters.length,
+                  word_count: generatedChapters.reduce((total, ch) => total + ch.content.length, 0),
+                  generation_settings: {
+                    useTaylorSwiftThemes,
+                    selectedTheme,
+                    selectedFormat,
+                    storyType
+                  },
+                  style_preferences: {
+                    image_style: 'children',
+                    mood: 'happy',
+                    target_age_group: 'children'
+                  },
+                  status: 'completed',
+                  generation_completed_at: new Date().toISOString()
+                });
+
+              if (memoryBookError) {
+                console.error('Error saving book to memory:', memoryBookError);
+              } else {
+                toast({
+                  title: "Book Saved",
+                  description: "Your book has been saved and is now available in your library.",
+                });
+              }
             }
           } catch (dbError) {
             console.error('Database error:', dbError);
@@ -249,7 +287,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
       if (creditValidation.transactionId) {
         try {
           const storyType = useTaylorSwiftThemes ? `taylor-swift-${selectedTheme}-${selectedFormat}` : 'ebook';
-          const { error: ebookError } = await supabase
+          const { data: ebookGeneration, error: ebookError } = await supabase
             .from('ebook_generations')
             .insert({
               user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
@@ -263,10 +301,48 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
               story_type: storyType,
               chapter_count: formattedChapters.length,
               word_count: formattedChapters.reduce((total, ch) => total + ch.content.length, 0)
-            });
+            })
+            .select()
+            .single();
 
           if (ebookError) {
             console.error('Error creating ebook generation record:', ebookError);
+          } else {
+            // Save the actual book to memory_books table for user access
+            const { error: memoryBookError } = await supabase
+              .from('memory_books')
+              .insert({
+                user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
+                original_story_id: storyId,
+                ebook_generation_id: ebookGeneration.id,
+                title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
+                description: `A ${storyFormats[selectedFormat].name.toLowerCase()}${useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : ''} generated from your story.`,
+                chapters: formattedChapters,
+                chapter_count: formattedChapters.length,
+                word_count: formattedChapters.reduce((total, ch) => total + ch.content.length, 0),
+                generation_settings: {
+                  useTaylorSwiftThemes,
+                  selectedTheme,
+                  selectedFormat,
+                  storyType
+                },
+                style_preferences: {
+                  image_style: 'children',
+                  mood: 'happy',
+                  target_age_group: 'children'
+                },
+                status: 'completed',
+                generation_completed_at: new Date().toISOString()
+              });
+
+            if (memoryBookError) {
+              console.error('Error saving book to memory:', memoryBookError);
+            } else {
+              toast({
+                title: "Book Saved",
+                description: "Your book has been saved and is now available in your library.",
+              });
+            }
           }
         } catch (dbError) {
           console.error('Database error:', dbError);

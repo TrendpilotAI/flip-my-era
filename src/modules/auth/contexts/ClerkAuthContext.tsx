@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/integrations/supabase/client";
 
 export interface AuthUser {
   id: string;
@@ -9,6 +9,17 @@ export interface AuthUser {
   avatar_url?: string;
   subscription_status?: "free" | "basic" | "premium";
   created_at?: string;
+  credits?: number;
+}
+
+// Define the Supabase profile type
+interface ProfileType {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url: string;
+  subscription_status: "free" | "basic" | "premium";
+  created_at: string;
 }
 
 interface AuthContextType {
@@ -20,6 +31,8 @@ interface AuthContextType {
   signOut: () => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   refreshUser: () => Promise<void>;
+  fetchCreditBalance: () => Promise<number>;
+  getToken: () => Promise<string | null>;
   isNewUser: boolean;
   setIsNewUser: (value: boolean) => void;
   SignInButton: typeof SignInButton;
@@ -34,26 +47,86 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const { signOut: clerkSignOut, getToken } = useClerkAuthHook();
   const [isNewUser, setIsNewUser] = useState(false);
   const [userProfile, setUserProfile] = useState<AuthUser | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
+
+  // Fetch credit balance using Supabase client
+  const fetchCreditBalance = useCallback(async (): Promise<number> => {
+    if (!clerkUser) return 0;
+    
+    try {
+      console.log("Fetching credit balance...");
+      
+      // Get Clerk token for authentication
+      const clerkToken = await getToken({ template: 'supabase' });
+      if (!clerkToken) {
+        console.warn("No Clerk token available for credit balance fetch");
+        return 0;
+      }
+      
+      // Create authenticated Supabase client
+      const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
+      
+      // Call the credits function using authenticated Supabase client
+      const { data, error } = await supabaseWithAuth.functions.invoke('credits', {
+        method: 'GET'
+      });
+      
+      if (error) {
+        console.error("Error fetching credit balance:", error);
+        return 0;
+      }
+      
+      if (!data?.balance) {
+        console.warn("No credit balance data received");
+        return 0;
+      }
+      
+      const balance = data.balance || 0;
+      console.log("Credit balance fetched:", balance);
+      setCreditBalance(balance);
+      
+      // Update the user profile with the credit balance
+      if (userProfile) {
+        setUserProfile({
+          ...userProfile,
+          credits: balance
+        });
+      }
+      
+      return balance;
+    } catch (error) {
+      console.error("Error fetching credit balance:", error);
+      return 0;
+    }
+  }, [clerkUser, userProfile]);
 
   // Create or update user profile in Supabase when Clerk user changes
   useEffect(() => {
     const syncUserProfile = async () => {
       if (clerkUser) {
         try {
-          const supabaseToken = await getToken({ template: 'supabase' });
-          await supabase.auth.setSession({ access_token: supabaseToken, refresh_token: '' });
-
-          const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-
-          if (!supabaseUser) {
-            throw new Error("Could not get Supabase user.");
+          // For native integration, we use the regular Clerk session token
+          const clerkToken = await getToken({ template: 'supabase' });
+          
+          if (!clerkToken) {
+            throw new Error("No Clerk token available");
           }
 
+          // Create a Supabase client with the Clerk token
+          // This is the recommended approach for native integration
+          const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
+          
+          console.log("Supabase client created with Clerk token");
+
+          // For native integration, we work directly with Clerk user data
+          // and use the Clerk user ID for database operations
+          const clerkUserId = clerkUser.id;
+          
           // Check if user profile exists in Supabase
-          const { data: existingProfile, error: fetchError } = await supabase
+          const { data: existingProfile, error: fetchError } = await supabaseWithAuth
             .from('profiles')
             .select('*')
-            .eq('id', supabaseUser.id)
+            .eq('id', clerkUserId)
             .single();
 
           if (fetchError && fetchError.code !== 'PGRST116') {
@@ -62,10 +135,10 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
           if (!existingProfile) {
             // Profile doesn't exist, create it
-            const { error: insertError } = await supabase
+            const { error: insertError } = await supabaseWithAuth
               .from('profiles')
               .insert({
-                id: supabaseUser.id,
+                id: clerkUserId,
                 email: clerkUser.primaryEmailAddress?.emailAddress || "",
                 name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
                 avatar_url: clerkUser.imageUrl,
@@ -76,33 +149,35 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
             setIsNewUser(true);
             setUserProfile({
-              id: supabaseUser.id,
+              id: clerkUserId,
               email: clerkUser.primaryEmailAddress?.emailAddress || "",
               name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
               avatar_url: clerkUser.imageUrl,
               subscription_status: "free",
-              created_at: supabaseUser.created_at,
+              created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
+              credits: creditBalance || 0
             });
           } else {
             // Profile exists, update it with latest Clerk data
-            const { error: updateError } = await supabase
+            const { error: updateError } = await supabaseWithAuth
               .from('profiles')
               .update({
                 email: clerkUser.primaryEmailAddress?.emailAddress || "",
                 name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
                 avatar_url: clerkUser.imageUrl,
               })
-              .eq('id', supabaseUser.id);
+              .eq('id', clerkUserId);
 
             if (updateError) throw updateError;
 
             setUserProfile({
-              id: existingProfile.id,
-              email: existingProfile.email,
-              name: existingProfile.name,
-              avatar_url: existingProfile.avatar_url,
-              subscription_status: existingProfile.subscription_status || "free",
-              created_at: existingProfile.created_at,
+              id: String(existingProfile.id),
+              email: String(existingProfile.email),
+              name: String(existingProfile.name),
+              avatar_url: String(existingProfile.avatar_url),
+              subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
+              created_at: String(existingProfile.created_at),
+              credits: creditBalance || 0
             });
           }
         } catch (error) {
@@ -115,6 +190,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             avatar_url: clerkUser.imageUrl,
             subscription_status: "free",
             created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
+            credits: creditBalance || 0
           });
         }
       } else {
@@ -126,7 +202,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     if (isLoaded) {
       syncUserProfile();
     }
-  }, [clerkUser, isLoaded, getToken]);
+  }, [clerkUser, isLoaded, getToken, creditBalance]);
 
   // Use Supabase profile data if available, otherwise fall back to Clerk data
   const user: AuthUser | null = userProfile || (clerkUser ? {
@@ -136,39 +212,45 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     avatar_url: clerkUser.imageUrl,
     subscription_status: "free", // Default to free, can be updated from database
     created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
+    credits: creditBalance || 0
   } : null);
 
-  const refreshUser = useCallback(async () => {
+    const refreshUser = useCallback(async () => {
     // Refresh user profile from Supabase
     if (clerkUser) {
       try {
-        const supabaseToken = await getToken({ template: 'supabase' });
-        await supabase.auth.setSession({ access_token: supabaseToken, refresh_token: '' });
-        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-
-        if (!supabaseUser) return;
-
-        const { data: profile } = await supabase
+        // Get Clerk token for authentication
+        const clerkToken = await getToken({ template: 'supabase' });
+        if (!clerkToken) {
+          console.warn("No Clerk token available for user refresh");
+          return;
+        }
+        
+        // Create authenticated Supabase client
+        const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
+        
+        const { data: profile } = await supabaseWithAuth
           .from('profiles')
           .select('*')
-          .eq('id', supabaseUser.id)
+          .eq('id', clerkUser.id)
           .single();
 
         if (profile) {
           setUserProfile({
-            id: profile.id,
-            email: profile.email,
-            name: profile.name,
-            avatar_url: profile.avatar_url,
-            subscription_status: profile.subscription_status || "free",
-            created_at: profile.created_at,
+            id: String(profile.id),
+            email: String(profile.email),
+            name: String(profile.name),
+            avatar_url: String(profile.avatar_url),
+            subscription_status: (profile.subscription_status as "free" | "basic" | "premium") || "free",
+            created_at: String(profile.created_at),
+            credits: creditBalance || 0
           });
         }
       } catch (error) {
         console.error("Error refreshing user profile:", error);
       }
     }
-  }, [clerkUser, getToken]);
+  }, [clerkUser, creditBalance]);
 
   const handleSignIn = async (email: string, password: string) => {
     // This will be handled by Clerk's SignInButton component
@@ -184,9 +266,12 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleSignOut = async () => {
     try {
+      // Sign out from both Clerk and Supabase
+      await signOutFromSupabase();
       await clerkSignOut();
       setUserProfile(null);
       setIsNewUser(false);
+      setCreditBalance(null);
       return { error: null };
     } catch (error) {
       return { error: error as Error };
@@ -198,15 +283,20 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: new Error("Use SignInButton component for Google authentication") };
   };
 
-  const value = {
+  const isLoading = !isLoaded;
+  const isAuthenticated = !!user;
+
+  const value: AuthContextType = {
     user,
-    isLoading: !isLoaded,
-    isAuthenticated: !!user,
+    isLoading,
+    isAuthenticated,
     signIn: handleSignIn,
     signUp: handleSignUp,
     signOut: handleSignOut,
     signInWithGoogle: handleSignInWithGoogle,
     refreshUser,
+    fetchCreditBalance,
+    getToken,
     isNewUser,
     setIsNewUser,
     SignInButton,
@@ -214,13 +304,17 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     UserButton,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useClerkAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useClerkAuth must be used within a ClerkAuthProvider");
+    throw new Error('useClerkAuth must be used within a ClerkAuthProvider');
   }
   return context;
 };

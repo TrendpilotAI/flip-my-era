@@ -12,7 +12,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'ebook_generations') THEN
         CREATE TABLE ebook_generations (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+            user_id TEXT REFERENCES profiles(id) ON DELETE CASCADE,
             story_id UUID,
             title VARCHAR(255),
             content TEXT,

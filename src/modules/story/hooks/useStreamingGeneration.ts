@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { TaylorSwiftTheme, StoryFormat } from "@/modules/story/utils/storyPrompts";
 
 interface Chapter {
@@ -33,7 +34,7 @@ interface StreamingGenerationOptions {
 
 export const useStreamingGeneration = () => {
   const { toast } = useToast();
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const { getToken } = useClerkAuth();
   
   const [state, setState] = useState<StreamingState>({
     isGenerating: false,
@@ -69,15 +70,18 @@ export const useStreamingGeneration = () => {
     });
 
     try {
-      // Create EventSource for streaming
-      const eventSource = new EventSource('/api/stream-chapters');
-      eventSourceRef.current = eventSource;
+      // Get Clerk token for authentication
+      const clerkToken = await getToken({ template: 'supabase' });
+      if (!clerkToken) {
+        throw new Error('No authentication token available. Please sign in again.');
+      }
 
-      // Send generation request
+      // Send generation request with proper authentication
       const response = await fetch('/api/stream-chapters', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${clerkToken}`,
         },
         body: JSON.stringify({
           originalStory,
@@ -89,7 +93,9 @@ export const useStreamingGeneration = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start generation');
+        const errorText = await response.text();
+        console.error('Streaming response error:', response.status, errorText);
+        throw new Error(`Failed to start generation: ${response.status} ${response.statusText}`);
       }
 
       const reader = response.body?.getReader();
@@ -112,6 +118,7 @@ export const useStreamingGeneration = () => {
                 if (line.startsWith('data: ')) {
                   try {
                     const data = JSON.parse(line.slice(6));
+                    console.log('Received streaming data:', data);
                     
                     switch (data.type) {
                       case 'progress':
@@ -168,10 +175,11 @@ export const useStreamingGeneration = () => {
                         break;
                         
                       case 'error':
+                        console.error('Streaming error received:', data.message);
                         throw new Error(data.message || 'Generation failed');
                     }
                   } catch (parseError) {
-                    console.error('Error parsing stream data:', parseError);
+                    console.error('Error parsing stream data:', parseError, 'Raw line:', line);
                   }
                 }
               }
@@ -183,6 +191,8 @@ export const useStreamingGeneration = () => {
         };
 
         await readStream();
+      } else {
+        throw new Error('No response body available for streaming');
       }
 
     } catch (error) {
@@ -207,11 +217,8 @@ export const useStreamingGeneration = () => {
   }, [toast]);
 
   const stopGeneration = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    
+    // Note: With fetch streaming, we can't easily abort the request
+    // The stream will continue until completion or error
     setState(prev => ({
       ...prev,
       isGenerating: false,

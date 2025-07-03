@@ -19,6 +19,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminIntegrations from "@/pages/AdminIntegrations";
 import AdminUsers from "@/pages/AdminUsers";
+import AdminCredits from "@/pages/AdminCredits";
 
 function App() {
   return (
@@ -90,6 +91,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminUsers />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/credits" 
+              element={
+                <AdminRoute>
+                  <AdminCredits />
                 </AdminRoute>
               } 
             />

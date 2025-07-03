@@ -19,6 +19,7 @@ import {
   Settings
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { UserBooks } from '@/modules/ebook/components/UserBooks';
 
 interface Story {
   id: string;
@@ -134,9 +135,10 @@ const UserDashboard = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="stories">My Stories</TabsTrigger>
+            <TabsTrigger value="books">My Books</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
@@ -316,6 +318,16 @@ const UserDashboard = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Books Tab */}
+          <TabsContent value="books" className="space-y-6">
+            <UserBooks 
+              onBookSelect={(book) => {
+                // TODO: Implement book reader/viewer
+                console.log('Selected book:', book);
+              }}
+            />
           </TabsContent>
 
           {/* Account Tab */}

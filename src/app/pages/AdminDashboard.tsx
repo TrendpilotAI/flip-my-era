@@ -13,7 +13,8 @@ import {
   FileText, 
   Shield,
   ArrowRight,
-  Crown
+  Crown,
+  Coins
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -36,6 +37,14 @@ const AdminDashboard = () => {
       icon: Users,
       path: "/admin/users",
       color: "bg-green-500",
+      badge: "Active"
+    },
+    {
+      title: "Credit Management",
+      description: "Add credits to users for free ebook generation",
+      icon: Coins,
+      path: "/admin/credits",
+      color: "bg-yellow-500",
       badge: "Active"
     },
     {

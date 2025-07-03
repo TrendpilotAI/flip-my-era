@@ -17,6 +17,7 @@ import ResetPassword from "@/modules/auth/components/ResetPassword";
 import AdminDashboard from "@/app/pages/AdminDashboard";
 import AdminIntegrations from "@/app/pages/AdminIntegrations";
 import AdminUsers from "@/app/pages/AdminUsers";
+import AdminCredits from "@/app/pages/AdminCredits";
 
 function App() {
   return (
@@ -88,6 +89,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminUsers />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/credits" 
+              element={
+                <AdminRoute>
+                  <AdminCredits />
                 </AdminRoute>
               } 
             />

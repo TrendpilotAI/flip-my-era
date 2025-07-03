@@ -7,7 +7,8 @@ import {
   BarChart3, 
   FileText, 
   Settings, 
-  Shield 
+  Shield,
+  Coins
 } from "lucide-react";
 
 const AdminNav = () => {
@@ -28,6 +29,11 @@ const AdminNav = () => {
       path: "/admin/users",
       label: "Users",
       icon: Users
+    },
+    {
+      path: "/admin/credits",
+      label: "Credits",
+      icon: Coins
     },
     {
       path: "/admin/analytics",
