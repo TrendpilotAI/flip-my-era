@@ -72,17 +72,31 @@ export const useStreamingGeneration = () => {
     try {
       // Get Clerk token for authentication
       const clerkToken = await getToken({ template: 'supabase' });
-      if (!clerkToken) {
-        throw new Error('No authentication token available. Please sign in again.');
+      console.log('Clerk token retrieved:', clerkToken ? 'Token exists' : 'No token');
+      
+      // Prepare headers
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+      };
+      
+      if (clerkToken) {
+        headers['Authorization'] = `Bearer ${clerkToken}`;
+        console.log('Making request with authentication');
+      } else {
+        console.log('Making request without authentication (fallback)');
       }
-
+      
       // Send generation request with proper authentication
-      const response = await fetch('/api/stream-chapters', {
+      // Use production URL directly since Edge Functions are deployed
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const functionUrl = `${supabaseUrl}/functions/v1/stream-chapters`;
+      
+      console.log('Calling function URL:', functionUrl);
+      
+      const response = await fetch(functionUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${clerkToken}`,
-        },
+        headers,
         body: JSON.stringify({
           originalStory,
           useTaylorSwiftThemes,
@@ -91,6 +105,8 @@ export const useStreamingGeneration = () => {
           numChapters
         })
       });
+
+      console.log('Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
