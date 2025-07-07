@@ -1,0 +1,127 @@
+import { SparkleEffect } from "@/modules/shared/components/SparkleEffect";
+import { BackgroundImages } from "@/modules/shared/components/BackgroundImages";
+import { PageHeader } from "@/modules/shared/components/PageHeader";
+import { StoryForm } from "@/modules/story/components/StoryForm";
+import { StoryResult } from "@/modules/story/components/StoryResult";
+import { useApiCheck } from '@/modules/shared/hooks/useApiCheck';
+import { useStoryGeneration } from '@/modules/story/hooks/useStoryGeneration';
+import { personalityTypes } from '@/modules/story/types/personality';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { Button } from "@/modules/shared/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
+import { AuthDialog } from "@/modules/shared/components/AuthDialog";
+import { BookOpen, Sparkles, User, Star } from "lucide-react";
+import AuthTest from "@/components/AuthTest";
+
+const Index = () => {
+  useApiCheck();
+  const { isAuthenticated } = useClerkAuth();
+  const {
+    name,
+    setName,
+    date,
+    setDate,
+    loading,
+    result,
+    personalityType,
+    setPersonalityType,
+    gender,
+    setGender,
+    storyId,
+    previousStory,
+    location,
+    setLocation,
+    handleStorySelect,
+    handleSubmit,
+    handleUndo
+  } = useStoryGeneration();
+
+  return (
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
+      <SparkleEffect />
+      <BackgroundImages />
+
+      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
+        <PageHeader />
+
+        {/* Authentication Test Component - Remove this after debugging */}
+        {isAuthenticated && (
+          <div className="mb-8">
+            <AuthTest />
+          </div>
+        )}
+
+        {/* Call-to-action for non-authenticated users */}
+        {!isAuthenticated && (
+          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+            <CardHeader className="text-center">
+              <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-900">
+                <Sparkles className="h-6 w-6 text-purple-500" />
+                Unlock Your Full Potential
+                <Sparkles className="h-6 w-6 text-purple-500" />
+              </CardTitle>
+              <CardDescription className="text-lg text-gray-600">
+                Sign up to save your stories, access your personal dashboard, and unlock premium features
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center gap-2 justify-center">
+                  <BookOpen className="h-4 w-4 text-purple-500" />
+                  <span>Save & organize stories</span>
+                </div>
+                <div className="flex items-center gap-2 justify-center">
+                  <User className="h-4 w-4 text-pink-500" />
+                  <span>Personal dashboard</span>
+                </div>
+                <div className="flex items-center gap-2 justify-center">
+                  <Star className="h-4 w-4 text-blue-500" />
+                  <span>Premium features</span>
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <AuthDialog
+                  trigger={
+                    <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Get Started - It's Free!
+                    </Button>
+                  }
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <StoryForm
+          name={name}
+          setName={setName}
+          date={date}
+          setDate={setDate}
+          loading={loading}
+          handleSubmit={handleSubmit}
+          handleStorySelect={handleStorySelect}
+          personalityTypes={personalityTypes}
+          personalityType={personalityType}
+          setPersonalityType={setPersonalityType}
+          gender={gender}
+          setGender={setGender}
+          location={location}
+          setLocation={setLocation}
+        />
+
+        {result && (
+          <StoryResult
+            result={result}
+            storyId={storyId}
+            onRegenerateClick={handleSubmit}
+            onUndoClick={handleUndo}
+            hasPreviousStory={!!previousStory}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Index;

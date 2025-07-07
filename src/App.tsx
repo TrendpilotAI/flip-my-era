@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Layout } from "@/components/Layout";
-import { Toaster } from "@/components/ui/toaster";
-import { ClerkAuthProvider } from "@/contexts/ClerkAuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AdminRoute } from "@/components/AdminRoute";
+import { Layout } from "@/modules/shared/components/Layout";
+import { Toaster } from "@/modules/shared/components/ui/toaster";
+import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
+import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
+import { AdminRoute } from "@/modules/shared/components/AdminRoute";
 import Index from "@/pages/Index";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
@@ -19,6 +19,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminIntegrations from "@/pages/AdminIntegrations";
 import AdminUsers from "@/pages/AdminUsers";
+import AdminCredits from "@/pages/AdminCredits";
 
 function App() {
   return (
@@ -90,6 +91,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminUsers />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/credits" 
+              element={
+                <AdminRoute>
+                  <AdminCredits />
                 </AdminRoute>
               } 
             />

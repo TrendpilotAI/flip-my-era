@@ -16,7 +16,7 @@ CREATE TYPE transaction_type AS ENUM (
 -- Create user_credits table
 CREATE TABLE user_credits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE UNIQUE,
+  user_id TEXT REFERENCES profiles(id) ON DELETE CASCADE UNIQUE,
   
   -- Credit balance tracking
   balance INTEGER DEFAULT 0 NOT NULL CHECK (balance >= 0),
@@ -44,7 +44,7 @@ CREATE TABLE user_credits (
 -- Create credit_transactions table
 CREATE TABLE credit_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES profiles(id) ON DELETE CASCADE,
   
   -- Transaction details
   amount INTEGER NOT NULL, -- positive for credits earned, negative for credits spent

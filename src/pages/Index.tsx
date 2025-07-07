@@ -1,15 +1,15 @@
-import { SparkleEffect } from "@/components/SparkleEffect";
-import { BackgroundImages } from "@/components/BackgroundImages";
-import { PageHeader } from "@/components/PageHeader";
-import { StoryForm } from "@/components/StoryForm";
-import { StoryResult } from "@/components/StoryResult";
-import { useApiCheck } from "@/hooks/useApiCheck";
-import { useStoryGeneration } from "@/hooks/useStoryGeneration";
-import { personalityTypes } from "@/types/personality";
-import { useClerkAuth } from "@/contexts/ClerkAuthContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AuthDialog } from "@/components/AuthDialog";
+import { SparkleEffect } from "@/modules/shared/components/SparkleEffect";
+import { BackgroundImages } from "@/modules/shared/components/BackgroundImages";
+import { PageHeader } from "@/modules/shared/components/PageHeader";
+import { StoryForm } from "@/modules/story/components/StoryForm";
+import { StoryResult } from "@/modules/story/components/StoryResult";
+import { useApiCheck } from '@/modules/shared/hooks/useApiCheck';
+import { useStoryGeneration } from '@/modules/story/hooks/useStoryGeneration';
+import { personalityTypes } from '@/modules/story/types/personality';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { Button } from "@/modules/shared/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
+import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
 
 const Index = () => {
