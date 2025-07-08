@@ -227,10 +227,92 @@ async function generateSingleChapter(
     }
   });
 
-  const parsedContent = JSON.parse(response.data.choices[0].message.content);
+  let parsedContent;
+  try {
+    // First, try to clean the response content
+    let cleanedContent = response.data.choices[0].message.content
+      .replace(/\0/g, '') // Remove null bytes
+      .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+      .replace(/[\uFFFE\uFFFF]/g, '') // Remove Unicode BOM and invalid chars
+      .replace(/[\uD800-\uDFFF]/g, '') // Remove surrogate pairs
+      .trim();
+    
+    parsedContent = JSON.parse(cleanedContent);
+  } catch (parseError) {
+    console.error('Error parsing AI response:', parseError);
+    console.error('Raw AI response:', response.data.choices[0].message.content);
+    
+    // Fallback: try to extract title and content from the raw text
+    const rawContent = response.data.choices[0].message.content;
+    
+    // Try multiple regex patterns to extract content
+    let titleMatch = rawContent.match(/"title"\s*:\s*"([^"]*)"/);
+    let contentMatch = rawContent.match(/"content"\s*:\s*"([^"]*)"/);
+    
+    // If that doesn't work, try without quotes
+    if (!titleMatch) {
+      titleMatch = rawContent.match(/title\s*:\s*([^\n,}]+)/);
+    }
+    if (!contentMatch) {
+      contentMatch = rawContent.match(/content\s*:\s*([^\n,}]+)/);
+    }
+    
+    // If still no match, try to extract any text that looks like a title or content
+    if (!titleMatch) {
+      const lines = rawContent.split('\n');
+      const titleLine = lines.find(line => line.toLowerCase().includes('title') || line.includes('Chapter'));
+      if (titleLine) {
+        const extractedTitle = titleLine.replace(/.*?:\s*/, '');
+        titleMatch = [titleLine, extractedTitle] as RegExpMatchArray;
+      }
+    }
+    
+    if (!contentMatch) {
+      // Find the longest paragraph that's not a title
+      const paragraphs = rawContent.split('\n\n');
+      const contentParagraph = paragraphs.find(p => 
+        p.length > 50 && 
+        !p.toLowerCase().includes('title') && 
+        !p.toLowerCase().includes('chapter')
+      );
+      if (contentParagraph) {
+        contentMatch = [contentParagraph, contentParagraph] as RegExpMatchArray;
+      }
+    }
+    
+    parsedContent = {
+      title: titleMatch ? titleMatch[1].trim() : `Chapter ${chapterNumber}`,
+      content: contentMatch ? contentMatch[1].trim() : rawContent
+    };
+  }
+  
+  // Ensure the returned content is clean and safe
+  // Convert title/content to strings first to avoid calling .replace on non-string values
+  const rawTitle = typeof parsedContent.title === 'string'
+    ? parsedContent.title
+    : JSON.stringify(parsedContent.title ?? `Chapter ${chapterNumber}`);
+
+  const rawContent = typeof parsedContent.content === 'string'
+    ? parsedContent.content
+    : JSON.stringify(parsedContent.content ?? '');
+
+  const cleanTitle = (rawTitle || `Chapter ${chapterNumber}`)
+    .replace(/\0/g, '')
+    .replace(/[\x00-\x1F\x7F]/g, '')
+    .replace(/[\uFFFE\uFFFF]/g, '')
+    .replace(/[\uD800-\uDFFF]/g, '')
+    .trim();
+    
+  const cleanContent = (rawContent)
+    .replace(/\0/g, '')
+    .replace(/[\x00-\x1F\x7F]/g, '')
+    .replace(/[\uFFFE\uFFFF]/g, '')
+    .replace(/[\uD800-\uDFFF]/g, '')
+    .trim();
+  
   return {
-    title: parsedContent.title || `Chapter ${chapterNumber}`,
-    content: parsedContent.content || ''
+    title: cleanTitle,
+    content: cleanContent
   };
 }
 
@@ -303,8 +385,65 @@ serve(async (req: Request) => {
         const encoder = new TextEncoder();
         
         const sendEvent = (data: ChapterProgress) => {
-          const eventData = `data: ${JSON.stringify(data)}\n\n`;
-          controller.enqueue(encoder.encode(eventData));
+          try {
+            // Create a clean copy of the data to avoid modifying the original
+            const cleanData = { ...data };
+            
+            // Clean all string fields to ensure they're safe for JSON serialization
+            const cleanString = (str: string): string => {
+              return str
+                .replace(/\0/g, '') // Remove null bytes
+                .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters except newlines/tabs
+                .replace(/[\uFFFE\uFFFF]/g, '') // Remove Unicode BOM and invalid chars
+                .replace(/[\uD800-\uDFFF]/g, '') // Remove surrogate pairs
+                .trim(); // Remove leading/trailing whitespace
+            };
+            
+            // Clean all string fields
+            if (cleanData.chapterContent) {
+              cleanData.chapterContent = cleanString(cleanData.chapterContent);
+            }
+            
+            if (cleanData.chapterTitle) {
+              cleanData.chapterTitle = cleanString(cleanData.chapterTitle);
+            }
+            
+            if (cleanData.message) {
+              cleanData.message = cleanString(cleanData.message);
+            }
+            
+            // Test JSON serialization first to catch any issues
+            const testJson = JSON.stringify(cleanData);
+            
+            const eventData = `data: ${testJson}\n\n`;
+            controller.enqueue(encoder.encode(eventData));
+          } catch (error) {
+            console.error('Error serializing event data:', error);
+            console.error('Data that failed to serialize:', data);
+            
+            // Try to create a minimal safe version
+            try {
+              const safeData = {
+                type: data.type,
+                currentChapter: data.currentChapter,
+                totalChapters: data.totalChapters,
+                progress: data.progress,
+                message: data.message ? data.message.substring(0, 100) + '...' : 'Content truncated due to serialization error',
+                estimatedTimeRemaining: data.estimatedTimeRemaining
+              };
+              
+              const safeEventData = `data: ${JSON.stringify(safeData)}\n\n`;
+              controller.enqueue(encoder.encode(safeEventData));
+            } catch (fallbackError) {
+              console.error('Fallback serialization also failed:', fallbackError);
+              // Send a basic error event
+              const errorEvent = `data: ${JSON.stringify({
+                type: 'error',
+                message: 'Failed to serialize chapter data'
+              })}\n\n`;
+              controller.enqueue(encoder.encode(errorEvent));
+            }
+          }
         };
 
         try {

@@ -318,7 +318,7 @@ a.click();
 
   return (
     <div className={cn(
-      "min-h-screen transition-all duration-300",
+      "min-h-screen max-h-screen overflow-y-auto transition-all duration-300",
       themeClasses.background,
       preferences.darkMode ? "text-white" : "text-gray-900"
     )}>

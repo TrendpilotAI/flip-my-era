@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
-import { supabase, getSupabaseSession, signOutFromSupabase } from "@/integrations/supabase/client";
+import { supabase, getSupabaseSession, signOutFromSupabase } from "@/core/integrations/supabase/client";
 
 export interface AuthUser {
   id: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import { supabase } from '@/core/integrations/supabase/client';
+import { supabase, createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
@@ -74,8 +74,17 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
       setLoading(true);
       const token = await getToken({ template: 'supabase' });
       
-      const { data, error } = await supabase
-        .from('memory_books')
+      if (!token) {
+        console.error('No token available for database operation');
+        setError('Authentication required');
+        return;
+      }
+      
+      // Create authenticated Supabase client
+      const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
+      
+      const { data, error } = await supabaseWithAuth
+        .from('ebook_generations')
         .select('*')
         .order('created_at', { ascending: false });
 

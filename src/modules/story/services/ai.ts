@@ -441,14 +441,15 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
       const runwareAvailable = await isRunwareAvailable();
       if (runwareAvailable) {
         try {
+          // Use the correct model constant and supported scheduler for FLUX
+          const { RUNWARE_MODELS, RUNWARE_SCHEDULERS } = await import('@/modules/shared/utils/runware');
           const illustration = await runwareService.generateImage({
             positivePrompt: prompt,
-            model: "flux1.1-pro",
+            model: RUNWARE_MODELS.FLUX_1_1_PRO,
             numberResults: 1,
             outputFormat: "WEBP",
-            CFGScale: 7,
-            scheduler: "FlowMatchEulerDiscreteScheduler",
-            strength: 0.8,
+            scheduler: RUNWARE_SCHEDULERS.FLOW_MATCH_EULER_DISCRETE, // Supported for FLUX
+            // Do not include unsupported params for FLUX
           });
           return illustration.imageURL;
         } catch (runwareError) {

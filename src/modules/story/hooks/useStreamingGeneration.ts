@@ -121,6 +121,8 @@ export const useStreamingGeneration = () => {
         const chapters: Chapter[] = [];
         
         const readStream = async () => {
+          let buffer = ''; // Buffer for incomplete lines
+          
           try {
             while (true) {
               const { done, value } = await reader.read();
@@ -128,12 +130,20 @@ export const useStreamingGeneration = () => {
               if (done) break;
               
               const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
+              buffer += chunk;
+              
+              // Split by newlines and process complete lines
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
               
               for (const line of lines) {
                 if (line.startsWith('data: ')) {
                   try {
-                    const data = JSON.parse(line.slice(6));
+                    // Clean the line before parsing
+                    const cleanLine = line.slice(6).trim();
+                    if (!cleanLine) return; // Skip empty lines
+                    
+                    const data = JSON.parse(cleanLine);
                     console.log('Received streaming data:', data);
                     
                     switch (data.type) {
@@ -195,8 +205,58 @@ export const useStreamingGeneration = () => {
                         throw new Error(data.message || 'Generation failed');
                     }
                   } catch (parseError) {
-                    console.error('Error parsing stream data:', parseError, 'Raw line:', line);
+                    console.error('Error parsing stream data:', parseError);
+                    console.error('Raw line:', line);
+                    console.error('Line length:', line.length);
+                    console.error('Line slice (6):', line.slice(6));
+                    
+                    // Try to extract more information about the problematic content
+                    if (line.includes('chapterContent')) {
+                      const contentMatch = line.match(/"chapterContent":"([^"]*)"/);
+                      if (contentMatch) {
+                        console.error('Problematic content preview:', contentMatch[1].substring(0, 100));
+                      }
+                    }
+                    
+                    // Don't throw here, just log and continue to avoid breaking the stream
+                    // The backend should handle serialization issues and send proper error events
+                    console.warn('Continuing stream despite parse error');
                   }
+                }
+              }
+            }
+            
+            // Process any remaining buffer content
+            if (buffer.trim()) {
+              const line = buffer.trim();
+              if (line.startsWith('data: ')) {
+                try {
+                  const cleanLine = line.slice(6).trim();
+                  if (cleanLine) {
+                    const data = JSON.parse(cleanLine);
+                    console.log('Received final streaming data:', data);
+                    
+                    // Handle the final data based on its type
+                    switch (data.type) {
+                      case 'complete':
+                        setState(prev => ({
+                          ...prev,
+                          isGenerating: false,
+                          isComplete: true,
+                          progress: 100,
+                          message: "Generation complete!"
+                        }));
+                        onComplete?.(chapters);
+                        break;
+                      case 'error':
+                        console.error('Final streaming error received:', data.message);
+                        throw new Error(data.message || 'Generation failed');
+                    }
+                  }
+                } catch (parseError) {
+                  console.error('Error parsing final stream data:', parseError);
+                  // Don't throw here either, just log the error
+                  console.warn('Continuing despite final parse error');
                 }
               }
             }

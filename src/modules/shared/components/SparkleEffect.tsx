@@ -1,8 +1,7 @@
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface Sparkle {
-  id: number;
+  id: string;
   x: number;
   y: number;
   size: number;
@@ -12,14 +11,16 @@ interface Sparkle {
 export const SparkleEffect = () => {
   const [sparkles, setSparkles] = useState<Sparkle[]>([]);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const counterRef = useRef(0);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
       
-      if (Math.random() > 0.8) { // Only create sparkles 20% of the time for performance
+      // Only create sparkles 20% of the time and limit to max 10 sparkles
+      if (Math.random() > 0.8 && sparkles.length < 10) {
         const newSparkle = {
-          id: Date.now(),
+          id: `${Date.now()}-${Math.random()}-${counterRef.current++}`,
           x: e.clientX,
           y: e.clientY,
           size: Math.random() * 10 + 5,
@@ -37,7 +38,7 @@ export const SparkleEffect = () => {
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  }, [sparkles.length]);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">

@@ -64,7 +64,7 @@ src/
 
 ## Common Patterns
 - Components use the useClerkAuth hook for authentication
-- API calls use the supabase client from @/integrations/supabase/client
+- API calls use the supabase client from @/core/integrations/supabase/client
 - Toast notifications use the useToast hook
 - Form handling uses React state and controlled components
 - Styling uses Tailwind CSS classes

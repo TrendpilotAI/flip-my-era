@@ -71,7 +71,7 @@ export const saveStory = async (story: string, name: string, date?: Date, prompt
       birth_date: date?.toISOString(),
       initial_story: story,
       prompt,
-      storyId: savedData?.id || `local-${Date.now()}`,
+      storyId: savedData?.id || crypto.randomUUID(),
       ...additionalData
     };
     
@@ -100,7 +100,18 @@ export const saveStory = async (story: string, name: string, date?: Date, prompt
 export const getLocalStory = (): StoryData | null => {
   try {
     const storyData = localStorage.getItem(STORY_DATA_KEY);
-    return storyData ? JSON.parse(storyData) : null;
+    if (!storyData) return null;
+    
+    const parsedData = JSON.parse(storyData);
+    
+    // Check if the storyId is in the old "local-" format and clear it
+    if (parsedData.storyId && parsedData.storyId.startsWith('local-')) {
+      console.log('Clearing old localStorage data with invalid ID format');
+      localStorage.removeItem(STORY_DATA_KEY);
+      return null;
+    }
+    
+    return parsedData;
   } catch (error) {
     console.error("Error retrieving local story:", error);
     return null;
@@ -149,13 +160,7 @@ export const getUserStories = async () => {
 
 // Get a specific story by ID
 export const getStoryById = async (storyId: string) => {
-  // Check if it's a local story ID
-  if (storyId.startsWith('local-')) {
-    const localStory = getLocalStory();
-    return localStory?.storyId === storyId ? localStory : null;
-  }
-  
-  // Otherwise fetch from Supabase
+  // First try to fetch from Supabase
   try {
     const { data, error } = await supabase
       .from('stories')
@@ -163,16 +168,16 @@ export const getStoryById = async (storyId: string) => {
       .eq('id', storyId)
       .single();
       
-    if (error) {
-      console.error("Error fetching story by ID:", error);
-      throw error;
+    if (!error && data) {
+      return data;
     }
-    
-    return data;
   } catch (error) {
-    console.error("Error in getStoryById:", error);
-    throw error;
+    console.error("Error fetching story from Supabase:", error);
   }
+  
+  // If not found in Supabase, check local storage
+  const localStory = getLocalStory();
+  return localStory?.storyId === storyId ? localStory : null;
 };
 
 // Update user subscription status

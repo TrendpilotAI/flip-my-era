@@ -22,7 +22,7 @@ mockIntersectionObserver.mockReturnValue({
 window.IntersectionObserver = mockIntersectionObserver;
 
 // Mock Supabase
-vi.mock('@/integrations/supabase/client', () => ({
+vi.mock('@/core/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getUser: vi.fn(),
