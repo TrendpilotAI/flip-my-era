@@ -322,12 +322,7 @@ const UserDashboard = () => {
 
           {/* Books Tab */}
           <TabsContent value="books" className="space-y-6">
-            <UserBooks 
-              onBookSelect={(book) => {
-                // TODO: Implement book reader/viewer
-                console.log('Selected book:', book);
-              }}
-            />
+            <UserBooks />
           </TabsContent>
 
           {/* Account Tab */}

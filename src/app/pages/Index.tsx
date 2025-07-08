@@ -15,7 +15,7 @@ import AuthTest from "@/components/AuthTest";
 
 const Index = () => {
   useApiCheck();
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated, user } = useClerkAuth();
   const {
     name,
     setName,
@@ -45,10 +45,14 @@ const Index = () => {
         <PageHeader />
 
         {/* Authentication Test Component - Remove this after debugging */}
-        {isAuthenticated && (
-          <div className="mb-8">
-            <AuthTest />
-          </div>
+        {isAuthenticated && user && (
+          (user.email === 'admin@flipmyera.com' ||
+           user.email === 'danny.ijdo@gmail.com' ||
+           user.email?.includes('trendpilot')) && (
+            <div className="mb-8">
+              <AuthTest />
+            </div>
+          )
         )}
 
         {/* Call-to-action for non-authenticated users */}

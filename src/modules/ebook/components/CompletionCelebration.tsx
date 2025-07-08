@@ -19,6 +19,7 @@ interface CompletionCelebrationProps {
   onDownload?: () => void;
   onShare?: () => void;
   onClose?: () => void;
+  renderContinueEditingButton?: () => React.ReactNode;
 }
 
 export const CompletionCelebration = ({
@@ -27,7 +28,8 @@ export const CompletionCelebration = ({
   chaptersGenerated,
   onDownload,
   onShare,
-  onClose
+  onClose,
+  renderContinueEditingButton
 }: CompletionCelebrationProps) => {
   const [confetti, setConfetti] = useState<Array<{ id: number; x: number; delay: number; icon: React.ReactNode }>>([]);
   const [showContent, setShowContent] = useState(false);
@@ -205,13 +207,17 @@ export const CompletionCelebration = ({
           </div>
 
           {/* Close button */}
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            className="text-gray-500 hover:text-gray-700"
-          >
-            Continue Editing
-          </Button>
+          {renderContinueEditingButton
+            ? renderContinueEditingButton()
+            : (
+                <Button
+                  onClick={onClose}
+                  variant="ghost"
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  Continue Editing
+                </Button>
+              )}
 
           {/* Floating sparkles */}
           {useTaylorSwiftThemes && (

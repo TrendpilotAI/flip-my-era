@@ -1,5 +1,5 @@
 import { Button } from '@/modules/shared/components/ui/button';
-import { Repeat, Undo } from "lucide-react";
+import { Repeat, Undo, Download, Share2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { findRelevantSong } from "@/modules/story/utils/taylorSwiftSongs";
@@ -10,6 +10,7 @@ import { supabase } from '@/core/integrations/supabase/client';
 import { useState } from "react";
 import { EbookGenerator } from "@/modules/ebook/components/EbookGenerator";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { DownloadShareModal } from '@/modules/shared/components/DownloadShareModal';
 
 interface StoryResultProps {
   result: string;
@@ -31,6 +32,7 @@ export const StoryResult = ({
   const { isAuthenticated } = useClerkAuth();
   const relevantSong = findRelevantSong(result);
   const [showEbookGenerator, setShowEbookGenerator] = useState(false);
+  const [showDownloadShareModal, setShowDownloadShareModal] = useState(false);
 
   const handleCreateEbook = async () => {
     try {
@@ -152,6 +154,14 @@ export const StoryResult = ({
               Undo
             </Button>
           )}
+          <Button
+            onClick={() => setShowDownloadShareModal(true)}
+            variant="outline"
+            className="text-lg border-blue-300 hover:bg-blue-50 text-blue-600 flex items-center gap-2"
+          >
+            <Download className="h-5 w-5" />
+            Download & Share
+          </Button>
         </div>
       </div>
 
@@ -174,6 +184,19 @@ export const StoryResult = ({
           </div>
         </>
       )}
+
+      {/* Download & Share Modal */}
+      <DownloadShareModal
+        isOpen={showDownloadShareModal}
+        onClose={() => setShowDownloadShareModal(false)}
+        content={{
+          id: storyId,
+          title: getStoryTitle(result),
+          content: getStoryContent(result),
+          type: 'story',
+          author: 'FlipMyEra User'
+        }}
+      />
     </div>
   );
 };

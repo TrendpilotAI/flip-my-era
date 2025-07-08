@@ -18,15 +18,19 @@ import {
   Sparkles,
   Heart,
   Users,
-  Zap
+  Zap,
+  MoreHorizontal
 } from "lucide-react";
 import { cn } from '@/core/lib/utils';
+import { DownloadShareModal } from '@/modules/shared/components/DownloadShareModal';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/modules/shared/components/ui/dropdown-menu';
+import { BookReader } from './BookReader';
 
 interface MemoryBook {
   id: string;
   title: string;
   description: string;
-  chapters: any[];
+  chapters: any[] | string | object; // Can be array, JSON string, or object
   chapter_count: number;
   word_count: number;
   status: string;
@@ -60,6 +64,10 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
   const [books, setBooks] = useState<MemoryBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedBook, setSelectedBook] = useState<MemoryBook | null>(null);
+  const [showDownloadShareModal, setShowDownloadShareModal] = useState(false);
+  const [showBookReader, setShowBookReader] = useState(false);
+  const [selectedBookForReading, setSelectedBookForReading] = useState<MemoryBook | null>(null);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -68,6 +76,18 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
       setLoading(false);
     }
   }, [isSignedIn]);
+
+  // Lock background scroll when BookReader is open
+  useEffect(() => {
+    if (showBookReader) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showBookReader]);
 
   const fetchUserBooks = async () => {
     try {
@@ -83,10 +103,38 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
       // Create authenticated Supabase client
       const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
       
-      const { data, error } = await supabaseWithAuth
-        .from('ebook_generations')
+      // Try to fetch from memory_books first (newer table for user books)
+      let { data, error } = await supabaseWithAuth
+        .from('memory_books')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // If memory_books is empty or doesn't exist, fallback to ebook_generations
+      if (!data || data.length === 0) {
+        console.log('No books found in memory_books, trying ebook_generations...');
+        const fallbackResult = await supabaseWithAuth
+          .from('ebook_generations')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (fallbackResult.data && fallbackResult.data.length > 0) {
+          // Map ebook_generations data to memory_books format
+          data = fallbackResult.data.map(book => ({
+            ...book,
+            chapters: book.content, // content field maps to chapters
+            description: book.title || 'Generated ebook',
+            status: book.status || 'completed',
+            generation_settings: {},
+            style_preferences: {},
+            view_count: 0,
+            download_count: 0,
+            share_count: 0,
+            rating_average: 0,
+            rating_count: 0
+          }));
+          error = fallbackResult.error;
+        }
+      }
 
       if (error) {
         console.error('Error fetching books:', error);
@@ -110,6 +158,71 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const parseChapters = (chapters: any[] | string | object): any[] => {
+    try {
+      if (typeof chapters === 'string') {
+        return JSON.parse(chapters);
+      } else if (Array.isArray(chapters)) {
+        return chapters;
+      } else if (chapters && typeof chapters === 'object') {
+        return (chapters as any).chapters || Object.values(chapters);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error parsing chapters:', error);
+      return [];
+    }
+  };
+
+  const handleDownloadShare = (book: MemoryBook, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedBook(book);
+    setShowDownloadShareModal(true);
+  };
+
+  const handleBookClick = (book: MemoryBook) => {
+    console.log('Book clicked:', book.title);
+    console.log('Raw chapters data:', book.chapters);
+    
+    // Parse chapters data using the helper function
+    const chapters = parseChapters(book.chapters);
+    console.log('Parsed chapters:', chapters);
+
+    // Check if the book has chapters to read
+    if (!chapters || chapters.length === 0) {
+      console.log('No chapters found for book:', book.title);
+      toast({
+        title: "Book Not Ready",
+        description: "This book doesn't have any chapters to read yet. Try generating chapters first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate chapter structure
+    const validChapters = chapters.filter(chapter => 
+      chapter && typeof chapter === 'object' && (chapter.title || chapter.content)
+    );
+
+    if (validChapters.length === 0) {
+      toast({
+        title: "Invalid Book Data",
+        description: "This book's chapters are not properly formatted. Please regenerate the book.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedBookForReading({
+      ...book,
+      chapters: validChapters
+    });
+    setShowBookReader(true);
+    
+    // Call the optional callback if provided
+    onBookSelect?.(book);
   };
 
   const formatDate = (dateString: string) => {
@@ -216,7 +329,7 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
           <Card 
             key={book.id} 
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => onBookSelect?.(book)}
+            onClick={() => handleBookClick(book)}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -225,7 +338,26 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
                     getThemeIcon(book.generation_settings.selectedTheme)}
                   <BookOpen className="h-4 w-4 text-gray-500" />
                 </div>
-                {getStatusBadge(book.status)}
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(book.status)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => handleDownloadShare(book, e)}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleDownloadShare(book, e)}>
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
               <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
               <CardDescription className="line-clamp-2">
@@ -268,18 +400,70 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
                 )}
               </div>
 
-              {book.generation_settings?.useTaylorSwiftThemes && (
-                <div className="flex items-center space-x-2 text-xs">
-                  <Sparkles className="h-3 w-3 text-purple-500" />
-                  <span className="text-purple-600 font-medium">
-                    Taylor Swift Theme
-                  </span>
+              <div className="flex items-center justify-between">
+                {book.generation_settings?.useTaylorSwiftThemes && (
+                  <div className="flex items-center space-x-2 text-xs">
+                    <Sparkles className="h-3 w-3 text-purple-500" />
+                    <span className="text-purple-600 font-medium">
+                      Taylor Swift Theme
+                    </span>
+                  </div>
+                )}
+                
+                {/* Reading Status Indicator */}
+                <div className="flex items-center space-x-1 text-xs">
+                  {book.chapters && (
+                    Array.isArray(book.chapters) ? book.chapters.length > 0 : true
+                  ) ? (
+                    <>
+                      <BookOpen className="h-3 w-3 text-green-500" />
+                      <span className="text-green-600 font-medium">Ready to Read</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="h-3 w-3 text-gray-400" />
+                      <span className="text-gray-500">Not Ready</span>
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Download & Share Modal */}
+      {selectedBook && (
+        <DownloadShareModal
+          isOpen={showDownloadShareModal}
+          onClose={() => {
+            setShowDownloadShareModal(false);
+            setSelectedBook(null);
+          }}
+          content={{
+            id: selectedBook.id,
+            title: selectedBook.title,
+            content: parseChapters(selectedBook.chapters),
+            type: 'ebook',
+            author: 'FlipMyEra User'
+          }}
+        />
+      )}
+
+      {/* Book Reader */}
+      {showBookReader && selectedBookForReading && selectedBookForReading.chapters && (
+        <div className="fixed inset-0 z-50">
+          <BookReader
+            chapters={parseChapters(selectedBookForReading.chapters)}
+            useTaylorSwiftThemes={selectedBookForReading.generation_settings?.useTaylorSwiftThemes}
+            onClose={() => {
+              setShowBookReader(false);
+              setSelectedBookForReading(null);
+            }}
+            initialChapter={0}
+          />
+        </div>
+      )}
     </div>
   );
 }; 

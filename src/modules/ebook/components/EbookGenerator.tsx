@@ -29,6 +29,8 @@ import {
   taylorSwiftThemes,
   storyFormats
 } from "@/modules/story/utils/storyPrompts";
+import { downloadEbook } from '@/modules/shared/utils/downloadUtils';
+import { Pencil } from 'lucide-react';
 
 interface Chapter {
   title: string;
@@ -499,19 +501,36 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     toast({
       title: "Saving PDF",
       description: "Your illustrated story is being prepared for download.",
     });
-    
-    // In a real implementation, this would generate and download a PDF
-    setTimeout(() => {
+    try {
+      await downloadEbook(
+        `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${chapters[0]?.title || 'Untitled'}`,
+        chapters,
+        {
+          format: 'pdf',
+          includeMetadata: true,
+          includeCoverPage: true,
+          fontSize: 12,
+          fontFamily: 'helvetica',
+          pageSize: 'A4',
+        },
+        storyId
+      );
       toast({
         title: "PDF Ready",
         description: "Your illustrated story has been saved as a PDF.",
       });
-    }, 2000);
+    } catch (err) {
+      toast({
+        title: "PDF Download Failed",
+        description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePublish = async () => {
@@ -824,57 +843,59 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           </div>
           
           {/* Enhanced Action Buttons with Book Reader */}
-          <div className="space-y-4">
-            {/* Read Book Button - Phase 1E Enhancement */}
-            <div className="text-center">
-              <Button
-                size="lg"
-                className={cn(
-                  "w-full max-w-md mx-auto text-lg font-semibold py-4 transition-all duration-300",
-                  useTaylorSwiftThemes
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
-                )}
-                onClick={() => setShowBookReader(true)}
-              >
-                <Book className="h-5 w-5 mr-2" />
-                Read Your Book
-                {useTaylorSwiftThemes && <Sparkles className="h-4 w-4 ml-2" />}
-              </Button>
-              <p className="text-sm text-gray-600 mt-2">
-                Experience your story with our immersive book-style reader
-              </p>
-            </div>
-            
+          <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto mt-8">
+            <Button
+              size="lg"
+              className={cn(
+                "w-full text-lg font-semibold py-4 transition-all duration-300 rounded-full",
+                useTaylorSwiftThemes
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl"
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+              )}
+              onClick={() => setShowBookReader(true)}
+            >
+              <Book className="h-5 w-5 mr-2" />
+              Read Your Book
+              {useTaylorSwiftThemes && <Sparkles className="h-4 w-4 ml-2" />}
+            </Button>
             <ActionButtons
               onSave={handleSave}
               onPublish={handlePublish}
               onShare={handleShare}
               isPublishing={isPublishing}
+              content={{
+                id: storyId,
+                title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${chapters[0]?.title || 'Untitled'}`,
+                content: chapters,
+                type: 'ebook',
+                author: 'FlipMyEra User'
+              }}
+              showDownloadShare={true}
             />
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-semibold py-4"
+              size="lg"
+              onClick={() => {
+                try {
+                  const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
+                  samcartClient.redirectToCheckout({
+                    productId,
+                    redirectUrl: `${window.location.origin}/checkout/success`,
+                    cancelUrl: window.location.href
+                  });
+                } catch (error) {
+                  console.error('Failed to redirect to checkout:', error);
+                  toast({
+                    title: "Checkout Error",
+                    description: "Unable to proceed to checkout. Please try again.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Buy this Ebook with SamCart
+            </Button>
           </div>
-          <Button
-            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => {
-              try {
-                const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
-                samcartClient.redirectToCheckout({
-                  productId,
-                  redirectUrl: `${window.location.origin}/checkout/success`,
-                  cancelUrl: window.location.href
-                });
-              } catch (error) {
-                console.error('Failed to redirect to checkout:', error);
-                toast({
-                  title: "Checkout Error",
-                  description: "Unable to proceed to checkout. Please try again.",
-                  variant: "destructive",
-                });
-              }
-            }}
-          >
-            Buy this Ebook with SamCart
-          </Button>
         </div>
       )}
 
@@ -894,6 +915,19 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         onDownload={handleSave}
         onShare={handleShare}
         onClose={() => setShowCelebration(false)}
+        renderContinueEditingButton={
+          () => (
+            <Button
+              onClick={() => setShowCelebration(false)}
+              variant="outline"
+              size="lg"
+              className="w-full mt-2 rounded-full border-2 border-blue-400 text-blue-700 hover:bg-blue-50 flex items-center justify-center gap-2"
+            >
+              <Pencil className="h-5 w-5 mr-2" />
+              Continue Editing
+            </Button>
+          )
+        }
       />
 
       {/* Phase 1E: Book-Style Reading Interface */}
