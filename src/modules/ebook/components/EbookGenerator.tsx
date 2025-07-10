@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { supabase } from '@/core/integrations/supabase/client';
+import { supabase, createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { generateWithGroq } from "@/modules/shared/utils/groq";
 import { ChapterView } from "./ChapterView";
 import { StreamingChapterView } from "./StreamingChapterView";
@@ -15,7 +15,7 @@ import { Label } from '@/modules/shared/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/modules/shared/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Book, Download, Loader2, Sparkles, AlertTriangle, Heart, Users, Zap, Star, Pause, Play, RotateCcw } from "lucide-react";
-import { cn } from '@/core/lib/utils';
+import { cn, extractUserIdFromToken } from '@/core/lib/utils';
 import { generateChapters, generateTaylorSwiftChapters, generateEbookIllustration, generateTaylorSwiftIllustration } from "@/modules/story/services/ai";
 import { samcartClient } from '@/core/integrations/samcart/client';
 import { CreditBalance } from "@/modules/user/components/CreditBalance";
@@ -29,6 +29,8 @@ import {
   taylorSwiftThemes,
   storyFormats
 } from "@/modules/story/utils/storyPrompts";
+import { downloadEbook } from '@/modules/shared/utils/downloadUtils';
+import { Pencil } from 'lucide-react';
 
 interface Chapter {
   title: string;
@@ -71,6 +73,18 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   
   // Book reading state
   const [showBookReader, setShowBookReader] = useState(false);
+
+  // Lock background scroll when BookReader is open
+  useEffect(() => {
+    if (showBookReader) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showBookReader]);
   
   // Initialize streaming generation hook
   const streaming = useStreamingGeneration();
@@ -191,10 +205,29 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         if (creditValidation.transactionId) {
           try {
             const storyType = useTaylorSwiftThemes ? `taylor-swift-${selectedTheme}-${selectedFormat}` : 'ebook';
-            const { data: ebookGeneration, error: ebookError } = await supabase
+            const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
+            const userId = token ? extractUserIdFromToken(token) : null;
+            
+            if (!token || !userId) {
+              console.error('No token or user ID available for database operation');
+              return;
+            }
+            
+            // Create authenticated Supabase client
+            const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
+            
+            console.log('Attempting to save ebook generation record:', {
+              user_id: userId,
+              story_id: storyId,
+              title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${generatedChapters[0]?.title || 'Untitled'}`,
+              chapter_count: generatedChapters.length,
+              word_count: generatedChapters.reduce((total, ch) => total + ch.content.length, 0)
+            });
+            
+            const { data: ebookGeneration, error: ebookError } = await supabaseWithAuth
               .from('ebook_generations')
               .insert({
-                user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
+                user_id: userId,
                 story_id: storyId,
                 title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${generatedChapters[0]?.title || 'Untitled'}`,
                 content: JSON.stringify(generatedChapters),
@@ -212,11 +245,12 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
             if (ebookError) {
               console.error('Error creating ebook generation record:', ebookError);
             } else {
-              // Save the actual book to memory_books table for user access
-              const { error: memoryBookError } = await supabase
-                .from('memory_books')
+              console.log('Successfully saved ebook generation record:', ebookGeneration);
+              // Save the actual book to ebook_generations table for user access
+              const { error: memoryBookError } = await supabaseWithAuth
+                .from('ebook_generations')
                 .insert({
-                  user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
+                  user_id: userId,
                   original_story_id: storyId,
                   ebook_generation_id: ebookGeneration.id,
                   title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${generatedChapters[0]?.title || 'Untitled'}`,
@@ -287,10 +321,21 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
       if (creditValidation.transactionId) {
         try {
           const storyType = useTaylorSwiftThemes ? `taylor-swift-${selectedTheme}-${selectedFormat}` : 'ebook';
-          const { data: ebookGeneration, error: ebookError } = await supabase
+          const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
+          const userId = token ? extractUserIdFromToken(token) : null;
+          
+          if (!token || !userId) {
+            console.error('No token or user ID available for database operation');
+            return;
+          }
+          
+          // Create authenticated Supabase client
+          const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
+          
+          const { data: ebookGeneration, error: ebookError } = await supabaseWithAuth
             .from('ebook_generations')
             .insert({
-              user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
+              user_id: userId,
               story_id: storyId,
               title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
               content: JSON.stringify(formattedChapters),
@@ -308,11 +353,11 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           if (ebookError) {
             console.error('Error creating ebook generation record:', ebookError);
           } else {
-            // Save the actual book to memory_books table for user access
-            const { error: memoryBookError } = await supabase
-              .from('memory_books')
+            // Save the actual book to ebook_generations table for user access
+            const { error: memoryBookError } = await supabaseWithAuth
+              .from('ebook_generations')
               .insert({
-                user_id: isSignedIn ? (await getToken({ template: 'supabase' })) : null,
+                user_id: userId,
                 original_story_id: storyId,
                 ebook_generation_id: ebookGeneration.id,
                 title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
@@ -456,19 +501,36 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     toast({
       title: "Saving PDF",
       description: "Your illustrated story is being prepared for download.",
     });
-    
-    // In a real implementation, this would generate and download a PDF
-    setTimeout(() => {
+    try {
+      await downloadEbook(
+        `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${chapters[0]?.title || 'Untitled'}`,
+        chapters,
+        {
+          format: 'pdf',
+          includeMetadata: true,
+          includeCoverPage: true,
+          fontSize: 12,
+          fontFamily: 'helvetica',
+          pageSize: 'A4',
+        },
+        storyId
+      );
       toast({
         title: "PDF Ready",
         description: "Your illustrated story has been saved as a PDF.",
       });
-    }, 2000);
+    } catch (err) {
+      toast({
+        title: "PDF Download Failed",
+        description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePublish = async () => {
@@ -781,57 +843,59 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           </div>
           
           {/* Enhanced Action Buttons with Book Reader */}
-          <div className="space-y-4">
-            {/* Read Book Button - Phase 1E Enhancement */}
-            <div className="text-center">
-              <Button
-                size="lg"
-                className={cn(
-                  "w-full max-w-md mx-auto text-lg font-semibold py-4 transition-all duration-300",
-                  useTaylorSwiftThemes
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
-                )}
-                onClick={() => setShowBookReader(true)}
-              >
-                <Book className="h-5 w-5 mr-2" />
-                Read Your Book
-                {useTaylorSwiftThemes && <Sparkles className="h-4 w-4 ml-2" />}
-              </Button>
-              <p className="text-sm text-gray-600 mt-2">
-                Experience your story with our immersive book-style reader
-              </p>
-            </div>
-            
+          <div className="flex flex-col gap-4 w-full max-w-2xl mx-auto mt-8">
+            <Button
+              size="lg"
+              className={cn(
+                "w-full text-lg font-semibold py-4 transition-all duration-300 rounded-full",
+                useTaylorSwiftThemes
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl"
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+              )}
+              onClick={() => setShowBookReader(true)}
+            >
+              <Book className="h-5 w-5 mr-2" />
+              Read Your Book
+              {useTaylorSwiftThemes && <Sparkles className="h-4 w-4 ml-2" />}
+            </Button>
             <ActionButtons
               onSave={handleSave}
               onPublish={handlePublish}
               onShare={handleShare}
               isPublishing={isPublishing}
+              content={{
+                id: storyId,
+                title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${chapters[0]?.title || 'Untitled'}`,
+                content: chapters,
+                type: 'ebook',
+                author: 'FlipMyEra User'
+              }}
+              showDownloadShare={true}
             />
+            <Button
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-semibold py-4"
+              size="lg"
+              onClick={() => {
+                try {
+                  const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
+                  samcartClient.redirectToCheckout({
+                    productId,
+                    redirectUrl: `${window.location.origin}/checkout/success`,
+                    cancelUrl: window.location.href
+                  });
+                } catch (error) {
+                  console.error('Failed to redirect to checkout:', error);
+                  toast({
+                    title: "Checkout Error",
+                    description: "Unable to proceed to checkout. Please try again.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Buy this Ebook with SamCart
+            </Button>
           </div>
-          <Button
-            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => {
-              try {
-                const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
-                samcartClient.redirectToCheckout({
-                  productId,
-                  redirectUrl: `${window.location.origin}/checkout/success`,
-                  cancelUrl: window.location.href
-                });
-              } catch (error) {
-                console.error('Failed to redirect to checkout:', error);
-                toast({
-                  title: "Checkout Error",
-                  description: "Unable to proceed to checkout. Please try again.",
-                  variant: "destructive",
-                });
-              }
-            }}
-          >
-            Buy this Ebook with SamCart
-          </Button>
         </div>
       )}
 
@@ -851,6 +915,19 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         onDownload={handleSave}
         onShare={handleShare}
         onClose={() => setShowCelebration(false)}
+        renderContinueEditingButton={
+          () => (
+            <Button
+              onClick={() => setShowCelebration(false)}
+              variant="outline"
+              size="lg"
+              className="w-full mt-2 rounded-full border-2 border-blue-400 text-blue-700 hover:bg-blue-50 flex items-center justify-center gap-2"
+            >
+              <Pencil className="h-5 w-5 mr-2" />
+              Continue Editing
+            </Button>
+          )
+        }
       />
 
       {/* Phase 1E: Book-Style Reading Interface */}

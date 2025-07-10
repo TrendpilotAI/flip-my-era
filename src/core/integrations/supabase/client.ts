@@ -8,11 +8,79 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-// Create Supabase client for database operations only (auth handled by Clerk)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  global: {
-    headers: {
-      'X-Client-Info': 'supabase-js-web/2.x'
+// Singleton pattern to avoid multiple client instances
+let supabaseInstance: ReturnType<typeof createClient>;
+
+// Create Supabase client with native third-party auth support
+export const supabase = (() => {
+  if (supabaseInstance) return supabaseInstance;
+  
+  // Always use the production Supabase URL since Edge Functions are deployed
+  const baseUrl = supabaseUrl || '';
+  
+  // Create a client with the global configuration
+  supabaseInstance = createClient(baseUrl, supabaseAnonKey || '', {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'supabase-js-web/2.x'
+      }
     }
-  }
-});
+  });
+  
+  return supabaseInstance;
+})();
+
+// Helper to get the current Supabase session
+export async function getSupabaseSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
+}
+
+// Helper to sign out from Supabase
+export async function signOutFromSupabase() {
+  const { error } = await supabase.auth.signOut();
+  return { error };
+}
+
+// Helper to create a Supabase client with Clerk session token
+// This uses Clerk's native integration approach
+export function createSupabaseClientWithClerkToken(sessionToken: string | null) {
+  return createClient(supabaseUrl || '', supabaseAnonKey || '', {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
+    global: {
+      headers: {
+        Authorization: sessionToken ? `Bearer ${sessionToken}` : '',
+        'apikey': supabaseAnonKey || '',
+      },
+    },
+  });
+}
+
+// Alternative approach using Clerk's accessToken function
+export async function createClerkSupabaseClient(getToken: () => Promise<string | null>) {
+  const token = await getToken();
+  return createClient(supabaseUrl || '', supabaseAnonKey || '', {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
+    global: {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    },
+  });
+}

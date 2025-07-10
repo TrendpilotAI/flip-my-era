@@ -1,39 +1,124 @@
 
+import { useState } from 'react';
 import { Button } from '@/modules/shared/components/ui/button';
-import { Save, Globe, Share2 } from "lucide-react";
+import { Save, Globe, Share2, Download } from "lucide-react";
+import { DownloadShareModal } from '@/modules/shared/components/DownloadShareModal';
+import { useToast } from '@/modules/shared/hooks/use-toast';
+import type { Chapter } from '@/modules/shared/utils/downloadUtils';
 
 interface ActionButtonsProps {
-  onSave: () => void;
-  onPublish: () => void;
-  onShare: () => void;
-  isPublishing: boolean;
+  onSave?: () => void;
+  onPublish?: () => void;
+  onShare?: () => void;
+  isPublishing?: boolean;
+  // New props for enhanced functionality
+  content?: {
+    id: string;
+    title: string;
+    content: string | Chapter[];
+    type: 'story' | 'ebook';
+    author?: string;
+    url?: string;
+    imageUrl?: string;
+  };
+  showDownloadShare?: boolean;
 }
 
-export const ActionButtons = ({ onSave, onPublish, onShare, isPublishing }: ActionButtonsProps) => {
+export const ActionButtons = ({ 
+  onSave, 
+  onPublish, 
+  onShare, 
+  isPublishing = false,
+  content,
+  showDownloadShare = true
+}: ActionButtonsProps) => {
+  const { toast } = useToast();
+  const [showModal, setShowModal] = useState(false);
+
+  const handleSave = () => {
+    if (onSave) {
+      onSave();
+    } else if (content && showDownloadShare) {
+      setShowModal(true);
+    } else {
+      toast({
+        title: "Save Feature",
+        description: "Save functionality will be implemented soon.",
+      });
+    }
+  };
+
+  const handlePublish = () => {
+    if (onPublish) {
+      onPublish();
+    } else {
+      toast({
+        title: "Publish Feature",
+        description: "Publishing functionality will be implemented soon.",
+      });
+    }
+  };
+
+  const handleShare = () => {
+    if (onShare) {
+      onShare();
+    } else if (content && showDownloadShare) {
+      setShowModal(true);
+    } else {
+      toast({
+        title: "Share Feature",
+        description: "Sharing functionality will be implemented soon.",
+      });
+    }
+  };
+
   return (
-    <div className="flex flex-wrap gap-4 mt-8">
-      <Button
-        onClick={onSave}
-        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-      >
-        <Save className="h-5 w-5 mr-2" />
-        Save as PDF
-      </Button>
-      <Button
-        onClick={onPublish}
-        disabled={isPublishing}
-        className="flex-1 bg-purple-500 hover:bg-purple-600 text-white"
-      >
-        <Globe className="h-5 w-5 mr-2" />
-        {isPublishing ? "Publishing..." : "Publish Online"}
-      </Button>
-      <Button
-        onClick={onShare}
-        className="flex-1 bg-green-500 hover:bg-green-600 text-white"
-      >
-        <Share2 className="h-5 w-5 mr-2" />
-        Share Story
-      </Button>
-    </div>
+    <>
+      <div className="flex flex-wrap gap-4 mt-8">
+        {showDownloadShare && content ? (
+          <Button
+            onClick={() => setShowModal(true)}
+            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            <Download className="h-5 w-5 mr-2" />
+            Download & Share
+          </Button>
+        ) : (
+          <>
+            <Button
+              onClick={handleSave}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <Save className="h-5 w-5 mr-2" />
+              Save as PDF
+            </Button>
+            <Button
+              onClick={handleShare}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+            >
+              <Share2 className="h-5 w-5 mr-2" />
+              Share Story
+            </Button>
+          </>
+        )}
+        
+        <Button
+          onClick={handlePublish}
+          disabled={isPublishing}
+          className="flex-1 bg-purple-500 hover:bg-purple-600 text-white"
+        >
+          <Globe className="h-5 w-5 mr-2" />
+          {isPublishing ? "Publishing..." : "Publish Online"}
+        </Button>
+      </div>
+
+      {content && showDownloadShare && (
+        <DownloadShareModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          content={content}
+        />
+      )}
+    </>
   );
 };

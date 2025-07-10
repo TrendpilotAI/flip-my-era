@@ -31,6 +31,7 @@ import { ReadingPreferences } from "./ReadingPreferences";
 import { BookmarkManager } from "./BookmarkManager";
 import { ReadingProgress } from "./ReadingProgress";
 import { useToast } from '@/modules/shared/hooks/use-toast';
+import { DownloadShareModal } from '@/modules/shared/components/DownloadShareModal';
 
 interface Chapter {
   title: string;
@@ -263,41 +264,15 @@ export const BookReader = ({
     }
   }, [readingState.currentChapter, handleChapterChange]);
 
+  const [showDownloadShareModal, setShowDownloadShareModal] = useState(false);
+
   const handleShare = useCallback(() => {
-    const currentChapter = chapters[readingState.currentChapter];
-    if (navigator.share && currentChapter) {
-      navigator.share({
-        title: currentChapter.title,
-        text: `Reading "${currentChapter.title}" - A beautiful ${useTaylorSwiftThemes ? 'Taylor Swift-inspired' : ''} story`,
-        url: window.location.href
-      });
-    } else {
-      // Fallback to clipboard
-      const shareText = `Reading "${currentChapter?.title}" - A beautiful story`;
-      navigator.clipboard.writeText(shareText);
-      toast({
-        title: "Copied to Clipboard",
-        description: "Share text copied to clipboard",
-      });
-    }
-  }, [chapters, readingState.currentChapter, useTaylorSwiftThemes, toast]);
+    setShowDownloadShareModal(true);
+  }, []);
 
   const handleDownload = useCallback(() => {
-    // Generate a text file download
-    const content = chapters.map(chapter => 
-      `# ${chapter.title}\n\n${chapter.content}\n\n`
-    ).join('');
-    
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `story-${Date.now()}.txt`;
-    document.body.appendChild(a);
-a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [chapters]);
+    setShowDownloadShareModal(true);
+  }, []);
 
   const currentChapter = chapters[readingState.currentChapter];
   const progress = ((readingState.currentChapter + 1) / chapters.length) * 100;
@@ -318,7 +293,7 @@ a.click();
 
   return (
     <div className={cn(
-      "min-h-screen transition-all duration-300",
+      "min-h-screen max-h-screen overflow-y-auto transition-all duration-300",
       themeClasses.background,
       preferences.darkMode ? "text-white" : "text-gray-900"
     )}>
@@ -565,6 +540,19 @@ a.click();
           </Button>
         </div>
       )}
+
+      {/* Download & Share Modal */}
+      <DownloadShareModal
+        isOpen={showDownloadShareModal}
+        onClose={() => setShowDownloadShareModal(false)}
+        content={{
+          id: `book-${Date.now()}`,
+          title: chapters[0]?.title || 'My Story Book',
+          content: chapters,
+          type: 'ebook',
+          author: 'FlipMyEra User'
+        }}
+      />
     </div>
   );
 };

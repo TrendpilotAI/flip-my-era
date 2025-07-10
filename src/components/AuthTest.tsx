@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-react';
-import { createSupabaseClientWithClerkToken } from '@/integrations/supabase/client';
+import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 
 export default function AuthTest() {
   const { user, isLoaded } = useUser();

@@ -602,6 +602,8 @@ export class RunwareService {
     
     // Filter parameters based on model capabilities
     const filteredParams = filterParamsForModel(params);
+    const modelId = filteredParams.model || RUNWARE_MODELS.FLUX_1_1_PRO;
+    const architecture = getModelArchitecture(modelId);
     
     return new Promise((resolve, reject) => {
       const request: RunwareImageInferenceRequest = {
@@ -609,16 +611,15 @@ export class RunwareService {
         taskUUID,
         positivePrompt: filteredParams.positivePrompt!,
         negativePrompt: filteredParams.negativePrompt,
-        model: filteredParams.model || RUNWARE_MODELS.FLUX_1_1_PRO,
+        model: modelId,
         width: filteredParams.width || 1024,
         height: filteredParams.height || 1024,
         numberResults: filteredParams.numberResults || 1,
         outputFormat: filteredParams.outputFormat || "WEBP",
         outputType: filteredParams.outputType || "URL",
         steps: filteredParams.steps || 4,
-        CFGScale: filteredParams.CFGScale || (getModelArchitecture(filteredParams.model || RUNWARE_MODELS.FLUX_1_1_PRO) !== 'FLUX' ? 1 : undefined),
-        scheduler: filteredParams.scheduler || RUNWARE_SCHEDULERS.FLOW_MATCH_EULER_DISCRETE,
-        strength: filteredParams.strength || (getModelArchitecture(filteredParams.model || RUNWARE_MODELS.FLUX_1_1_PRO) !== 'FLUX' ? 0.8 : undefined),
+        CFGScale: filteredParams.CFGScale || (architecture !== 'FLUX' ? 1 : undefined),
+        strength: filteredParams.strength || (architecture !== 'FLUX' ? 0.8 : undefined),
         seed: filteredParams.seed || undefined,
         promptWeighting: filteredParams.promptWeighting,
         checkNSFW: filteredParams.checkNSFW,
@@ -626,6 +627,11 @@ export class RunwareService {
         lora: filteredParams.lora,
         controlNet: filteredParams.controlNet,
       };
+
+      // Only include scheduler if not FLUX
+      if (architecture !== 'FLUX') {
+        request.scheduler = filteredParams.scheduler || RUNWARE_SCHEDULERS.FLOW_MATCH_EULER_DISCRETE;
+      }
 
       // Remove undefined values to keep the request clean
       Object.keys(request).forEach(key => {
