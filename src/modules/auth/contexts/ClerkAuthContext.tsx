@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
-import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/core/integrations/supabase/client";
+import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken, clearAuthenticatedInstance } from "@/core/integrations/supabase/client";
 
 export interface AuthUser {
   id: string;
@@ -272,6 +272,8 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       setUserProfile(null);
       setIsNewUser(false);
       setCreditBalance(null);
+      // Clear the authenticated Supabase instance to prevent multiple instances
+      clearAuthenticatedInstance();
       return { error: null };
     } catch (error) {
       return { error: error as Error };

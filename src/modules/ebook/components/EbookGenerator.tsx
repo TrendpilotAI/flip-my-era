@@ -17,10 +17,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/mod
 import { Book, Download, Loader2, Sparkles, AlertTriangle, Heart, Users, Zap, Star, Pause, Play, RotateCcw } from "lucide-react";
 import { cn, extractUserIdFromToken } from '@/core/lib/utils';
 import { generateChapters, generateTaylorSwiftChapters, generateEbookIllustration, generateTaylorSwiftIllustration } from "@/modules/story/services/ai";
-import { samcartClient } from '@/core/integrations/samcart/client';
+import { stripeClient } from '@/core/integrations/stripe/client';
 import { CreditBalance } from "@/modules/user/components/CreditBalance";
-import { CreditPurchaseModal } from "@/modules/user/components/CreditPurchaseModal";
-import { useAuth } from "@clerk/clerk-react";
+import { StripeCreditPurchaseModal } from "@/modules/user/components/StripeCreditPurchaseModal";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { Alert, AlertDescription } from '@/modules/shared/components/ui/alert';
 import { useStreamingGeneration } from "@/modules/story/hooks/useStreamingGeneration";
 import {
@@ -47,6 +47,7 @@ interface EbookGeneratorProps {
 export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) => {
   const { toast } = useToast();
   const { isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isGeneratingChapters, setIsGeneratingChapters] = useState(false);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
@@ -872,35 +873,13 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
               }}
               showDownloadShare={true}
             />
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-semibold py-4"
-              size="lg"
-              onClick={() => {
-                try {
-                  const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
-                  samcartClient.redirectToCheckout({
-                    productId,
-                    redirectUrl: `${window.location.origin}/checkout/success`,
-                    cancelUrl: window.location.href
-                  });
-                } catch (error) {
-                  console.error('Failed to redirect to checkout:', error);
-                  toast({
-                    title: "Checkout Error",
-                    description: "Unable to proceed to checkout. Please try again.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            >
-              Buy this Ebook with SamCart
-            </Button>
+
           </div>
         </div>
       )}
 
       {/* Credit Purchase Modal */}
-      <CreditPurchaseModal
+      <StripeCreditPurchaseModal
         isOpen={showCreditModal}
         onClose={() => setShowCreditModal(false)}
         onSuccess={handleCreditPurchaseSuccess}

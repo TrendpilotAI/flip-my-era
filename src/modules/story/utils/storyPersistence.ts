@@ -1,4 +1,5 @@
-import { supabase } from '@/core/integrations/supabase/client';
+import { supabase, createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 
 // Local storage keys
 const STORY_DATA_KEY = 'flip_my_era_story_data';
@@ -192,6 +193,88 @@ export const updateSubscription = async (userId: string, subscriptionStatus: "fr
     return { error: null };
   } catch (error) {
     console.error("Error updating subscription:", error);
+    return { error: error as Error };
+  }
+};
+
+// Add credits to user account (for credit-based purchases)
+export const addCreditsToUser = async (
+  userId: string, 
+  creditAmount: number, 
+  purchaseType: string = "credit_purchase",
+  sessionToken?: string
+) => {
+  try {
+    // Use authenticated Supabase client if session token is provided
+    const supabaseClient = sessionToken 
+      ? createSupabaseClientWithClerkToken(sessionToken)
+      : supabase;
+    
+    // First, get or create user's credit record
+    const { data: creditData, error: creditError } = await supabaseClient
+      .from('user_credits')
+      .select('balance, total_earned')
+      .eq('user_id', userId)
+      .single();
+
+    let currentBalance = 0;
+    let totalEarned = 0;
+
+    if (creditError && creditError.code === 'PGRST116') {
+      // No credit record exists, create one
+      const { data: newCredit, error: createError } = await supabaseClient
+        .from('user_credits')
+        .insert({
+          user_id: userId,
+          balance: creditAmount,
+          total_earned: creditAmount,
+          total_spent: 0
+        })
+        .select('balance, total_earned')
+        .single();
+
+      if (createError) throw createError;
+      currentBalance = newCredit.balance;
+      totalEarned = newCredit.total_earned;
+    } else if (!creditError) {
+      // Update existing credit record
+      currentBalance = creditData.balance + creditAmount;
+      totalEarned = (creditData.total_earned || 0) + creditAmount;
+
+      const { error: updateError } = await supabaseClient
+        .from('user_credits')
+        .update({
+          balance: currentBalance,
+          total_earned: totalEarned,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+    } else {
+      throw creditError;
+    }
+
+    // Create credit transaction record
+    const { error: transactionError } = await supabaseClient
+      .from('credit_transactions')
+      .insert({
+        user_id: userId,
+        amount: creditAmount,
+        transaction_type: 'purchase_single',
+        description: `${purchaseType}: ${creditAmount} credits added`,
+        balance_after_transaction: currentBalance,
+        metadata: {
+          purchase_type: purchaseType,
+          credits_added: creditAmount
+        }
+      });
+
+    if (transactionError) throw transactionError;
+
+    return { error: null, newBalance: currentBalance };
+  } catch (error) {
+    console.error("Error adding credits to user:", error);
     return { error: error as Error };
   }
 };

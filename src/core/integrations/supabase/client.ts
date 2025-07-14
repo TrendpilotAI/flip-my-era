@@ -10,6 +10,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Singleton pattern to avoid multiple client instances
 let supabaseInstance: ReturnType<typeof createClient>;
+let authenticatedInstance: ReturnType<typeof createClient> | null = null;
 
 // Create Supabase client with native third-party auth support
 export const supabase = (() => {
@@ -49,9 +50,15 @@ export async function signOutFromSupabase() {
 }
 
 // Helper to create a Supabase client with Clerk session token
-// This uses Clerk's native integration approach
+// This uses Clerk's native integration approach with singleton pattern
 export function createSupabaseClientWithClerkToken(sessionToken: string | null) {
-  return createClient(supabaseUrl || '', supabaseAnonKey || '', {
+  // If we already have an authenticated instance and the token is the same, reuse it
+  if (authenticatedInstance && sessionToken) {
+    return authenticatedInstance;
+  }
+  
+  // Create new authenticated instance
+  authenticatedInstance = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
@@ -65,22 +72,17 @@ export function createSupabaseClientWithClerkToken(sessionToken: string | null) 
       },
     },
   });
+  
+  return authenticatedInstance;
 }
 
 // Alternative approach using Clerk's accessToken function
 export async function createClerkSupabaseClient(getToken: () => Promise<string | null>) {
   const token = await getToken();
-  return createClient(supabaseUrl || '', supabaseAnonKey || '', {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-      flowType: 'pkce',
-    },
-    global: {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : '',
-      },
-    },
-  });
+  return createSupabaseClientWithClerkToken(token);
+}
+
+// Clear authenticated instance when needed (e.g., on logout)
+export function clearAuthenticatedInstance() {
+  authenticatedInstance = null;
 }

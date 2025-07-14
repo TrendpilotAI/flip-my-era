@@ -165,21 +165,13 @@ async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookP
 
 // New function to handle credit allocation for purchases
 async function allocateCreditsForPurchase(supabase: SupabaseClient, userId: string, payload: SamCartWebhookPayload) {
-  // Map SamCart product IDs to credit amounts and subscription types
+  // Map SamCart product IDs to credit amounts
   // These IDs should match your actual SamCart product configuration
-  const productMapping: Record<number, { type: 'credits' | 'subscription', amount?: number, subscription_type?: string }> = {
+  const productMapping: Record<number, { type: 'credits', amount: number }> = {
     // Credit Products
     350001: { type: 'credits', amount: 1 },      // Single Credit ($2.99)
     350002: { type: 'credits', amount: 3 },      // 3-Credit Bundle ($7.99)
     350003: { type: 'credits', amount: 5 },      // 5-Credit Bundle ($11.99)
-    
-    // Subscription Products
-    350004: { type: 'subscription', subscription_type: 'monthly_unlimited' },  // Monthly Unlimited ($9.99)
-    350005: { type: 'subscription', subscription_type: 'annual_unlimited' },   // Annual Unlimited ($89.99)
-    
-    // Legacy subscription mappings (keeping for backward compatibility)
-    350399: { type: 'subscription', subscription_type: 'monthly_unlimited' },  // Legacy basic plan
-    440369: { type: 'subscription', subscription_type: 'annual_unlimited' },   // Legacy premium plan
   };
   
   const productConfig = productMapping[payload.product.id];
@@ -192,13 +184,10 @@ async function allocateCreditsForPurchase(supabase: SupabaseClient, userId: stri
   try {
     if (productConfig.type === 'credits') {
       // Handle credit purchase
-      await allocateCredits(supabase, userId, productConfig.amount!, payload);
-    } else if (productConfig.type === 'subscription') {
-      // Handle subscription purchase
-      await updateSubscriptionStatus(supabase, userId, productConfig.subscription_type!, payload);
+      await allocateCredits(supabase, userId, productConfig.amount, payload);
     }
   } catch (error) {
-    console.error('Error allocating credits/subscription:', error);
+    console.error('Error allocating credits:', error);
   }
 }
 
@@ -279,95 +268,7 @@ async function allocateCredits(supabase: SupabaseClient, userId: string, creditA
   console.log(`Allocated ${creditAmount} credits to user ${userId}. New balance: ${currentBalance}`);
 }
 
-// Function to update subscription status for subscription purchases
-async function updateSubscriptionStatus(supabase: SupabaseClient, userId: string, subscriptionType: string, payload: SamCartWebhookPayload) {
-  // Update user's credit record with subscription type
-  const { data: creditData, error: creditError } = await supabase
-    .from('user_credits')
-    .select('balance')
-    .eq('user_id', userId)
-    .single();
-  
-  let currentBalance = 0;
-  
-  if (creditError && creditError.code === 'PGRST116') {
-    // No credit record exists, create one with subscription
-    const { error: createError } = await supabase
-      .from('user_credits')
-      .insert({
-        user_id: userId,
-        balance: 0,
-        subscription_type: subscriptionType
-      });
-    
-    if (createError) {
-      console.error('Error creating credit record with subscription:', createError);
-      return;
-    }
-  } else if (!creditError) {
-    // Update existing credit record with subscription
-    currentBalance = creditData.balance;
-    
-    const { error: updateError } = await supabase
-      .from('user_credits')
-      .update({
-        subscription_type: subscriptionType,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
-    
-    if (updateError) {
-      console.error('Error updating subscription status:', updateError);
-      return;
-    }
-  } else {
-    console.error('Error fetching credit record:', creditError);
-    return;
-  }
-  
-  // Update legacy subscription fields in profiles for backward compatibility
-  if (payload.order.subscription_id) {
-    const legacySubscriptionLevel = subscriptionType === 'monthly_unlimited' ? 'basic' :
-                                   subscriptionType === 'annual_unlimited' ? 'premium' : 'free';
-    
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        subscription_status: legacySubscriptionLevel,
-        subscription_id: payload.order.subscription_id.toString()
-      })
-      .eq('id', userId);
-    
-    if (profileError) {
-      console.error('Error updating profile subscription status:', profileError);
-    }
-  }
-  
-  // Create transaction record for subscription activation
-  const { error: transactionError } = await supabase
-    .from('credit_transactions')
-    .insert({
-      user_id: userId,
-      type: 'purchase',
-      amount: 0, // No credits added, but subscription activated
-      description: `Subscription activated: ${payload.product.name}`,
-      samcart_order_id: payload.order.id.toString(),
-      metadata: {
-        product_id: payload.product.id,
-        product_name: payload.product.name,
-        subscription_type: subscriptionType,
-        subscription_id: payload.order.subscription_id?.toString(),
-        order_total: payload.order.total,
-        customer_email: payload.customer.email
-      }
-    });
-  
-  if (transactionError) {
-    console.error('Error creating subscription transaction:', transactionError);
-  }
-  
-  console.log(`Activated ${subscriptionType} subscription for user ${userId}`);
-}
+
 
 async function handleRefund(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
   // Update order status to refunded

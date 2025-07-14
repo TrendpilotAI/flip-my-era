@@ -4,6 +4,11 @@
 
 BEGIN;
 
+-- Drop RLS policies first to avoid dependency issues
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+
 -- Drop foreign key constraints first
 ALTER TABLE IF EXISTS stories DROP CONSTRAINT IF EXISTS stories_user_id_fkey;
 ALTER TABLE IF EXISTS tiktok_shares DROP CONSTRAINT IF EXISTS tiktok_shares_user_id_fkey;
@@ -32,12 +37,6 @@ FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
 ALTER TABLE IF EXISTS ebook_generations 
 ADD CONSTRAINT ebook_generations_user_id_fkey 
 FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE;
-
--- Update RLS policies to work with TEXT user IDs
--- Drop existing policies
-DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
-DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 
 -- Create new policies for TEXT-based Clerk user IDs
 CREATE POLICY "Users can view own profile" ON profiles

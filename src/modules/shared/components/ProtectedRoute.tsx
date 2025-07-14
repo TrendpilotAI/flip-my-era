@@ -5,12 +5,12 @@ import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredSubscription?: "free" | "basic" | "premium";
+  requiredCredits?: number;
 }
 
 export const ProtectedRoute = ({ 
   children, 
-  requiredSubscription 
+  requiredCredits 
 }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useClerkAuth();
   const location = useLocation();
@@ -30,23 +30,16 @@ export const ProtectedRoute = ({
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Check subscription level if required
-  if (requiredSubscription && user) {
-    const userSubscription = user.subscription_status || "free";
+  // Check credit balance if required
+  if (requiredCredits && user) {
+    const userCredits = user.credits || 0;
     
-    // Define subscription levels for comparison
-    const levels = {
-      free: 0,
-      basic: 1,
-      premium: 2
-    };
-    
-    // Redirect to upgrade page if subscription level is not sufficient
-    if (levels[userSubscription] < levels[requiredSubscription]) {
+    // Redirect to purchase page if user doesn't have enough credits
+    if (userCredits < requiredCredits) {
       return <Navigate to="/upgrade" state={{ from: location }} replace />;
     }
   }
 
-  // If authenticated and subscription level is sufficient, render children
+  // If authenticated and has sufficient credits, render children
   return <>{children}</>;
 }; 

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/compo
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { supabase } from '@/core/integrations/supabase/client';
 import { useAuth } from '@clerk/clerk-react';
-import { CreditPurchaseModal } from './CreditPurchaseModal';
+import { StripeCreditPurchaseModal } from './StripeCreditPurchaseModal';
 
 interface CreditBalance {
   balance: number;
@@ -211,7 +211,7 @@ export const CreditBalance: React.FC<{
         </CardContent>
       </Card>
 
-      <CreditPurchaseModal
+      <StripeCreditPurchaseModal
         isOpen={showPurchaseModal}
         onClose={() => setShowPurchaseModal(false)}
         onSuccess={handlePurchaseSuccess}

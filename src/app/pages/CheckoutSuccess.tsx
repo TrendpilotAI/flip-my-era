@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
-import { updateSubscription } from "@/modules/story/utils/storyPersistence";
+import { addCreditsToUser } from "@/modules/story/utils/storyPersistence";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
 import { useToast } from '@/modules/shared/hooks/use-toast';
@@ -10,50 +10,75 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, refreshUser } = useClerkAuth();
+  const { user, refreshUser, getToken } = useClerkAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(true);
   const [planName, setPlanName] = useState("");
+  const [creditsAdded, setCreditsAdded] = useState(0);
+  const hasProcessedPayment = useRef(false);
 
   useEffect(() => {
     const processPayment = async () => {
+      // Prevent multiple executions
+      if (hasProcessedPayment.current) {
+        return;
+      }
+
       try {
+        hasProcessedPayment.current = true;
+        
         // Get the plan from URL query params
         const params = new URLSearchParams(location.search);
         const plan = params.get("plan");
         
-        // Map plan to subscription level
-        let subscriptionLevel: "free" | "basic" | "premium" = "free";
+        // Map plan to credit amount (for credit-based purchases)
+        let creditAmount = 0;
         let planDisplayName = "Free Plan";
         
         if (plan === "basic") {
-          subscriptionLevel = "basic";
-          planDisplayName = "Basic Plan";
-        } else if (plan === "premium" || plan === "family") {
-          subscriptionLevel = "premium";
-          planDisplayName = plan === "premium" ? "Premium Plan" : "Family Plan";
+          creditAmount = 3; // 3 credits for basic plan
+          planDisplayName = "Basic Plan - 3 Credits";
+        } else if (plan === "premium") {
+          creditAmount = 5; // 5 credits for premium plan
+          planDisplayName = "Premium Plan - 5 Credits";
+        } else if (plan === "family") {
+          creditAmount = 10; // 10 credits for family plan
+          planDisplayName = "Family Plan - 10 Credits";
+        } else {
+          // Default single credit purchase
+          creditAmount = 1;
+          planDisplayName = "Single Credit Purchase";
         }
         
         setPlanName(planDisplayName);
         
-        // In a real implementation, you would verify the payment with SamCart
-        // before updating the user's subscription status
+        // In a real implementation, you would verify the payment with Stripe
+        // before adding credits to the user's account
         
-        // Update user subscription in database
+        // Add credits to user account
         if (user) {
-          await updateSubscription(user.id, subscriptionLevel);
-          await refreshUser(); // Refresh user data to get updated subscription
+          // Get Clerk session token for authenticated Supabase operations
+          const sessionToken = await getToken({ template: 'supabase' });
+          
+          const result = await addCreditsToUser(user.id, creditAmount, plan || "credit_purchase", sessionToken);
+          
+          if (result.error) {
+            throw result.error;
+          }
+          
+          setCreditsAdded(creditAmount);
+          await refreshUser(); // Refresh user data to get updated credits
           
           toast({
-            title: "Subscription Activated",
-            description: `Your ${planDisplayName} has been successfully activated.`,
+            title: "Credits Added Successfully",
+            description: `${creditAmount} credits have been added to your account.`,
           });
         }
       } catch (error) {
         console.error("Error processing payment:", error);
         toast({
-          title: "Error Activating Subscription",
-          description: "There was a problem activating your subscription. Please contact support.",
+          title: "Error Adding Credits",
+          description: "There was a problem adding credits to your account. Please contact support.",
           variant: "destructive",
         });
       } finally {
@@ -62,7 +87,7 @@ const CheckoutSuccess = () => {
     };
 
     processPayment();
-  }, [location.search, user, refreshUser, toast]);
+  }, []); // Empty dependency array to run only once
 
   return (
     <div className="container max-w-md mx-auto py-16">
@@ -73,15 +98,15 @@ const CheckoutSuccess = () => {
           </div>
           <CardTitle className="text-2xl">Payment Successful!</CardTitle>
           <CardDescription>
-            Thank you for your purchase. Your subscription is now active.
+            Thank you for your purchase. Your credits have been added to your account.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-gray-700">Subscription Details</h3>
+            <h3 className="font-medium text-gray-700">Purchase Details</h3>
             <p className="text-xl font-bold mt-1">{planName}</p>
             <p className="text-sm text-gray-500 mt-1">
-              Your subscription is now active and ready to use
+              {creditsAdded > 0 ? `${creditsAdded} credits added to your account` : "Credits added to your account"}
             </p>
           </div>
           
@@ -90,15 +115,15 @@ const CheckoutSuccess = () => {
             <ul className="space-y-2">
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mr-2 shrink-0 mt-0.5" />
-                <span>Explore all the features included in your plan</span>
+                <span>Create your first story with your new credits</span>
               </li>
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mr-2 shrink-0 mt-0.5" />
-                <span>Create your first story with our enhanced tools</span>
+                <span>Generate an ebook from your story</span>
               </li>
               <li className="flex items-start">
                 <ArrowRight className="h-5 w-5 text-primary mr-2 shrink-0 mt-0.5" />
-                <span>Check out our tutorials to get started quickly</span>
+                <span>Check your credit balance in your dashboard</span>
               </li>
             </ul>
           </div>
@@ -115,7 +140,7 @@ const CheckoutSuccess = () => {
             className="w-full"
             onClick={() => navigate("/settings")}
           >
-            Manage Subscription
+            View Credit Balance
           </Button>
         </CardFooter>
       </Card>
