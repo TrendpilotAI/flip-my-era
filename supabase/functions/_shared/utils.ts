@@ -1,5 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
+// Configuration type for Edge Functions
+export interface Config {
+  authRequired: boolean;
+  cors: {
+    enabled: boolean;
+    origins: string[];
+    methods: string[];
+    allowedHeaders: string[];
+  };
+}
+
 // Standard CORS headers for all functions
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

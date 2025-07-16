@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
@@ -6,7 +7,7 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
   apiVersion: '2024-12-18.acacia'
 });
 // Initialize Supabase client
-const supabase = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
+const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 // Stripe product/price mapping
 const STRIPE_PRODUCTS = {
   // Credit Products - Updated with correct price IDs
@@ -68,7 +69,7 @@ serve(async (req)=>{
     });
   }
 });
-async function handleCheckoutSessionCompleted(session) {
+async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   console.log('Processing checkout session:', session.id);
   const customerEmail = session.customer_details?.email;
   if (!customerEmail) {
@@ -101,7 +102,7 @@ async function handleCheckoutSessionCompleted(session) {
     // Process line items
     for (const item of sessionWithLineItems.line_items.data){
       const priceId = item.price.id;
-      const productConfig = STRIPE_PRODUCTS[priceId];
+      const productConfig = STRIPE_PRODUCTS[priceId as keyof typeof STRIPE_PRODUCTS];
       if (!productConfig) {
         console.log(`No configuration found for price ID: ${priceId}`);
         continue;
@@ -121,7 +122,7 @@ async function handleCheckoutSessionCompleted(session) {
     throw error;
   }
 }
-async function allocateCredits(userId, creditAmount, session, item) {
+async function allocateCredits(userId: string, creditAmount: number, session: Stripe.Checkout.Session, item: Stripe.LineItem) {
   console.log(`Starting credit allocation for user ${userId}: ${creditAmount} credits`);
   console.log(`Item details:`, JSON.stringify(item, null, 2));
   // Get or create user's credit record
@@ -153,7 +154,7 @@ async function allocateCredits(userId, creditAmount, session, item) {
       balance: currentBalance,
       total_earned: totalEarned,
       updated_at: new Date().toISOString()
-    }).eq('user_id', userId);
+    }).eq('user_id', userId).select().single();
     if (updateError) {
       console.error('Error updating credit balance:', updateError);
       return;
@@ -179,7 +180,7 @@ async function allocateCredits(userId, creditAmount, session, item) {
       price_id: item.price.id,
       quantity: item.quantity || 1
     }
-  });
+  }).select().single();
   if (transactionError) {
     console.error('Error creating credit transaction:', transactionError);
   } else {
@@ -187,7 +188,7 @@ async function allocateCredits(userId, creditAmount, session, item) {
   }
   console.log(`Successfully allocated ${creditAmount} credits to user ${userId}. Final balance: ${currentBalance}`);
 }
-async function createOrderRecord(session, userId) {
+async function createOrderRecord(session: Stripe.Checkout.Session, userId: string) {
   const { error } = await supabase.from('orders').insert({
     stripe_session_id: session.id,
     user_id: userId,
@@ -196,7 +197,7 @@ async function createOrderRecord(session, userId) {
     customer_email: session.customer_details?.email,
     customer_name: `${session.customer_details?.name || ''}`,
     order_data: session
-  });
+  }).select().single();
   if (error) {
     console.error('Error creating order record:', error);
   }

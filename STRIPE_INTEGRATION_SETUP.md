@@ -60,12 +60,12 @@ In your Stripe Dashboard, create these products:
   - Amount: $2.99
 
 - **3-Credit Bundle** ($7.99)
-  - Price ID: `prod_SfP7IqlevBnqkD`
+  - Price ID: `price_1Rk4JDQH2CPu3kDwnWUmRgHb`
   - Type: One-time
   - Amount: $7.99
 
 - **5-Credit Bundle** ($11.99)
-  - Price ID: `prod_SfP7H6tTBGbSRF`
+  - Price ID: `price_1Rk4JEQH2CPu3kDwf1ymmbqt`
   - Type: One-time
   - Amount: $11.99
 
@@ -160,7 +160,8 @@ Edit the `STRIPE_PRODUCTS` object in `supabase/functions/stripe-webhook/index.ts
 const STRIPE_PRODUCTS = {
   // Add your actual Stripe price IDs here
   'prod_SfP7IhRHXieFTJ': { type: 'credits', amount: 1, name: 'Single Credit' },
-  'prod_SfP7IqlevBnqkD': { type: 'credits', amount: 3, name: '3-Credit Bundle' },
+  'price_1Rk4JDQH2CPu3kDwnWUmRgHb': { type: 'credits', amount: 3, name: '3-Credit Bundle' },
+  'price_1Rk4JEQH2CPu3kDwf1ymmbqt': { type: 'credits', amount; 5, name: '5-Credit Bundle' }
   // ... add more products
 };
 ```

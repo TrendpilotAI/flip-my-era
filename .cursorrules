@@ -19,58 +19,84 @@ This is a React/TypeScript application called "Flip My Era" that generates alter
 - Shadcn/ui components
 - Lucide React icons
 - React Router DOM
+- Cloudflare Turnstile (script loaded but not implemented)
 
 ## Project Structure
 ```
 src/
-├── components/          # React components
-│   ├── ui/             # Shadcn/ui components
-│   ├── story/          # Story-related components
-│   └── ebook/          # Ebook-related components
-├── pages/              # Page components
+├── app/                # Main app entry point
+│   ├── App.tsx         # Main app component
+│   ├── main.tsx        # App entry with ClerkProvider
+│   └── pages/          # Page components
+├── modules/            # Feature modules
+│   ├── auth/           # Authentication components and contexts
+│   ├── ebook/          # Ebook generation components
+│   ├── shared/         # Shared components and UI
+│   ├── story/          # Story generation components
+│   └── user/           # User dashboard components
+├── core/               # Core integrations and config
+│   ├── api/            # API client
+│   ├── config/         # Environment configuration
+│   └── integrations/   # Third-party integrations
 ├── contexts/           # React contexts (ClerkAuthContext)
 ├── hooks/              # Custom React hooks
-├── utils/              # Utility functions
-├── types/              # TypeScript type definitions
-├── services/           # API services
-└── integrations/       # Third-party integrations
+├── lib/                # Utility functions
+├── pages/              # Legacy page components
+├── test/               # Test utilities
+└── vite-env.d.ts       # Vite type definitions
 ```
 
 ## Authentication System
-- Uses Clerk for authentication
-- ClerkAuthContext provides useClerkAuth hook
-- Integrates with Supabase for user profiles
-- Supports Google OAuth
+- Uses Clerk for authentication with ClerkProvider wrapper
+- Custom ClerkAuthContext provides useClerkAuth hook
+- Integrates with Supabase for user profiles and credit system
+- Supports Google OAuth through Clerk
+- JWT token integration between Clerk and Supabase Edge Functions
+- Credit balance management through Supabase functions
 
 ## Database Schema (Supabase)
-- profiles table: user profiles with subscription status
+- profiles table: user profiles with subscription status and credits
 - stories table: user-generated stories
 - tiktok_shares table: TikTok sharing analytics
+- ebook_generations table: Ebook generation tracking
+- videos table: Video generation tracking
+- user_activities table: User activity logging
 
 ## Key Features
-- Story generation based on personality types
-- User dashboard with story management
-- Ebook generation
-- TikTok sharing integration
+- Story generation based on personality types with streaming responses
+- User dashboard with story management and credit system
+- Ebook generation with chapter streaming
+- TikTok sharing integration with analytics
 - Subscription management (free/basic/premium)
+- Credit-based system for premium features
+- Admin dashboard for user management
+- Stripe integration for payments
+- Video generation capabilities
 
 ## Development Guidelines
 - Use TypeScript for all new code
-- Follow the existing component structure
+- Follow the existing component structure in modules/
 - Use Shadcn/ui components for UI elements
-- Implement proper error handling
-- Use the existing authentication context
+- Implement proper error handling with toast notifications
+- Use the existing authentication context (useClerkAuth)
 - Follow the established naming conventions
+- Use Supabase Edge Functions for backend logic
+- Implement proper CORS handling for API endpoints
 
 ## Common Patterns
 - Components use the useClerkAuth hook for authentication
 - API calls use the supabase client from @/core/integrations/supabase/client
-- Toast notifications use the useToast hook
+- Toast notifications use the useToast hook from shared components
 - Form handling uses React state and controlled components
 - Styling uses Tailwind CSS classes
+- Edge Functions use Deno.serve for HTTP handling
+- JWT tokens are used for Supabase authentication via Clerk
 
-## Important Notes
+## Security & Integration Notes
 - The app uses Clerk for authentication, not a custom auth system
+- Cloudflare Turnstile script is loaded but not implemented
 - All authentication-related imports should use ClerkAuthContext
 - The project has both frontend (React) and backend (Supabase functions) code
-- Environment variables should be configured for Clerk and Supabase 
+- Environment variables should be configured for Clerk, Supabase, Stripe, and other services
+- JWT integration between Clerk and Supabase is configured for Edge Functions
+- Credit system is implemented with validation and balance tracking 

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/mod
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { stripeClient } from '@/core/integrations/stripe/client';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { Coins, Crown, Check, Star, Zap } from 'lucide-react';
 
 interface PricingTier {
@@ -72,7 +72,7 @@ export const StripeCreditPurchaseModal: React.FC<StripeCreditPurchaseModalProps>
 }) => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const handlePurchase = async (tier: PricingTier) => {
     setLoading(tier.id);

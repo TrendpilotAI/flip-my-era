@@ -187,7 +187,8 @@ async function allocateCredits(userId: string, creditAmount: number, session: an
         total_earned: totalEarned,
         updated_at: new Date().toISOString()
       })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .single();
 
     if (updateError) {
       console.error('Error updating credit balance:', updateError);
@@ -217,7 +218,8 @@ async function allocateCredits(userId: string, creditAmount: number, session: an
         price_id: item.price.id,
         quantity: item.quantity || 1
       }
-    });
+    })
+    .single();
 
   if (transactionError) {
     console.error('Error creating credit transaction:', transactionError);
@@ -239,7 +241,8 @@ async function createOrderRecord(session: any, userId: string) {
       customer_email: session.customer_details?.email,
       customer_name: `${session.customer_details?.name || ''}`,
       order_data: session
-    });
+    })
+    .single();
 
   if (error) {
     console.error('Error creating order record:', error);

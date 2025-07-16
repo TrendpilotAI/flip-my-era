@@ -13,6 +13,7 @@ export interface StripeCheckoutOptions {
   successUrl: string;
   cancelUrl: string;
   customerEmail?: string;
+  quantity?: number;
 }
 
 export interface StripeBillingPortalOptions {
@@ -51,7 +52,7 @@ export class StripeClient {
       lineItems: [
         {
           price: options.priceId,
-          quantity: 1,
+          quantity: options.quantity || 1,
         },
       ],
       mode: 'payment',

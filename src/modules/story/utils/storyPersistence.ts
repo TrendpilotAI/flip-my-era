@@ -234,12 +234,12 @@ export const addCreditsToUser = async (
         .single();
 
       if (createError) throw createError;
-      currentBalance = newCredit.balance;
-      totalEarned = newCredit.total_earned;
+      currentBalance = newCredit.balance as number;
+      totalEarned = newCredit.total_earned as number;
     } else if (!creditError) {
       // Update existing credit record
-      currentBalance = creditData.balance + creditAmount;
-      totalEarned = (creditData.total_earned || 0) + creditAmount;
+      currentBalance = (creditData.balance as number) + creditAmount;
+      totalEarned = ((creditData.total_earned as number) || 0) + creditAmount;
 
       const { error: updateError } = await supabaseClient
         .from('user_credits')
@@ -261,8 +261,8 @@ export const addCreditsToUser = async (
       .insert({
         user_id: userId,
         amount: creditAmount,
-        transaction_type: 'purchase_single',
-        description: `${purchaseType}: ${creditAmount} credits added`,
+        transaction_type: 'purchase',  // Changed from 'purchase_single' to 'purchase'
+        description: `${purchaseType}: ${creditAmount} credit${creditAmount > 1 ? 's' : ''} added`,
         balance_after_transaction: currentBalance,
         metadata: {
           purchase_type: purchaseType,

@@ -2,30 +2,42 @@
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 
-// Import via bare specifier thanks to the import_map.json file.
-import Stripe from 'https://esm.sh/stripe@14?target=denonext'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "std/http/server.ts";
+import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') as string, {
-  // This is needed to use the Fetch API rather than relying on the Node http
-  // package.
-  apiVersion: '2024-11-20'
-})
+// This is needed to use the Web Crypto API in Deno.
+const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
-// This is needed in order to use the Web Crypto API in Deno.
-const cryptoProvider = Stripe.createSubtleCryptoProvider()
+// Initialize Stripe
+const stripeKey = Deno.env.get('STRIPE_API_KEY') as string;
+console.log('Stripe Key loaded:', stripeKey ? `${stripeKey.slice(0, 7)}...${stripeKey.slice(-4)}` : 'not found');
+
+const stripe = new Stripe(stripeKey, {
+  apiVersion: '2025-06-30.basil' as any, // Type assertion needed as this is a future API version
+  httpClient: Stripe.createFetchHttpClient(), // Use Fetch API for Deno compatibility
+});
 
 // Initialize Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Stripe product configuration
 const STRIPE_PRODUCTS = {
-  'price_1Rk4JDQH2CPu3kDwnWUmRgHb': { name: '3-Credit Bundle', amount: 3 },
-  'price_1Rk4JDQH2CPu3kDwnWUmRgHc': { name: '5-Credit Bundle', amount: 5 },
-  'price_1Rk4JDQH2CPu3kDwnWUmRgHd': { name: '10-Credit Bundle', amount: 10 }
-} as const
+  'price_1Rk4JDQH2CPu3kDwaJ9W1TDW': {
+    name: 'Single Credit',
+    amount: 1
+  },
+  'price_1Rk4JDQH2CPu3kDwnWUmRgHb': {
+    name: '3-Credit Bundle',
+    amount: 3
+  },
+  'price_1Rk4JEQH2CPu3kDwf1ymmbqt': {
+    name: '5-Credit Bundle',
+    amount: 5
+  }
+};
 
 console.log('🚀 Stripe Webhook Function Started')
 
@@ -64,8 +76,9 @@ Deno.serve(async (request) => {
         cryptoProvider
       )
     } catch (err) {
-      console.error('❌ Webhook signature verification failed:', err.message)
-      return new Response(`Webhook signature verification failed: ${err.message}`, { status: 400 })
+      const errMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      console.error('❌ Webhook signature verification failed:', errMessage)
+      return new Response(`Webhook signature verification failed: ${errMessage}`, { status: 400 })
     }
 
     console.log(`🔔 Event received: ${receivedEvent.id} (${receivedEvent.type})`)
@@ -86,7 +99,8 @@ Deno.serve(async (request) => {
 
   } catch (error) {
     console.error('❌ Webhook error:', error)
-    return new Response(`Webhook error: ${error.message}`, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    return new Response(`Webhook error: ${errorMessage}`, { status: 500 })
   }
 })
 
@@ -221,8 +235,7 @@ async function allocateCredits(
           stripe_customer_id: session.customer,
           product_name: item.description,
           amount_paid: session.amount_total,
-          price_id: item.price?.id,
-          quantity: item.quantity || 1
+          price_id: item.price?.id
         }
       })
 
