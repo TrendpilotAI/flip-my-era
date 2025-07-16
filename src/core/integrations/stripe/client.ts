@@ -1,7 +1,12 @@
 import { loadStripe } from '@stripe/stripe-js';
 
-// Initialize Stripe with your publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
+// Initialize Stripe with your publishable key and locale configuration
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!, {
+  // Remove locale configuration to avoid CDN issues
+  // locale: 'en',
+  // Disable advanced fraud signals to avoid locale loading
+  advancedFraudSignals: false,
+});
 
 export interface StripeCheckoutOptions {
   priceId: string;
