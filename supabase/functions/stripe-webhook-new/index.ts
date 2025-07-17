@@ -205,15 +205,12 @@ async function allocateCredits(
     const newBalance = currentBalance + creditAmount
     const newTotalEarned = totalEarned + creditAmount
 
-    // Upsert user credits
-    const { error: upsertError } = await supabase
-      .from('user_credits')
-      .upsert({
-        user_id: userId,
-        balance: newBalance,
-        total_earned: newTotalEarned,
-        updated_at: new Date().toISOString()
-      })
+    // Use RPC to handle the atomic update
+    const { error: upsertError } = await supabase.rpc('upsert_user_credits', {
+      p_user_id: userId,
+      p_balance: newBalance,
+      p_total_earned: newTotalEarned
+    })
 
     if (upsertError) {
       console.error('❌ Error upserting user credits:', upsertError)
