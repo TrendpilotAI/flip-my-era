@@ -32,7 +32,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   refreshUser: () => Promise<void>;
   fetchCreditBalance: () => Promise<number>;
-  getToken: () => Promise<string | null>;
+  getToken: (options?: { template?: string }) => Promise<string | null>;
   isNewUser: boolean;
   setIsNewUser: (value: boolean) => void;
   SignInButton: typeof SignInButton;

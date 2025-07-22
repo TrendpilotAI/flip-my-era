@@ -150,7 +150,8 @@ export const useStoryGeneration = () => {
         };
         
         const savedStory = await saveStory(story, name, date, prompt, additionalData);
-        setStoryId(savedStory.id || savedStory.storyId);
+        const newStoryId = savedStory.id || savedStory.storyId;
+        setStoryId(newStoryId);
         
         toast({
           title: "Alternate life discovered!",

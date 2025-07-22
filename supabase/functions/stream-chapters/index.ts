@@ -3,6 +3,25 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 // @ts-ignore -- Deno Edge Function imports
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Import story memory utilities
+import {
+  generateStoryOutline,
+  generateChapterSummary,
+  buildStoryContext,
+  saveStoryOutline,
+  saveChapterSummary,
+  saveStoryState,
+  getStoryMemory,
+  extractLastWords,
+  checkRepetition,
+  saveChapterEmbedding,
+  generateEmbedding,
+  type StoryOutline,
+  type ChapterSummary,
+  type StoryState,
+  type CharacterBio
+} from '../_shared/story-memory.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -52,10 +71,12 @@ interface StreamChapterRequest {
   selectedTheme?: string;
   selectedFormat?: string;
   numChapters?: number;
+  ebookGenerationId?: string; // Required for memory system
+  useEnhancedMemory?: boolean; // Flag to enable/disable memory system
 }
 
 interface ChapterProgress {
-  type: 'progress' | 'chapter' | 'complete' | 'error';
+  type: 'progress' | 'chapter' | 'complete' | 'error' | 'outline' | 'memory_check';
   currentChapter?: number;
   totalChapters?: number;
   chapterTitle?: string;
@@ -63,7 +84,36 @@ interface ChapterProgress {
   progress?: number;
   message?: string;
   estimatedTimeRemaining?: number;
+  outline?: StoryOutline;
+  memoryWarning?: {
+    isRepetitive: boolean;
+    similarChapters: number[];
+    maxSimilarity: number;
+  };
 }
+
+/**
+ * Fix text formatting to follow Standard English conventions
+ * - Ensures proper spacing after periods
+ * - Fixes other common spacing issues
+ */
+const fixTextFormatting = (text: string): string => {
+  return text
+    // Fix period spacing: ensure single space after periods followed by letters
+    .replace(/\.([A-Z])/g, '. $1')
+    // Fix multiple spaces after periods
+    .replace(/\.\s{2,}/g, '. ')
+    // Fix missing space after periods at end of sentences
+    .replace(/\.([a-zA-Z])/g, '. $1')
+    // Fix other punctuation spacing issues
+    .replace(/\?([A-Z])/g, '? $1')
+    .replace(/!([A-Z])/g, '! $1')
+    .replace(/;([A-Z])/g, '; $1')
+    .replace(/:([A-Z])/g, ': $1')
+    // Clean up any double spaces that might have been created
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
 
 // Story formats configuration
 const storyFormats = {
@@ -124,6 +174,188 @@ async function apiRequestWithRetry<T>(
   }
   
   throw lastError;
+}
+
+/**
+ * Generate a single chapter using the enhanced memory system
+ */
+async function generateSingleChapterWithMemory(
+  originalStory: string,
+  chapterNumber: number,
+  totalChapters: number,
+  useTaylorSwiftThemes: boolean,
+  selectedTheme?: string,
+  selectedFormat?: string,
+  storyContext?: string
+): Promise<{ title: string; content: string }> {
+  const format = selectedFormat || 'short-story';
+  const theme = selectedTheme || 'coming-of-age';
+  
+  let prompt: string;
+
+  if (useTaylorSwiftThemes) {
+    const wordTarget = format === 'novella' ?
+      `approximately 1,250-3,125 words` :
+      `approximately 300-2,500 words`;
+    
+    const themeDescriptions = {
+      'coming-of-age': 'coming-of-age, self-discovery, and finding your voice',
+      'first-love': 'first love, innocent romance, and the magic of new connections',
+      'heartbreak': 'heartbreak, healing, and finding strength after loss',
+      'friendship': 'friendship, loyalty, and the bonds that shape us'
+    };
+    
+    const themeDescription = themeDescriptions[theme as keyof typeof themeDescriptions] || themeDescriptions['coming-of-age'];
+    
+    prompt = `
+      ${storyContext ? storyContext : ''}
+      
+      Create Chapter ${chapterNumber} of ${totalChapters} for a Taylor Swift-inspired young adult ${format === 'novella' ? 'novella' : 'short story'} based on this story:
+      
+      ${originalStory}
+      
+      SPECIFICATIONS:
+      - Theme: ${themeDescription}
+      - Format: YA ${format === 'novella' ? 'Novella' : 'Short Story'}
+      - Target: ${wordTarget} for this chapter
+      - Chapter ${chapterNumber} of ${totalChapters}
+      - Age-appropriate content for readers 13-18
+      - Emotional storytelling reminiscent of Taylor Swift's lyrical style
+      
+      IMPORTANT CONTINUITY REQUIREMENTS:
+      - Maintain consistency with all character names, personalities, and relationships mentioned above
+      - Continue the plot logically from where the previous chapter ended
+      - Reference and build upon events from previous chapters
+      - Keep the story's emotional tone and pacing consistent
+      - Do NOT repeat major events or character developments from previous chapters
+      - Advance the plot meaningfully toward the planned chapter outcome
+      
+      Provide:
+      - A compelling chapter title that reflects the emotional journey
+      - Rich content with authentic dialogue and relatable teenage experiences
+      - Character development that builds on previous chapters
+      - Age-appropriate themes and situations
+      - Vivid descriptions and emotional resonance
+      
+      ${chapterNumber === 1 ? 'This is the opening chapter - establish the world, characters, and central conflict while following the planned outline.' : 
+        chapterNumber === totalChapters ? 'This is the final chapter - bring the story to an emotionally satisfying conclusion that resolves the main conflicts.' :
+        'This is a middle chapter - develop the story and deepen character relationships while advancing toward the climax.'}
+      
+      Format your response as a JSON object with "title" and "content" properties.
+    `;
+  } else {
+    prompt = `
+      ${storyContext ? storyContext : ''}
+      
+      Create Chapter ${chapterNumber} of ${totalChapters} for a children's book based on this story:
+      
+      ${originalStory}
+      
+      IMPORTANT CONTINUITY REQUIREMENTS:
+      - Keep all character names and personalities consistent with previous chapters
+      - Build upon events from previous chapters without repeating them
+      - Maintain the story's tone and style
+      - Advance the plot toward the planned chapter outcome
+      
+      Make this chapter engaging, imaginative, and appropriate for children.
+      ${chapterNumber === 1 ? 'This is the opening chapter - introduce the characters and setting following the planned outline.' : 
+        chapterNumber === totalChapters ? 'This is the final chapter - bring the story to a satisfying conclusion.' :
+        'This is a middle chapter - develop the adventure and characters.'}
+      
+      Format your response as a JSON object with "title" and "content" properties.
+    `;
+  }
+
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+  if (!groqApiKey) {
+    throw new Error('GROQ_API_KEY environment variable is not set');
+  }
+  
+  const response = await apiRequestWithRetry<GroqChatResponse>({
+    method: 'POST',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    headers: {
+      'Authorization': `Bearer ${groqApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    data: {
+      model: 'llama3-70b-8192',
+      messages: [
+        {
+          role: 'system',
+          content: useTaylorSwiftThemes
+            ? `You are a creative young adult author who specializes in emotionally resonant ${format === 'novella' ? 'novellas' : 'short stories'} with Taylor Swift-inspired themes. You write age-appropriate content that captures the intensity and authenticity of teenage emotions. You maintain perfect story continuity and never repeat content.`
+            : 'You are a creative children\'s book author who specializes in creating engaging chapter books with perfect continuity and character consistency.'
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.7,
+      max_tokens: format === 'novella' ? 4096 : 2048,
+      response_format: { type: "json_object" }
+    }
+  });
+
+  let parsedContent;
+  try {
+    let cleanedContent = response.data.choices[0].message.content
+      .replace(/\0/g, '')
+      .replace(/[\x00-\x1F\x7F]/g, '')
+      .replace(/[\uFFFE\uFFFF]/g, '')
+      .replace(/[\uD800-\uDFFF]/g, '')
+      .trim();
+    
+    parsedContent = JSON.parse(cleanedContent);
+  } catch (parseError) {
+    console.error('Error parsing AI response:', parseError);
+    console.error('Raw AI response:', response.data.choices[0].message.content);
+    
+    const rawContent = response.data.choices[0].message.content;
+    let titleMatch = rawContent.match(/"title"\s*:\s*"([^"]*)"/);
+    let contentMatch = rawContent.match(/"content"\s*:\s*"([^"]*)"/);
+    
+    if (!titleMatch) {
+      titleMatch = rawContent.match(/title\s*:\s*([^\n,}]+)/);
+    }
+    if (!contentMatch) {
+      contentMatch = rawContent.match(/content\s*:\s*([^\n,}]+)/);
+    }
+    
+    parsedContent = {
+      title: titleMatch ? titleMatch[1].trim() : `Chapter ${chapterNumber}`,
+      content: contentMatch ? contentMatch[1].trim() : rawContent
+    };
+  }
+  
+  const rawTitle = typeof parsedContent.title === 'string'
+    ? parsedContent.title
+    : JSON.stringify(parsedContent.title ?? `Chapter ${chapterNumber}`);
+
+  const rawContent = typeof parsedContent.content === 'string'
+    ? parsedContent.content
+    : JSON.stringify(parsedContent.content ?? '');
+
+  const cleanTitle = fixTextFormatting(
+    (rawTitle || `Chapter ${chapterNumber}`)
+      .replace(/\0/g, '')
+      .replace(/[\x00-\x1F\x7F]/g, '')
+      .replace(/[\uFFFE\uFFFF]/g, '')
+      .replace(/[\uD800-\uDFFF]/g, '')
+      .trim()
+  );
+    
+  const cleanContent = fixTextFormatting(
+    (rawContent)
+      .replace(/\0/g, '')
+      .replace(/[\x00-\x1F\x7F]/g, '')
+      .replace(/[\uFFFE\uFFFF]/g, '')
+      .replace(/[\uD800-\uDFFF]/g, '')
+      .trim()
+  );
+  
+  return {
+    title: cleanTitle,
+    content: cleanContent
+  };
 }
 
 async function generateSingleChapter(
@@ -296,19 +528,23 @@ async function generateSingleChapter(
     ? parsedContent.content
     : JSON.stringify(parsedContent.content ?? '');
 
-  const cleanTitle = (rawTitle || `Chapter ${chapterNumber}`)
-    .replace(/\0/g, '')
-    .replace(/[\x00-\x1F\x7F]/g, '')
-    .replace(/[\uFFFE\uFFFF]/g, '')
-    .replace(/[\uD800-\uDFFF]/g, '')
-    .trim();
+  const cleanTitle = fixTextFormatting(
+    (rawTitle || `Chapter ${chapterNumber}`)
+      .replace(/\0/g, '')
+      .replace(/[\x00-\x1F\x7F]/g, '')
+      .replace(/[\uFFFE\uFFFF]/g, '')
+      .replace(/[\uD800-\uDFFF]/g, '')
+      .trim()
+  );
     
-  const cleanContent = (rawContent)
-    .replace(/\0/g, '')
-    .replace(/[\x00-\x1F\x7F]/g, '')
-    .replace(/[\uFFFE\uFFFF]/g, '')
-    .replace(/[\uD800-\uDFFF]/g, '')
-    .trim();
+  const cleanContent = fixTextFormatting(
+    (rawContent)
+      .replace(/\0/g, '')
+      .replace(/[\x00-\x1F\x7F]/g, '')
+      .replace(/[\uFFFE\uFFFF]/g, '')
+      .replace(/[\uD800-\uDFFF]/g, '')
+      .trim()
+  );
   
   return {
     title: cleanTitle,
@@ -391,12 +627,15 @@ serve(async (req: Request) => {
             
             // Clean all string fields to ensure they're safe for JSON serialization
             const cleanString = (str: string): string => {
-              return str
+              const cleaned = str
                 .replace(/\0/g, '') // Remove null bytes
                 .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters except newlines/tabs
                 .replace(/[\uFFFE\uFFFF]/g, '') // Remove Unicode BOM and invalid chars
                 .replace(/[\uD800-\uDFFF]/g, '') // Remove surrogate pairs
                 .trim(); // Remove leading/trailing whitespace
+              
+              // Apply text formatting fixes for proper English conventions
+              return fixTextFormatting(cleaned);
             };
             
             // Clean all string fields

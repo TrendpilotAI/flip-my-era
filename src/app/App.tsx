@@ -18,6 +18,7 @@ import AdminDashboard from "@/app/pages/AdminDashboard";
 import AdminIntegrations from "@/app/pages/AdminIntegrations";
 import AdminUsers from "@/app/pages/AdminUsers";
 import AdminCredits from "@/app/pages/AdminCredits";
+import { MemorySystemDemo } from "@/app/pages/MemorySystemDemo";
 
 function App() {
   return (
@@ -30,6 +31,9 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* Memory System Demo - Public for testing */}
+            <Route path="/memory-demo" element={<MemorySystemDemo />} />
             
             {/* Protected routes - New unified dashboard */}
             <Route 

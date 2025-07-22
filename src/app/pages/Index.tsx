@@ -11,8 +11,6 @@ import { Button } from "@/modules/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
-import AuthTest from "@/components/AuthTest";
-
 const Index = () => {
   useApiCheck();
   const { isAuthenticated, user } = useClerkAuth();
@@ -43,17 +41,6 @@ const Index = () => {
 
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         <PageHeader />
-
-        {/* Authentication Test Component - Remove this after debugging */}
-        {isAuthenticated && user && (
-          (user.email === 'admin@flipmyera.com' ||
-           user.email === 'danny.ijdo@gmail.com' ||
-           user.email?.includes('trendpilot')) && (
-            <div className="mb-8">
-              <AuthTest />
-            </div>
-          )
-        )}
 
         {/* Call-to-action for non-authenticated users */}
         {!isAuthenticated && (

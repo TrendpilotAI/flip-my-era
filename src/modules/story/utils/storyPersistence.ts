@@ -104,6 +104,7 @@ export const getLocalStory = (): StoryData | null => {
     if (!storyData) return null;
     
     const parsedData = JSON.parse(storyData);
+
     
     // Check if the storyId is in the old "local-" format and clear it
     if (parsedData.storyId && parsedData.storyId.startsWith('local-')) {

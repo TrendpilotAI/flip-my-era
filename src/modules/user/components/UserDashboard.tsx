@@ -21,6 +21,8 @@ import {
 import ReactMarkdown from "react-markdown";
 import { UserBooks } from '@/modules/ebook/components/UserBooks';
 import { StripeBillingPortal } from '@/modules/user/components/StripeBillingPortal';
+import { MemoryEnhancedEbookGenerator } from '@/modules/ebook/components/MemoryEnhancedEbookGenerator';
+import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 
 interface Story {
   id: string;
@@ -32,7 +34,7 @@ interface Story {
 }
 
 const UserDashboard = () => {
-  const { user } = useClerkAuth();
+  const { user, getToken } = useClerkAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -142,11 +144,15 @@ const UserDashboard = () => {
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="stories">My Stories</TabsTrigger>
-            <TabsTrigger value="books">My Books</TabsTrigger>
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
+                            <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="stories">My Stories</TabsTrigger>
+                <TabsTrigger value="books">My Books</TabsTrigger>
+                <TabsTrigger value="memory-enhanced" className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Memory Enhanced
+                </TabsTrigger>
+                <TabsTrigger value="account">Account</TabsTrigger>
+                <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -329,6 +335,95 @@ const UserDashboard = () => {
           {/* Books Tab */}
           <TabsContent value="books" className="space-y-6">
             <UserBooks />
+          </TabsContent>
+
+          {/* Memory Enhanced Tab */}
+          <TabsContent value="memory-enhanced" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Memory-Enhanced Story Generation
+                </CardTitle>
+                <CardDescription>
+                  Generate stories with advanced AI memory system for perfect character consistency and plot continuity
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MemoryEnhancedEbookGenerator
+                  originalStory="Enter your story idea here and watch the AI create a multi-chapter book with perfect continuity..."
+                  useTaylorSwiftThemes={false}
+                  selectedTheme="coming-of-age"
+                  selectedFormat="short-story"
+                  onChaptersGenerated={async (chapters) => {
+                    console.log('Generated chapters:', chapters);
+                    
+                    // Save to database using the same logic as EbookGenerator
+                    try {
+                      const token = await getToken({ template: 'supabase' });
+                      if (token && user?.id) {
+                        const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
+                        
+                        const { data: ebookGeneration, error } = await supabaseWithAuth
+                          .from('ebook_generations')
+                          .insert({
+                            user_id: user.id,
+                            title: `Memory-Enhanced Story: ${chapters[0]?.title || 'Untitled'}`,
+                            content: JSON.stringify(chapters),
+                            status: 'completed',
+                            credits_used: 1,
+                            paid_with_credits: true,
+                            story_type: 'memory-enhanced',
+                            chapter_count: chapters.length,
+                            word_count: chapters.reduce((total, ch) => total + ch.content.length, 0)
+                          })
+                          .select()
+                          .single();
+
+                        if (error) {
+                          console.error('Error saving memory-enhanced story:', error);
+                          toast({
+                            title: "Save Failed",
+                            description: "Story generated but couldn't be saved to your library.",
+                            variant: "destructive",
+                          });
+                        } else {
+                          console.log('Successfully saved memory-enhanced story:', ebookGeneration);
+                          toast({
+                            title: "Story Saved!",
+                            description: `Successfully created and saved ${chapters.length} chapters with enhanced memory system.`,
+                          });
+                          
+                          // Refresh the stories list
+                          window.location.reload();
+                        }
+                      } else {
+                        toast({
+                          title: "Authentication Required",
+                          description: "Please sign in to save your generated stories.",
+                          variant: "destructive",
+                        });
+                      }
+                    } catch (dbError) {
+                      console.error('Database save error:', dbError);
+                      toast({
+                        title: "Save Error",
+                        description: "Story generated but couldn't be saved. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  onError={(error) => {
+                    console.error('Generation error:', error);
+                    toast({
+                      title: "Generation Failed",
+                      description: error,
+                      variant: "destructive",
+                    });
+                  }}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Account Tab */}

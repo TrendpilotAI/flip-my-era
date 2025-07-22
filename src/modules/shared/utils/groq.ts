@@ -1,3 +1,26 @@
+/**
+ * Fix text formatting to follow Standard English conventions
+ * - Ensures proper spacing after periods
+ * - Fixes other common spacing issues
+ */
+const fixTextFormatting = (text: string): string => {
+  return text
+    // Fix period spacing: ensure single space after periods followed by letters
+    .replace(/\.([A-Z])/g, '. $1')
+    // Fix multiple spaces after periods
+    .replace(/\.\s{2,}/g, '. ')
+    // Fix missing space after periods at end of sentences
+    .replace(/\.([a-zA-Z])/g, '. $1')
+    // Fix other punctuation spacing issues
+    .replace(/\?([A-Z])/g, '? $1')
+    .replace(/!([A-Z])/g, '! $1')
+    .replace(/;([A-Z])/g, '; $1')
+    .replace(/:([A-Z])/g, ': $1')
+    // Clean up any double spaces that might have been created
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
+
 export const generateWithGroq = async (prompt: string) => {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   
@@ -51,7 +74,10 @@ export const generateWithGroq = async (prompt: string) => {
     }
 
     const data = await response.json();
-    return data.choices[0].message.content;
+    const generatedText = data.choices[0].message.content;
+    
+    // Apply text formatting fixes
+    return fixTextFormatting(generatedText);
   } catch (error) {
     console.error('Error generating with Groq:', error);
     throw error;

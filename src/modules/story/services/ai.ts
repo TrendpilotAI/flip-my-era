@@ -96,6 +96,29 @@ export async function isRunwareAvailable(): Promise<boolean> {
 }
 
 /**
+ * Fix text formatting to follow Standard English conventions
+ * - Ensures proper spacing after periods
+ * - Fixes other common spacing issues
+ */
+const fixTextFormatting = (text: string): string => {
+  return text
+    // Fix period spacing: ensure single space after periods followed by letters
+    .replace(/\.([A-Z])/g, '. $1')
+    // Fix multiple spaces after periods
+    .replace(/\.\s{2,}/g, '. ')
+    // Fix missing space after periods at end of sentences
+    .replace(/\.([a-zA-Z])/g, '. $1')
+    // Fix other punctuation spacing issues
+    .replace(/\?([A-Z])/g, '? $1')
+    .replace(/!([A-Z])/g, '! $1')
+    .replace(/;([A-Z])/g, '; $1')
+    .replace(/:([A-Z])/g, ': $1')
+    // Clean up any double spaces that might have been created
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+};
+
+/**
  * Generate a story using the Groq API with retry logic for rate limits
  */
 export async function generateStory(options: GenerateStoryOptions): Promise<string> {
@@ -120,7 +143,10 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
       }
     });
     
-    return response.data.choices[0].message.content;
+    const generatedText = response.data.choices[0].message.content;
+    
+    // Apply text formatting fixes for proper English conventions
+    return fixTextFormatting(generatedText);
   } catch (error) {
     console.error('Failed to generate story:', error);
     throw new Error('Story generation failed. Please try again later.');
