@@ -11,7 +11,6 @@ import {
   Loader2, 
   BookOpen, 
   User, 
-  CreditCard, 
   Plus, 
   Calendar, 
   UserCircle,
@@ -20,7 +19,6 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { UserBooks } from '@/modules/ebook/components/UserBooks';
-import { StripeBillingPortal } from '@/modules/user/components/StripeBillingPortal';
 import { MemoryEnhancedEbookGenerator } from '@/modules/ebook/components/MemoryEnhancedEbookGenerator';
 import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 
@@ -53,7 +51,7 @@ const UserDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['overview', 'stories', 'account', 'billing'].includes(tabParam)) {
+    if (tabParam && ['overview', 'stories', 'account'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -114,45 +112,63 @@ const UserDashboard = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 py-12 px-4">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            className="mb-4 text-white hover:bg-white/20"
+            onClick={() => navigate('/')}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Back to Stories
+          </Button>
+          
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Welcome back, {user?.name?.split(' ')[0] || 'Storyteller'}! ✨
-              </h1>
-              <p className="text-gray-600">
-                Your alternate timeline stories and account settings
+              <h1 className="text-3xl font-bold text-white mb-2">Your Dashboard</h1>
+              <p className="text-white/90">
+                Welcome back, {user?.name || 'Time Traveler'}! Manage your stories and explore your alternate timelines.
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-white">
+                <UserCircle className="h-5 w-5" />
+                <span className="font-medium">{user?.name || 'User'}</span>
+              </div>
               {getSubscriptionBadge()}
-              <Button
-                onClick={() => navigate('/')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Story
-              </Button>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-                            <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="stories">My Stories</TabsTrigger>
-                <TabsTrigger value="books">My Books</TabsTrigger>
-                <TabsTrigger value="memory-enhanced" className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Memory Enhanced
-                </TabsTrigger>
-                <TabsTrigger value="account">Account</TabsTrigger>
-                <TabsTrigger value="billing">Billing</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="stories">My Stories</TabsTrigger>
+            <TabsTrigger value="books">My Books</TabsTrigger>
+            <TabsTrigger value="memory-enhanced" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Memory Enhanced
+            </TabsTrigger>
+            <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -237,28 +253,15 @@ const UserDashboard = () => {
                         <h4 className="font-semibold text-gray-900 mb-2 line-clamp-1">
                           {story.title || "Untitled Story"}
                         </h4>
-                        <div className="flex items-center text-sm text-gray-500 mb-2">
-                          <UserCircle className="h-4 w-4 mr-1" />
-                          <span>{story.name}</span>
-                        </div>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {story.initial_story.substring(0, 100)}...
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                          {story.initial_story}
                         </p>
-                        <div className="text-xs text-gray-500 mt-2">
-                          {new Date(story.created_at).toLocaleDateString()}
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{story.name}</span>
+                          <span>{new Date(story.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
                     ))}
-                  </div>
-                )}
-                {stories.length > 3 && (
-                  <div className="mt-4 text-center">
-                    <Button
-                      variant="outline"
-                      onClick={() => setActiveTab("stories")}
-                    >
-                      View All Stories
-                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -267,69 +270,57 @@ const UserDashboard = () => {
 
           {/* Stories Tab */}
           <TabsContent value="stories" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">All Stories</h2>
-              <Button
-                onClick={() => navigate('/')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Story
-              </Button>
-            </div>
-
-            {stories.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">No stories yet</h3>
-                  <p className="text-gray-500 mb-4">Start creating your alternate life stories!</p>
-                  <Button
-                    onClick={() => navigate('/')}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
-                  >
-                    Create Your First Story
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stories.map((story) => (
-                  <Card
-                    key={story.id}
-                    className="hover:shadow-lg transition-shadow cursor-pointer"
-                    onClick={() => navigate(`/story/${story.id}`)}
-                  >
-                    <CardContent className="p-6">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-1">
-                        {story.title || "Untitled Story"}
-                      </h3>
-                      <div className="flex items-center text-sm text-gray-500 mb-4">
-                        <UserCircle className="h-4 w-4 mr-1" />
-                        <span>{story.name}</span>
-                        {story.birth_date && (
-                          <>
-                            <Calendar className="h-4 w-4 ml-3 mr-1" />
-                            <span>{new Date(story.birth_date).toLocaleDateString()}</span>
-                          </>
-                        )}
+            <Card>
+              <CardHeader>
+                <CardTitle>My Stories</CardTitle>
+                <CardDescription>
+                  All your alternate timeline stories
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {stories.length === 0 ? (
+                  <div className="text-center py-8">
+                    <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No stories yet</h3>
+                    <p className="text-gray-500 mb-4">Start creating your first alternate timeline story!</p>
+                    <Button
+                      onClick={() => navigate('/')}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                    >
+                      Create Your First Story
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {stories.map((story) => (
+                      <div
+                        key={story.id}
+                        className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={() => navigate(`/story/${story.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-gray-900 mb-2">
+                              {story.title || "Untitled Story"}
+                            </h4>
+                            <p className="text-sm text-gray-600 mb-2 line-clamp-3">
+                              {story.initial_story}
+                            </p>
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span>By {story.name}</span>
+                              <span>{new Date(story.created_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="prose prose-sm line-clamp-3 mb-4 text-gray-600">
-                        <ReactMarkdown>{story.initial_story}</ReactMarkdown>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">
-                          {new Date(story.created_at).toLocaleDateString()}
-                        </span>
-                        <Button variant="outline" size="sm">
-                          Read More
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Books Tab */}
@@ -375,7 +366,7 @@ const UserDashboard = () => {
                             paid_with_credits: true,
                             story_type: 'memory-enhanced',
                             chapter_count: chapters.length,
-                            word_count: chapters.reduce((total, ch) => total + ch.content.length, 0)
+                            word_count: chapters.reduce((total, chapter) => total + (chapter.content?.length || 0), 0)
                           })
                           .select()
                           .single();
@@ -465,36 +456,6 @@ const UserDashboard = () => {
                   <p className="text-sm text-gray-600">
                     Profile editing features coming soon. For now, contact support if you need to update your information.
                   </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Billing Tab */}
-          <TabsContent value="billing" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Billing & Subscription
-                </CardTitle>
-                <CardDescription>
-                  Manage your subscription and billing information
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="w-full h-[600px] rounded-lg overflow-hidden border border-gray-200">
-                  {loading ? (
-                    <div className="flex justify-center items-center h-[600px]">
-                      <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-                      <span className="ml-2">Loading billing portal...</span>
-                    </div>
-                  ) : (
-                    <StripeBillingPortal
-                      customerId={user?.stripe_customer_id}
-                      className="w-full h-full"
-                    />
-                  )}
                 </div>
               </CardContent>
             </Card>
