@@ -6,6 +6,7 @@
 // Using Deno's built-in HTTP server API
 // @ts-ignore - HTTPS imports are supported in Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { jwtVerify } from "https://esm.sh/jose@4.15.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',  // More permissive for development
@@ -55,23 +56,54 @@ interface ValidationResponse {
 }
 
 // Function to extract user ID from Clerk JWT token
-const extractUserIdFromClerkToken = (req: Request): string | null => {
+const extractUserIdFromClerkToken = async (req: Request): Promise<string | null> => {
   try {
     const authHeader = req.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No authorization header found');
       return null;
     }
     
     const token = authHeader.substring(7);
     
-    // For testing purposes, we'll use a mock user ID
-    // In production, you would decode the JWT and extract the user ID from the 'sub' claim
-    console.log('Using mock Clerk user ID for testing');
-    return 'user_2zFAK78eCctIYm4mAd07mDWhNoA'; // Mock Clerk user ID format
+    // Try simple base64 decoding first (like stories function)
+    try {
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        throw new Error('Invalid token format');
+      }
+      
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const userId = payload.sub || payload.user_id;
+      
+      if (userId) {
+        console.log('Successfully extracted user ID using base64 decode:', userId);
+        return userId;
+      }
+    } catch (base64Error) {
+      console.error('Base64 decode failed:', base64Error);
+    }
     
-    // TODO: In production, implement proper JWT decoding:
-    // const decoded = jwt.verify(token, CLERK_JWT_SECRET);
-    // return decoded.sub; // This will be the Clerk user ID
+    // Fallback to JWT verification if CLERK_JWT_SECRET is available
+    const clerkJwtSecret = Deno.env.get('CLERK_JWT_SECRET');
+    if (clerkJwtSecret) {
+      try {
+        // Verify and decode the JWT token
+        const { payload } = await jwtVerify(token, new TextEncoder().encode(clerkJwtSecret));
+        
+        // Extract user ID from the 'sub' claim
+        const userId = payload.sub as string;
+        console.log('Successfully extracted user ID from JWT:', userId);
+        return userId;
+      } catch (jwtError) {
+        console.error('JWT verification failed:', jwtError);
+      }
+    }
+    
+    // Final fallback to mock user ID for development
+    console.log('Using mock Clerk user ID for development');
+    return 'user_2zFAK78eCctIYm4mAd07mDWhNoA';
+    
   } catch (error) {
     console.error('Error extracting user ID from token:', error);
     return null;
@@ -99,7 +131,7 @@ const validateCreditsWithSupabase = async (userId: string, creditsRequired: numb
       return null;
     }
     
-    const currentBalance = creditData?.balance || 0;
+    const currentBalance = creditData?.balance?.balance || 0;
     const hasSufficientCredits = currentBalance >= creditsRequired;
     
     if (hasSufficientCredits) {
@@ -186,7 +218,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     // Extract user ID from Clerk token
-    const userId = extractUserIdFromClerkToken(req);
+    const userId = await extractUserIdFromClerkToken(req);
     
     if (!userId) {
       return new Response(

@@ -51,6 +51,9 @@ interface MemoryEnhancedEbookGeneratorProps {
   selectedFormat: string;
   onChaptersGenerated?: (chapters: Chapter[]) => void;
   onError?: (error: string) => void;
+  onProgress?: (progressData: any) => void;
+  isGenerating?: boolean;
+  setIsGenerating?: (generating: boolean) => void;
 }
 
 export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGeneratorProps> = ({
@@ -60,13 +63,18 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
   selectedTheme,
   selectedFormat,
   onChaptersGenerated,
-  onError
+  onError,
+  onProgress,
+  isGenerating: externalIsGenerating,
+  setIsGenerating: externalSetIsGenerating
 }) => {
   const { toast } = useToast();
   const { getToken, isAuthenticated } = useClerkAuth();
   
   // State management
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [internalIsGenerating, setInternalIsGenerating] = useState(false);
+  const isGenerating = externalIsGenerating !== undefined ? externalIsGenerating : internalIsGenerating;
+  const setIsGenerating = externalSetIsGenerating || setInternalIsGenerating;
   const [useMemorySystem, setUseMemorySystem] = useState(true);
   const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState('');
@@ -147,6 +155,9 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
           setCurrentChapter(progressData.currentChapter || 0);
           setTotalChapters(progressData.totalChapters || currentFormat.chapters);
           setEstimatedTime(progressData.estimatedTimeRemaining);
+          
+          // Call external progress handler if provided
+          onProgress?.(progressData);
         },
         
         onOutlineGenerated: (outline: StoryOutline) => {

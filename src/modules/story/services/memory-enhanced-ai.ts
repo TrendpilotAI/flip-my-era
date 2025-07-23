@@ -176,13 +176,20 @@ export class MemoryEnhancedAI {
 
       const readStream = async () => {
         try {
+          let buffer = '';
+          
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
             const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-
+            buffer += chunk;
+            
+            // Process complete lines from the buffer
+            const lines = buffer.split('\n');
+            // Keep the last line in the buffer if it's incomplete
+            buffer = lines.pop() || '';
+            
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 try {
@@ -230,6 +237,8 @@ export class MemoryEnhancedAI {
                   }
                 } catch (parseError) {
                   console.error('Error parsing SSE data:', parseError);
+                  // Log the problematic line for debugging
+                  console.error('Problematic line:', line);
                 }
               }
             }

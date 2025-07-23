@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { supabase } from '@/core/integrations/supabase/client';
@@ -14,12 +14,11 @@ import {
   Plus, 
   Calendar, 
   UserCircle,
-  Sparkles,
-  Settings
+  Sparkles
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { UserBooks } from '@/modules/ebook/components/UserBooks';
-import { MemoryEnhancedEbookGenerator } from '@/modules/ebook/components/MemoryEnhancedEbookGenerator';
+import { CreditBasedEbookGenerator } from '@/modules/ebook/components/CreditBasedEbookGenerator';
 import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 
 interface Story {
@@ -33,7 +32,6 @@ interface Story {
 
 const UserDashboard = () => {
   const { user, getToken } = useClerkAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const [stories, setStories] = useState<Story[]>([]);
@@ -131,15 +129,6 @@ const UserDashboard = () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            className="mb-4 text-white hover:bg-white/20"
-            onClick={() => navigate('/')}
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Back to Stories
-          </Button>
-          
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Your Dashboard</h1>
@@ -236,7 +225,7 @@ const UserDashboard = () => {
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No stories yet</h3>
                     <p className="text-gray-500 mb-4">Start creating your first alternate timeline story!</p>
                     <Button
-                      onClick={() => navigate('/')}
+                      onClick={() => window.location.href = '/'}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                     >
                       Create Your First Story
@@ -248,7 +237,7 @@ const UserDashboard = () => {
                       <div
                         key={story.id}
                         className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => navigate(`/story/${story.id}`)}
+                        onClick={() => window.location.href = `/story/${story.id}`}
                       >
                         <h4 className="font-semibold text-gray-900 mb-2 line-clamp-1">
                           {story.title || "Untitled Story"}
@@ -284,7 +273,7 @@ const UserDashboard = () => {
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No stories yet</h3>
                     <p className="text-gray-500 mb-4">Start creating your first alternate timeline story!</p>
                     <Button
-                      onClick={() => navigate('/')}
+                      onClick={() => window.location.href = '/'}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
                     >
                       Create Your First Story
@@ -296,7 +285,7 @@ const UserDashboard = () => {
                       <div
                         key={story.id}
                         className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                        onClick={() => navigate(`/story/${story.id}`)}
+                        onClick={() => window.location.href = `/story/${story.id}`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -341,7 +330,7 @@ const UserDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <MemoryEnhancedEbookGenerator
+                <CreditBasedEbookGenerator
                   originalStory="Enter your story idea here and watch the AI create a multi-chapter book with perfect continuity..."
                   useTaylorSwiftThemes={false}
                   selectedTheme="coming-of-age"
@@ -349,7 +338,7 @@ const UserDashboard = () => {
                   onChaptersGenerated={async (chapters) => {
                     console.log('Generated chapters:', chapters);
                     
-                    // Save to database using the same logic as EbookGenerator
+                    // Save to database for credit-based generation
                     try {
                       const token = await getToken({ template: 'supabase' });
                       if (token && user?.id) {
@@ -359,12 +348,12 @@ const UserDashboard = () => {
                           .from('ebook_generations')
                           .insert({
                             user_id: user.id,
-                            title: `Memory-Enhanced Story: ${chapters[0]?.title || 'Untitled'}`,
+                            title: `Credit-Based Story: ${chapters[0]?.title || 'Untitled'}`,
                             content: JSON.stringify(chapters),
                             status: 'completed',
                             credits_used: 1,
                             paid_with_credits: true,
-                            story_type: 'memory-enhanced',
+                            story_type: 'credit-based',
                             chapter_count: chapters.length,
                             word_count: chapters.reduce((total, chapter) => total + (chapter.content?.length || 0), 0)
                           })
@@ -372,17 +361,17 @@ const UserDashboard = () => {
                           .single();
 
                         if (error) {
-                          console.error('Error saving memory-enhanced story:', error);
+                          console.error('Error saving credit-based story:', error);
                           toast({
                             title: "Save Failed",
                             description: "Story generated but couldn't be saved to your library.",
                             variant: "destructive",
                           });
                         } else {
-                          console.log('Successfully saved memory-enhanced story:', ebookGeneration);
+                          console.log('Successfully saved credit-based story:', ebookGeneration);
                           toast({
                             title: "Story Saved!",
-                            description: `Successfully created and saved ${chapters.length} chapters with enhanced memory system.`,
+                            description: `Successfully created and saved ${chapters.length} chapters with credit-based system.`,
                           });
                           
                           // Refresh the stories list

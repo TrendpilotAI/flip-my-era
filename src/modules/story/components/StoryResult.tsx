@@ -8,8 +8,7 @@ import { EnhancedSongPreview } from "./EnhancedSongPreview";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/core/integrations/supabase/client';
 import { useState } from "react";
-import { EbookGenerator } from "@/modules/ebook/components/EbookGenerator";
-import { MemoryEnhancedEbookGenerator } from "@/modules/ebook/components/MemoryEnhancedEbookGenerator";
+import { CreditBasedEbookGenerator } from "@/modules/ebook/components/CreditBasedEbookGenerator";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { DownloadShareModal } from '@/modules/shared/components/DownloadShareModal';
 
@@ -32,11 +31,10 @@ export const StoryResult = ({
   const navigate = useNavigate();
   const { isAuthenticated } = useClerkAuth();
   const relevantSong = findRelevantSong(result);
-  const [showEbookGenerator, setShowEbookGenerator] = useState(false);
   const [showMemoryEnhancedGenerator, setShowMemoryEnhancedGenerator] = useState(false);
   const [showDownloadShareModal, setShowDownloadShareModal] = useState(false);
 
-  const handleCreateEbook = async () => {
+  const handleCreateMemoryEnhancedEbook = async () => {
     try {
       if (!isAuthenticated) {
         // Determine if we're in development or production
@@ -62,12 +60,12 @@ export const StoryResult = ({
         return;
       }
       
-      // User is authenticated, show the ebook generator
-      setShowEbookGenerator(true);
+      // User is authenticated, show the memory-enhanced generator
+      setShowMemoryEnhancedGenerator(true);
       
       toast({
-        title: "E-Book Generator Ready",
-        description: "Now you can create your personalized illustrated story!",
+        title: "Memory-Enhanced E-Book Generator Ready",
+        description: "Now you can create your personalized illustrated story with perfect continuity!",
       });
     } catch (error) {
       console.error("Error checking authentication:", error);
@@ -105,11 +103,6 @@ export const StoryResult = ({
     return content;
   };
 
-  // If showing the ebook generator, render it instead of the story preview
-  if (showEbookGenerator) {
-    return <EbookGenerator originalStory={result} storyId={storyId} />;
-  }
-
   // If showing the memory-enhanced generator, render it instead of the story preview
   if (showMemoryEnhancedGenerator) {
     return (
@@ -123,21 +116,21 @@ export const StoryResult = ({
             ← Back to Story
           </Button>
         </div>
-        <MemoryEnhancedEbookGenerator
+        <CreditBasedEbookGenerator
           originalStory={result}
           storyId={storyId}
           useTaylorSwiftThemes={true}
           selectedTheme="coming-of-age"
           selectedFormat="short-story"
           onChaptersGenerated={(chapters) => {
-            console.log('Memory-enhanced chapters generated:', chapters);
+            console.log('Credit-based chapters generated:', chapters);
             toast({
               title: "Success!",
-              description: `Generated ${chapters.length} chapters with enhanced memory system.`,
+              description: `Generated ${chapters.length} chapters with credit-based system.`,
             });
           }}
           onError={(error) => {
-            console.error('Memory-enhanced generation error:', error);
+            console.error('Credit-based generation error:', error);
             toast({
               title: "Generation Error",
               description: error,
@@ -151,23 +144,35 @@ export const StoryResult = ({
 
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+      {/* Title Section - Made more prominent */}
       <div className="text-center mb-8 pb-6 border-b border-[#E5DEFF]">
-        <h2 className="text-3xl font-bold text-[#4A4A4A] mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#2D2D2D] mb-3 leading-tight">
           {getStoryTitle(result)}
-        </h2>
-        <p className="text-lg text-purple-600 italic">
+        </h1>
+        <p className="text-base text-purple-600 italic font-medium">
           {getEraDescription(result)}
         </p>
       </div>
       
-      <div className="prose prose-lg prose-pink max-w-none mb-8 font-serif leading-relaxed space-y-6">
+      {/* Story Content - Normal text formatting */}
+      <div className="max-w-none mb-6">
         <ReactMarkdown
           components={{
             p: ({ children }) => (
-              <p className="text-lg leading-relaxed text-gray-700 mb-6">{children}</p>
+              <p className="text-base leading-7 text-gray-700 mb-4 first:mt-0">{children}</p>
             ),
             strong: ({ children }) => (
-              <strong className="text-purple-700">{children}</strong>
+              <strong className="text-purple-700 font-semibold">{children}</strong>
+            ),
+            em: ({ children }) => (
+              <em className="text-purple-600 italic">{children}</em>
+            ),
+            // Handle any remaining headings in content
+            h1: ({ children }) => (
+              <h2 className="text-xl font-bold text-gray-900 mt-6 mb-3">{children}</h2>
+            ),
+            h2: ({ children }) => (
+              <h3 className="text-lg font-semibold text-gray-900 mt-5 mb-2">{children}</h3>
             ),
           }}
         >
@@ -212,27 +217,20 @@ export const StoryResult = ({
           <EnhancedSongPreview story={getStoryContent(result)} />
           
           <div className="mt-12 text-center space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-4xl mx-auto">
+            <div className="flex justify-center">
               <Button 
-                className="flex-1 max-w-md text-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white 
-                  py-4 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg"
-                onClick={handleCreateEbook}
+                className="max-w-md text-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white 
+                  px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg"
+                onClick={handleCreateMemoryEnhancedEbook}
               >
-                Create Standard E-Memory Book
-              </Button>
-              <Button 
-                className="flex-1 max-w-md text-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white 
-                  py-4 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg border-2 border-yellow-300"
-                onClick={() => setShowMemoryEnhancedGenerator(true)}
-              >
-                🧠 Create Memory-Enhanced E-Book
+                🧠 Create E-Memory Book
               </Button>
             </div>
             <p className="text-sm text-gray-600">
-              Choose between standard generation or our advanced memory-enhanced system for perfect story continuity
+              Transform your story into a beautifully illustrated book with perfect continuity
             </p>
             <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg max-w-2xl mx-auto">
-              <strong>Memory-Enhanced:</strong> Advanced AI system that maintains character consistency, 
+              <strong>Advanced AI:</strong> Our memory-enhanced system maintains character consistency, 
               eliminates repetition, and creates perfectly coherent multi-chapter stories.
             </div>
           </div>

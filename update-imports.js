@@ -22,7 +22,7 @@ const importMappings = [
   { from: '@/components/StreamingText', to: '@/modules/story/components/StreamingText' },
   
   // Ebook module
-  { from: '@/components/EbookGenerator', to: '@/modules/ebook/components/EbookGenerator' },
+  { from: '@/components/EbookGenerator', to: '@/modules/ebook/components/MemoryEnhancedEbookGenerator' },
   
   // User module
   { from: '@/pages/UserDashboard', to: '@/modules/user/components/UserDashboard' },

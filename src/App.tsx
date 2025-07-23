@@ -5,6 +5,9 @@ import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
 import { AdminRoute } from "@/modules/shared/components/AdminRoute";
 import Index from "@/pages/Index";
+import About from "@/pages/About";
+import Ebook from "@/pages/Ebook";
+import EbookBuilder from "@/pages/EbookBuilder";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import Stories from "@/pages/Stories";
@@ -29,6 +32,9 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/ebook" element={<Ebook />} />
+            <Route path="/ebook-builder" element={<EbookBuilder />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />

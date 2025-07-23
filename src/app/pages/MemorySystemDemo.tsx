@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/modules/shared/components/ui/switch';
 import { Label } from '@/modules/shared/components/ui/label';
 import { Badge } from '@/modules/shared/components/ui/badge';
-import { MemoryEnhancedEbookGenerator } from '@/modules/ebook/components/MemoryEnhancedEbookGenerator';
+import { CreditBasedEbookGenerator } from '@/modules/ebook/components/CreditBasedEbookGenerator';
 import { 
   Brain, 
   BookOpen, 
@@ -340,7 +340,7 @@ export const MemorySystemDemo: React.FC = () => {
               </CardContent>
             </Card>
 
-            <MemoryEnhancedEbookGenerator
+            <CreditBasedEbookGenerator
               originalStory={originalStory}
               useTaylorSwiftThemes={useTaylorSwiftThemes}
               selectedTheme={selectedTheme}

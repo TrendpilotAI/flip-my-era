@@ -66,39 +66,72 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       // Create authenticated Supabase client
       const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
       
-      // Call the credits function using authenticated Supabase client
-      const { data, error } = await supabaseWithAuth.functions.invoke('credits', {
-        method: 'GET'
+      // Call the credits function using fetch
+      const response = await fetch('/api/functions/credits', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${clerkToken}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
-      if (error) {
-        console.error("Error fetching credit balance:", error);
+
+      if (!response.ok) {
+        console.error("Error fetching credit balance:", response.status, response.statusText);
+        
+        // In development, return mock data if Edge Functions are not available
+        if (import.meta.env.DEV && response.status === 503) {
+          console.log("Using mock credit balance for development");
+          const mockBalance = 5; // Mock balance for development
+          setCreditBalance(mockBalance);
+          return mockBalance;
+        }
+        
         return 0;
       }
+
+      const data = await response.json();
       
-      if (!data?.balance) {
+      if (!data?.success || !data?.data?.balance) {
         console.warn("No credit balance data received");
+        
+        // In development, return mock data if no real data
+        if (import.meta.env.DEV) {
+          console.log("Using mock credit balance for development");
+          const mockBalance = 5; // Mock balance for development
+          setCreditBalance(mockBalance);
+          return mockBalance;
+        }
+        
         return 0;
       }
       
-      const balance = data.balance || 0;
+      const balance = data.data.balance.balance || 0;
       console.log("Credit balance fetched:", balance);
       setCreditBalance(balance);
-      
-      // Update the user profile with the credit balance
-      if (userProfile) {
-        setUserProfile({
-          ...userProfile,
-          credits: balance
-        });
-      }
       
       return balance;
     } catch (error) {
       console.error("Error fetching credit balance:", error);
       return 0;
     }
-  }, [clerkUser, userProfile]);
+  }, [clerkUser]);
+
+  // Fetch credit balance when user is loaded
+  useEffect(() => {
+    if (clerkUser && isLoaded) {
+      fetchCreditBalance();
+    }
+  }, [clerkUser, isLoaded, fetchCreditBalance]);
+
+  // Update user profile with credit balance when it changes
+  useEffect(() => {
+    if (userProfile && creditBalance !== null) {
+      setUserProfile(prevProfile => ({
+        ...prevProfile,
+        credits: creditBalance
+      }));
+    }
+  }, [creditBalance]);
 
   // Create or update user profile in Supabase when Clerk user changes
   useEffect(() => {
@@ -155,7 +188,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               avatar_url: clerkUser.imageUrl,
               subscription_status: "free",
               created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
-              credits: creditBalance || 0
+              credits: 0 // Will be updated separately by fetchCreditBalance
             });
           } else {
             // Profile exists, update it with latest Clerk data
@@ -177,7 +210,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               avatar_url: String(existingProfile.avatar_url),
               subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
               created_at: String(existingProfile.created_at),
-              credits: creditBalance || 0
+              credits: 0 // Will be updated separately by fetchCreditBalance
             });
           }
         } catch (error) {
@@ -190,7 +223,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             avatar_url: clerkUser.imageUrl,
             subscription_status: "free",
             created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
-            credits: creditBalance || 0
+            credits: 0 // Will be updated separately by fetchCreditBalance
           });
         }
       } else {
@@ -202,7 +235,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     if (isLoaded) {
       syncUserProfile();
     }
-  }, [clerkUser, isLoaded, getToken, creditBalance]);
+  }, [clerkUser, isLoaded]);
 
   // Use Supabase profile data if available, otherwise fall back to Clerk data
   const user: AuthUser | null = userProfile || (clerkUser ? {
@@ -243,14 +276,14 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             avatar_url: String(profile.avatar_url),
             subscription_status: (profile.subscription_status as "free" | "basic" | "premium") || "free",
             created_at: String(profile.created_at),
-            credits: creditBalance || 0
+            credits: 0 // Will be updated separately by fetchCreditBalance
           });
         }
       } catch (error) {
         console.error("Error refreshing user profile:", error);
       }
     }
-  }, [clerkUser, creditBalance]);
+  }, [clerkUser]);
 
   const handleSignIn = async (email: string, password: string) => {
     // This will be handled by Clerk's SignInButton component

@@ -51,18 +51,37 @@ export const CreditBalance: React.FC<{
       setError(null);
       const token = await getToken({ template: 'supabase' });
       
-      const { data, error } = await supabase.functions.invoke('credits', {
+      const response = await fetch('/api/functions/credits', {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
-      if (error) {
-        console.error('Error fetching credit balance:', error);
-        setError('Failed to load credit balance');
-        return;
+      if (!response.ok) {
+        // In development, use mock data if Edge Functions are not available
+        if (import.meta.env.DEV && response.status === 503) {
+          console.log("Using mock credit data for development");
+          const mockData = {
+            balance: {
+              balance: 5,
+              subscription_type: null,
+              last_updated: new Date().toISOString()
+            },
+            recent_transactions: []
+          };
+          setCreditData(mockData);
+          if (onBalanceChange) {
+            onBalanceChange(mockData.balance.balance);
+          }
+          return;
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+
+      const data = await response.json();
 
       if (data?.success && data?.data) {
         setCreditData(data.data);
@@ -70,6 +89,24 @@ export const CreditBalance: React.FC<{
           onBalanceChange(data.data.balance.balance);
         }
       } else {
+        // In development, use mock data if no real data
+        if (import.meta.env.DEV) {
+          console.log("Using mock credit data for development");
+          const mockData = {
+            balance: {
+              balance: 5,
+              subscription_type: null,
+              last_updated: new Date().toISOString()
+            },
+            recent_transactions: []
+          };
+          setCreditData(mockData);
+          if (onBalanceChange) {
+            onBalanceChange(mockData.balance.balance);
+          }
+          return;
+        }
+        
         setError(data?.error || 'Unknown error occurred');
       }
     } catch (err) {

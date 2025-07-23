@@ -83,10 +83,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.credits]
-verify_jwt = true
+verify_jwt = false
 
 [functions.credits-validate]
-verify_jwt = true
+verify_jwt = false
 
 [functions.stream-chapters]
 verify_jwt = false
