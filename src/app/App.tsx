@@ -21,6 +21,7 @@ import AdminUsers from "@/app/pages/AdminUsers";
 import AdminCredits from "@/app/pages/AdminCredits";
 import { MemorySystemDemo } from "@/app/pages/MemorySystemDemo";
 import EbookBuilder from "@/pages/EbookBuilder";
+import PastGenerations from "@/modules/user/components/PastGenerations";
 
 function App() {
   return (
@@ -45,6 +46,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Past Generations */}
+            <Route 
+              path="/past-generations" 
+              element={
+                <ProtectedRoute>
+                  <PastGenerations />
                 </ProtectedRoute>
               } 
             />
