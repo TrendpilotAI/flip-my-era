@@ -17,6 +17,7 @@ import {
   Trash2,
   Loader2
 } from 'lucide-react';
+import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 
 interface Story {
   id: string;
@@ -36,7 +37,7 @@ interface Ebook {
 }
 
 const PastGenerations = () => {
-  const { user } = useClerkAuth();
+  const { user, getToken } = useClerkAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('stories');
@@ -52,29 +53,93 @@ const PastGenerations = () => {
     try {
       setLoading(true);
       
-      // Fetch stories
-      const storiesResponse = await fetch('/api/stories', {
-        headers: {
-          'Authorization': `Bearer ${await user?.getToken()}`,
-        },
-      });
-      
-      if (storiesResponse.ok) {
-        const storiesData = await storiesResponse.json();
-        setStories(storiesData.stories || []);
+      if (!user?.id) {
+        console.log('No user ID available');
+        setLoading(false);
+        return;
       }
 
-      // Fetch ebooks
-      const ebooksResponse = await fetch('/api/ebooks', {
-        headers: {
-          'Authorization': `Bearer ${await user?.getToken()}`,
-        },
-      });
-      
-      if (ebooksResponse.ok) {
-        const ebooksData = await ebooksResponse.json();
-        setEbooks(ebooksData.ebooks || []);
+      // Get Clerk token for authentication
+      const clerkToken = await getToken({ template: 'supabase' });
+      if (!clerkToken) {
+        console.warn('No Clerk token available');
+        setLoading(false);
+        return;
       }
+
+      // Create authenticated Supabase client
+      const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
+      
+      // Fetch stories from Supabase
+      const { data: storiesData, error: storiesError } = await supabaseWithAuth
+        .from('stories')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (storiesError) {
+        console.error('Error fetching stories:', storiesError);
+      } else {
+        // Map stories data to match our interface
+        const mappedStories = storiesData?.map(story => ({
+          id: story.id,
+          title: story.title || story.name || 'Untitled Story',
+          content: story.initial_story || story.content || '',
+          created_at: story.created_at,
+          personality_type: story.personality_type,
+          location: story.location
+        })) || [];
+        setStories(mappedStories);
+      }
+
+      // Fetch ebooks from Supabase - try memory_books first, then fallback to ebook_generations
+      let ebooksData = null;
+      let ebooksError = null;
+
+      // Try memory_books first (newer table)
+      const { data: memoryBooksData, error: memoryBooksError } = await supabaseWithAuth
+        .from('memory_books')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (memoryBooksError) {
+        console.log('memory_books table not available, trying ebook_generations...');
+        // Fallback to ebook_generations
+        const { data: ebookGenerationsData, error: ebookGenerationsError } = await supabaseWithAuth
+          .from('ebook_generations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (ebookGenerationsError) {
+          console.error('Error fetching ebooks:', ebookGenerationsError);
+          ebooksError = ebookGenerationsError;
+        } else {
+          // Map ebook_generations data to match our interface
+          ebooksData = ebookGenerationsData?.map(book => ({
+            id: book.id,
+            title: book.title || 'Generated Ebook',
+            chapters: book.content ? [book.content] : [], // content field maps to chapters
+            created_at: book.created_at,
+            theme: book.theme || 'general'
+          })) || [];
+        }
+      } else {
+        // Use memory_books data
+        ebooksData = memoryBooksData?.map(book => ({
+          id: book.id,
+          title: book.title || book.description || 'Memory Book',
+          chapters: book.chapters || [],
+          created_at: book.created_at,
+          theme: book.theme || 'memory'
+        })) || [];
+      }
+
+      if (!ebooksError) {
+        setEbooks(ebooksData || []);
+      }
+
     } catch (error) {
       console.error('Error fetching past generations:', error);
       toast({
@@ -99,21 +164,35 @@ const PastGenerations = () => {
 
   const handleDeleteStory = async (storyId: string) => {
     try {
-      const response = await fetch(`/api/stories/${storyId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${await user?.getToken()}`,
-        },
-      });
-
-      if (response.ok) {
-        setStories(stories.filter(story => story.id !== storyId));
+      const clerkToken = await getToken({ template: 'supabase' });
+      if (!clerkToken) {
         toast({
-          title: "Story deleted",
-          description: "Your story has been successfully deleted.",
+          title: "Authentication error",
+          description: "Please sign in again to delete stories.",
+          variant: "destructive",
         });
+        return;
       }
+
+      const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
+      
+      const { error } = await supabaseWithAuth
+        .from('stories')
+        .delete()
+        .eq('id', storyId)
+        .eq('user_id', user?.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setStories(stories.filter(story => story.id !== storyId));
+      toast({
+        title: "Story deleted",
+        description: "Your story has been successfully deleted.",
+      });
     } catch (error) {
+      console.error('Error deleting story:', error);
       toast({
         title: "Error deleting story",
         description: "Failed to delete the story. Please try again.",
@@ -124,21 +203,45 @@ const PastGenerations = () => {
 
   const handleDeleteEbook = async (ebookId: string) => {
     try {
-      const response = await fetch(`/api/ebooks/${ebookId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${await user?.getToken()}`,
-        },
-      });
-
-      if (response.ok) {
-        setEbooks(ebooks.filter(ebook => ebook.id !== ebookId));
+      const clerkToken = await getToken({ template: 'supabase' });
+      if (!clerkToken) {
         toast({
-          title: "Ebook deleted",
-          description: "Your ebook has been successfully deleted.",
+          title: "Authentication error",
+          description: "Please sign in again to delete ebooks.",
+          variant: "destructive",
         });
+        return;
       }
+
+      const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
+      
+      // Try to delete from memory_books first
+      let { error } = await supabaseWithAuth
+        .from('memory_books')
+        .delete()
+        .eq('id', ebookId)
+        .eq('user_id', user?.id);
+
+      // If that fails, try ebook_generations
+      if (error) {
+        const { error: ebookError } = await supabaseWithAuth
+          .from('ebook_generations')
+          .delete()
+          .eq('id', ebookId)
+          .eq('user_id', user?.id);
+        
+        if (ebookError) {
+          throw ebookError;
+        }
+      }
+
+      setEbooks(ebooks.filter(ebook => ebook.id !== ebookId));
+      toast({
+        title: "Ebook deleted",
+        description: "Your ebook has been successfully deleted.",
+      });
     } catch (error) {
+      console.error('Error deleting ebook:', error);
       toast({
         title: "Error deleting ebook",
         description: "Failed to delete the ebook. Please try again.",
