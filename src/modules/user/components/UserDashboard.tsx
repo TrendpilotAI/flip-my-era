@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { useToast } from '@/modules/shared/hooks/use-toast';
@@ -17,7 +17,9 @@ import {
   CreditCard,
   Loader2,
   UserCircle,
-  ArrowLeft
+  ArrowLeft,
+  LayoutDashboard,
+  History
 } from 'lucide-react';
 
 interface CreditData {
@@ -38,10 +40,29 @@ const UserDashboard = () => {
   const [creditData, setCreditData] = useState<CreditData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showAccountPopup, setShowAccountPopup] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   // Get current tab from URL parameters
   const urlParams = new URLSearchParams(location.search);
   const currentTab: DashboardTab = (urlParams.get('tab') as DashboardTab) || 'main';
+
+  // Handle clicking outside popup to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setShowAccountPopup(false);
+      }
+    };
+
+    if (showAccountPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAccountPopup]);
 
   const fetchCreditBalance = async () => {
     if (!user?.id) {
@@ -198,17 +219,60 @@ const UserDashboard = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Your Dashboard</h1>
-              <p className="text-white/90">
-                Welcome back, {user?.name || 'Time Traveler'}! Manage your stories and explore your alternate timelines.
-              </p>
             </div>
             
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-white">
-                <UserCircle className="h-5 w-5" />
-                <span className="font-medium">{user?.name || 'User'}</span>
+              <div className="relative" ref={popupRef}>
+                <Button 
+                  variant="ghost"
+                  onClick={() => setShowAccountPopup(!showAccountPopup)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <User className="h-5 w-5" />
+                  <span className="ml-2">Account</span>
+                </Button>
+                
+                {/* Account Popup - Left Aligned */}
+                {showAccountPopup && (
+                  <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 min-w-[200px]">
+                    <div className="space-y-2">
+                      <Button 
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAccountPopup(false);
+                          navigate('/dashboard');
+                        }}
+                        className="w-full justify-start"
+                      >
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAccountPopup(false);
+                          navigate('/past-generations');
+                        }}
+                        className="w-full justify-start"
+                      >
+                        <History className="h-4 w-4 mr-2" />
+                        Past Generations
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAccountPopup(false);
+                          handleSignOut();
+                        }}
+                        className="w-full justify-start text-red-600 hover:text-red-700"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-              {getSubscriptionBadge()}
             </div>
           </div>
         </div>
@@ -258,7 +322,7 @@ const UserDashboard = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                     <Coins className="h-4 w-4" />
-                    Current Plan
+                    Credits Available
                   </label>
                   <div className="mt-1">
                     {getSubscriptionBadge()}
@@ -267,46 +331,10 @@ const UserDashboard = () => {
               </div>
             </div>
 
-            {/* Account Actions */}
-            <div className="pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Actions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate('/dashboard?tab=account')}
-                  className="flex items-center justify-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Account Settings
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate('/dashboard?tab=billing')}
-                  className="flex items-center justify-center gap-2"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Billing & Subscriptions
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  onClick={handleSignOut}
-                  className="flex items-center justify-center gap-2 text-red-600 hover:text-red-700"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </Button>
-              </div>
-            </div>
-
             {/* Credit Purchase Section */}
             <div className="pt-6 border-t border-gray-200">
               <div className="text-center space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Need More Credits?</h3>
-                <p className="text-gray-600 max-w-md mx-auto">
-                  Purchase credits to unlock unlimited story generation and ebook creation features.
-                </p>
                 <Button 
                   onClick={() => setShowPurchaseModal(true)}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 px-8 py-3"
@@ -315,12 +343,6 @@ const UserDashboard = () => {
                   Purchase Credits
                 </Button>
               </div>
-            </div>
-
-            <div className="pt-4">
-              <p className="text-sm text-gray-600 text-center">
-                Profile editing features coming soon. For now, contact support if you need to update your information.
-              </p>
             </div>
           </CardContent>
         </Card>

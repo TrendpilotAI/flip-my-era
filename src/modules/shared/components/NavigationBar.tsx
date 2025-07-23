@@ -1,20 +1,40 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from '@/modules/shared/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/modules/shared/components/ui/dropdown-menu';
-import { BookOpen, LogOut, Settings, User, Crown, Sparkles, BookText, UserCircle } from "lucide-react";
+import { BookOpen, LogOut, Settings, User, Crown, Sparkles, BookText, UserCircle, LayoutDashboard, History } from "lucide-react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { useState, useEffect, useRef } from "react";
 
 export const NavigationBar = () => {
   const { isAuthenticated, user, signOut } = useClerkAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const [showAccountPopup, setShowAccountPopup] = useState(false);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   // Check if user is admin
   const isAdmin = user?.email === "admin@flipmyera.com" || 
                   user?.email === "danny.ijdo@gmail.com" ||
                   user?.email?.includes("trendpilot");
+
+  // Handle clicking outside popup to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setShowAccountPopup(false);
+      }
+    };
+
+    if (showAccountPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAccountPopup]);
 
   const handleSignOut = async () => {
     try {
@@ -98,9 +118,10 @@ export const NavigationBar = () => {
 
             {/* Account Section */}
             <SignedIn>
-              <Link to="/dashboard">
+              <div className="relative" ref={popupRef}>
                 <Button 
                   variant="ghost" 
+                  onClick={() => setShowAccountPopup(!showAccountPopup)}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     location.pathname.startsWith('/dashboard') 
                       ? 'text-purple-600 bg-purple-50' 
@@ -110,7 +131,48 @@ export const NavigationBar = () => {
                   <User className="w-4 h-4" />
                   <span>Account</span>
                 </Button>
-              </Link>
+                
+                {/* Account Popup - Left Aligned */}
+                {showAccountPopup && (
+                  <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 min-w-[200px]">
+                    <div className="space-y-2">
+                      <Button 
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAccountPopup(false);
+                          window.location.href = '/dashboard';
+                        }}
+                        className="w-full justify-start"
+                      >
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAccountPopup(false);
+                          window.location.href = '/past-generations';
+                        }}
+                        className="w-full justify-start"
+                      >
+                        <History className="h-4 w-4 mr-2" />
+                        Past Generations
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAccountPopup(false);
+                          handleSignOut();
+                        }}
+                        className="w-full justify-start text-red-600 hover:text-red-700"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </SignedIn>
             <SignedOut>
               <Link to="/auth">
