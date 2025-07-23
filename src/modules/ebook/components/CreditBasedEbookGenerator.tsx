@@ -62,7 +62,8 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
     
     try {
       const token = await getToken({ template: 'supabase' });
-      const response = await fetch('/api/functions/credits', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/credits`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

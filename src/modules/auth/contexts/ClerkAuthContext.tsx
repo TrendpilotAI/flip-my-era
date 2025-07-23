@@ -67,7 +67,8 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
       
       // Call the credits function using fetch
-      const response = await fetch('/api/functions/credits', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/credits`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${clerkToken}`,

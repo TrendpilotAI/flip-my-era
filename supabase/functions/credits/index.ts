@@ -10,32 +10,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jwtVerify } from "https://esm.sh/jose@4.15.4";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',  // More permissive for development
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
-};
-
-// For production, we'll determine the correct origin
-const getCorsHeaders = (req: Request) => {
-  const origin = req.headers.get('Origin') || '*';
-  const allowedOrigins = [
-    'http://localhost:8080', 
-    'http://localhost:8081', 
-    'http://localhost:8082', 
-    'http://localhost:8083', 
-    'http://localhost:8084', 
-    'http://localhost:3000', 
-    'https://flip-my-era.netlify.app'
-  ];
-  
-  return {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-    'Access-Control-Allow-Credentials': 'true',
-  };
 };
 
 interface CreditBalance {
@@ -212,6 +190,10 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
     return { balance, transactions: formattedTransactions };
   } catch (error) {
     console.error('Error in getCreditDataFromSupabase:', error);
+    if (error instanceof Error) {
+      console.error('Error stack:', error.stack);
+      console.error('Error message:', error.message);
+    }
     return null;
   }
 };
@@ -219,23 +201,16 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
 // Removed mock credit data - credits should only come from Supabase
 
 serve(async (req: Request) => {
-  // Get dynamic CORS headers based on request
-  const dynamicCorsHeaders = getCorsHeaders(req);
-  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: dynamicCorsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    console.log('Credits function called with method:', req.method);
-    console.log('Request URL:', req.url);
-    
     // Extract user ID from Clerk token
     const userId = await extractUserIdFromClerkToken(req);
     
     if (!userId) {
-      console.error('No user ID extracted from token');
       return new Response(
         JSON.stringify({
           success: false,
@@ -243,23 +218,17 @@ serve(async (req: Request) => {
         }),
         {
           status: 401,
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    console.log(`Processing request for Clerk user: ${userId}`);
-
     if (req.method === 'GET') {
-      console.log('Processing GET request for credit balance');
-      
       // Parse query parameters
       const url = new URL(req.url);
       const includeTransactions = url.searchParams.get('include_transactions') === 'true';
-      console.log('Include transactions:', includeTransactions);
       
       // Get real data from Supabase only
-      console.log('Calling getCreditDataFromSupabase for user:', userId);
       const creditData = await getCreditDataFromSupabase(userId);
       
       // If Supabase query fails, return error instead of mock data
@@ -272,12 +241,10 @@ serve(async (req: Request) => {
           }),
           {
             status: 500,
-            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
-      
-      console.log('Successfully retrieved credit data:', JSON.stringify(creditData, null, 2));
       
       const response: ApiResponse = {
         success: true,
@@ -291,10 +258,9 @@ serve(async (req: Request) => {
         JSON.stringify(response),
         { 
           status: 200, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
-
     } else {
       // Method not allowed
       return new Response(
@@ -304,13 +270,14 @@ serve(async (req: Request) => {
         }),
         { 
           status: 405, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
   } catch (error) {
-    console.error('Credits API error:', error);
+    console.error('=== CREDITS API ERROR ===');
+    console.error('Error:', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
@@ -328,7 +295,7 @@ serve(async (req: Request) => {
       }),
       {
         status: 500,
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

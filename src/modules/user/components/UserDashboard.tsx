@@ -53,7 +53,9 @@ const UserDashboard = () => {
       // Use getToken from context (not user.getToken which doesn't exist on AuthUser interface)
       const token = await getToken({ template: 'supabase' });
       
-      const response = await fetch('/api/functions/credits', {
+      // Use the correct Supabase Edge Function URL
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/credits`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

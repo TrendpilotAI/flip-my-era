@@ -70,7 +70,8 @@ export const CreditWallModal: React.FC<CreditWallModalProps> = ({
       }
 
       // Call credit validation endpoint
-      const response = await fetch('/api/functions/credits-validate', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/credits-validate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
