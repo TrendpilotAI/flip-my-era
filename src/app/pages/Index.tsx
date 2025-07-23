@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { SparkleEffect } from "@/modules/shared/components/SparkleEffect";
 import { BackgroundImages } from "@/modules/shared/components/BackgroundImages";
 import { PageHeader } from "@/modules/shared/components/PageHeader";
-import { StoryForm } from "@/modules/story/components/StoryForm";
+import StoryWizard from "@/modules/story/components/StoryWizard";
 import { StoryResult } from "@/modules/story/components/StoryResult";
 import { useApiCheck } from '@/modules/shared/hooks/useApiCheck';
 import { useStoryGeneration } from '@/modules/story/hooks/useStoryGeneration';
@@ -11,9 +12,11 @@ import { Button } from "@/modules/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
+
 const Index = () => {
   useApiCheck();
-  const { isAuthenticated, user } = useClerkAuth();
+  const { isAuthenticated } = useClerkAuth();
+  const [showStoryResult, setShowStoryResult] = useState(false);
   const {
     name,
     setName,
@@ -21,18 +24,34 @@ const Index = () => {
     setDate,
     loading,
     result,
+    storyId,
     personalityType,
     setPersonalityType,
     gender,
     setGender,
-    storyId,
-    previousStory,
     location,
     setLocation,
+    characterDescription,
+    setCharacterDescription,
+    plotDescription,
+    setPlotDescription,
     handleStorySelect,
     handleSubmit,
     handleUndo
-  } = useStoryGeneration();
+  } = useStoryGeneration(false); // Don't load saved story automatically
+
+  // Handle story generation with result display
+  const handleStoryGeneration = async () => {
+    await handleSubmit();
+    setShowStoryResult(true);
+  };
+
+  // Handle undo to hide story result
+  const handleUndoWithHide = () => {
+    // Don't call handleUndo as it would restore the previous story
+    // Just hide the result and let user start fresh with planning
+    setShowStoryResult(false);
+  };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
@@ -84,30 +103,36 @@ const Index = () => {
           </Card>
         )}
 
-        <StoryForm
-          name={name}
-          setName={setName}
-          date={date}
-          setDate={setDate}
-          loading={loading}
-          handleSubmit={handleSubmit}
-          handleStorySelect={handleStorySelect}
-          personalityTypes={personalityTypes}
-          personalityType={personalityType}
-          setPersonalityType={setPersonalityType}
-          gender={gender}
-          setGender={setGender}
-          location={location}
-          setLocation={setLocation}
-        />
+        {/* Show StoryWizard when not showing result or when there's no result */}
+        {(!showStoryResult || !result) && (
+          <StoryWizard
+            name={name}
+            setName={setName}
+            date={date}
+            setDate={setDate}
+            loading={loading}
+            handleSubmit={handleStoryGeneration}
+            personalityType={personalityType}
+            setPersonalityType={setPersonalityType}
+            gender={gender}
+            setGender={setGender}
+            location={location}
+            setLocation={setLocation}
+            characterDescription={characterDescription}
+            setCharacterDescription={setCharacterDescription}
+            plotDescription={plotDescription}
+            setPlotDescription={setPlotDescription}
+          />
+        )}
 
-        {result && (
+        {/* Show StoryResult only when explicitly requested and result exists */}
+        {showStoryResult && result && (
           <StoryResult
             result={result}
             storyId={storyId}
-            onRegenerateClick={handleSubmit}
-            onUndoClick={handleUndo}
-            hasPreviousStory={!!previousStory}
+            onRegenerateClick={handleStoryGeneration}
+            onUndoClick={handleUndoWithHide}
+            hasPreviousStory={false}
           />
         )}
       </div>

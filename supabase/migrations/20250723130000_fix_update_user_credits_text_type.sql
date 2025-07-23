@@ -1,3 +1,6 @@
+-- Fix update_user_credits function to accept TEXT user IDs instead of UUID
+-- This resolves the issue where Clerk user IDs (TEXT format) were incompatible with UUID parameter
+
 CREATE OR REPLACE FUNCTION update_user_credits(p_user_id TEXT, p_credit_amount INT)
 RETURNS VOID AS $$
 BEGIN

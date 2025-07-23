@@ -1,5 +1,11 @@
-CREATE OR REPLACE FUNCTION update_user_credits(p_user_id TEXT, p_credit_amount INT)
-RETURNS VOID AS $$
+drop function if exists "public"."update_user_credits"(p_user_id text, p_credit_amount integer);
+
+set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.update_user_credits(p_user_id uuid, p_credit_amount integer)
+ RETURNS void
+ LANGUAGE plpgsql
+AS $function$
 BEGIN
   -- Atomically update the user's credit balance
   UPDATE public.user_credits
@@ -16,4 +22,7 @@ BEGIN
     VALUES (p_user_id, p_credit_amount, p_credit_amount);
   END IF;
 END;
-$$ LANGUAGE plpgsql;
+$function$
+;
+
+

@@ -24,7 +24,7 @@ interface SavedStory {
   [key: string]: string | number | boolean | undefined;
 }
 
-export const useStoryGeneration = () => {
+export const useStoryGeneration = (loadSavedStory: boolean = true) => {
   const { isAuthenticated } = useClerkAuth();
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
@@ -34,6 +34,8 @@ export const useStoryGeneration = () => {
   const [personalityType, setPersonalityType] = useState<PersonalityTypeKey>("dreamer");
   const [gender, setGender] = useState<GenderType>("same");
   const [location, setLocation] = useState("");
+  const [characterDescription, setCharacterDescription] = useState("");
+  const [plotDescription, setPlotDescription] = useState("");
   const [detectedGender, setDetectedGender] = useState<GenderInfo>({ gender: 'unknown', probability: 0 });
   const [storyId, setStoryId] = useState<string>("");
   const [previousStory, setPreviousStory] = useState<StoryState | null>(null);
@@ -58,11 +60,13 @@ export const useStoryGeneration = () => {
           if (preferences.location) setLocation(preferences.location);
         }
         
-        // Load the most recent story
-        const savedStory = getLocalStory();
-        if (savedStory) {
-          setResult(savedStory.initial_story);
-          if (savedStory.storyId) setStoryId(savedStory.storyId);
+        // Load the most recent story only if loadSavedStory is true
+        if (loadSavedStory) {
+          const savedStory = getLocalStory();
+          if (savedStory) {
+            setResult(savedStory.initial_story);
+            if (savedStory.storyId) setStoryId(savedStory.storyId);
+          }
         }
         
         console.log("Loaded saved preferences and story data");
@@ -74,7 +78,7 @@ export const useStoryGeneration = () => {
     };
     
     loadSavedData();
-  }, []);
+  }, [loadSavedStory]);
 
   useEffect(() => {
     if (name) {
@@ -132,7 +136,9 @@ export const useStoryGeneration = () => {
         selectedPersonality,
         viralTropes,
         sceneSettings,
-        location
+        location,
+        characterDescription,
+        plotDescription
       );
 
       const story = await generateWithGroq(prompt);
@@ -146,7 +152,9 @@ export const useStoryGeneration = () => {
           transformedName,
           gender,
           personalityType,
-          location
+          location,
+          characterDescription,
+          plotDescription
         };
         
         const savedStory = await saveStory(story, name, date, prompt, additionalData);
@@ -238,6 +246,10 @@ export const useStoryGeneration = () => {
     setGender,
     location,
     setLocation,
+    characterDescription,
+    setCharacterDescription,
+    plotDescription,
+    setPlotDescription,
     storyId,
     previousStory,
     isAuthenticated,

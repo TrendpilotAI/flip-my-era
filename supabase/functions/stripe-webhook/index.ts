@@ -122,7 +122,11 @@ async function handleCheckoutSessionCompleted(session: any) {
       const quantity = item.quantity || 1;
       const totalCreditsForThisItem = productConfig.amount * quantity;
 
-      console.log(`Processing item: ${productConfig.name} with ${productConfig.amount} credits per unit, quantity: ${quantity}, total credits: ${totalCreditsForThisItem}`);
+      console.log(`🔍 ORIGINAL WEBHOOK - Processing item: ${productConfig.name}`);
+      console.log(`🔍 ORIGINAL WEBHOOK - Item quantity: ${quantity}`);
+      console.log(`🔍 ORIGINAL WEBHOOK - Credits per item: ${productConfig.amount}`);
+      console.log(`🔍 ORIGINAL WEBHOOK - Total credits calculated: ${totalCreditsForThisItem}`);
+      console.log(`🔍 ORIGINAL WEBHOOK - User ID: ${userId}`);
 
       if (productConfig.type === 'credits') {
         await allocateCredits(userId, totalCreditsForThisItem, sessionWithLineItems, item);

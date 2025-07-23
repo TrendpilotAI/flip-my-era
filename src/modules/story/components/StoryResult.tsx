@@ -1,5 +1,5 @@
 import { Button } from '@/modules/shared/components/ui/button';
-import { Repeat, Undo, Download, Share2 } from "lucide-react";
+import { Repeat, Undo, Download, Share2, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { findRelevantSong } from "@/modules/story/utils/taylorSwiftSongs";
@@ -198,6 +198,16 @@ export const StoryResult = ({
             >
               <Undo className="h-5 w-5" />
               Undo
+            </Button>
+          )}
+          {onUndoClick && (
+            <Button
+              onClick={onUndoClick}
+              variant="outline"
+              className="text-lg border-[#E5DEFF] hover:bg-[#E5DEFF]/10 flex items-center gap-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Back to Planning
             </Button>
           )}
           <Button
