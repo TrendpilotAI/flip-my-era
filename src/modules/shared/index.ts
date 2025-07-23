@@ -8,4 +8,5 @@ export * from './components/AuthDialog'
 export * from './components/BackgroundImages'
 export * from './components/SparkleEffect'
 export * from './components/GoogleSignInButton'
+export { default as AboutCarousel } from './components/AboutCarousel'
 // If you add hooks, utils, or types, export them here as needed. 

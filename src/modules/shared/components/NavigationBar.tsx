@@ -98,55 +98,19 @@ export const NavigationBar = () => {
 
             {/* Account Section */}
             <SignedIn>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      location.pathname.startsWith('/dashboard') 
-                        ? 'text-purple-600 bg-purple-50' 
-                        : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
-                    }`}
-                  >
-                    <User className="w-4 h-4" />
-                    <span>Account</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5 text-sm font-medium">
-                    {user?.name || user?.email}
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="flex items-center">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      My Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard?tab=account" className="flex items-center">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Account & Billing
-                    </Link>
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/admin" className="flex items-center text-purple-600">
-                          <Crown className="h-4 w-4 mr-2" />
-                          Admin Dashboard
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="flex items-center text-red-500">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Link to="/dashboard">
+                <Button 
+                  variant="ghost" 
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname.startsWith('/dashboard') 
+                      ? 'text-purple-600 bg-purple-50' 
+                      : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Account</span>
+                </Button>
+              </Link>
             </SignedIn>
             <SignedOut>
               <Link to="/auth">

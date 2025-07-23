@@ -3,6 +3,7 @@ import { Layout, ProtectedRoute, AdminRoute } from "@/modules/shared";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth";
 import Index from "@/app/pages/Index";
+import About from "@/pages/About";
 import Settings from "@/modules/user/components/Settings";
 import NotFound from "@/app/pages/NotFound";
 import Stories from "@/modules/story/components/Stories";
@@ -29,6 +30,7 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />

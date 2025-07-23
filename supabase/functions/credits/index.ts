@@ -120,22 +120,66 @@ const extractUserIdFromClerkToken = async (req: Request): Promise<string | null>
 // Function to get real credit data from Supabase
 const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: CreditBalance; transactions: CreditTransaction[] } | null> => {
   try {
+    console.log('getCreditDataFromSupabase called for userId:', userId);
+    
     // Create Supabase client with service role key for edge function
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log('Environment variables check:');
+    console.log('SUPABASE_URL exists:', !!supabaseUrl);
+    console.log('SUPABASE_SERVICE_ROLE_KEY exists:', !!supabaseServiceKey);
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing required environment variables');
+      return null;
+    }
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('Supabase client created successfully');
     
     // Query user_credits table using Clerk user ID (TEXT field)
-    const { data: creditData, error: creditError } = await supabase
+    console.log('Querying user_credits table for user:', userId);
+    let { data: creditData, error: creditError } = await supabase
       .from('user_credits')
       .select('*')
       .eq('user_id', userId) // Using TEXT field, not UUID
       .single();
     
+    console.log('Query result - data:', creditData);
+    console.log('Query result - error:', creditError);
+    
     if (creditError) {
-      console.error('Error fetching credit data:', creditError);
-      return null;
+      // If user doesn't have a credit record, create one with 0 balance
+      if (creditError.code === 'PGRST116') {
+        console.log('No credit record found for user, creating one with 0 balance');
+        const { data: newCreditData, error: insertError } = await supabase
+          .from('user_credits')
+          .insert({
+            user_id: userId,
+            balance: 0,
+            total_earned: 0,
+            total_spent: 0,
+            subscription_type: null,
+            subscription_status: 'free'
+          })
+          .select()
+          .single();
+        
+        console.log('Insert result - data:', newCreditData);
+        console.log('Insert result - error:', insertError);
+        
+        if (insertError) {
+          console.error('Error creating credit record:', insertError);
+          return null;
+        }
+        
+        // Use the newly created record
+        creditData = newCreditData;
+      } else {
+        console.error('Error fetching credit data:', creditError);
+        return null;
+      }
     }
     
     // Query recent transactions
@@ -172,28 +216,7 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
   }
 };
 
-// Mock credit data for testing (fallback)
-const getMockCreditData = (): { balance: CreditBalance; transactions: CreditTransaction[] } => {
-  const now = new Date().toISOString();
-  
-  return {
-    balance: {
-      balance: 10, // Give user 10 credits for testing
-      subscription_type: 'monthly',
-      last_updated: now
-    },
-    transactions: [
-      {
-        id: 'mock-tx-1',
-        type: 'purchase',
-        amount: 10,
-        description: 'Welcome credits for testing',
-        transaction_date: now,
-        samcart_order_id: 'mock-order-123'
-      }
-    ]
-  };
-};
+// Removed mock credit data - credits should only come from Supabase
 
 serve(async (req: Request) => {
   // Get dynamic CORS headers based on request
@@ -205,18 +228,22 @@ serve(async (req: Request) => {
   }
 
   try {
+    console.log('Credits function called with method:', req.method);
+    console.log('Request URL:', req.url);
+    
     // Extract user ID from Clerk token
     const userId = await extractUserIdFromClerkToken(req);
     
     if (!userId) {
+      console.error('No user ID extracted from token');
       return new Response(
         JSON.stringify({
           success: false,
           error: 'Unauthorized - Invalid or missing token'
         }),
-        { 
-          status: 401, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 401,
+          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -224,18 +251,33 @@ serve(async (req: Request) => {
     console.log(`Processing request for Clerk user: ${userId}`);
 
     if (req.method === 'GET') {
+      console.log('Processing GET request for credit balance');
+      
       // Parse query parameters
       const url = new URL(req.url);
       const includeTransactions = url.searchParams.get('include_transactions') === 'true';
+      console.log('Include transactions:', includeTransactions);
       
-      // Try to get real data from Supabase first
-      let creditData = await getCreditDataFromSupabase(userId);
+      // Get real data from Supabase only
+      console.log('Calling getCreditDataFromSupabase for user:', userId);
+      const creditData = await getCreditDataFromSupabase(userId);
       
-      // Fallback to mock data if Supabase query fails
+      // If Supabase query fails, return error instead of mock data
       if (!creditData) {
-        console.log('Falling back to mock data');
-        creditData = getMockCreditData();
+        console.error('Failed to fetch credit data from Supabase for user:', userId);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Unable to fetch credit balance from database'
+          }),
+          {
+            status: 500,
+            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
+      
+      console.log('Successfully retrieved credit data:', JSON.stringify(creditData, null, 2));
       
       const response: ApiResponse = {
         success: true,
@@ -269,14 +311,24 @@ serve(async (req: Request) => {
 
   } catch (error) {
     console.error('Credits API error:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
+    const errorName = error instanceof Error ? error.name : 'Unknown error type';
+    
+    console.error('Error stack:', errorStack);
+    console.error('Error message:', errorMessage);
+    console.error('Error name:', errorName);
+    
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
+        details: errorMessage
       }),
-      { 
-        status: 500, 
-        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } 
+      {
+        status: 500,
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' }
       }
     );
   }

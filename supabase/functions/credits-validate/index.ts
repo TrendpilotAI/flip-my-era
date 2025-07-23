@@ -120,15 +120,40 @@ const validateCreditsWithSupabase = async (userId: string, creditsRequired: numb
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Query user_credits table using Clerk user ID (TEXT field)
-    const { data: creditData, error: creditError } = await supabase
+    let { data: creditData, error: creditError } = await supabase
       .from('user_credits')
       .select('*')
       .eq('user_id', userId) // Using TEXT field, not UUID
       .single();
     
     if (creditError) {
-      console.error('Error fetching credit data:', creditError);
-      return null;
+      // If user doesn't have a credit record, create one with 0 balance
+      if (creditError.code === 'PGRST116') {
+        console.log('No credit record found for user, creating one with 0 balance');
+        const { data: newCreditData, error: insertError } = await supabase
+          .from('user_credits')
+          .insert({
+            user_id: userId,
+            balance: 0,
+            total_earned: 0,
+            total_spent: 0,
+            subscription_type: null,
+            subscription_status: 'free'
+          })
+          .select()
+          .single();
+        
+        if (insertError) {
+          console.error('Error creating credit record:', insertError);
+          return null;
+        }
+        
+        // Use the newly created record
+        creditData = newCreditData;
+      } else {
+        console.error('Error fetching credit data:', creditError);
+        return null;
+      }
     }
     
     const currentBalance = creditData?.balance?.balance || 0;
@@ -192,19 +217,7 @@ const validateCreditsWithSupabase = async (userId: string, creditsRequired: numb
   }
 };
 
-// Mock validation data for testing (fallback)
-const getMockValidationData = (creditsRequired: number = 1): ValidationResponse['data'] => {
-  const mockBalance = 10; // Mock balance
-  const hasSufficientCredits = mockBalance >= creditsRequired;
-  
-  return {
-    has_sufficient_credits: hasSufficientCredits,
-    current_balance: hasSufficientCredits ? mockBalance - creditsRequired : mockBalance,
-    subscription_type: 'monthly',
-    transaction_id: hasSufficientCredits ? 'mock-transaction-123' : undefined,
-    bypass_credits: false
-  };
-};
+// Removed mock validation data - credits should only come from Supabase
 
 // @ts-ignore - Deno.serve is available in Supabase Edge Functions runtime
 Deno.serve(async (req: Request) => {
@@ -267,13 +280,22 @@ Deno.serve(async (req: Request) => {
 
       console.log(`Validating ${creditsRequired} credits for ${storyType}`);
 
-      // Try to validate with real Supabase data first
-      let validationData = await validateCreditsWithSupabase(userId, creditsRequired);
+      // Validate with real Supabase data only
+      const validationData = await validateCreditsWithSupabase(userId, creditsRequired);
       
-      // Fallback to mock data if Supabase validation fails
+      // If Supabase validation fails, return error instead of mock data
       if (!validationData) {
-        console.log('Falling back to mock validation data');
-        validationData = getMockValidationData(creditsRequired);
+        console.error('Failed to validate credits with Supabase');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Unable to validate credits from database'
+          }),
+          {
+            status: 500,
+            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
       
       const response: ValidationResponse = {

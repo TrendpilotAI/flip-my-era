@@ -1,19 +1,24 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
+import { Button } from '@/modules/shared/components/ui/button';
 import { Badge } from '@/modules/shared/components/ui/badge';
-import { 
-  Loader2, 
-  User, 
-  UserCircle,
-  Coins,
-  Calendar,
-  Mail
-} from "lucide-react";
-import { CreditBalance } from './CreditBalance';
 import { StripeCreditPurchaseModal } from './StripeCreditPurchaseModal';
+import SettingsDashboard from './SettingsDashboard';
+import { 
+  User, 
+  Mail, 
+  Calendar, 
+  Coins, 
+  Settings, 
+  LogOut,
+  CreditCard,
+  Loader2,
+  UserCircle,
+  ArrowLeft
+} from 'lucide-react';
 
 interface CreditData {
   balance: {
@@ -23,12 +28,20 @@ interface CreditData {
   };
 }
 
+type DashboardTab = 'main' | 'account' | 'billing';
+
 const UserDashboard = () => {
-  const { user, getToken } = useClerkAuth();
+  const { user, signOut, getToken } = useClerkAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [creditData, setCreditData] = useState<CreditData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+
+  // Get current tab from URL parameters
+  const urlParams = new URLSearchParams(location.search);
+  const currentTab: DashboardTab = (urlParams.get('tab') as DashboardTab) || 'main';
 
   const fetchCreditBalance = async () => {
     if (!user?.id) {
@@ -37,6 +50,7 @@ const UserDashboard = () => {
     }
 
     try {
+      // Use getToken from context (not user.getToken which doesn't exist on AuthUser interface)
       const token = await getToken({ template: 'supabase' });
       
       const response = await fetch('/api/functions/credits', {
@@ -47,13 +61,38 @@ const UserDashboard = () => {
         },
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.success && data?.data) {
+          setCreditData(data.data);
+        } else {
+          // In development, use mock data if no real data
+          if (import.meta.env.DEV) {
+            console.log("Using mock credit data for development");
+            const mockData = {
+              balance: {
+                balance: 0,
+                subscription_type: null,
+                last_updated: new Date().toISOString()
+              }
+            };
+            setCreditData(mockData);
+            return;
+          }
+          
+          toast({
+            title: "Error loading credits",
+            description: data?.error || 'Failed to load credit balance',
+            variant: "destructive",
+          });
+        }
+      } else {
         // In development, use mock data if Edge Functions are not available
         if (import.meta.env.DEV && response.status === 503) {
           console.log("Using mock credit data for development");
           const mockData = {
             balance: {
-              balance: 5,
+              balance: 0,
               subscription_type: null,
               last_updated: new Date().toISOString()
             }
@@ -62,31 +101,10 @@ const UserDashboard = () => {
           return;
         }
         
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      if (data?.success && data?.data) {
-        setCreditData(data.data);
-      } else {
-        // In development, use mock data if no real data
-        if (import.meta.env.DEV) {
-          console.log("Using mock credit data for development");
-          const mockData = {
-            balance: {
-              balance: 5,
-              subscription_type: null,
-              last_updated: new Date().toISOString()
-            }
-          };
-          setCreditData(mockData);
-          return;
-        }
-        
+        const errorData = await response.json().catch(() => ({}));
         toast({
           title: "Error loading credits",
-          description: data?.error || 'Failed to load credit balance',
+          description: errorData?.error || 'Failed to load credit balance',
           variant: "destructive",
         });
       }
@@ -110,6 +128,25 @@ const UserDashboard = () => {
     // Refresh balance after successful purchase
     fetchCreditBalance();
     setShowPurchaseModal(false);
+  }
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Successfully Signed Out",
+        description: "You have been securely logged out of your account. Come back soon!",
+      });
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast({
+        title: "Sign Out Failed",
+        description: "We couldn't sign you out properly. Please try again or refresh the page.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getSubscriptionBadge = () => {
@@ -144,6 +181,11 @@ const UserDashboard = () => {
         <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
       </div>
     );
+  }
+
+  // Render settings dashboard for account and billing tabs
+  if (currentTab === 'account' || currentTab === 'billing') {
+    return <SettingsDashboard />;
   }
 
   return (
@@ -220,6 +262,39 @@ const UserDashboard = () => {
                     {getSubscriptionBadge()}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Account Actions */}
+            <div className="pt-6 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate('/dashboard?tab=account')}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Account Settings
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate('/dashboard?tab=billing')}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Billing & Subscriptions
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={handleSignOut}
+                  className="flex items-center justify-center gap-2 text-red-600 hover:text-red-700"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </Button>
               </div>
             </div>
 

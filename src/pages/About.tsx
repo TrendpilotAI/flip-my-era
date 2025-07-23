@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/mod
 import { Button } from "@/modules/shared/components/ui/button";
 import { Sparkles, BookOpen, Users, Star, Heart, Zap } from "lucide-react";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
+import AboutCarousel from "@/modules/shared/components/AboutCarousel";
 
 const About = () => {
   return (
@@ -25,6 +26,19 @@ const About = () => {
             Discover what could have been with AI-powered alternate timeline stories. 
             Every choice creates a new reality - explore yours.
           </p>
+        </div>
+
+        {/* Carousel Section */}
+        <div className="space-y-6">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Explore Infinite Possibilities
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              See how our AI transforms your choices into captivating alternate timeline stories
+            </p>
+          </div>
+          <AboutCarousel />
         </div>
 
         {/* Mission Section */}
