@@ -71,6 +71,7 @@ export interface EnhancedStreamingOptions {
   numChapters?: number;
   ebookGenerationId?: string;
   useEnhancedMemory?: boolean;
+  designSettings?: any; // Style preferences for the ebook
   onProgress?: (progress: EnhancedChapterProgress) => void;
   onOutlineGenerated?: (outline: StoryOutline) => void;
   onChapterComplete?: (chapter: { title: string; content: string }) => void;
@@ -101,6 +102,7 @@ export class MemoryEnhancedAI {
       numChapters,
       ebookGenerationId,
       useEnhancedMemory = true,
+      designSettings,
       onProgress,
       onOutlineGenerated,
       onChapterComplete,
@@ -150,9 +152,11 @@ export class MemoryEnhancedAI {
         selectedFormat,
         numChapters,
         ebookGenerationId: generationId,
-        useEnhancedMemory
+        useEnhancedMemory,
+        designSettings
       };
-      console.log('Frontend - request body:', requestBody);
+      console.log('Frontend - request body:', JSON.stringify(requestBody, null, 2));
+      console.log('Frontend - designSettings in request:', JSON.stringify(designSettings, null, 2));
 
       const response = await fetch(functionUrl, {
         method: 'POST',

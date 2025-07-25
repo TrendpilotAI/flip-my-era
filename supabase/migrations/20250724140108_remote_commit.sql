@@ -401,5 +401,26 @@ for select
 to public
 using (((auth.jwt() ->> 'sub'::text) = user_id));
 
+-- Add unique constraint to ebook_generations table
+ALTER TABLE ebook_generations
+ADD CONSTRAINT unique_story_per_user UNIQUE (user_id, story_id);
+
+-- Update table comment to reflect that this is for memory-enhanced ebooks
+COMMENT ON TABLE ebook_generations IS 'Stores memory-enhanced ebook generations with styling preferences';
+
+-- Add style_preferences column if it doesn't exist
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM information_schema.columns 
+    WHERE table_name = 'ebook_generations' 
+    AND column_name = 'style_preferences'
+  ) THEN
+    ALTER TABLE ebook_generations 
+    ADD COLUMN style_preferences JSONB DEFAULT '{}'::jsonb;
+  END IF;
+END $$;
+
 
 

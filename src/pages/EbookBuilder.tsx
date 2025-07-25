@@ -183,57 +183,30 @@ const EbookBuilder = () => {
     setIsGenerating(true);
     
     try {
-      const token = await getToken({ template: 'supabase' });
-      if (token) {
-        const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
-        
-        const { data: ebookGeneration, error } = await supabaseWithAuth
-          .from('ebook_generations')
-          .insert({
-            user_id: user.id,
-            title: currentProject.title,
-            content: JSON.stringify({
-              chapters,
-              designSettings: currentProject.designSettings
-            }),
-            status: 'completed',
-            credits_used: 1,
-            paid_with_credits: true,
-            story_type: 'ebook-builder',
-            chapter_count: chapters.length,
-            word_count: chapters.reduce((total, chapter) => total + (chapter.content?.length || 0), 0)
-          })
-          .select()
-          .single();
+      // No need to insert into database here - the backend stream-chapters-enhanced function already does this
+      // Just update the local project state with the generated chapters
+      const updatedProject = {
+        ...currentProject,
+        chapters: chapters.map((chapter, index) => ({
+          id: `chapter-${index}`,
+          title: chapter.title || `Chapter ${index + 1}`,
+          content: chapter.content || "",
+          order: index
+        })),
+        updatedAt: new Date().toISOString()
+      };
 
-        if (error) {
-          throw error;
-        }
-
-        // Update current project with generated chapters
-        const updatedProject = {
-          ...currentProject,
-          chapters: chapters.map((chapter, index) => ({
-            id: `chapter-${index}`,
-            title: chapter.title || `Chapter ${index + 1}`,
-            content: chapter.content || "",
-            order: index
-          })),
-          updatedAt: new Date().toISOString()
-        };
-
-        setCurrentProject(updatedProject);
-        
-        toast({
-          title: "Chapters Generated!",
-          description: `Successfully created ${chapters.length} chapters for your ebook.`,
-        });
-      }
-    } catch (error) {
-      console.error('Error saving ebook:', error);
+      setCurrentProject(updatedProject);
+      
       toast({
-        title: "Save Failed",
-        description: "Chapters generated but couldn't be saved. Please try again.",
+        title: "Chapters Generated!",
+        description: `Successfully created ${chapters.length} chapters for your ebook.`,
+      });
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast({
+        title: "Update Failed",
+        description: "Chapters generated but couldn't update project. Please try again.",
         variant: "destructive",
       });
     } finally {

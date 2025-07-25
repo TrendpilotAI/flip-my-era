@@ -4,6 +4,11 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
+
+// IMPORTANT: This function handles additional updates to existing ebook_generations records.
+// Initial record creation and progressive updates are handled by the stream-chapters-enhanced function.
+// This function is used for post-generation updates like design settings, illustrations, etc.
+
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 Deno.serve(async (req) => {
@@ -104,27 +109,32 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Required fields for ebook generation
+  // Fields for additional ebook updates (post-generation)
   const {
-    story_id,
+    ebook_id, // Primary identifier for direct updates
     title,
     content,
     chapters, // Array of chapter objects
     designSettings, // Design settings object
-    status = "completed",
-    credits_used = 1,
-    paid_with_credits = true,
+    status,
+    credits_used,
+    paid_with_credits,
     transaction_id,
     story_type,
     chapter_count,
     word_count,
     description,
     subtitle,
-    author_name
+    author_name,
+    images, // Array of generated images
+    pdf_url,
+    epub_url,
+    cover_image_url
   } = body;
 
-  if (!story_id || !title) {
-    return new Response(JSON.stringify({ error: "Missing required fields: story_id, title" }), {
+  // Require ebook_id for identification
+  if (!ebook_id) {
+    return new Response(JSON.stringify({ error: "Missing required field: ebook_id" }), {
       status: 400,
       headers: { 
         "Content-Type": "application/json",
@@ -145,7 +155,7 @@ Deno.serve(async (req) => {
     // For development, return success without actually saving
     return new Response(JSON.stringify({ 
       success: true,
-      message: "Development mode: Simulated successful save (no actual database write)",
+      message: "Development mode: Simulated successful update (no actual database write)",
       data: { id: "dev-mode-id" }
     }), {
       status: 200,
@@ -158,44 +168,74 @@ Deno.serve(async (req) => {
   
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Prepare the data object
-  const ebookData: any = {
-    user_id: userId,
-    story_id,
-    title,
-    status,
-    credits_used,
-    paid_with_credits,
-    generation_completed_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
+  // Prepare the update data object (only include fields that are provided)
+  const updateData: any = {
     updated_at: new Date().toISOString()
   };
 
-  // Add optional fields if provided
-  if (content) ebookData.content = content;
-  if (chapters) ebookData.chapters = chapters;
-  if (designSettings) ebookData.style_preferences = designSettings;
-  if (transaction_id) ebookData.transaction_id = transaction_id;
-  if (story_type) ebookData.story_type = story_type;
-  if (chapter_count) ebookData.chapter_count = chapter_count;
-  if (word_count) ebookData.word_count = word_count;
-  if (description) ebookData.description = description;
-  if (subtitle) ebookData.subtitle = subtitle;
-  if (author_name) ebookData.author_name = author_name;
+  // Only include fields that are provided in the request
+  if (title !== undefined) updateData.title = title;
+  if (description !== undefined) updateData.description = description;
+  if (subtitle !== undefined) updateData.subtitle = subtitle;
+  if (author_name !== undefined) updateData.author_name = author_name;
+  if (chapters !== undefined) updateData.chapters = chapters;
+  if (status !== undefined) updateData.status = status;
+  if (designSettings !== undefined) updateData.style_preferences = designSettings;
+  if (content !== undefined) updateData.content = content;
+  if (story_type !== undefined) updateData.story_type = story_type;
+  if (chapter_count !== undefined) updateData.chapter_count = chapter_count;
+  if (word_count !== undefined) updateData.word_count = word_count;
+  if (credits_used !== undefined) updateData.credits_used = credits_used;
+  if (paid_with_credits !== undefined) updateData.paid_with_credits = paid_with_credits;
+  if (images !== undefined) updateData.images = images;
+  if (pdf_url !== undefined) updateData.pdf_url = pdf_url;
+  if (epub_url !== undefined) updateData.epub_url = epub_url;
+  if (cover_image_url !== undefined) updateData.cover_image_url = cover_image_url;
 
-  console.log('Attempting to save ebook data:', {
+  console.log('Attempting to update ebook data:', {
     user_id: userId,
-    story_id,
-    title,
+    ebook_id,
+    title: updateData.title,
     hasChapters: !!chapters,
-    hasDesignSettings: !!designSettings
+    hasDesignSettings: !!designSettings,
+    updateFields: Object.keys(updateData)
   });
 
   try {
-    // Insert into ebook_generations table
+    // Find the existing ebook record by ebook_id
+    const { data: existingEbook, error: checkError } = await supabase
+      .from("ebook_generations")
+      .select("id, title, status")
+      .eq("id", ebook_id)
+      .single();
+
+    if (checkError) {
+      if (checkError.code === 'PGRST116') {
+        // No existing record found
+        console.error('No existing ebook_generations record found for ebook_id:', ebook_id);
+        return new Response(JSON.stringify({ 
+          error: "No existing ebook record found. Records are created during the streaming generation process.",
+          ebook_id
+        }), {
+          status: 404,
+          headers: { 
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*'
+          },
+        });
+      } else {
+        console.error('Error checking for existing ebook:', checkError);
+        throw checkError;
+      }
+    }
+
+    console.log('Found existing ebook record:', existingEbook);
+
+    // Update the existing ebook record
     const { data, error } = await supabase
       .from("ebook_generations")
-      .insert(ebookData)
+      .update(updateData)
+      .eq("id", existingEbook.id)
       .select()
       .single();
 
@@ -213,7 +253,8 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true,
       data,
-      message: "Ebook saved successfully"
+      message: "Ebook updated successfully",
+      updated_fields: Object.keys(updateData).filter(key => key !== 'updated_at')
     }), {
       status: 200,
       headers: { 
@@ -244,6 +285,6 @@ Deno.serve(async (req) => {
   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/ebook-generation' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.esaU0tAllSc9odxI0N-kH2hXruKTV5Ji1oi3Fuw6YcY' \
     --header 'Content-Type: application/json' \
-    --data '{"user_id":"test","story_id":"test","title":"Test Book","chapters":[{"title":"Chapter 1","content":"Test content"}],"designSettings":{"textColor":"#374151","chapterHeadingColor":"#8B5CF6"}}'
+    --data '{"ebook_id":"test-ebook-id","designSettings":{"textColor":"#374151","chapterHeadingColor":"#8B5CF6"}}'
 
 */

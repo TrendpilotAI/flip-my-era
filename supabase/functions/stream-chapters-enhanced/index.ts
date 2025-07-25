@@ -1,5 +1,6 @@
 // Enhanced Stream Chapters Function with Memory System
 // Implements: Story Outline Planning, Rolling Memory, Story State, and Repetition Detection
+// OPTION A: Single Record with Staged Updates
 
 // @ts-ignore -- Deno Edge Function imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
@@ -20,7 +21,6 @@ import {
   saveChapterEmbedding,
   generateEmbedding,
   initializeStoryState,
-  createEbookGeneration,
   type StoryOutline,
   type ChapterSummary,
   type StoryState,
@@ -119,6 +119,7 @@ interface StreamChapterRequest {
   numChapters?: number;
   ebookGenerationId?: string; // Required for memory system
   useEnhancedMemory?: boolean;
+  designSettings?: any; // Style preferences for the ebook
 }
 
 interface ChapterProgress {
@@ -200,7 +201,8 @@ serve(async (req: Request) => {
       selectedFormat, 
       numChapters, 
       ebookGenerationId,
-      useEnhancedMemory = true 
+      useEnhancedMemory = true,
+      designSettings
     } = requestBody;
 
     if (!ebookGenerationId) {
@@ -249,6 +251,99 @@ serve(async (req: Request) => {
           const chapters: Array<{ title: string; content: string }> = [];
           const chapterSummaries: ChapterSummary[] = [];
 
+          // STAGE 1: CREATE INITIAL EBOOK RECORD WITH USER INPUT DATA
+          sendEvent({
+            type: 'progress',
+            progress: 8,
+            message: 'Creating initial ebook record...'
+          });
+
+          // DEBUG LOGGING: Log the input data
+          console.log('=== EBOOK GENERATION DEBUG ===');
+          console.log('ebookGenerationId:', ebookGenerationId);
+          console.log('userId:', userId);
+          console.log('designSettings received:', JSON.stringify(designSettings, null, 2));
+          console.log('designSettings type:', typeof designSettings);
+          console.log('designSettings is null:', designSettings === null);
+          console.log('designSettings is undefined:', designSettings === undefined);
+
+          if (userId) {
+            try {
+              // Check if record already exists to prevent duplicates
+              const { data: existingRecord, error: checkError } = await supabase
+                .from('ebook_generations')
+                .select('id, status')
+                .eq('id', ebookGenerationId)
+                .single();
+
+              if (existingRecord) {
+                console.log('Record already exists, skipping creation:', existingRecord);
+                sendEvent({
+                  type: 'progress',
+                  progress: 10,
+                  message: 'Using existing ebook record...'
+                });
+              } else {
+                // Ensure designSettings is properly handled - never null, always an object
+                const safeDesignSettings = designSettings && typeof designSettings === 'object'
+                  ? designSettings
+                  : {};
+
+                const insertData = {
+                  id: ebookGenerationId,
+                  user_id: userId,
+                  title: 'Generating...',
+                  description: '',
+                  chapters: [],
+                  status: 'generating',
+                  credits_used: 1,
+                  paid_with_credits: true,
+                  story_type: 'memory_enhanced',
+                  chapter_count: chapterCount,
+                  word_count: 0,
+                  style_preferences: safeDesignSettings, // Ensure it's always an object, never null
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                };
+
+                console.log('Inserting ebook record with data:', JSON.stringify(insertData, null, 2));
+
+                // Use upsert to handle potential race conditions
+                const { data: initialEbook, error: insertError } = await supabase
+                  .from('ebook_generations')
+                  .upsert(insertData, {
+                    onConflict: 'id',
+                    ignoreDuplicates: false
+                  })
+                  .select()
+                  .single();
+
+                if (insertError) {
+                  console.error('Error creating initial ebook record:', insertError);
+                  console.error('Insert error details:', JSON.stringify(insertError, null, 2));
+                  throw new Error(`Failed to create ebook record: ${insertError.message}`);
+                }
+
+                console.log('Successfully created initial ebook record:', JSON.stringify(initialEbook, null, 2));
+              }
+            } catch (dbError) {
+              console.error('Database insertion error:', dbError);
+              console.error('Database error details:', JSON.stringify(dbError, null, 2));
+              
+              // If it's a unique constraint violation, it means another process created the record
+              if (dbError instanceof Error && dbError.message.includes('duplicate key')) {
+                console.log('Record was created by another process, continuing...');
+                sendEvent({
+                  type: 'progress',
+                  progress: 10,
+                  message: 'Record created by concurrent process, continuing...'
+                });
+              } else {
+                throw new Error('Failed to create initial ebook record');
+              }
+            }
+          }
+
           // PHASE 1: STORY OUTLINE PLANNING
           sendEvent({
             type: 'progress',
@@ -274,17 +369,8 @@ serve(async (req: Request) => {
           if (!outline.user_id || outline.user_id.trim() === '') {
             throw new Error('user_id cannot be empty');
           }
-          
-          // Create ebook_generations record first (required for foreign key constraint)
-          await createEbookGeneration(
-            supabase,
-            ebookGenerationId,
-            userId || 'anonymous',
-            outline.book_title,
-            outline.book_description
-          );
 
-          // Save outline to database
+          // Save outline to database (now that ebook record exists)
           const outlineId = await saveStoryOutline(supabase, outline);
           console.log('Saved story outline:', outlineId);
 
@@ -295,10 +381,56 @@ serve(async (req: Request) => {
             message: `Story outline created: "${outline.book_title}"`
           });
 
+          // STAGE 2: UPDATE WITH AI-GENERATED METADATA
+          sendEvent({
+            type: 'progress',
+            progress: 22,
+            message: 'Updating with AI-generated metadata...'
+          });
+
+          if (userId) {
+            try {
+              const { data: updatedEbook, error: updateError } = await supabase
+                .from('ebook_generations')
+                .update({
+                  title: outline.book_title,
+                  description: outline.book_description || '',
+                  table_of_contents: {
+                    chapters: outline.chapter_titles.map((title, index) => ({
+                      number: index + 1,
+                      title,
+                      summary: outline.chapter_summaries[index] || ''
+                    }))
+                  },
+                  generation_settings: {
+                    outline: outline,
+                    character_bios: outline.character_bios,
+                    world_info: outline.world_info,
+                    key_themes: outline.key_themes,
+                    plot_outline: outline.plot_outline
+                  },
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', ebookGenerationId)
+                .select()
+                .single();
+
+              if (updateError) {
+                console.error('Error updating ebook with metadata:', updateError);
+                throw new Error(`Failed to update ebook metadata: ${updateError.message}`);
+              }
+
+              console.log('Successfully updated ebook with AI metadata:', updatedEbook);
+            } catch (dbError) {
+              console.error('Database metadata update error:', dbError);
+              throw new Error('Failed to update ebook with metadata');
+            }
+          }
+
           // PHASE 2: INITIALIZE STORY STATE
           sendEvent({
             type: 'progress',
-            progress: 25,
+            progress: 24,
             message: 'Initializing story state tracking...'
           });
 
@@ -308,7 +440,7 @@ serve(async (req: Request) => {
           // PHASE 3: GENERATE CHAPTERS WITH MEMORY
           for (let i = 0; i < chapterCount; i++) {
             const chapterNumber = i + 1;
-            const progressPercent = 25 + (i / chapterCount) * 60;
+            const progressPercent = 24 + (i / chapterCount) * 60;
 
             sendEvent({
               type: 'progress',
@@ -423,6 +555,30 @@ serve(async (req: Request) => {
 
             await saveStoryState(supabase, storyState);
 
+            // STAGE 3: UPDATE WITH GENERATED CHAPTERS (Progressive Updates)
+            if (userId) {
+              try {
+                const { data: chapterUpdateEbook, error: chapterUpdateError } = await supabase
+                  .from('ebook_generations')
+                  .update({
+                    chapters: chapters,
+                    word_count: chapters.reduce((total, ch) => total + ch.content.length, 0),
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', ebookGenerationId)
+                  .select()
+                  .single();
+
+                if (chapterUpdateError) {
+                  console.error('Error updating ebook with chapter:', chapterUpdateError);
+                } else {
+                  console.log(`Successfully updated ebook with Chapter ${chapterNumber}`);
+                }
+              } catch (dbError) {
+                console.error('Database chapter update error:', dbError);
+              }
+            }
+
             // Send chapter completion event
             sendEvent({
               type: 'chapter',
@@ -435,38 +591,35 @@ serve(async (req: Request) => {
             });
           }
 
-          // PHASE 5: SAVE TO DATABASE
+          // STAGE 4: FINAL UPDATE - MARK AS COMPLETED
           sendEvent({
             type: 'progress',
             progress: 90,
-            message: 'Saving complete story to database...'
+            message: 'Finalizing ebook generation...'
           });
 
+          // Final update to mark the ebook as completed
           if (userId) {
             try {
               const { data: ebookGeneration, error } = await supabase
                 .from('ebook_generations')
-                .insert({
-                  user_id: userId,
-                  title: `Memory-Enhanced: ${outline.book_title}`,
-                  content: JSON.stringify(chapters),
+                .update({
                   status: 'completed',
-                  credits_used: 1,
-                  paid_with_credits: true,
-                  story_type: 'memory-enhanced',
                   chapter_count: chapters.length,
-                  word_count: chapters.reduce((total, ch) => total + ch.content.length, 0)
+                  word_count: chapters.reduce((total, ch) => total + ch.content.length, 0),
+                  updated_at: new Date().toISOString()
                 })
+                .eq('id', ebookGenerationId)
                 .select()
                 .single();
 
               if (error) {
-                console.error('Error saving to ebook_generations:', error);
+                console.error('Error finalizing ebook_generations:', error);
               } else {
-                console.log('Successfully saved memory-enhanced story:', ebookGeneration);
+                console.log('Successfully completed memory-enhanced story:', ebookGeneration);
               }
             } catch (dbError) {
-              console.error('Database save error:', dbError);
+              console.error('Database finalization error:', dbError);
             }
           }
 

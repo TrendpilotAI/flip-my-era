@@ -673,35 +673,6 @@ export function initializeStoryState(
 }
 
 /**
- * Create ebook generation record (required for foreign key constraints)
- */
-export async function createEbookGeneration(
-  supabase: any,
-  ebookGenerationId: string,
-  userId: string,
-  title: string,
-  description?: string
-): Promise<void> {
-  const { error } = await supabase
-    .from('ebook_generations')
-    .upsert({
-      id: ebookGenerationId,
-      user_id: userId,
-      title: title,
-      description: description,
-      chapters: [],
-      status: 'draft',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
-
-  if (error) {
-    console.error('Error creating ebook generation record:', error);
-    throw new Error(`Failed to create ebook generation record: ${error.message}`);
-  }
-}
-
-/**
  * Save chapter embedding to database
  */
 export async function saveChapterEmbedding(

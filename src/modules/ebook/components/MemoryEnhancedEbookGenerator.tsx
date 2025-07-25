@@ -161,6 +161,14 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
       // Generate a unique ID for this ebook generation
       const uniqueEbookGenerationId = generateUUID();
       
+      // DEBUG LOGGING: Log what we're sending
+      console.log('=== FRONTEND EBOOK GENERATION DEBUG ===');
+      console.log('uniqueEbookGenerationId:', uniqueEbookGenerationId);
+      console.log('designSettings received in component:', JSON.stringify(designSettings, null, 2));
+      console.log('designSettings type:', typeof designSettings);
+      console.log('designSettings is null:', designSettings === null);
+      console.log('designSettings is undefined:', designSettings === undefined);
+      
       // Start enhanced generation
       await memoryAI.generateEnhancedStory({
         originalStory,
@@ -170,7 +178,7 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
         numChapters: currentFormat.chapters,
         ebookGenerationId: uniqueEbookGenerationId,
         useEnhancedMemory: useMemorySystem,
-        storyId: effectiveStoryId, // Use the effective story ID
+        designSettings, // Explicitly pass designSettings
         
         onProgress: (progressData: EnhancedChapterProgress) => {
           setProgress(progressData.progress || 0);

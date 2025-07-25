@@ -84,109 +84,6 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
   const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState('');
   const [storyPrompt, setStoryPrompt] = useState<string>(originalStory || '');
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // Save ebook function
-  const saveEbook = async () => {
-    if (!isAuthenticated || chapters.length === 0) {
-      toast({
-        title: "Cannot Save",
-        description: "Please generate chapters first and ensure you're logged in.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    
-    try {
-      // Try to get the token directly from Clerk
-      console.log("Getting token from Clerk...");
-      // Try different JWT templates if 'supabase' doesn't work
-      let token;
-      try {
-        // First try with the supabase template
-        token = await getToken({ template: 'supabase' });
-        console.log("Token received with supabase template:", token ? "Token exists" : "No token received");
-      } catch (tokenError) {
-        console.error("Error getting token with supabase template:", tokenError);
-        // Fall back to a raw JWT token
-        try {
-          token = await getToken();
-          console.log("Token received with default template:", token ? "Token exists" : "No token received");
-        } catch (defaultTokenError) {
-          console.error("Error getting default token:", defaultTokenError);
-        }
-      }
-      
-      if (!token) {
-        throw new Error('Unable to get authentication token');
-      }
-      
-      // For testing, let's try with the Supabase anon key
-      // This is just for debugging - in production, always use the user's token
-      const debugToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.esaU0tAllSc9odxI0N-kH2hXruKTV5Ji1oi3Fuw6YcY";
-      
-      console.log("Making request to Edge Function...");
-      
-      // Import the Supabase client and createSupabaseClientWithClerkToken function
-      const { createSupabaseClientWithClerkToken } = await import('@/core/integrations/supabase/client');
-      
-      // Create a Supabase client with the Clerk token
-      const supabaseClient = createSupabaseClientWithClerkToken(token);
-      
-      console.log("Calling Edge Function through Supabase client...");
-      
-      // Use the Supabase client to call the Edge Function
-      const { data, error } = await supabaseClient.functions.invoke('ebook-generation', {
-        method: 'POST',
-        body: {
-          user_id: 'current_user', // This will be extracted from the JWT token in the Edge Function
-          story_id: storyId || 'test-story-id',
-          title: getStoryTitle() || 'Test Story',
-          chapters: chapters,
-          designSettings: designSettings,
-          chapter_count: chapters.length,
-          word_count: getTotalWords(),
-          status: 'completed',
-          story_type: selectedFormat || 'standard',
-          credits_used: 1,
-          paid_with_credits: true
-        }
-      });
-
-            console.log("Response from Supabase function:", { data, error });
-      
-      if (error) {
-        console.error("Error from Supabase function:", error);
-        throw new Error(`Function error: ${error.message || JSON.stringify(error)}`);
-      }
-      
-      if (!data) {
-        throw new Error('No data returned from function');
-      }
-      
-      console.log("Response data:", data);
-
-      if (data.success) {
-        toast({
-          title: "Ebook Saved!",
-          description: "Your ebook has been saved successfully with all design settings.",
-        });
-      } else {
-        throw new Error(data.error || 'Failed to save ebook');
-      }
-    } catch (error) {
-      console.error('Save error:', error);
-      toast({
-        title: "Save Failed",
-        description: error instanceof Error ? error.message : "Failed to save ebook. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
   
   // Update storyPrompt when originalStory changes
   useEffect(() => {
@@ -406,25 +303,12 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
                 </div>
               ))}
               
-              {/* Save Button */}
+              {/* Save Button - Removed since saving is handled by MemoryEnhancedEbookGenerator */}
               <div className="flex justify-center pt-8 border-t border-gray-200">
-                <Button
-                  onClick={saveEbook}
-                  disabled={isSaving || chapters.length === 0}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 px-8 py-3"
-                >
-                  {isSaving ? (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                      Saving Ebook...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Ebook
-                    </>
-                  )}
-                </Button>
+                <Badge variant="secondary" className="px-4 py-2">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Story Generated Successfully
+                </Badge>
               </div>
 
             </div>

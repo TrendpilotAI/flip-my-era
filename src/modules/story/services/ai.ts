@@ -426,7 +426,7 @@ export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwi
     } else {
       console.warn('RUNWARE not available for Taylor Swift illustrations, falling back to standard generation');
       
-      // Fallback to standard ebook illustration with Taylor Swift styling hints
+      // Fallback to memory-enhanced ebook illustration with Taylor Swift styling hints
       const styleMapping: Record<TaylorSwiftTheme, 'children' | 'fantasy' | 'adventure' | 'educational'> = {
         'coming-of-age': 'children',
         'first-love': 'fantasy',

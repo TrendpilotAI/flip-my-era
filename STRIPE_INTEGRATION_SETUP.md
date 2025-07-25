@@ -88,7 +88,7 @@ In your Stripe Dashboard, create these products:
 Replace the existing `CreditPurchaseModal` with `StripeCreditPurchaseModal`:
 
 ```tsx
-// In your EbookGenerator.tsx or wherever you use the credit modal
+// In your CreditBasedEbookGenerator.tsx or wherever you use the credit modal
 import { StripeCreditPurchaseModal } from '@/modules/user/components/StripeCreditPurchaseModal';
 
 // Replace CreditPurchaseModal with:
