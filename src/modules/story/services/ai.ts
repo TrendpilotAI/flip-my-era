@@ -303,72 +303,40 @@ export async function generateName(options: GenerateNameOptions): Promise<string
 }
 
 /**
- * Generate an optimized illustration for an ebook chapter using RUNWARE Flux1.1 Pro with AI-enhanced prompts
+ * Generate an optimized illustration for an ebook chapter using DALL-E
  */
 export async function generateEbookIllustration(options: GenerateEbookIllustrationOptions): Promise<string> {
   try {
     const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
     
-    // Check if RUNWARE is available
-    const runwareAvailable = await isRunwareAvailable();
+    // Create an enhanced prompt for DALL-E
+    const styleDescriptions = {
+      children: 'colorful, whimsical children\'s book illustration style',
+      fantasy: 'magical fantasy art style with mystical elements',
+      adventure: 'dynamic adventure scene with exciting action',
+      educational: 'clear, informative educational illustration style'
+    };
     
-    if (runwareAvailable) {
-      // Use RUNWARE with Flux1.1 Pro for ebook illustrations
-      const illustration = await runwareService.generateEbookIllustration({
-        chapterTitle,
-        chapterContent,
-        style,
-        mood,
-        useEnhancedPrompts
-      });
-      
-      return illustration.imageURL || '';
-    } else {
-      console.warn('RUNWARE not available, falling back to OpenAI');
-      throw new Error('RUNWARE not available');
-    }
+    const moodDescriptions = {
+      happy: 'bright, cheerful, uplifting atmosphere',
+      mysterious: 'mysterious, intriguing, atmospheric mood',
+      adventurous: 'exciting, dynamic, energetic feeling',
+      peaceful: 'calm, serene, tranquil ambiance'
+    };
+    
+    const styleDesc = styleDescriptions[style] || styleDescriptions.children;
+    const moodDesc = moodDescriptions[mood] || moodDescriptions.happy;
+    
+    const prompt = `Professional ebook illustration for chapter "${chapterTitle}". ${styleDesc}, ${moodDesc}. Scene depicting: ${chapterContent.substring(0, 300)}. High quality, detailed artwork, book illustration style, professional publishing quality.`;
+    
+    return await generateImage({ 
+      prompt,
+      size: '1024x1024',
+      quality: 'hd'
+    });
   } catch (error) {
-    console.error('Failed to generate ebook illustration with RUNWARE:', error);
-    
-    // Fallback to OpenAI if RUNWARE fails
-    try {
-      const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
-      
-      let prompt: string;
-      
-      if (useEnhancedPrompts) {
-        // Try to use Groq-enhanced prompt
-        try {
-          prompt = await enhancePromptWithGroq({
-            chapterTitle,
-            chapterContent,
-            style,
-            mood
-          });
-        } catch (enhancementError) {
-          console.warn('Failed to enhance prompt with Groq, using basic prompt:', enhancementError);
-          prompt = createEbookIllustrationPrompt({
-            chapterTitle,
-            chapterContent,
-            style,
-            mood
-          });
-        }
-      } else {
-        // Use basic prompt
-        prompt = createEbookIllustrationPrompt({
-          chapterTitle,
-          chapterContent,
-          style,
-          mood
-        });
-      }
-      
-      return await generateImage({ prompt, useRunware: false });
-    } catch (fallbackError) {
-      console.error('Fallback image generation also failed:', fallbackError);
-      throw new Error('Ebook illustration generation failed. Please try again later.');
-    }
+    console.error('Failed to generate ebook illustration:', error);
+    throw new Error('Ebook illustration generation failed. Please try again later.');
   }
 }
 
@@ -388,49 +356,27 @@ export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwi
       setting
     } = options;
     
-    // Check if RUNWARE is available
-    const runwareAvailable = await isRunwareAvailable();
+    // Create Taylor Swift-themed prompt for DALL-E
+    const themeDescriptions = {
+      'coming-of-age': 'nostalgic coming-of-age story with warm, golden hour lighting',
+      'first-love': 'romantic first love scene with dreamy, ethereal atmosphere',
+      'heartbreak': 'melancholic heartbreak scene with moody, dramatic lighting',
+      'friendship': 'joyful friendship moment with bright, celebratory colors'
+    };
     
-    if (runwareAvailable) {
-      // Use RUNWARE with Taylor Swift-specific styling
-      const illustration = await runwareService.generateTaylorSwiftIllustration({
-        chapterTitle,
-        chapterContent,
-        theme,
-        useEnhancedPrompts,
-        customMood,
-        timeOfDay,
-        season,
-        setting
-      });
-      
-      return illustration.imageURL || '';
-    } else {
-      console.warn('RUNWARE not available for Taylor Swift illustrations, falling back to standard generation');
-      
-      // Fallback to memory-enhanced ebook illustration with Taylor Swift styling hints
-      const styleMapping: Record<TaylorSwiftTheme, 'children' | 'fantasy' | 'adventure' | 'educational'> = {
-        'coming-of-age': 'children',
-        'first-love': 'fantasy',
-        'heartbreak': 'children',
-        'friendship': 'adventure'
-      };
-      
-      const moodMapping: Record<TaylorSwiftTheme, 'happy' | 'mysterious' | 'adventurous' | 'peaceful'> = {
-        'coming-of-age': 'peaceful',
-        'first-love': 'happy',
-        'heartbreak': 'mysterious',
-        'friendship': 'happy'
-      };
-      
-      return await generateEbookIllustration({
-        chapterTitle,
-        chapterContent,
-        style: styleMapping[theme],
-        mood: moodMapping[theme],
-        useEnhancedPrompts
-      });
-    }
+    const themeDesc = themeDescriptions[theme] || themeDescriptions['coming-of-age'];
+    const moodDesc = customMood || 'emotional and evocative';
+    const timeDesc = timeOfDay ? `, ${timeOfDay} lighting` : '';
+    const seasonDesc = season ? `, ${season} season` : '';
+    const settingDesc = setting ? `, set in ${setting}` : '';
+    
+    const prompt = `Taylor Swift-inspired illustration for chapter "${chapterTitle}". ${themeDesc}, ${moodDesc}${timeDesc}${seasonDesc}${settingDesc}. Scene: ${chapterContent.substring(0, 300)}. Artistic, emotional, high quality illustration in the style of music album artwork.`;
+    
+    return await generateImage({
+      prompt,
+      size: '1024x1024',
+      quality: 'hd'
+    });
   } catch (error) {
     console.error('Failed to generate Taylor Swift illustration:', error);
     throw new Error('Taylor Swift illustration generation failed. Please try again later.');

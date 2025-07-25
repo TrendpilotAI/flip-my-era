@@ -37,6 +37,7 @@ import {
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { CreditBasedEbookGenerator } from '@/modules/ebook/components/CreditBasedEbookGenerator';
+import { EbookPublishDemo } from './EbookPublishDemo';
 import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 
@@ -114,6 +115,7 @@ const EbookBuilder = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [currentProject, setCurrentProject] = useState<EbookProject | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedEbookId, setGeneratedEbookId] = useState<string | null>(null);
   
   // Image generation state
   const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -1014,67 +1016,79 @@ const EbookBuilder = () => {
 
           {/* Publish Tab */}
           <TabsContent value="publish" className="space-y-6">
-            <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Share2 className="h-5 w-5" />
-                  Publish Your Ebook
-                </CardTitle>
-                <CardDescription>
-                  Make your ebook available to readers worldwide
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Publishing Options</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <input type="radio" id="pdf" name="format" className="text-purple-600" />
-                        <Label htmlFor="pdf">PDF Format</Label>
+            {generatedEbookId ? (
+              <EbookPublishDemo ebookId={generatedEbookId} />
+            ) : (
+              <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Share2 className="h-5 w-5" />
+                    Publish Your Ebook
+                  </CardTitle>
+                  <CardDescription>
+                    Generate your ebook content first to access the publish preview
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="text-center py-8">
+                    <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Content Generated Yet</h3>
+                    <p className="text-gray-600 mb-6">
+                      Generate your ebook content in the "Generate" tab first, then return here to preview and publish your complete book with cover and chapter images.
+                    </p>
+                    <Button 
+                      onClick={() => setActiveTab("generate")}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                    >
+                      <Zap className="h-4 w-4 mr-2" />
+                      Generate Content
+                    </Button>
+                  </div>
+                  
+                  <div className="border-t pt-6">
+                    <h3 className="font-semibold mb-4">What you'll get in the publish preview:</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <Eye className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Complete Book Preview</h4>
+                          <p className="text-sm text-gray-600">See your entire ebook with cover and chapter images</p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <input type="radio" id="epub" name="format" className="text-purple-600" />
-                        <Label htmlFor="epub">EPUB Format</Label>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-pink-100 rounded-lg">
+                          <Image className="w-4 h-4 text-pink-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Image Generation</h4>
+                          <p className="text-sm text-gray-600">Generate cover and chapter illustrations with DALL-E</p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <input type="radio" id="mobi" name="format" className="text-purple-600" />
-                        <Label htmlFor="mobi">MOBI Format (Kindle)</Label>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Download className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Export Options</h4>
+                          <p className="text-sm text-gray-600">Download as PDF, EPUB, or share online</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <Share2 className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Share & Publish</h4>
+                          <p className="text-sm text-gray-600">Share preview links or publish to platforms</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Distribution</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <input type="checkbox" id="download" className="text-purple-600" />
-                        <Label htmlFor="download">Direct Download</Label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <input type="checkbox" id="share" className="text-purple-600" />
-                        <Label htmlFor="share">Share Link</Label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <input type="checkbox" id="embed" className="text-purple-600" />
-                        <Label htmlFor="embed">Embed on Website</Label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t space-y-4">
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
-                    <Download className="h-4 w-4 mr-2" />
-                    Generate Ebook Files
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Preview Link
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

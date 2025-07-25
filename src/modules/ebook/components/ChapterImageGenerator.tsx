@@ -10,6 +10,7 @@ import { Switch } from '@/modules/shared/components/ui/switch';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { generateImage } from '@/modules/story/services/ai';
+import { saveChapterImageToEbook } from '../utils/imageStorage';
 import { 
   Image as ImageIcon, 
   Wand2, 
@@ -32,6 +33,7 @@ interface ChapterImageGeneratorProps {
   bookTitle?: string;
   genre?: string;
   mood?: string;
+  ebookId?: string; // Add ebookId for saving to database
 }
 
 const IMAGE_STYLES = [
@@ -47,10 +49,11 @@ export const ChapterImageGenerator: React.FC<ChapterImageGeneratorProps> = ({
   onError,
   bookTitle,
   genre,
-  mood
+  mood,
+  ebookId
 }) => {
   const { toast } = useToast();
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated, getToken } = useClerkAuth();
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingChapterId, setGeneratingChapterId] = useState<string | null>(null);
@@ -94,6 +97,20 @@ export const ChapterImageGenerator: React.FC<ChapterImageGeneratorProps> = ({
       });
 
       setGenerationProgress(100);
+      
+      // Save image to database if ebookId is provided
+      if (ebookId && getToken) {
+        try {
+          const token = await getToken({ template: 'supabase' });
+          if (token) {
+            await saveChapterImageToEbook(ebookId, chapter.id, imageUrl, prompt, token);
+            console.log('Chapter image saved to database');
+          }
+        } catch (saveError) {
+          console.error('Failed to save chapter image to database:', saveError);
+          // Don't show error to user as the image was still generated successfully
+        }
+      }
       
       if (onChapterImageGenerated) {
         onChapterImageGenerated(chapter.id, imageUrl, prompt);

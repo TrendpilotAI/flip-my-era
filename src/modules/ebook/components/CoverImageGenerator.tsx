@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/modules/shared/components/ui/alert';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { generateImage } from '@/modules/story/services/ai';
+import { saveCoverImageToEbook, updateCoverImageUrl } from '../utils/imageStorage';
 import { 
   Image as ImageIcon, 
   Wand2, 
@@ -28,6 +29,7 @@ interface CoverImageGeneratorProps {
   authorName?: string;
   genre?: string;
   mood?: string;
+  ebookId?: string; // Add ebookId for saving to database
   onImageGenerated?: (imageUrl: string, prompt: string) => void;
   onError?: (error: string) => void;
 }
@@ -84,11 +86,12 @@ export const CoverImageGenerator: React.FC<CoverImageGeneratorProps> = ({
   authorName,
   genre,
   mood,
+  ebookId,
   onImageGenerated,
   onError
 }) => {
   const { toast } = useToast();
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated, getToken } = useClerkAuth();
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -173,6 +176,23 @@ export const CoverImageGenerator: React.FC<CoverImageGeneratorProps> = ({
       setGeneratedImage(imageUrl);
       setGenerationProgress(100);
       setCurrentStep('Complete!');
+      
+      // Save image to database if ebookId is provided
+      if (ebookId && getToken) {
+        try {
+          const token = await getToken({ template: 'supabase' });
+          if (token) {
+            // Save to images array
+            await saveCoverImageToEbook(ebookId, imageUrl, prompt, token);
+            // Also update the cover_image_url field
+            await updateCoverImageUrl(ebookId, imageUrl, token);
+            console.log('Cover image saved to database');
+          }
+        } catch (saveError) {
+          console.error('Failed to save cover image to database:', saveError);
+          // Don't show error to user as the image was still generated successfully
+        }
+      }
       
       if (onImageGenerated) {
         onImageGenerated(imageUrl, prompt);
