@@ -1,5 +1,5 @@
 import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
-import { RunwareService, createEbookIllustrationPrompt, enhancePromptWithGroq } from '@/modules/shared/utils/runware';
+// Removed Runware imports - now using DALL-E exclusively
 import { TaylorSwiftTheme } from '@/modules/story/utils/storyPrompts';
 import { type ImageMood } from '@/modules/story/utils/taylorSwiftImagePrompts';
 
@@ -13,7 +13,6 @@ interface GenerateImageOptions {
   prompt: string;
   size?: string;
   quality?: string;
-  useRunware?: boolean;
 }
 
 interface GenerateEbookIllustrationOptions {
@@ -76,24 +75,7 @@ interface OpenAIImageResponse {
   data: OpenAIImageData[];
 }
 
-// Initialize RUNWARE service
-const runwareService = new RunwareService(import.meta.env.VITE_RUNWARE_API_KEY || '');
-
-/**
- * Check if RUNWARE is available and properly configured
- */
-export async function isRunwareAvailable(): Promise<boolean> {
-  if (!runwareService.isConfigured()) {
-    return false;
-  }
-  
-  try {
-    return await runwareService.isConnected();
-  } catch (error) {
-    console.error('RUNWARE availability check failed:', error);
-    return false;
-  }
-}
+// DALL-E is now the primary image generation service
 
 /**
  * Fix text formatting to follow Standard English conventions
@@ -460,33 +442,9 @@ export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwi
  */
 export async function generateImage(options: GenerateImageOptions): Promise<string> {
   try {
-    const { prompt, size = '1024x1024', quality = 'standard', useRunware = false } = options;
+    const { prompt, size = '1024x1024', quality = 'hd' } = options;
     
-    // Use RUNWARE if specified and available
-    if (useRunware) {
-      const runwareAvailable = await isRunwareAvailable();
-      if (runwareAvailable) {
-        try {
-          // Use the correct model constant and supported scheduler for FLUX
-          const { RUNWARE_MODELS, RUNWARE_SCHEDULERS } = await import('@/modules/shared/utils/runware');
-          const illustration = await runwareService.generateImage({
-            positivePrompt: prompt,
-            model: RUNWARE_MODELS.FLUX_1_1_PRO,
-            numberResults: 1,
-            outputFormat: "WEBP",
-            scheduler: RUNWARE_SCHEDULERS.FLOW_MATCH_EULER_DISCRETE, // Supported for FLUX
-            // Do not include unsupported params for FLUX
-          });
-          return illustration.imageURL;
-        } catch (runwareError) {
-          console.warn('RUNWARE image generation failed, falling back to OpenAI:', runwareError);
-        }
-      } else {
-        console.warn('RUNWARE not available, using OpenAI');
-      }
-    }
-    
-    // First try with OpenAI
+    // Use DALL-E 3 via OpenAI API
     try {
       const response = await apiRequestWithRetry<OpenAIImageResponse>({
         method: 'POST',
@@ -496,20 +454,45 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
           'Content-Type': 'application/json'
         },
         data: {
-          prompt,
+          model: 'dall-e-3', // Use DALL-E 3 for best quality
+          prompt: prompt.length > 4000 ? prompt.substring(0, 4000) : prompt, // DALL-E 3 has a 4000 character limit
           n: 1,
-          size,
-          quality,
-          response_format: 'url'
+          size: size === '1024x1024' ? '1024x1024' : '1024x1024', // DALL-E 3 supports 1024x1024, 1792x1024, 1024x1792
+          quality: quality === 'hd' ? 'hd' : 'standard',
+          response_format: 'url',
+          style: 'vivid' // Use 'vivid' for more artistic images or 'natural' for more realistic
         }
       });
       
       return response.data.data[0].url;
     } catch (openaiError) {
-      console.warn('OpenAI image generation failed, falling back to placeholder:', openaiError);
+      console.warn('DALL-E 3 generation failed, trying DALL-E 2:', openaiError);
       
-      // Fallback to a placeholder image if OpenAI fails
-      return `https://picsum.photos/seed/${Math.random().toString(36).substring(7)}/1024/1024`;
+      // Fallback to DALL-E 2 if DALL-E 3 fails
+      try {
+        const response = await apiRequestWithRetry<OpenAIImageResponse>({
+          method: 'POST',
+          url: 'https://api.openai.com/v1/images/generations',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          data: {
+            model: 'dall-e-2',
+            prompt: prompt.length > 1000 ? prompt.substring(0, 1000) : prompt, // DALL-E 2 has a 1000 character limit
+            n: 1,
+            size: size,
+            response_format: 'url'
+          }
+        });
+        
+        return response.data.data[0].url;
+      } catch (dalle2Error) {
+        console.warn('DALL-E 2 also failed, using placeholder:', dalle2Error);
+        
+        // Fallback to a placeholder image if both DALL-E models fail
+        return `https://picsum.photos/seed/${Math.random().toString(36).substring(7)}/1024/1024`;
+      }
     }
   } catch (error) {
     console.error('Failed to generate image:', error);

@@ -14,7 +14,7 @@ const Ebook = () => {
   const { toast } = useToast();
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
       <SparkleEffect />
       <BackgroundImages />
 
@@ -35,7 +35,7 @@ const Ebook = () => {
 
         {/* Features Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <BookOpen className="h-6 w-6 text-purple-600" />
@@ -47,10 +47,10 @@ const Ebook = () => {
             </CardHeader>
           </Card>
 
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
-              <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="h-6 w-6 text-pink-600" />
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Sparkles className="h-6 w-6 text-gray-600" />
               </div>
               <CardTitle className="text-lg font-semibold">AI Illustrations</CardTitle>
               <CardDescription>
@@ -59,7 +59,7 @@ const Ebook = () => {
             </CardHeader>
           </Card>
 
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Download className="h-6 w-6 text-blue-600" />
@@ -74,7 +74,7 @@ const Ebook = () => {
 
         {/* Ebook Generator Section */}
         {isAuthenticated ? (
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
                 Create Your Ebook
@@ -156,7 +156,7 @@ const Ebook = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
                 Sign In to Create Ebooks
@@ -179,7 +179,7 @@ const Ebook = () => {
         )}
 
         {/* Benefits Section */}
-        <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+        <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
               Why Choose Our Ebook Creator?
@@ -203,8 +203,8 @@ const Ebook = () => {
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Star className="h-4 w-4 text-pink-600" />
+                                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Star className="h-4 w-4 text-gray-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Professional Quality</h3>

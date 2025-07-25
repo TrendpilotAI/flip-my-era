@@ -36,7 +36,7 @@ export const SongPreviewSection = ({ story }: SongPreviewSectionProps) => {
   if (!relevantSong) return null;
 
   return (
-    <div className="mt-8 p-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl border border-pink-100">
+          <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-100">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <p className="text-gray-600">{relevantSong.mood}</p>
@@ -56,7 +56,7 @@ export const SongPreviewSection = ({ story }: SongPreviewSectionProps) => {
             </button>
             <button
               onClick={() => openSongInPreferredPlatform(relevantSong)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors"
             >
               <Music className="h-5 w-5" />
               <span className="font-semibold">Listen to "{relevantSong.title}"</span>

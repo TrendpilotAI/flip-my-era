@@ -8,7 +8,7 @@ import AboutCarousel from "@/modules/shared/components/AboutCarousel";
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
       <SparkleEffect />
       <BackgroundImages />
 
@@ -42,7 +42,7 @@ const About = () => {
         </div>
 
         {/* Mission Section */}
-        <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+        <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
               Our Mission
@@ -64,8 +64,8 @@ const About = () => {
                 </p>
               </div>
               <div className="text-center space-y-3">
-                <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto">
-                  <BookOpen className="h-6 w-6 text-pink-600" />
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+          <BookOpen className="h-6 w-6 text-gray-600" />
                 </div>
                 <h3 className="font-semibold text-gray-900">Personalized Experience</h3>
                 <p className="text-sm text-gray-600">
@@ -86,7 +86,7 @@ const About = () => {
         </Card>
 
         {/* Features Section */}
-        <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+        <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
               What We Offer
@@ -110,8 +110,8 @@ const About = () => {
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="h-4 w-4 text-pink-600" />
+                                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <BookOpen className="h-4 w-4 text-gray-600" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Ebook Creation</h3>

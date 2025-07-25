@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/modules/shared/components/ui/tabs";
 import { Badge } from "@/modules/shared/components/ui/badge";
 import { Slider } from "@/modules/shared/components/ui/slider";
+import { CoverImageGenerator, ChapterImageGenerator } from "@/modules/ebook";
 import { 
   Sparkles, 
   BookOpen, 
@@ -113,6 +114,32 @@ const EbookBuilder = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [currentProject, setCurrentProject] = useState<EbookProject | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Image generation state
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverImagePrompt, setCoverImagePrompt] = useState<string>('');
+  const [chapterImages, setChapterImages] = useState<Record<string, { url: string; prompt: string }>>({});
+
+  // Image generation handlers
+  const handleCoverImageGenerated = (imageUrl: string, prompt: string) => {
+    setCoverImage(imageUrl);
+    setCoverImagePrompt(prompt);
+  };
+
+  const handleChapterImageGenerated = (chapterId: string, imageUrl: string, prompt: string) => {
+    setChapterImages(prev => ({
+      ...prev,
+      [chapterId]: { url: imageUrl, prompt }
+    }));
+  };
+
+  const handleImageError = (error: string) => {
+    toast({
+      title: "Image Generation Error",
+      description: error,
+      variant: "destructive",
+    });
+  };
 
   const [projectForm, setProjectForm] = useState({
     title: "",
@@ -256,7 +283,7 @@ const EbookBuilder = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
+      <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
         <SparkleEffect />
         <BackgroundImages />
 
@@ -274,7 +301,7 @@ const EbookBuilder = () => {
             </p>
           </div>
 
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
                 Sign In to Access Ebook Builder
@@ -300,7 +327,7 @@ const EbookBuilder = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
+            <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
       <SparkleEffect />
       <BackgroundImages />
 
@@ -330,17 +357,18 @@ const EbookBuilder = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="design">Design</TabsTrigger>
             <TabsTrigger value="editor">Editor</TabsTrigger>
+            <TabsTrigger value="images">Images</TabsTrigger>
             <TabsTrigger value="publish">Publish</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             {!currentProject ? (
-              <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+              <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Plus className="h-5 w-5" />
@@ -423,7 +451,7 @@ const EbookBuilder = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+                <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <BookOpen className="h-5 w-5" />
@@ -450,7 +478,7 @@ const EbookBuilder = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+                <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Zap className="h-5 w-5" />
@@ -492,7 +520,7 @@ const EbookBuilder = () => {
             {currentProject ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Design Controls */}
-                <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+                <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Palette className="h-5 w-5" />
@@ -723,7 +751,7 @@ const EbookBuilder = () => {
                 </Card>
 
                 {/* Live Preview */}
-                <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+                <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Eye className="h-5 w-5" />
@@ -779,7 +807,7 @@ const EbookBuilder = () => {
                 </Card>
               </div>
             ) : (
-              <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+              <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                 <CardContent className="text-center py-12">
                   <Palette className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
@@ -795,7 +823,7 @@ const EbookBuilder = () => {
           {/* Editor Tab - Now comes third */}
           <TabsContent value="editor" className="space-y-6">
             {currentProject ? (
-              <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+              <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Edit className="h-5 w-5" />
@@ -843,7 +871,7 @@ const EbookBuilder = () => {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+              <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                 <CardContent className="text-center py-12">
                   <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
@@ -856,9 +884,137 @@ const EbookBuilder = () => {
             )}
           </TabsContent>
 
+          {/* Images Tab */}
+          <TabsContent value="images" className="space-y-6">
+            {currentProject ? (
+              <div className="space-y-6">
+                {/* Cover Image Generation */}
+                <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Image className="h-5 w-5" />
+                      Book Cover
+                    </CardTitle>
+                    <CardDescription>
+                      Generate a professional cover image for your ebook
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <CoverImageGenerator
+                      storyText={currentProject.chapters?.map(ch => ch.content).join('\n\n') || ''}
+                      bookTitle={currentProject.title}
+                      authorName={user?.name || 'Anonymous'}
+                      genre={currentProject.genre}
+                      onImageGenerated={handleCoverImageGenerated}
+                      onError={handleImageError}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Chapter Images Generation */}
+                {currentProject.chapters && currentProject.chapters.length > 0 && (
+                  <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" />
+                        Chapter Illustrations
+                      </CardTitle>
+                      <CardDescription>
+                        Add custom illustrations to enhance each chapter
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ChapterImageGenerator
+                        chapters={currentProject.chapters.map(chapter => ({
+                          ...chapter,
+                          imageUrl: chapterImages[chapter.id]?.url,
+                          imagePrompt: chapterImages[chapter.id]?.prompt
+                        }))}
+                        onChapterImageGenerated={handleChapterImageGenerated}
+                        onError={handleImageError}
+                        bookTitle={currentProject.title}
+                        genre={currentProject.genre}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Image Summary */}
+                <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="h-5 w-5" />
+                      Image Summary
+                    </CardTitle>
+                    <CardDescription>
+                      Overview of all generated images for your ebook
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Cover Image Summary */}
+                      <div className="space-y-2">
+                        <Label className="font-medium">Cover Image</Label>
+                        {coverImage ? (
+                          <div className="space-y-2">
+                            <img
+                              src={coverImage}
+                              alt="Book cover"
+                              className="w-full max-w-xs rounded-lg shadow-md"
+                            />
+                            <Badge variant="default" className="bg-green-100 text-green-700">
+                              Generated
+                            </Badge>
+                          </div>
+                        ) : (
+                          <div className="p-8 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                            <Image className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-500">No cover image generated</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Chapter Images Summary */}
+                      <div className="space-y-2">
+                        <Label className="font-medium">Chapter Images</Label>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600">
+                            {Object.keys(chapterImages).length} of {currentProject.chapters?.length || 0} chapters have images
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {currentProject.chapters?.map((chapter, index) => (
+                              <Badge
+                                key={chapter.id}
+                                variant={chapterImages[chapter.id] ? "default" : "outline"}
+                                className={chapterImages[chapter.id] ? "bg-green-100 text-green-700" : ""}
+                              >
+                                Ch. {index + 1}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
+                <CardContent className="text-center py-12">
+                  <Image className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
+                  <p className="text-gray-500 mb-4">Create a new ebook project to generate images</p>
+                  <Button onClick={() => setActiveTab("overview")}>
+                    Create New Project
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           {/* Publish Tab */}
           <TabsContent value="publish" className="space-y-6">
-            <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+            <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Share2 className="h-5 w-5" />

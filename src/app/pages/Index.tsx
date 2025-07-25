@@ -54,7 +54,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
+          <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
       <SparkleEffect />
       <BackgroundImages />
 
@@ -63,7 +63,7 @@ const Index = () => {
 
         {/* Call-to-action for non-authenticated users */}
         {!isAuthenticated && (
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+          <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-900">
                 <Sparkles className="h-6 w-6 text-purple-500" />

@@ -21,7 +21,7 @@ export const MoralSection = ({ story }: MoralSectionProps) => {
   };
 
   return (
-    <div className="mt-12 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+          <div className="mt-12 p-6 bg-gray-50 rounded-xl border border-gray-100">
       <div className="flex items-center gap-2 mb-4">
         <Sparkles className="h-6 w-6 text-purple-500" />
         <h3 className="text-xl font-semibold text-[#4A4A4A]">

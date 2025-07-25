@@ -3,8 +3,7 @@ export const BackgroundImages = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Background Gradients */}
-      <div className="absolute -left-32 top-1/3 w-96 h-96 bg-gradient-to-r 
-        from-[#D3E4FD] to-[#FFDEE2] opacity-20 rounded-full blur-3xl animate-float" />
+      <div className="absolute -left-32 top-1/3 w-96 h-96 bg-white opacity-20 rounded-full blur-3xl animate-float" />
       
       {/* Polaroid Base Styles */}
       <style>

@@ -188,9 +188,9 @@ export const StoryResult = ({
   }
 
   return (
-    <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+    <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
       {/* Title Section - Made much more prominent */}
-      <div className="text-center mb-10 pb-8 border-b border-[#E5DEFF]">
+      <div className="text-center mb-10 pb-8 border-b border-gray-200">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#2D2D2D] mb-4 leading-tight bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
           {getStoryTitle(result)}
         </h1>
@@ -225,13 +225,13 @@ export const StoryResult = ({
         </ReactMarkdown>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-center justify-between mb-8 pt-4 border-t border-[#E5DEFF]">
+      <div className="flex flex-wrap gap-4 items-center justify-between mb-8 pt-4 border-t border-gray-200">
         <div className="flex gap-2">
           {hasPreviousStory && onUndoClick && (
             <Button
               onClick={onUndoClick}
               variant="outline"
-              className="text-lg border-[#E5DEFF] hover:bg-[#E5DEFF]/10 flex items-center gap-2"
+              className="text-lg border-gray-200 hover:bg-gray-50 flex items-center gap-2"
             >
               <Undo className="h-5 w-5" />
               Undo
@@ -241,7 +241,7 @@ export const StoryResult = ({
             <Button
               onClick={onUndoClick}
               variant="outline"
-              className="text-lg border-[#E5DEFF] hover:bg-[#E5DEFF]/10 flex items-center gap-2"
+              className="text-lg border-gray-200 hover:bg-gray-50 flex items-center gap-2"
             >
               <ArrowLeft className="h-5 w-5" />
               Back to Planning

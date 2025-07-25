@@ -109,7 +109,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
+            <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-3xl mx-auto bg-white/95 backdrop-blur-lg rounded-xl shadow-xl p-8">
         <div className="text-center mb-8">
           <Avatar className="h-24 w-24 mx-auto mb-4">

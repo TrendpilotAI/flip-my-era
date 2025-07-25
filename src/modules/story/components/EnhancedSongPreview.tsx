@@ -14,7 +14,7 @@ export const EnhancedSongPreview = ({ story }: EnhancedSongPreviewProps) => {
   if (!relevantSong) return null;
 
   return (
-    <div className="mt-8 p-6 bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl border border-pink-100">
+          <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-100">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-purple-800">

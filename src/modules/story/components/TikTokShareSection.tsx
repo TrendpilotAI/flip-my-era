@@ -37,7 +37,7 @@ export const TikTokShareSection = ({ story, songUrl }: TikTokShareSectionProps) 
   };
 
   return (
-    <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+            <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-100">
       <div className="flex items-center gap-2 mb-6">
         <Video className="h-6 w-6 text-purple-500" />
         <h3 className="text-xl font-semibold text-[#4A4A4A]">
@@ -62,8 +62,8 @@ export const TikTokShareSection = ({ story, songUrl }: TikTokShareSectionProps) 
                 <span>{template.duration}s</span>
               </div>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 
-              group-hover:from-purple-500/5 group-hover:to-pink-500/5 rounded-xl transition-all 
+                        <div className="absolute inset-0 bg-gray-500/0
+              group-hover:bg-gray-500/5 rounded-xl transition-all 
               duration-300" />
           </button>
         ))}

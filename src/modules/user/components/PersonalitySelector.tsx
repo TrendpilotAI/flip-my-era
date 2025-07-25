@@ -39,7 +39,7 @@ export const PersonalitySelector = ({
           <div
             key={key}
             className={`flex flex-col space-y-2 rounded-lg border p-4 cursor-pointer transition-all duration-300 hover:scale-102 hover:shadow-md
-              ${selectedType === key ? "border-[#E5DEFF] bg-[#E5DEFF]/20" : "border-gray-200 hover:border-[#E5DEFF]/50"}`}
+              ${selectedType === key ? "border-gray-200 bg-gray-100" : "border-gray-200 hover:border-gray-200"}`}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value={key as PersonalityTypeKey} id={key} />

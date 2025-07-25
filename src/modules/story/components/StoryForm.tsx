@@ -55,7 +55,7 @@ export const StoryForm = ({
   };
 
   return (
-    <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+    <div className="glass-card rounded-2xl p-8 space-y-6 animate-fadeIn [animation-delay:200ms] bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
       <div className="space-y-4">
         <div className="flex justify-between items-start">
           <div className="space-y-2">
@@ -68,7 +68,7 @@ export const StoryForm = ({
           {isAuthenticated ? (
             <Button 
               variant="outline" 
-              className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 group"
+              className="border-gray-200 hover:bg-gray-50 transition-all duration-300 group"
             >
               <User className="h-4 w-4 text-purple-500 mr-2" />
               <span>Welcome Back!</span>
@@ -77,7 +77,7 @@ export const StoryForm = ({
             <SignInButton mode="modal">
               <Button 
                 variant="outline" 
-                className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
+                className="border-gray-200 hover:bg-gray-50 transition-all duration-300 hover:scale-105 group"
               >
                 <span className="mr-2">Sign In / Register</span>
                 <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
@@ -97,7 +97,7 @@ export const StoryForm = ({
             placeholder="Enter your character name" 
             value={name} 
             onChange={e => setName(e.target.value)} 
-            className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
+            className="input-field text-base py-2 border-gray-200 focus:border-gray-300"
           />
         </div>
 
@@ -110,7 +110,7 @@ export const StoryForm = ({
             placeholder="Enter the story location (e.g., Paris, New York, Tokyo)" 
             value={location} 
             onChange={e => setLocation(e.target.value)} 
-            className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]"
+            className="input-field text-base py-2 border-gray-200 focus:border-gray-300"
           />
         </div>
 
@@ -123,7 +123,7 @@ export const StoryForm = ({
             <Input 
               type="date" 
               onChange={handleDateChange} 
-              className="input-field text-base py-2 border-[#E5DEFF] focus:border-[#FFDEE2]" 
+              className="input-field text-base py-2 border-gray-200 focus:border-gray-300" 
               max={new Date().toISOString().split('T')[0]} 
             />
             {date && <StarSignDisplay date={date} />}
@@ -140,15 +140,15 @@ export const StoryForm = ({
             onValueChange={(value: GenderType) => setGender(value)} 
             className="grid grid-cols-3 gap-4"
           >
-            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-[#E5DEFF]/10">
+            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
               <RadioGroupItem value="same" id="same" />
               <Label htmlFor="same">Keep Same</Label>
             </div>
-            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-[#E5DEFF]/10">
+            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
               <RadioGroupItem value="flip" id="flip" />
               <Label htmlFor="flip">Flip It!</Label>
             </div>
-            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-[#E5DEFF]/10">
+            <div className="flex items-center space-x-2 rounded-lg border p-4 cursor-pointer hover:bg-gray-50">
               <RadioGroupItem value="neutral" id="neutral" />
               <Label htmlFor="neutral">Gender Neutral</Label>
             </div>
