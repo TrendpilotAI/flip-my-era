@@ -19,7 +19,8 @@ import {
   UserCircle,
   ArrowLeft,
   LayoutDashboard,
-  History
+  History,
+  BookOpen
 } from 'lucide-react';
 
 interface CreditData {
@@ -342,6 +343,24 @@ const UserDashboard = () => {
                   <Coins className="h-4 w-4 mr-2" />
                   Purchase Credits
                 </Button>
+              </div>
+            </div>
+            
+            {/* E-Book Generation Section */}
+            <div className="pt-6 border-t border-gray-200 mt-6">
+              <div className="text-center space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Create E-Memory Book</h3>
+                <p className="text-gray-600">Generate a multi-chapter illustrated book with our advanced memory system</p>
+                <Button 
+                  onClick={() => navigate('/ebook-builder')}
+                  className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 px-8 py-3"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Create E-Book (Spend Credits)
+                </Button>
+                <p className="text-xs text-gray-500">
+                  No need to generate a story first - create your E-Book directly!
+                </p>
               </div>
             </div>
           </CardContent>

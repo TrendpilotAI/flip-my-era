@@ -43,12 +43,40 @@ interface Chapter {
   id: string;
 }
 
+interface EbookDesignSettings {
+  // Typography
+  fontFamily: 'serif' | 'sans-serif' | 'monospace';
+  fontSize: number; // 12-20px
+  lineHeight: number; // 1.2-2.0
+  letterSpacing: number; // -0.05 to 0.1em
+  textColor: string; // Custom text color in hex format
+  chapterHeadingColor: string; // Custom chapter heading color in hex format
+  
+  // Layout
+  pageLayout: 'single' | 'double' | 'magazine';
+  textAlignment: 'left' | 'center' | 'justify';
+  marginTop: number; // 20-60px
+  marginBottom: number; // 20-60px
+  marginLeft: number; // 20-80px
+  marginRight: number; // 20-80px
+  
+  // Cover Design
+  coverStyle: 'minimal' | 'modern' | 'classic' | 'bold';
+  colorScheme: 'purple-pink' | 'blue-green' | 'orange-red' | 'monochrome';
+  
+  // Chapter Settings
+  chapterTitleSize: number; // 24-36px
+  chapterSpacing: number; // 30-60px
+  paragraphSpacing: number; // 12-24px
+}
+
 interface MemoryEnhancedEbookGeneratorProps {
   originalStory: string;
   storyId?: string;
   useTaylorSwiftThemes: boolean;
   selectedTheme: string;
   selectedFormat: string;
+  designSettings?: EbookDesignSettings;
   onChaptersGenerated?: (chapters: Chapter[]) => void;
   onError?: (error: string) => void;
   onProgress?: (progressData: any) => void;
@@ -62,6 +90,7 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
   useTaylorSwiftThemes,
   selectedTheme,
   selectedFormat,
+  designSettings,
   onChaptersGenerated,
   onError,
   onProgress,
@@ -111,16 +140,9 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
       return;
     }
 
-    if (!storyId) {
-      toast({
-        title: "Missing Story ID",
-        description: "Please generate a story first before creating an ebook.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-
+    // Remove the storyId check and error message
+    // Generate a random ID if no storyId is provided
+    const effectiveStoryId = storyId || generateUUID();
 
     setIsGenerating(true);
     setProgress(0);
@@ -148,6 +170,7 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
         numChapters: currentFormat.chapters,
         ebookGenerationId: uniqueEbookGenerationId,
         useEnhancedMemory: useMemorySystem,
+        storyId: effectiveStoryId, // Use the effective story ID
         
         onProgress: (progressData: EnhancedChapterProgress) => {
           setProgress(progressData.progress || 0);
@@ -285,16 +308,42 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
     URL.revokeObjectURL(url);
   };
 
+  const getDesignStyles = (): React.CSSProperties => {
+    if (!designSettings) return {};
+    
+    return {
+      fontFamily: designSettings.fontFamily === 'serif' ? 'Georgia, serif' : 
+                  designSettings.fontFamily === 'sans-serif' ? 'Arial, sans-serif' : 
+                  'Monaco, monospace',
+      fontSize: `${designSettings.fontSize}px`,
+      lineHeight: designSettings.lineHeight,
+      letterSpacing: `${designSettings.letterSpacing}em`,
+      textAlign: designSettings.textAlignment as any,
+    };
+  };
+
+  const getColorSchemeColors = (scheme?: string) => {
+    if (!scheme) return { primary: '#8B5CF6', secondary: '#EC4899' };
+    
+    switch (scheme) {
+      case 'purple-pink':
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
+      case 'blue-green':
+        return { primary: '#3B82F6', secondary: '#10B981' };
+      case 'orange-red':
+        return { primary: '#F97316', secondary: '#EF4444' };
+      case 'monochrome':
+        return { primary: '#374151', secondary: '#6B7280' };
+      default:
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
+    }
+  };
+
   return (
     <div className="space-y-6">
+
       {/* Memory System Configuration */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5" />
-            Memory-Enhanced Generation
-          </CardTitle>
-        </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-2">
             <Switch
@@ -347,8 +396,8 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
         </CardContent>
       </Card>
 
-      {/* Story Outline Preview */}
-      {storyOutline && (
+      {/* Story Outline Preview - Only show during generation */}
+      {storyOutline && isGenerating && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -400,8 +449,8 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
         </Card>
       )}
 
-      {/* Memory Warnings */}
-      {memoryWarnings.length > 0 && (
+      {/* Memory Warnings - Only show during generation */}
+      {memoryWarnings.length > 0 && isGenerating && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-orange-600">
@@ -451,83 +500,34 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
                 <span className="text-gray-600">Chapters Complete:</span>
                 <div className="font-medium">{chapters.length}</div>
               </div>
-              <div>
-                <span className="text-gray-600">Memory Alerts:</span>
-                <div className="font-medium">{memoryWarnings.length}</div>
-              </div>
-              <div>
-                <span className="text-gray-600">Est. Time:</span>
-                <div className="font-medium">
-                  {estimatedTime ? formatEstimatedTime(estimatedTime) : '--'}
-                </div>
-              </div>
+
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Generate Button */}
-      <div className="flex justify-center">
-        <Button
-          onClick={handleGenerateWithMemory}
-          disabled={isGenerating || !originalStory.trim()}
-          size="lg"
-          className="px-8"
-        >
-          {isGenerating ? (
-            <>
-              <Clock className="w-4 h-4 mr-2 animate-spin" />
-              Generating with Memory System...
-            </>
-          ) : (
-            <>
-              <Brain className="w-4 h-4 mr-2" />
-              Generate {currentFormat.name} ({currentFormat.chapters} chapters)
-            </>
-          )}
-        </Button>
-      </div>
-
-      {/* Generated Chapters Summary */}
-      {chapters.length > 0 && !isGenerating && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              Generated Chapters ({chapters.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {chapters.map((chapter, index) => (
-                <div key={chapter.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-medium">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1">
-                    <h4 className="font-medium">{chapter.title}</h4>
-                    <p className="text-sm text-gray-600">
-                      {chapter.content.split(' ').length} words
-                    </p>
-                  </div>
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                </div>
-              ))}
-              
-              {/* Reading Actions */}
-              <div className="flex gap-3 pt-4 border-t border-gray-200">
-                <Button onClick={handleReadStory} className="flex-1">
-                  <Eye className="w-4 h-4 mr-2" />
-                  Read Story
-                </Button>
-                <Button onClick={downloadStory} variant="outline">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Generate Button - Only show if not generating and no chapters yet */}
+      {!isGenerating && chapters.length === 0 && (
+        <div className="flex justify-center">
+          <Button
+            onClick={handleGenerateWithMemory}
+            disabled={isGenerating || !originalStory.trim()}
+            size="lg"
+            className="px-8"
+          >
+            {isGenerating ? (
+              <>
+                <Clock className="w-4 h-4 mr-2 animate-spin" />
+                Generating with Memory System...
+              </>
+            ) : (
+              <>
+                <Brain className="w-4 h-4 mr-2" />
+                Generate {currentFormat.name} ({currentFormat.chapters} chapters)
+              </>
+            )}
+          </Button>
+        </div>
       )}
 
       {/* Story Reader Modal */}
@@ -555,14 +555,20 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
 
             {/* Reader Content */}
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="max-w-3xl mx-auto">
-                <h1 className="text-3xl font-bold mb-6 text-center">
+              <div className="max-w-3xl mx-auto" style={getDesignStyles()}>
+                <h1 className="text-3xl font-bold mb-6 text-center" style={{
+                  fontSize: designSettings ? `${designSettings.chapterTitleSize}px` : '2rem',
+                  color: designSettings?.chapterHeadingColor || '#8B5CF6'
+                }}>
                   {chapters[currentChapterIndex].title}
                 </h1>
                 <div className="prose prose-lg max-w-none">
-                  {chapters[currentChapterIndex].content.split('\n').map((paragraph, index) => (
-                    <p key={index} className="mb-4 leading-relaxed">
-                      {paragraph}
+                                              {chapters[currentChapterIndex].content.split('\n\n').map((paragraph, index) => (
+                              <p key={index} className="mb-4 leading-relaxed" style={{
+                                marginBottom: designSettings ? `${designSettings.paragraphSpacing}px` : '1rem',
+                                color: designSettings?.textColor || '#374151'
+                              }}>
+                                {paragraph}
                     </p>
                   ))}
                 </div>

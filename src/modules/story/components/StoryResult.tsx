@@ -33,6 +33,8 @@ export const StoryResult = ({
   const relevantSong = findRelevantSong(result);
   const [showMemoryEnhancedGenerator, setShowMemoryEnhancedGenerator] = useState(false);
   const [showDownloadShareModal, setShowDownloadShareModal] = useState(false);
+  // Generate a temporary ID if storyId is not provided
+  const effectiveStoryId = storyId || crypto.randomUUID();
 
   const handleCreateMemoryEnhancedEbook = async () => {
     try {
@@ -49,7 +51,7 @@ export const StoryResult = ({
         // Save the return path in session storage
         sessionStorage.setItem('auth_return_path', JSON.stringify({
           returnTo: returnPath,
-          storyId: storyId
+          storyId: effectiveStoryId
         }));
         
         toast({
@@ -77,10 +79,33 @@ export const StoryResult = ({
     }
   };
 
-  // Extract title from the first line if it starts with #
+  // Extract title from the story content with improved logic
   const getStoryTitle = (content: string) => {
-    const firstLine = content.split('\n')[0];
-    return firstLine.startsWith('#') ? firstLine.replace(/^#\s*/, '') : firstLine.slice(0, 50);
+    const lines = content.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return "Untitled Story";
+    
+    const firstLine = lines[0].trim();
+    
+    // Check for markdown title format
+    if (firstLine.startsWith('#')) {
+      return firstLine.replace(/^#+\s*/, '');
+    }
+    
+    // Check if first line looks like a title (contains colon, is shorter than typical paragraph)
+    if (firstLine.includes(':') && firstLine.length < 100) {
+      return firstLine;
+    }
+    
+    // Check if first line is significantly shorter than the second line (title-like)
+    if (lines.length > 1) {
+      const secondLine = lines[1].trim();
+      if (firstLine.length < secondLine.length * 0.6 && firstLine.length < 80) {
+        return firstLine;
+      }
+    }
+    
+    // Fallback: use first line but limit to reasonable title length
+    return firstLine.length > 60 ? firstLine.slice(0, 60) + '...' : firstLine;
   };
 
   // Get era description based on story content
@@ -96,10 +121,30 @@ export const StoryResult = ({
 
   // Remove the title from the story content since we'll display it separately
   const getStoryContent = (content: string) => {
-    const lines = content.split('\n');
-    if (lines[0].startsWith('#')) {
+    const lines = content.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return content;
+    
+    const firstLine = lines[0].trim();
+    
+    // Check for markdown title format
+    if (firstLine.startsWith('#')) {
       return lines.slice(1).join('\n').trim();
     }
+    
+    // Check if first line looks like a title (contains colon, is shorter than typical paragraph)
+    if (firstLine.includes(':') && firstLine.length < 100) {
+      return lines.slice(1).join('\n').trim();
+    }
+    
+    // Check if first line is significantly shorter than the second line (title-like)
+    if (lines.length > 1) {
+      const secondLine = lines[1].trim();
+      if (firstLine.length < secondLine.length * 0.6 && firstLine.length < 80) {
+        return lines.slice(1).join('\n').trim();
+      }
+    }
+    
+    // If no clear title detected, return the full content
     return content;
   };
 
@@ -118,7 +163,7 @@ export const StoryResult = ({
         </div>
         <CreditBasedEbookGenerator
           originalStory={result}
-          storyId={storyId}
+          storyId={effectiveStoryId}
           useTaylorSwiftThemes={true}
           selectedTheme="coming-of-age"
           selectedFormat="short-story"
@@ -144,22 +189,22 @@ export const StoryResult = ({
 
   return (
     <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
-      {/* Title Section - Made more prominent */}
-      <div className="text-center mb-8 pb-6 border-b border-[#E5DEFF]">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#2D2D2D] mb-3 leading-tight">
+      {/* Title Section - Made much more prominent */}
+      <div className="text-center mb-10 pb-8 border-b border-[#E5DEFF]">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#2D2D2D] mb-4 leading-tight bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
           {getStoryTitle(result)}
         </h1>
-        <p className="text-base text-purple-600 italic font-medium">
+        <p className="text-lg md:text-xl text-purple-600 italic font-medium">
           {getEraDescription(result)}
         </p>
       </div>
       
-      {/* Story Content - Normal text formatting */}
-      <div className="max-w-none mb-6">
+      {/* Story Content - Enhanced paragraph formatting */}
+      <div className="max-w-none mb-8">
         <ReactMarkdown
           components={{
             p: ({ children }) => (
-              <p className="text-base leading-7 text-gray-700 mb-4 first:mt-0">{children}</p>
+              <p className="text-lg leading-8 text-gray-700 mb-6 first:mt-0 last:mb-0 text-justify">{children}</p>
             ),
             strong: ({ children }) => (
               <strong className="text-purple-700 font-semibold">{children}</strong>
@@ -169,10 +214,10 @@ export const StoryResult = ({
             ),
             // Handle any remaining headings in content
             h1: ({ children }) => (
-              <h2 className="text-xl font-bold text-gray-900 mt-6 mb-3">{children}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">{children}</h2>
             ),
             h2: ({ children }) => (
-              <h3 className="text-lg font-semibold text-gray-900 mt-5 mb-2">{children}</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3">{children}</h3>
             ),
           }}
         >
@@ -182,14 +227,6 @@ export const StoryResult = ({
 
       <div className="flex flex-wrap gap-4 items-center justify-between mb-8 pt-4 border-t border-[#E5DEFF]">
         <div className="flex gap-2">
-          <Button
-            onClick={onRegenerateClick}
-            className="text-lg bg-gradient-to-r from-[#E5DEFF] to-[#FFDEE2] text-[#4A4A4A] 
-              px-8 py-4 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
-          >
-            <Repeat className="h-6 w-6" />
-            Try Another Timeline
-          </Button>
           {hasPreviousStory && onUndoClick && (
             <Button
               onClick={onUndoClick}
@@ -233,7 +270,7 @@ export const StoryResult = ({
                   px-8 py-4 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-lg"
                 onClick={handleCreateMemoryEnhancedEbook}
               >
-                🧠 Create E-Memory Book
+                🧠 Create E-Memory Book (Spend Credits)
               </Button>
             </div>
             <p className="text-sm text-gray-600">
@@ -241,7 +278,8 @@ export const StoryResult = ({
             </p>
             <div className="text-xs text-blue-600 bg-blue-50 p-3 rounded-lg max-w-2xl mx-auto">
               <strong>Advanced AI:</strong> Our memory-enhanced system maintains character consistency, 
-              eliminates repetition, and creates perfectly coherent multi-chapter stories.
+              eliminates repetition, and creates perfectly coherent multi-chapter stories. 
+              <span className="block mt-1 font-semibold">You can also create an E-Book directly from the dashboard without generating a story first!</span>
             </div>
           </div>
         </>
@@ -252,7 +290,7 @@ export const StoryResult = ({
         isOpen={showDownloadShareModal}
         onClose={() => setShowDownloadShareModal(false)}
         content={{
-          id: storyId,
+          id: effectiveStoryId,
           title: getStoryTitle(result),
           content: getStoryContent(result),
           type: 'story',

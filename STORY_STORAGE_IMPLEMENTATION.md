@@ -2,275 +2,172 @@
 
 ## Overview
 
-This implementation provides a complete solution for storing and retrieving user-generated stories in the Flip My Era application. The system uses Supabase as the backend database with Clerk authentication.
+This document describes the implementation of story storage in Supabase instead of local storage. The implementation includes:
+
+1. **Edge Functions**: Two new Supabase Edge Functions for story operations
+2. **Frontend Updates**: Modified story persistence utilities to use edge functions
+3. **Authentication**: Proper Clerk JWT token handling for secure API calls
+4. **Fallback Strategy**: Local storage as backup when Supabase is unavailable
+
+## Architecture
+
+### Edge Functions
+
+#### 1. `save-story` Function
+- **Location**: `supabase/functions/save-story/index.ts`
+- **Purpose**: Saves generated stories to the Supabase `stories` table
+- **Authentication**: Uses Clerk JWT tokens for user identification
+- **Features**:
+  - Validates required fields (name, initial_story)
+  - Stores additional metadata (prompt, personality type, location, etc.)
+  - Returns the saved story with generated ID
+  - Proper error handling and CORS support
+
+#### 2. `get-user-stories` Function
+- **Location**: `supabase/functions/get-user-stories/index.ts`
+- **Purpose**: Retrieves user stories from Supabase
+- **Features**:
+  - Fetches all stories for authenticated user
+  - Supports fetching specific story by ID
+  - Orders stories by creation date (newest first)
+  - Proper error handling for missing stories
+
+### Frontend Changes
+
+#### Updated Files
+
+1. **`src/modules/story/utils/storyPersistence.ts`**
+   - Modified `saveStory()` to use edge function instead of direct Supabase calls
+   - Updated `getUserStories()` to use edge function
+   - Updated `getStoryById()` to use edge function
+   - Maintains localStorage as fallback
+
+2. **`src/modules/story/hooks/useStoryGeneration.ts`**
+   - Updated to pass Clerk auth token to `saveStory()`
+   - Added `getToken` from `useClerkAuth()`
+
+3. **`src/modules/story/components/StoriesList.tsx`**
+   - Updated to use `getUserStories()` with auth token
+   - Removed direct Supabase calls
+
+4. **`src/modules/story/components/Stories.tsx`**
+   - Updated to use `getUserStories()` with auth token
+   - Removed direct Supabase calls
 
 ## Database Schema
 
-### Stories Table
-
-The stories table is already created in the database with the following structure:
+The implementation uses the existing `stories` table with the following structure:
 
 ```sql
-CREATE TABLE public.stories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  
-  -- Basic story information
-  name TEXT NOT NULL, -- User's name used in the story
-  title TEXT, -- Generated or extracted title
-  initial_story TEXT NOT NULL, -- The generated story content
-  
-  -- Generation metadata
-  prompt TEXT, -- The original prompt used for generation
-  birth_date DATE, -- User's birth date if provided
-  personality_type TEXT, -- Personality type used for generation
-  era TEXT, -- Era/time period for the story
-  location TEXT, -- Location setting for the story
-  gender TEXT, -- Gender preference for the story
-  transformed_name TEXT, -- Name transformation applied
-  
-  -- Generation settings
-  prompt_data JSONB, -- Original user input data
-  generation_settings JSONB, -- AI model settings used
-  
-  -- Content metadata
-  word_count INTEGER,
-  reading_time_minutes INTEGER,
-  content_rating TEXT DEFAULT 'general',
-  tags TEXT[],
-  
-  -- Status and workflow
-  status TEXT DEFAULT 'completed',
-  generation_started_at TIMESTAMP,
-  generation_completed_at TIMESTAMP,
-  
-  -- Analytics
-  view_count INTEGER DEFAULT 0,
-  like_count INTEGER DEFAULT 0,
-  share_count INTEGER DEFAULT 0,
-  
-  -- Timestamps
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE stories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    title TEXT,
+    initial_story TEXT NOT NULL,
+    prompt TEXT,
+    birth_date DATE,
+    personality_type TEXT,
+    era TEXT,
+    location TEXT,
+    gender TEXT,
+    transformed_name TEXT,
+    prompt_data JSONB,
+    generation_settings JSONB,
+    word_count INTEGER,
+    reading_time_minutes INTEGER,
+    content_rating TEXT DEFAULT 'general',
+    tags TEXT[],
+    status story_status DEFAULT 'completed',
+    generation_started_at TIMESTAMP,
+    generation_completed_at TIMESTAMP,
+    view_count INTEGER DEFAULT 0,
+    like_count INTEGER DEFAULT 0,
+    share_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
-## Implementation Components
+## Authentication Flow
 
-### 1. Edge Function (`supabase/functions/stories/index.ts`)
+1. **Token Extraction**: Edge functions extract user ID from Clerk JWT tokens using manual JWT parsing
+2. **User Validation**: Functions validate token format and extract user ID from the `sub` field
+3. **Database Operations**: All operations are scoped to the authenticated user
+4. **Error Handling**: Proper error responses for invalid tokens
 
-A Supabase Edge Function that handles CRUD operations for stories:
+**Note**: The edge functions use manual JWT parsing for Clerk tokens since Supabase's `auth.getUser()` expects Supabase JWT tokens, not Clerk tokens.
 
-- **GET /stories** - Get all stories for the authenticated user
-- **GET /stories/{id}** - Get a specific story by ID
-- **POST /stories** - Create a new story
-- **PUT /stories/{id}** - Update an existing story
-- **DELETE /stories/{id}** - Delete a story
+## API Endpoints
 
-The function uses Clerk authentication tokens to identify users and ensures users can only access their own stories.
+### Save Story
+- **URL**: `POST /functions/v1/save-story`
+- **Headers**: `Authorization: Bearer <clerk-jwt-token>`
+- **Body**: Story data including name, initial_story, and additional metadata
+- **Response**: Saved story object with generated ID
 
-### 2. API Client (`src/core/api/stories.ts`)
+### Get User Stories
+- **URL**: `GET /functions/v1/get-user-stories`
+- **Headers**: `Authorization: Bearer <clerk-jwt-token>`
+- **Response**: Array of user's stories
 
-A TypeScript API client that provides a clean interface for story operations:
+### Get Specific Story
+- **URL**: `GET /functions/v1/get-user-stories?storyId=<story-id>`
+- **Headers**: `Authorization: Bearer <clerk-jwt-token>`
+- **Response**: Single story object
 
-```typescript
-export const storiesAPI = {
-  getStories(): Promise<Story[]>
-  getStory(id: string): Promise<Story>
-  createStory(storyData: CreateStoryData): Promise<Story>
-  updateStory(id: string, updates: Partial<CreateStoryData>): Promise<Story>
-  deleteStory(id: string): Promise<void>
-}
-```
+## Error Handling
 
-### 3. Custom Hook (`src/modules/story/hooks/useStories.ts`)
+### Frontend
+- Graceful fallback to localStorage when edge functions fail
+- Proper error messages for users
+- Retry logic for transient failures
 
-A React hook that provides state management for stories:
-
-```typescript
-export const useStories = () => {
-  return {
-    stories: Story[],
-    loading: boolean,
-    error: string | null,
-    loadStories: () => Promise<void>,
-    createStory: (data) => Promise<Story>,
-    updateStory: (id, updates) => Promise<Story>,
-    deleteStory: (id) => Promise<void>,
-    getStoryById: (id) => Promise<Story>,
-  }
-}
-```
-
-### 4. Updated Components
-
-The following components have been updated to use the new story storage system:
-
-- `src/modules/story/components/Stories.tsx` - Story gallery
-- `src/modules/story/components/StoriesList.tsx` - Story list component
-- `src/modules/user/components/UserDashboard.tsx` - User dashboard with stories
-
-### 5. Updated Utilities
-
-- `src/modules/story/utils/storyPersistence.ts` - Updated to use the new API
-
-## Authentication Integration
-
-The implementation uses Clerk for authentication:
-
-1. **Token-based authentication**: The Edge Function extracts user IDs from Clerk JWT tokens
-2. **Row Level Security**: Supabase RLS policies ensure users can only access their own stories
-3. **Automatic user identification**: The API client automatically includes authentication headers
-
-## Usage Examples
-
-### Creating a Story
-
-```typescript
-import { useStories } from '@/modules/story/hooks/useStories';
-
-const { createStory } = useStories();
-
-const handleCreateStory = async () => {
-  const newStory = await createStory({
-    name: 'John Doe',
-    title: 'My Alternate Life',
-    initial_story: 'Once upon a time...',
-    personality_type: 'dreamer',
-    location: 'New York',
-  });
-};
-```
-
-### Loading User Stories
-
-```typescript
-import { useStories } from '@/modules/story/hooks/useStories';
-
-const { stories, loading, error } = useStories();
-
-// Stories are automatically loaded when the user is authenticated
-```
-
-### Updating a Story
-
-```typescript
-import { useStories } from '@/modules/story/hooks/useStories';
-
-const { updateStory } = useStories();
-
-const handleUpdateStory = async (storyId: string) => {
-  await updateStory(storyId, {
-    title: 'Updated Title',
-    view_count: 5,
-  });
-};
-```
-
-## Security Features
-
-1. **Authentication Required**: All story operations require a valid Clerk token
-2. **User Isolation**: Users can only access their own stories
-3. **Input Validation**: The API validates all input data
-4. **Error Handling**: Comprehensive error handling with user-friendly messages
-
-## Migration
-
-To apply the database changes, run the migration:
-
-```sql
--- Copy and paste this into your Supabase SQL editor
--- Migration: Ensure Stories Table Exists
--- This migration ensures the stories table exists with the correct structure
-
-BEGIN;
-
--- Create stories table if it doesn't exist
-CREATE TABLE IF NOT EXISTS public.stories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  
-  -- Basic story information
-  name TEXT NOT NULL, -- User's name used in the story
-  title TEXT, -- Generated or extracted title
-  initial_story TEXT NOT NULL, -- The generated story content
-  
-  -- Generation metadata
-  prompt TEXT, -- The original prompt used for generation
-  birth_date DATE, -- User's birth date if provided
-  personality_type TEXT, -- Personality type used for generation
-  era TEXT, -- Era/time period for the story
-  location TEXT, -- Location setting for the story
-  gender TEXT, -- Gender preference for the story
-  transformed_name TEXT, -- Name transformation applied
-  
-  -- Generation settings
-  prompt_data JSONB, -- Original user input data
-  generation_settings JSONB, -- AI model settings used
-  
-  -- Content metadata
-  word_count INTEGER,
-  reading_time_minutes INTEGER,
-  content_rating TEXT DEFAULT 'general',
-  tags TEXT[],
-  
-  -- Status and workflow
-  status TEXT DEFAULT 'completed',
-  generation_started_at TIMESTAMP,
-  generation_completed_at TIMESTAMP,
-  
-  -- Analytics
-  view_count INTEGER DEFAULT 0,
-  like_count INTEGER DEFAULT 0,
-  share_count INTEGER DEFAULT 0,
-  
-  -- Timestamps
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Create indexes for performance (if they don't exist)
-CREATE INDEX IF NOT EXISTS idx_stories_user_id ON stories(user_id);
-CREATE INDEX IF NOT EXISTS idx_stories_status ON stories(status);
-CREATE INDEX IF NOT EXISTS idx_stories_created_at ON stories(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_stories_user_status ON stories(user_id, status);
-
--- Add RLS policies for stories table
-ALTER TABLE public.stories ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see their own stories
-CREATE POLICY "Users can view own stories" ON public.stories
-  FOR SELECT USING (auth.uid()::text = user_id);
-
--- Policy: Users can insert their own stories
-CREATE POLICY "Users can insert own stories" ON public.stories
-  FOR INSERT WITH CHECK (auth.uid()::text = user_id);
-
--- Policy: Users can update their own stories
-CREATE POLICY "Users can update own stories" ON public.stories
-  FOR UPDATE USING (auth.uid()::text = user_id);
-
--- Policy: Users can delete their own stories
-CREATE POLICY "Users can delete own stories" ON public.stories
-  FOR DELETE USING (auth.uid()::text = user_id);
-
-COMMIT;
-```
-
-## Deployment
-
-1. **Deploy the Edge Function**: The stories Edge Function needs to be deployed to Supabase
-2. **Apply Migration**: Run the SQL migration in your Supabase dashboard
-3. **Update Environment Variables**: Ensure your environment variables are set up correctly
+### Edge Functions
+- CORS preflight handling
+- Input validation
+- Database error handling
+- Authentication error responses
 
 ## Testing
 
-The implementation includes tests in `src/modules/story/components/__tests__/StoriesAPI.test.tsx` to verify the API integration works correctly.
+Comprehensive test suite in `src/modules/story/utils/__tests__/storyPersistence.test.ts` covering:
+
+- Story saving with authentication
+- Story saving without authentication (localStorage fallback)
+- Error handling scenarios
+- User story retrieval
+- Individual story retrieval
+- Local storage operations
+
+## Deployment
+
+Edge functions are deployed to Supabase using:
+
+```bash
+npx supabase functions deploy save-story
+npx supabase functions deploy get-user-stories
+```
+
+## Benefits
+
+1. **Persistence**: Stories are now stored in the database and persist across devices
+2. **Security**: Proper authentication and user isolation
+3. **Scalability**: Database storage supports large numbers of stories
+4. **Reliability**: Fallback to localStorage ensures functionality even when Supabase is unavailable
+5. **Performance**: Edge functions provide fast, serverless API endpoints
+
+## Migration from Local Storage
+
+The implementation maintains backward compatibility:
+- Existing localStorage stories are still accessible
+- New stories are saved to both Supabase and localStorage
+- Gradual migration as users generate new stories
 
 ## Future Enhancements
 
-1. **Story Analytics**: Track story views, likes, and shares
-2. **Story Categories**: Add tagging and categorization
-3. **Story Sharing**: Implement social sharing features
-4. **Story Export**: Allow users to export stories as PDF or other formats
-5. **Story Collaboration**: Allow multiple users to collaborate on stories 
+1. **Story Synchronization**: Sync localStorage stories to Supabase on first login
+2. **Story Sharing**: Enable sharing stories between users
+3. **Story Analytics**: Track story views, likes, and engagement
+4. **Story Categories**: Organize stories by type, era, or personality
+5. **Story Export**: Allow users to export stories in various formats 

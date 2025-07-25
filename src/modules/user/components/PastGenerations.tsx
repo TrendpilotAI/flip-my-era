@@ -92,52 +92,27 @@ const PastGenerations = () => {
         setStories(mappedStories);
       }
 
-      // Fetch ebooks from Supabase - try memory_books first, then fallback to ebook_generations
-      let ebooksData = null;
-      let ebooksError = null;
-
-      // Try memory_books first (newer table)
-      const { data: memoryBooksData, error: memoryBooksError } = await supabaseWithAuth
-        .from('memory_books')
+      // Fetch ebooks from Supabase - try ebook_generations first
+      const { data: ebookGenerationsData, error: ebookGenerationsError } = await supabaseWithAuth
+        .from('ebook_generations')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (memoryBooksError) {
-        console.log('memory_books table not available, trying ebook_generations...');
-        // Fallback to ebook_generations
-        const { data: ebookGenerationsData, error: ebookGenerationsError } = await supabaseWithAuth
-          .from('ebook_generations')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (ebookGenerationsError) {
-          console.error('Error fetching ebooks:', ebookGenerationsError);
-          ebooksError = ebookGenerationsError;
-        } else {
-          // Map ebook_generations data to match our interface
-          ebooksData = ebookGenerationsData?.map(book => ({
-            id: book.id,
-            title: book.title || 'Generated Ebook',
-            chapters: book.content ? [book.content] : [], // content field maps to chapters
-            created_at: book.created_at,
-            theme: book.theme || 'general'
-          })) || [];
-        }
+      if (ebookGenerationsError) {
+        console.error('Error fetching ebooks:', ebookGenerationsError);
       } else {
-        // Use memory_books data
-        ebooksData = memoryBooksData?.map(book => ({
+        // Map ebook_generations data to match our interface
+        const mappedEbooks = ebookGenerationsData?.map(book => ({
           id: book.id,
-          title: book.title || book.description || 'Memory Book',
-          chapters: book.chapters || [],
+          title: book.title || 'Generated Ebook',
+          chapters: book.chapters || [], // Use chapters field directly
+          content: book.content || '',
           created_at: book.created_at,
-          theme: book.theme || 'memory'
+          theme: book.style_preferences?.theme || 'default',
+          style_preferences: book.style_preferences || {}
         })) || [];
-      }
-
-      if (!ebooksError) {
-        setEbooks(ebooksData || []);
+        setEbooks(mappedEbooks);
       }
 
     } catch (error) {
@@ -331,10 +306,10 @@ const PastGenerations = () => {
                             <div className="flex-1">
                               <CardTitle className="text-lg line-clamp-2">{story.title}</CardTitle>
                               <CardDescription className="mt-2">
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <span className="flex items-center gap-2 text-sm text-gray-500">
                                   <Calendar className="h-3 w-3" />
                                   {formatDate(story.created_at)}
-                                </div>
+                                </span>
                               </CardDescription>
                             </div>
                             <div className="flex gap-1">
@@ -395,10 +370,10 @@ const PastGenerations = () => {
                             <div className="flex-1">
                               <CardTitle className="text-lg line-clamp-2">{ebook.title}</CardTitle>
                               <CardDescription className="mt-2">
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <span className="flex items-center gap-2 text-sm text-gray-500">
                                   <Calendar className="h-3 w-3" />
                                   {formatDate(ebook.created_at)}
-                                </div>
+                                </span>
                               </CardDescription>
                             </div>
                             <div className="flex gap-1">

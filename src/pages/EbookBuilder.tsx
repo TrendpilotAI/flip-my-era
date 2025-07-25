@@ -9,6 +9,7 @@ import { Label } from "@/modules/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/modules/shared/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/modules/shared/components/ui/tabs";
 import { Badge } from "@/modules/shared/components/ui/badge";
+import { Slider } from "@/modules/shared/components/ui/slider";
 import { 
   Sparkles, 
   BookOpen, 
@@ -26,7 +27,11 @@ import {
   Image,
   Layout,
   Save,
-  Play
+  Play,
+  AlignLeft,
+  AlignCenter,
+  AlignJustify,
+  Ruler
 } from "lucide-react";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
@@ -45,6 +50,7 @@ interface EbookProject {
   status: 'draft' | 'published';
   createdAt: string;
   updatedAt: string;
+  designSettings: EbookDesignSettings;
 }
 
 interface Chapter {
@@ -53,6 +59,53 @@ interface Chapter {
   content: string;
   order: number;
 }
+
+interface EbookDesignSettings {
+  // Typography
+  fontFamily: 'serif' | 'sans-serif' | 'monospace';
+  fontSize: number; // 12-20px
+  lineHeight: number; // 1.2-2.0
+  letterSpacing: number; // -0.05 to 0.1em
+  textColor: string; // Custom text color in hex format
+  chapterHeadingColor: string; // Custom chapter heading color in hex format
+  
+  // Layout
+  pageLayout: 'single' | 'double' | 'magazine';
+  textAlignment: 'left' | 'center' | 'justify';
+  marginTop: number; // 20-60px
+  marginBottom: number; // 20-60px
+  marginLeft: number; // 20-80px
+  marginRight: number; // 20-80px
+  
+  // Cover Design
+  coverStyle: 'minimal' | 'modern' | 'classic' | 'bold';
+  colorScheme: 'purple-pink' | 'blue-green' | 'orange-red' | 'monochrome';
+  
+  // Chapter Settings
+  chapterTitleSize: number; // 24-36px
+  chapterSpacing: number; // 30-60px
+  paragraphSpacing: number; // 12-24px
+}
+
+const defaultDesignSettings: EbookDesignSettings = {
+  fontFamily: 'serif',
+  fontSize: 16,
+  lineHeight: 1.6,
+  letterSpacing: 0,
+  textColor: '#374151', // Default dark gray text color
+  chapterHeadingColor: '#8B5CF6', // Default purple chapter heading color
+  pageLayout: 'single',
+  textAlignment: 'left',
+  marginTop: 40,
+  marginBottom: 40,
+  marginLeft: 40,
+  marginRight: 40,
+  coverStyle: 'modern',
+  colorScheme: 'purple-pink',
+  chapterTitleSize: 28,
+  chapterSpacing: 40,
+  paragraphSpacing: 16
+};
 
 const EbookBuilder = () => {
   const { isAuthenticated, user, getToken } = useClerkAuth();
@@ -89,15 +142,38 @@ const EbookBuilder = () => {
       chapters: [],
       status: 'draft',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      designSettings: { ...defaultDesignSettings }
     };
 
     setCurrentProject(newProject);
-    setActiveTab("editor");
+    setActiveTab("design");
     
     toast({
       title: "Project Created!",
-      description: "Your ebook project has been created successfully.",
+      description: "Your ebook project has been created successfully. Now customize your design!",
+    });
+  };
+
+  const updateDesignSetting = <K extends keyof EbookDesignSettings>(
+    key: K, 
+    value: EbookDesignSettings[K]
+  ) => {
+    if (!currentProject) return;
+    
+    // Ensure backward compatibility by adding missing properties
+    const designSettings = {
+      ...defaultDesignSettings,
+      ...currentProject.designSettings
+    };
+    
+    setCurrentProject({
+      ...currentProject,
+      designSettings: {
+        ...designSettings,
+        [key]: value
+      },
+      updatedAt: new Date().toISOString()
     });
   };
 
@@ -116,7 +192,10 @@ const EbookBuilder = () => {
           .insert({
             user_id: user.id,
             title: currentProject.title,
-            content: JSON.stringify(chapters),
+            content: JSON.stringify({
+              chapters,
+              designSettings: currentProject.designSettings
+            }),
             status: 'completed',
             credits_used: 1,
             paid_with_credits: true,
@@ -159,6 +238,46 @@ const EbookBuilder = () => {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const getDesignPreviewStyles = (): React.CSSProperties => {
+    if (!currentProject) return {};
+    
+    const { designSettings } = currentProject;
+    
+    return {
+      fontFamily: designSettings.fontFamily === 'serif' ? 'Georgia, serif' : 
+                  designSettings.fontFamily === 'sans-serif' ? 'Arial, sans-serif' : 
+                  'Monaco, monospace',
+      fontSize: `${designSettings.fontSize}px`,
+      lineHeight: designSettings.lineHeight,
+      letterSpacing: `${designSettings.letterSpacing}em`,
+      textAlign: designSettings.textAlignment as any,
+      color: designSettings.textColor || '#374151',
+      marginTop: `${designSettings.marginTop}px`,
+      marginBottom: `${designSettings.marginBottom}px`,
+      marginLeft: `${designSettings.marginLeft}px`,
+      marginRight: `${designSettings.marginRight}px`,
+      padding: '20px',
+      backgroundColor: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: '8px'
+    };
+  };
+
+  const getColorSchemeColors = (scheme: string) => {
+    switch (scheme) {
+      case 'purple-pink':
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
+      case 'blue-green':
+        return { primary: '#3B82F6', secondary: '#10B981' };
+      case 'orange-red':
+        return { primary: '#F97316', secondary: '#EF4444' };
+      case 'monochrome':
+        return { primary: '#374151', secondary: '#6B7280' };
+      default:
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
     }
   };
 
@@ -240,8 +359,8 @@ const EbookBuilder = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="editor">Editor</TabsTrigger>
             <TabsTrigger value="design">Design</TabsTrigger>
+            <TabsTrigger value="editor">Editor</TabsTrigger>
             <TabsTrigger value="publish">Publish</TabsTrigger>
           </TabsList>
 
@@ -367,19 +486,19 @@ const EbookBuilder = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Button 
-                      onClick={() => setActiveTab("editor")}
-                      className="w-full"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Continue Editing
-                    </Button>
-                    <Button 
-                      variant="outline"
                       onClick={() => setActiveTab("design")}
                       className="w-full"
                     >
                       <Palette className="h-4 w-4 mr-2" />
                       Customize Design
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => setActiveTab("editor")}
+                      className="w-full"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Generate Content
                     </Button>
                     <Button 
                       variant="outline"
@@ -395,25 +514,349 @@ const EbookBuilder = () => {
             )}
           </TabsContent>
 
-          {/* Editor Tab */}
+          {/* Design Tab - Now comes second */}
+          <TabsContent value="design" className="space-y-6">
+            {currentProject ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Design Controls */}
+                <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Palette className="h-5 w-5" />
+                      Design Customization
+                    </CardTitle>
+                    <CardDescription>
+                      Customize the look and feel of your ebook
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+                    {/* Typography Section */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold flex items-center gap-2 text-lg">
+                        <Type className="h-5 w-5" />
+                        Typography
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Font Family</Label>
+                          <Select 
+                            value={currentProject.designSettings.fontFamily} 
+                            onValueChange={(value: any) => updateDesignSetting('fontFamily', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="serif">Serif (Georgia)</SelectItem>
+                              <SelectItem value="sans-serif">Sans Serif (Arial)</SelectItem>
+                              <SelectItem value="monospace">Monospace (Monaco)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Text Alignment</Label>
+                          <Select 
+                            value={currentProject.designSettings.textAlignment} 
+                            onValueChange={(value: any) => updateDesignSetting('textAlignment', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="left">
+                                <div className="flex items-center gap-2">
+                                  <AlignLeft className="h-4 w-4" />
+                                  Left
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="center">
+                                <div className="flex items-center gap-2">
+                                  <AlignCenter className="h-4 w-4" />
+                                  Center
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="justify">
+                                <div className="flex items-center gap-2">
+                                  <AlignJustify className="h-4 w-4" />
+                                  Justify
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Font Size: {currentProject.designSettings.fontSize}px</Label>
+                          <Slider
+                            value={[currentProject.designSettings.fontSize]}
+                            onValueChange={([value]) => updateDesignSetting('fontSize', value)}
+                            min={12}
+                            max={20}
+                            step={1}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Line Height: {currentProject.designSettings.lineHeight}</Label>
+                          <Slider
+                            value={[currentProject.designSettings.lineHeight]}
+                            onValueChange={([value]) => updateDesignSetting('lineHeight', value)}
+                            min={1.2}
+                            max={2.0}
+                            step={0.1}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Letter Spacing: {currentProject.designSettings.letterSpacing}em</Label>
+                          <Slider
+                            value={[currentProject.designSettings.letterSpacing]}
+                            onValueChange={([value]) => updateDesignSetting('letterSpacing', value)}
+                            min={-0.05}
+                            max={0.1}
+                            step={0.01}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Chapter Heading Color</Label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="color"
+                              value={currentProject.designSettings.chapterHeadingColor || '#8B5CF6'}
+                              onChange={(e) => updateDesignSetting('chapterHeadingColor', e.target.value)}
+                              className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                            />
+                            <Input
+                              value={currentProject.designSettings.chapterHeadingColor || '#8B5CF6'}
+                              onChange={(e) => updateDesignSetting('chapterHeadingColor', e.target.value)}
+                              placeholder="#8B5CF6"
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Text Color</Label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="color"
+                              value={currentProject.designSettings.textColor}
+                              onChange={(e) => updateDesignSetting('textColor', e.target.value)}
+                              className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                            />
+                            <Input
+                              value={currentProject.designSettings.textColor}
+                              onChange={(e) => updateDesignSetting('textColor', e.target.value)}
+                              placeholder="#374151"
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Layout Section */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold flex items-center gap-2 text-lg">
+                        <Layout className="h-5 w-5" />
+                        Layout & Spacing
+                      </h3>
+                      
+
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Top Margin: {currentProject.designSettings.marginTop}px</Label>
+                          <Slider
+                            value={[currentProject.designSettings.marginTop]}
+                            onValueChange={([value]) => updateDesignSetting('marginTop', value)}
+                            min={20}
+                            max={80}
+                            step={5}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Bottom Margin: {currentProject.designSettings.marginBottom}px</Label>
+                          <Slider
+                            value={[currentProject.designSettings.marginBottom]}
+                            onValueChange={([value]) => updateDesignSetting('marginBottom', value)}
+                            min={20}
+                            max={80}
+                            step={5}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Left Margin: {currentProject.designSettings.marginLeft}px</Label>
+                          <Slider
+                            value={[currentProject.designSettings.marginLeft]}
+                            onValueChange={([value]) => updateDesignSetting('marginLeft', value)}
+                            min={20}
+                            max={100}
+                            step={5}
+                            className="w-full"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Right Margin: {currentProject.designSettings.marginRight}px</Label>
+                          <Slider
+                            value={[currentProject.designSettings.marginRight]}
+                            onValueChange={([value]) => updateDesignSetting('marginRight', value)}
+                            min={20}
+                            max={100}
+                            step={5}
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Chapter Title Size: {currentProject.designSettings.chapterTitleSize}px</Label>
+                        <Slider
+                          value={[currentProject.designSettings.chapterTitleSize]}
+                          onValueChange={([value]) => updateDesignSetting('chapterTitleSize', value)}
+                          min={24}
+                          max={36}
+                          step={2}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+
+
+                    <div className="pt-6 border-t">
+                      <Button 
+                        onClick={() => setActiveTab("editor")}
+                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Continue to Content Generation
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Live Preview */}
+                <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="h-5 w-5" />
+                      Live Preview
+                    </CardTitle>
+                    <CardDescription>
+                      See how your design choices will look in the final ebook
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-100 p-4 rounded-lg">
+                      <div style={getDesignPreviewStyles()}>
+                        <h1 style={{ 
+                          fontSize: `${currentProject.designSettings.chapterTitleSize}px`,
+                          fontWeight: 'bold',
+                          marginBottom: `${currentProject.designSettings.chapterSpacing}px`,
+                          color: currentProject.designSettings.chapterHeadingColor || '#8B5CF6'
+                        }}>
+                          Chapter 1: The Beginning
+                        </h1>
+                        
+                        <p style={{ 
+                          marginBottom: `${currentProject.designSettings.paragraphSpacing}px`,
+                          color: currentProject.designSettings.textColor
+                        }}>
+                          This is a sample paragraph showing how your text will appear with the current design settings. 
+                          You can see the font family, size, line height, and spacing in action.
+                        </p>
+                        
+                        <p style={{ 
+                          marginBottom: `${currentProject.designSettings.paragraphSpacing}px`,
+                          color: currentProject.designSettings.textColor
+                        }}>
+                          The quick brown fox jumps over the lazy dog. This sentence contains all the letters 
+                          of the alphabet and helps you see how the typography looks with different characters.
+                        </p>
+                        
+                        <p style={{ color: currentProject.designSettings.textColor }}>
+                          Your ebook will use these exact settings when generated, ensuring a professional 
+                          and consistent reading experience for your audience.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-700">
+                        <strong>Design Summary:</strong> {currentProject.designSettings.fontFamily} font, 
+                        {currentProject.designSettings.fontSize}px size, {currentProject.designSettings.textAlignment} aligned, 
+                        {currentProject.designSettings.colorScheme} color scheme
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+                <CardContent className="text-center py-12">
+                  <Palette className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
+                  <p className="text-gray-500 mb-4">Create a new ebook project to start customizing design</p>
+                  <Button onClick={() => setActiveTab("overview")}>
+                    Create New Project
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* Editor Tab - Now comes third */}
           <TabsContent value="editor" className="space-y-6">
             {currentProject ? (
               <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Edit className="h-5 w-5" />
-                    Ebook Editor
+                    Ebook Content Generator
                   </CardTitle>
                   <CardDescription>
-                    Generate chapters and edit your ebook content
+                    Generate chapters using your custom design settings
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">Design Settings Applied:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-blue-700">
+                      <div>
+                        <strong>Font:</strong> {currentProject.designSettings.fontFamily}
+                      </div>
+                      <div>
+                        <strong>Size:</strong> {currentProject.designSettings.fontSize}px
+                      </div>
+                      <div>
+                        <strong>Alignment:</strong> {currentProject.designSettings.textAlignment}
+                      </div>
+                      <div>
+                        <strong>Style:</strong> {currentProject.designSettings.coverStyle}
+                      </div>
+                    </div>
+                  </div>
+                  
                   <CreditBasedEbookGenerator
                     originalStory={currentProject.description || "Enter your story idea here and watch the AI create a multi-chapter book with perfect continuity..."}
                     useTaylorSwiftThemes={false}
                     selectedTheme="coming-of-age"
                     selectedFormat="short-story"
+                    designSettings={currentProject.designSettings}
                     onChaptersGenerated={handleGenerateChapters}
                     onError={(error) => {
                       console.error('Generation error:', error);
@@ -438,132 +881,6 @@ const EbookBuilder = () => {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          {/* Design Tab */}
-          <TabsContent value="design" className="space-y-6">
-            <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="h-5 w-5" />
-                  Design Customization
-                </CardTitle>
-                <CardDescription>
-                  Customize the look and feel of your ebook
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Type className="h-4 w-4" />
-                      Typography
-                    </h3>
-                    <div className="space-y-2">
-                      <Label>Font Family</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="serif">Serif</SelectItem>
-                          <SelectItem value="sans-serif">Sans Serif</SelectItem>
-                          <SelectItem value="monospace">Monospace</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Font Size</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="small">Small</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="large">Large</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Layout className="h-4 w-4" />
-                      Layout
-                    </h3>
-                    <div className="space-y-2">
-                      <Label>Page Layout</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select layout" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="single">Single Column</SelectItem>
-                          <SelectItem value="double">Double Column</SelectItem>
-                          <SelectItem value="magazine">Magazine Style</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Margins</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select margins" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="narrow">Narrow</SelectItem>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="wide">Wide</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Image className="h-4 w-4" />
-                      Cover Design
-                    </h3>
-                    <div className="space-y-2">
-                      <Label>Cover Style</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select style" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="minimal">Minimal</SelectItem>
-                          <SelectItem value="modern">Modern</SelectItem>
-                          <SelectItem value="classic">Classic</SelectItem>
-                          <SelectItem value="bold">Bold</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Color Scheme</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select colors" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="purple-pink">Purple & Pink</SelectItem>
-                          <SelectItem value="blue-green">Blue & Green</SelectItem>
-                          <SelectItem value="orange-red">Orange & Red</SelectItem>
-                          <SelectItem value="monochrome">Monochrome</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t">
-                  <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Preview Design
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Publish Tab */}

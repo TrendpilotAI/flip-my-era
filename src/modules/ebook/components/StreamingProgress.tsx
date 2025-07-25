@@ -7,7 +7,6 @@ import {
   Star, 
   Music,
   BookOpen,
-  Clock,
   CheckCircle,
   Loader2
 } from "lucide-react";
@@ -156,13 +155,7 @@ export const StreamingProgress = ({
           </div>
         )}
 
-        {/* Time Estimate */}
-        {estimatedTimeRemaining && estimatedTimeRemaining > 0 && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Clock className="h-4 w-4" />
-            <span>Estimated time remaining: {formatTime(estimatedTimeRemaining)}</span>
-          </div>
-        )}
+
 
         {/* Chapter Progress Indicators */}
         <div className="flex space-x-1 overflow-x-auto py-2">

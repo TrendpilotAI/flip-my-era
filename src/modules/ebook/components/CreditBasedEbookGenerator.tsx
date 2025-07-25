@@ -6,17 +6,16 @@ import { Progress } from '@/modules/shared/components/ui/progress';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { MemoryEnhancedEbookGenerator } from './MemoryEnhancedEbookGenerator';
-import { CreditWallModal } from './CreditWallModal';
+
+import { Textarea } from '@/modules/shared/components/ui/textarea';
 import { 
   BookOpen, 
   Lock, 
-  Eye, 
   Coins, 
   CheckCircle, 
-  Clock,
   Sparkles,
-  Download,
-  Share2
+  PenLine,
+  Save
 } from 'lucide-react';
 
 interface Chapter {
@@ -25,12 +24,40 @@ interface Chapter {
   id: string;
 }
 
+interface EbookDesignSettings {
+  // Typography
+  fontFamily: 'serif' | 'sans-serif' | 'monospace';
+  fontSize: number; // 12-20px
+  lineHeight: number; // 1.2-2.0
+  letterSpacing: number; // -0.05 to 0.1em
+  textColor: string; // Custom text color in hex format
+  chapterHeadingColor: string; // Custom chapter heading color in hex format
+  
+  // Layout
+  pageLayout: 'single' | 'double' | 'magazine';
+  textAlignment: 'left' | 'center' | 'justify';
+  marginTop: number; // 20-60px
+  marginBottom: number; // 20-60px
+  marginLeft: number; // 20-80px
+  marginRight: number; // 20-80px
+  
+  // Cover Design
+  coverStyle: 'minimal' | 'modern' | 'classic' | 'bold';
+  colorScheme: 'purple-pink' | 'blue-green' | 'orange-red' | 'monochrome';
+  
+  // Chapter Settings
+  chapterTitleSize: number; // 24-36px
+  chapterSpacing: number; // 30-60px
+  paragraphSpacing: number; // 12-24px
+}
+
 interface CreditBasedEbookGeneratorProps {
   originalStory: string;
   storyId?: string;
   useTaylorSwiftThemes: boolean;
   selectedTheme: string;
   selectedFormat: string;
+  designSettings?: EbookDesignSettings;
   onChaptersGenerated?: (chapters: Chapter[]) => void;
   onError?: (error: string) => void;
 }
@@ -41,6 +68,7 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
   useTaylorSwiftThemes,
   selectedTheme,
   selectedFormat,
+  designSettings,
   onChaptersGenerated,
   onError
 }) => {
@@ -51,10 +79,121 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
   const [isGenerating, setIsGenerating] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [showCreditWall, setShowCreditWall] = useState(false);
+
   const [currentBalance, setCurrentBalance] = useState(0);
   const [progress, setProgress] = useState(0);
   const [currentMessage, setCurrentMessage] = useState('');
+  const [storyPrompt, setStoryPrompt] = useState<string>(originalStory || '');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Save ebook function
+  const saveEbook = async () => {
+    if (!isAuthenticated || chapters.length === 0) {
+      toast({
+        title: "Cannot Save",
+        description: "Please generate chapters first and ensure you're logged in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      // Try to get the token directly from Clerk
+      console.log("Getting token from Clerk...");
+      // Try different JWT templates if 'supabase' doesn't work
+      let token;
+      try {
+        // First try with the supabase template
+        token = await getToken({ template: 'supabase' });
+        console.log("Token received with supabase template:", token ? "Token exists" : "No token received");
+      } catch (tokenError) {
+        console.error("Error getting token with supabase template:", tokenError);
+        // Fall back to a raw JWT token
+        try {
+          token = await getToken();
+          console.log("Token received with default template:", token ? "Token exists" : "No token received");
+        } catch (defaultTokenError) {
+          console.error("Error getting default token:", defaultTokenError);
+        }
+      }
+      
+      if (!token) {
+        throw new Error('Unable to get authentication token');
+      }
+      
+      // For testing, let's try with the Supabase anon key
+      // This is just for debugging - in production, always use the user's token
+      const debugToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.esaU0tAllSc9odxI0N-kH2hXruKTV5Ji1oi3Fuw6YcY";
+      
+      console.log("Making request to Edge Function...");
+      
+      // Import the Supabase client and createSupabaseClientWithClerkToken function
+      const { createSupabaseClientWithClerkToken } = await import('@/core/integrations/supabase/client');
+      
+      // Create a Supabase client with the Clerk token
+      const supabaseClient = createSupabaseClientWithClerkToken(token);
+      
+      console.log("Calling Edge Function through Supabase client...");
+      
+      // Use the Supabase client to call the Edge Function
+      const { data, error } = await supabaseClient.functions.invoke('ebook-generation', {
+        method: 'POST',
+        body: {
+          user_id: 'current_user', // This will be extracted from the JWT token in the Edge Function
+          story_id: storyId || 'test-story-id',
+          title: getStoryTitle() || 'Test Story',
+          chapters: chapters,
+          designSettings: designSettings,
+          chapter_count: chapters.length,
+          word_count: getTotalWords(),
+          status: 'completed',
+          story_type: selectedFormat || 'standard',
+          credits_used: 1,
+          paid_with_credits: true
+        }
+      });
+
+            console.log("Response from Supabase function:", { data, error });
+      
+      if (error) {
+        console.error("Error from Supabase function:", error);
+        throw new Error(`Function error: ${error.message || JSON.stringify(error)}`);
+      }
+      
+      if (!data) {
+        throw new Error('No data returned from function');
+      }
+      
+      console.log("Response data:", data);
+
+      if (data.success) {
+        toast({
+          title: "Ebook Saved!",
+          description: "Your ebook has been saved successfully with all design settings.",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to save ebook');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save ebook. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Update storyPrompt when originalStory changes
+  useEffect(() => {
+    if (originalStory) {
+      setStoryPrompt(originalStory);
+    }
+  }, [originalStory]);
   
   // Fetch user's credit balance
   const fetchCreditBalance = async () => {
@@ -93,8 +232,8 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
     setChapters(generatedChapters);
     setIsGenerating(false);
     
-    // Show credit wall after generation is complete
-    setShowCreditWall(true);
+    // Automatically unlock the story to display content
+    setIsUnlocked(true);
     
     onChaptersGenerated?.(generatedChapters);
   };
@@ -109,18 +248,7 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
     setCurrentMessage(progressData.message || '');
   };
 
-  const handleUnlockStory = () => {
-    setIsUnlocked(true);
-    setShowCreditWall(false);
-    
-    // Refresh credit balance after successful unlock
-    fetchCreditBalance();
-    
-    toast({
-      title: "Story Unlocked!",
-      description: "You can now read the complete story.",
-    });
-  };
+
 
   const getPreviewContent = () => {
     if (chapters.length === 0) return '';
@@ -142,68 +270,72 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
     return chapters.length > 0 ? chapters[0].title : 'Your Story';
   };
 
-  const downloadStory = () => {
-    if (!isUnlocked) return;
+  const getDesignStyles = (): React.CSSProperties => {
+    if (!designSettings) return {};
     
-    const storyText = chapters.map((chapter, index) => {
-      return `Chapter ${index + 1}: ${chapter.title}\n\n${chapter.content}\n\n`;
-    }).join('\n');
-    
-    const blob = new Blob([storyText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `story-${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    return {
+      fontFamily: designSettings.fontFamily === 'serif' ? 'Georgia, serif' : 
+                  designSettings.fontFamily === 'sans-serif' ? 'Arial, sans-serif' : 
+                  'Monaco, monospace',
+      fontSize: `${designSettings.fontSize}px`,
+      lineHeight: designSettings.lineHeight,
+      letterSpacing: `${designSettings.letterSpacing}em`,
+      textAlign: designSettings.textAlignment as any,
+      marginTop: `${designSettings.marginTop}px`,
+      marginBottom: `${designSettings.marginBottom}px`,
+      marginLeft: `${designSettings.marginLeft}px`,
+      marginRight: `${designSettings.marginRight}px`,
+    };
   };
 
-  const shareStory = () => {
-    if (!isUnlocked) return;
+  const getColorSchemeColors = (scheme?: string) => {
+    if (!scheme) return { primary: '#8B5CF6', secondary: '#EC4899' };
     
-    const storyText = chapters.map((chapter, index) => {
-      return `Chapter ${index + 1}: ${chapter.title}\n\n${chapter.content}`;
-    }).join('\n\n');
-    
-    if (navigator.share) {
-      navigator.share({
-        title: getStoryTitle(),
-        text: storyText,
-      });
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(storyText);
-      toast({
-        title: "Story Copied!",
-        description: "Your story has been copied to clipboard.",
-      });
+    switch (scheme) {
+      case 'purple-pink':
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
+      case 'blue-green':
+        return { primary: '#3B82F6', secondary: '#10B981' };
+      case 'orange-red':
+        return { primary: '#F97316', secondary: '#EF4444' };
+      case 'monochrome':
+        return { primary: '#374151', secondary: '#6B7280' };
+      default:
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
     }
   };
 
+
+
   return (
     <div className="space-y-6">
-      {/* Generation Progress */}
-      {isGenerating && (
+
+      {/* Story Prompt Input (when no original story is provided) */}
+      {!originalStory && !isUnlocked && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Generating Your Story
+              <PenLine className="w-5 h-5" />
+              Enter Your Story Idea
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span>{currentMessage}</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <Progress value={progress} className="w-full" />
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Describe your story idea, character, or setting. Our AI will use this as a starting point to create a complete story.
+              </p>
+              <Textarea
+                placeholder="Describe your story idea or character... (e.g., 'A young wizard discovers they have the ability to talk to animals in a modern city setting')"
+                value={storyPrompt}
+                onChange={(e) => setStoryPrompt(e.target.value)}
+                className="min-h-[120px]"
+              />
             </div>
           </CardContent>
         </Card>
       )}
+
+
 
       {/* Story Preview (when not unlocked) */}
       {chapters.length > 0 && !isUnlocked && !isGenerating && (
@@ -216,7 +348,7 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
           </CardHeader>
           <CardContent>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="prose prose-sm max-w-none">
+              <div className="prose prose-sm max-w-none" style={getDesignStyles()}>
                 <p className="text-gray-700 leading-relaxed">
                   {getPreviewContent()}
                 </p>
@@ -229,36 +361,44 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
               </div>
             </div>
             
-            <div className="mt-4 flex justify-center">
-              <Button
-                onClick={() => setShowCreditWall(true)}
-                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Unlock Full Story
-              </Button>
-            </div>
+
           </CardContent>
         </Card>
       )}
 
       {/* Full Story (when unlocked) */}
       {chapters.length > 0 && isUnlocked && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              Your Complete Story
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+        <Card className="bg-white shadow-xl border-0">
+          <CardContent className="p-8">
+            <div className="max-w-4xl mx-auto space-y-12" style={getDesignStyles()}>
+              {/* Book Title */}
+              <div className="text-center mb-8">
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4" style={{
+                  color: getColorSchemeColors(designSettings?.colorScheme).primary
+                }}>
+                  {getStoryTitle()}
+                </h1>
+                <div className="w-24 h-1 mx-auto" style={{
+                  background: `linear-gradient(to right, ${getColorSchemeColors(designSettings?.colorScheme).primary}, ${getColorSchemeColors(designSettings?.colorScheme).secondary})`
+                }}></div>
+              </div>
+              
+              {/* Chapters */}
               {chapters.map((chapter, index) => (
-                <div key={chapter.id} className="border-b border-gray-200 pb-6 last:border-b-0">
-                  <h3 className="text-xl font-semibold mb-4">{chapter.title}</h3>
-                  <div className="prose prose-lg max-w-none">
+                <div key={chapter.id} className="space-y-6">
+                  <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 pb-4 border-b border-gray-100" style={{
+                    fontSize: designSettings ? `${designSettings.chapterTitleSize}px` : '2rem',
+                    marginBottom: designSettings ? `${designSettings.chapterSpacing}px` : '1.5rem',
+                    color: designSettings?.chapterHeadingColor || '#8B5CF6'
+                  }}>
+                    {chapter.title}
+                  </h2>
+                  <div className="prose prose-lg max-w-none text-gray-700">
                     {chapter.content.split('\n\n').map((paragraph, pIndex) => (
-                      <p key={pIndex} className="mb-4 leading-relaxed">
+                      <p key={pIndex} className="mb-6 leading-relaxed" style={{
+                        marginBottom: designSettings ? `${designSettings.paragraphSpacing}px` : '1.5rem',
+                        color: designSettings?.textColor || '#374151'
+                      }}>
                         {paragraph}
                       </p>
                     ))}
@@ -266,48 +406,50 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
                 </div>
               ))}
               
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-6 border-t border-gray-200">
-                <Button onClick={downloadStory} className="flex-1">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download Story
-                </Button>
-                <Button onClick={shareStory} variant="outline" className="flex-1">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Story
+              {/* Save Button */}
+              <div className="flex justify-center pt-8 border-t border-gray-200">
+                <Button
+                  onClick={saveEbook}
+                  disabled={isSaving || chapters.length === 0}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 px-8 py-3"
+                >
+                  {isSaving ? (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                      Saving Ebook...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Ebook
+                    </>
+                  )}
                 </Button>
               </div>
+
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Memory Enhanced Generator */}
-      <MemoryEnhancedEbookGenerator
-        originalStory={originalStory}
-        storyId={storyId}
-        useTaylorSwiftThemes={useTaylorSwiftThemes}
-        selectedTheme={selectedTheme}
-        selectedFormat={selectedFormat}
-        onChaptersGenerated={handleChaptersGenerated}
-        onError={handleGenerationError}
-        onProgress={handleGenerationProgress}
-        isGenerating={isGenerating}
-        setIsGenerating={setIsGenerating}
-      />
+      {/* Memory Enhanced Generator - Only show when not unlocked */}
+      {!isUnlocked && (
+        <MemoryEnhancedEbookGenerator
+          originalStory={storyPrompt}
+          storyId={storyId}
+          useTaylorSwiftThemes={useTaylorSwiftThemes}
+          selectedTheme={selectedTheme}
+          selectedFormat={selectedFormat}
+          designSettings={designSettings}
+          onChaptersGenerated={handleChaptersGenerated}
+          onError={handleGenerationError}
+          onProgress={handleGenerationProgress}
+          isGenerating={isGenerating}
+          setIsGenerating={setIsGenerating}
+        />
+      )}
 
-      {/* Credit Wall Modal */}
-      <CreditWallModal
-        isOpen={showCreditWall}
-        onClose={() => setShowCreditWall(false)}
-        onUnlock={handleUnlockStory}
-        currentBalance={currentBalance}
-        storyTitle={getStoryTitle()}
-        previewContent={getPreviewContent()}
-        totalChapters={chapters.length}
-        totalWords={getTotalWords()}
-        onBalanceRefresh={fetchCreditBalance}
-      />
+
     </div>
   );
 }; 

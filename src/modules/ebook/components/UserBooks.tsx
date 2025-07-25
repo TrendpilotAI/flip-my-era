@@ -26,6 +26,33 @@ import { DownloadShareModal } from '@/modules/shared/components/DownloadShareMod
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/modules/shared/components/ui/dropdown-menu';
 import { BookReader } from './BookReader';
 
+interface EbookDesignSettings {
+  // Typography
+  fontFamily: 'serif' | 'sans-serif' | 'monospace';
+  fontSize: number; // 12-20px
+  lineHeight: number; // 1.2-2.0
+  letterSpacing: number; // -0.05 to 0.1em
+  textColor: string; // Custom text color in hex format
+  chapterHeadingColor: string; // Custom chapter heading color in hex format
+  
+  // Layout
+  pageLayout: 'single' | 'double' | 'magazine';
+  textAlignment: 'left' | 'center' | 'justify';
+  marginTop: number; // 20-60px
+  marginBottom: number; // 20-60px
+  marginLeft: number; // 20-80px
+  marginRight: number; // 20-80px
+  
+  // Cover Design
+  coverStyle: 'minimal' | 'modern' | 'classic' | 'bold';
+  colorScheme: 'purple-pink' | 'blue-green' | 'orange-red' | 'monochrome';
+  
+  // Chapter Settings
+  chapterTitleSize: number; // 24-36px
+  chapterSpacing: number; // 30-60px
+  paragraphSpacing: number; // 12-24px
+}
+
 interface MemoryBook {
   id: string;
   title: string;
@@ -51,6 +78,8 @@ interface MemoryBook {
   share_count: number;
   rating_average: number;
   rating_count: number;
+  // Additional fields for ebook_generations fallback
+  content?: any; // This might contain design settings
 }
 
 interface UserBooksProps {
@@ -130,7 +159,8 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
             download_count: 0,
             share_count: 0,
             rating_average: 0,
-            rating_count: 0
+            rating_count: 0,
+            content: book.content // Keep original content for design settings extraction
           }));
           error = fallbackResult.error;
         }
@@ -163,16 +193,62 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
   const parseChapters = (chapters: any[] | string | object): any[] => {
     try {
       if (typeof chapters === 'string') {
-        return JSON.parse(chapters);
+        const parsed = JSON.parse(chapters);
+        // Check if it's the new format with chapters and designSettings
+        if (parsed && typeof parsed === 'object' && parsed.chapters) {
+          return parsed.chapters;
+        }
+        return parsed;
       } else if (Array.isArray(chapters)) {
         return chapters;
       } else if (chapters && typeof chapters === 'object') {
+        // Check if it's the new format with chapters and designSettings
+        if ((chapters as any).chapters) {
+          return (chapters as any).chapters;
+        }
         return (chapters as any).chapters || Object.values(chapters);
       }
       return [];
     } catch (error) {
       console.error('Error parsing chapters:', error);
       return [];
+    }
+  };
+
+  const extractDesignSettings = (book: MemoryBook): EbookDesignSettings | undefined => {
+    try {
+      // Try to extract from content field (ebook_generations format)
+      if (book.content) {
+        let contentData;
+        if (typeof book.content === 'string') {
+          contentData = JSON.parse(book.content);
+        } else {
+          contentData = book.content;
+        }
+        
+        if (contentData && contentData.designSettings) {
+          return contentData.designSettings;
+        }
+      }
+      
+      // Try to extract from chapters field (might also contain design settings)
+      if (book.chapters) {
+        let chaptersData;
+        if (typeof book.chapters === 'string') {
+          chaptersData = JSON.parse(book.chapters);
+        } else {
+          chaptersData = book.chapters;
+        }
+        
+        if (chaptersData && typeof chaptersData === 'object' && chaptersData.designSettings) {
+          return chaptersData.designSettings;
+        }
+      }
+      
+      return undefined;
+    } catch (error) {
+      console.error('Error extracting design settings:', error);
+      return undefined;
     }
   };
 
@@ -234,33 +310,34 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
     });
   };
 
-  const getThemeIcon = (theme?: string) => {
-    switch (theme) {
-      case 'coming-of-age':
-        return <Zap className="h-4 w-4 text-blue-500" />;
-      case 'first-love':
-        return <Heart className="h-4 w-4 text-pink-500" />;
-      case 'heartbreak':
-        return <Sparkles className="h-4 w-4 text-purple-500" />;
-      case 'friendship':
-        return <Users className="h-4 w-4 text-green-500" />;
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge variant="default" className="bg-green-100 text-green-800">Complete</Badge>;
+      case 'generating':
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Generating</Badge>;
+      case 'draft':
+        return <Badge variant="outline">Draft</Badge>;
       default:
-        return <BookOpen className="h-4 w-4 text-gray-500" />;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      draft: { label: 'Draft', variant: 'secondary' as const },
-      generating: { label: 'Generating', variant: 'default' as const },
-      processing: { label: 'Processing', variant: 'default' as const },
-      completed: { label: 'Completed', variant: 'default' as const },
-      published: { label: 'Published', variant: 'default' as const },
-      archived: { label: 'Archived', variant: 'secondary' as const }
-    };
-
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const getThemeIcon = (theme?: string) => {
+    if (!theme) return <Star className="h-4 w-4 text-yellow-500" />;
+    
+    switch (theme) {
+      case 'folklore':
+        return <Heart className="h-4 w-4 text-green-500" />;
+      case 'lover':
+        return <Heart className="h-4 w-4 text-pink-500" />;
+      case '1989':
+        return <Star className="h-4 w-4 text-blue-500" />;
+      case 'reputation':
+        return <Zap className="h-4 w-4 text-gray-800" />;
+      default:
+        return <Star className="h-4 w-4 text-purple-500" />;
+    }
   };
 
   if (!isSignedIn) {
@@ -456,6 +533,7 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
           <BookReader
             chapters={parseChapters(selectedBookForReading.chapters)}
             useTaylorSwiftThemes={selectedBookForReading.generation_settings?.useTaylorSwiftThemes}
+            designSettings={extractDesignSettings(selectedBookForReading)}
             onClose={() => {
               setShowBookReader(false);
               setSelectedBookForReading(null);

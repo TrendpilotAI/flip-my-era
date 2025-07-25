@@ -40,23 +40,31 @@ interface Chapter {
   id?: string;
 }
 
-interface ReadingState {
-  currentChapter: number;
-  currentPage: number;
-  totalPages: number;
-  readingTime: number;
-  wordsRead: number;
-  bookmarks: Bookmark[];
-  lastReadPosition: number;
-}
-
-interface Bookmark {
-  id: string;
-  chapterIndex: number;
-  pageIndex: number;
-  position: number;
-  note?: string;
-  timestamp: Date;
+interface EbookDesignSettings {
+  // Typography
+  fontFamily: 'serif' | 'sans-serif' | 'monospace';
+  fontSize: number; // 12-20px
+  lineHeight: number; // 1.2-2.0
+  letterSpacing: number; // -0.05 to 0.1em
+  textColor: string; // Custom text color in hex format
+  chapterHeadingColor: string; // Custom chapter heading color in hex format
+  
+  // Layout
+  pageLayout: 'single' | 'double' | 'magazine';
+  textAlignment: 'left' | 'center' | 'justify';
+  marginTop: number; // 20-60px
+  marginBottom: number; // 20-60px
+  marginLeft: number; // 20-80px
+  marginRight: number; // 20-80px
+  
+  // Cover Design
+  coverStyle: 'minimal' | 'modern' | 'classic' | 'bold';
+  colorScheme: 'purple-pink' | 'blue-green' | 'orange-red' | 'monochrome';
+  
+  // Chapter Settings
+  chapterTitleSize: number; // 24-36px
+  chapterSpacing: number; // 30-60px
+  paragraphSpacing: number; // 12-24px
 }
 
 interface ReadingPrefs {
@@ -64,9 +72,24 @@ interface ReadingPrefs {
   fontFamily: 'serif' | 'sans' | 'mono';
   lineHeight: 'tight' | 'normal' | 'relaxed';
   darkMode: boolean;
-  pageTransition: 'slide' | 'fade' | 'flip';
+  pageTransition: 'slide' | 'fade' | 'none';
   textToSpeech: boolean;
   autoBookmark: boolean;
+}
+
+interface ReadingState {
+  currentChapter: number;
+  currentPage: number;
+  totalPages: number;
+  readingTime: number;
+  wordsRead: number;
+  bookmarks: Array<{
+    chapter: number;
+    page: number;
+    note?: string;
+    timestamp: number;
+  }>;
+  lastReadPosition: number;
 }
 
 interface BookReaderProps {
@@ -74,13 +97,15 @@ interface BookReaderProps {
   useTaylorSwiftThemes?: boolean;
   onClose?: () => void;
   initialChapter?: number;
+  designSettings?: EbookDesignSettings;
 }
 
 export const BookReader = ({ 
   chapters, 
   useTaylorSwiftThemes = true, 
   onClose,
-  initialChapter = 0
+  initialChapter = 0,
+  designSettings
 }: BookReaderProps) => {
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -102,16 +127,59 @@ export const BookReader = ({
     lastReadPosition: 0
   });
 
-  // Reading preferences
-  const [preferences, setPreferences] = useState<ReadingPrefs>({
-    fontSize: 'medium',
-    fontFamily: 'serif',
-    lineHeight: 'normal',
-    darkMode: false,
-    pageTransition: 'slide',
-    textToSpeech: false,
-    autoBookmark: true
-  });
+  // Convert design settings to reading preferences
+  const convertDesignToPreferences = (design?: EbookDesignSettings): ReadingPrefs => {
+    if (!design) {
+      return {
+        fontSize: 'medium',
+        fontFamily: 'serif',
+        lineHeight: 'normal',
+        darkMode: false,
+        pageTransition: 'slide',
+        textToSpeech: false,
+        autoBookmark: true
+      };
+    }
+
+    // Convert font size from px to preference
+    let fontSize: 'small' | 'medium' | 'large' | 'xl' = 'medium';
+    if (design.fontSize <= 14) fontSize = 'small';
+    else if (design.fontSize <= 16) fontSize = 'medium';
+    else if (design.fontSize <= 18) fontSize = 'large';
+    else fontSize = 'xl';
+
+    // Convert font family
+    let fontFamily: 'serif' | 'sans' | 'mono' = 'serif';
+    if (design.fontFamily === 'sans-serif') fontFamily = 'sans';
+    else if (design.fontFamily === 'monospace') fontFamily = 'mono';
+
+    // Convert line height
+    let lineHeight: 'tight' | 'normal' | 'relaxed' = 'normal';
+    if (design.lineHeight <= 1.3) lineHeight = 'tight';
+    else if (design.lineHeight >= 1.7) lineHeight = 'relaxed';
+
+    return {
+      fontSize,
+      fontFamily,
+      lineHeight,
+      darkMode: false,
+      pageTransition: 'slide',
+      textToSpeech: false,
+      autoBookmark: true
+    };
+  };
+
+  // Reading preferences - initialized from design settings
+  const [preferences, setPreferences] = useState<ReadingPrefs>(() => 
+    convertDesignToPreferences(designSettings)
+  );
+
+  // Update preferences when design settings change
+  useEffect(() => {
+    if (designSettings) {
+      setPreferences(convertDesignToPreferences(designSettings));
+    }
+  }, [designSettings]);
 
   // Initialize speech synthesis
   useEffect(() => {
@@ -122,9 +190,12 @@ export const BookReader = ({
 
   // Load saved preferences and reading state
   useEffect(() => {
-    const savedPrefs = localStorage.getItem('book-reader-preferences');
-    if (savedPrefs) {
-      setPreferences(JSON.parse(savedPrefs));
+    // Only load saved preferences if no design settings are provided
+    if (!designSettings) {
+      const savedPrefs = localStorage.getItem('book-reader-preferences');
+      if (savedPrefs) {
+        setPreferences(JSON.parse(savedPrefs));
+      }
     }
 
     const savedState = localStorage.getItem('book-reader-state');
@@ -132,12 +203,15 @@ export const BookReader = ({
       const state = JSON.parse(savedState);
       setReadingState(prev => ({ ...prev, ...state }));
     }
-  }, []);
+  }, [designSettings]);
 
   // Save preferences and state
   useEffect(() => {
-    localStorage.setItem('book-reader-preferences', JSON.stringify(preferences));
-  }, [preferences]);
+    // Only save preferences if not using design settings
+    if (!designSettings) {
+      localStorage.setItem('book-reader-preferences', JSON.stringify(preferences));
+    }
+  }, [preferences, designSettings]);
 
   useEffect(() => {
     localStorage.setItem('book-reader-state', JSON.stringify(readingState));
@@ -146,7 +220,7 @@ export const BookReader = ({
   // Reading timer
   useEffect(() => {
     if (isReading) {
-      readingTimerRef.current = setInterval(() => {
+      readingTimerRef.current = window.setInterval(() => {
         setReadingState(prev => ({
           ...prev,
           readingTime: prev.readingTime + 1
@@ -168,46 +242,57 @@ export const BookReader = ({
   // Auto-bookmark on chapter change
   useEffect(() => {
     if (preferences.autoBookmark) {
-      const autoBookmark: Bookmark = {
-        id: `auto-${Date.now()}`,
-        chapterIndex: readingState.currentChapter,
-        pageIndex: readingState.currentPage,
-        position: 0,
-        note: 'Auto-bookmark',
-        timestamp: new Date()
+      const bookmark = {
+        chapter: readingState.currentChapter,
+        page: readingState.currentPage,
+        timestamp: Date.now()
       };
       
       setReadingState(prev => ({
         ...prev,
-        bookmarks: [autoBookmark, ...prev.bookmarks.slice(0, 9)] // Keep last 10 bookmarks
+        bookmarks: [bookmark, ...prev.bookmarks.slice(0, 9)] // Keep last 10 bookmarks
       }));
     }
-  }, [readingState.currentChapter, readingState.currentPage, preferences.autoBookmark]);
+  }, [readingState.currentChapter, preferences.autoBookmark]);
 
-  const handleChapterChange = useCallback((chapterIndex: number) => {
-    setReadingState(prev => ({
-      ...prev,
-      currentChapter: chapterIndex,
-      currentPage: 0
-    }));
-    setShowNavigation(false);
-  }, []);
+  const currentChapter = chapters[readingState.currentChapter];
 
-  const handlePageChange = useCallback((pageIndex: number) => {
+  const handleChapterChange = (chapterIndex: number) => {
+    if (chapterIndex >= 0 && chapterIndex < chapters.length) {
+      setReadingState(prev => ({
+        ...prev,
+        currentChapter: chapterIndex,
+        currentPage: 0
+      }));
+      setIsReading(true);
+    }
+  };
+
+  const handlePageChange = (pageIndex: number) => {
     setReadingState(prev => ({
       ...prev,
       currentPage: pageIndex
     }));
-  }, []);
+  };
 
-  const handleBookmark = useCallback((note?: string) => {
-    const bookmark: Bookmark = {
-      id: `bookmark-${Date.now()}`,
-      chapterIndex: readingState.currentChapter,
-      pageIndex: readingState.currentPage,
-      position: 0,
-      note: note || `Chapter ${readingState.currentChapter + 1}`,
-      timestamp: new Date()
+  const handleNextChapter = () => {
+    if (readingState.currentChapter < chapters.length - 1) {
+      handleChapterChange(readingState.currentChapter + 1);
+    }
+  };
+
+  const handlePrevChapter = () => {
+    if (readingState.currentChapter > 0) {
+      handleChapterChange(readingState.currentChapter - 1);
+    }
+  };
+
+  const handleBookmark = () => {
+    const bookmark = {
+      chapter: readingState.currentChapter,
+      page: readingState.currentPage,
+      timestamp: Date.now(),
+      note: `Chapter ${readingState.currentChapter + 1}: ${currentChapter?.title}`
     };
 
     setReadingState(prev => ({
@@ -217,229 +302,309 @@ export const BookReader = ({
 
     toast({
       title: "Bookmark Added",
-      description: `Added bookmark for ${bookmark.note}`,
+      description: `Bookmarked Chapter ${readingState.currentChapter + 1}`,
     });
-  }, [readingState.currentChapter, readingState.currentPage, toast]);
-
-  const handleTextToSpeech = useCallback(() => {
-    if (!speechSynthesis) return;
-
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
-      setIsReading(false);
-      return;
-    }
-
-    const currentChapter = chapters[readingState.currentChapter];
-    if (!currentChapter) return;
-
-    const utterance = new SpeechSynthesisUtterance(currentChapter.content);
-    utterance.rate = 0.8;
-    utterance.pitch = 1;
-    utterance.volume = 0.8;
-
-    utterance.onstart = () => setIsReading(true);
-    utterance.onend = () => setIsReading(false);
-    utterance.onerror = () => {
-      setIsReading(false);
-      toast({
-        title: "Speech Error",
-        description: "Unable to read text aloud",
-        variant: "destructive",
-      });
-    };
-
-    speechSynthesis.speak(utterance);
-  }, [speechSynthesis, chapters, readingState.currentChapter, toast]);
-
-  const nextChapter = useCallback(() => {
-    if (readingState.currentChapter < chapters.length - 1) {
-      handleChapterChange(readingState.currentChapter + 1);
-    }
-  }, [readingState.currentChapter, chapters.length, handleChapterChange]);
-
-  const previousChapter = useCallback(() => {
-    if (readingState.currentChapter > 0) {
-      handleChapterChange(readingState.currentChapter - 1);
-    }
-  }, [readingState.currentChapter, handleChapterChange]);
-
-  const [showDownloadShareModal, setShowDownloadShareModal] = useState(false);
-
-  const handleShare = useCallback(() => {
-    setShowDownloadShareModal(true);
-  }, []);
-
-  const handleDownload = useCallback(() => {
-    setShowDownloadShareModal(true);
-  }, []);
-
-  const currentChapter = chapters[readingState.currentChapter];
-  const progress = ((readingState.currentChapter + 1) / chapters.length) * 100;
-
-  const themeClasses = useTaylorSwiftThemes ? {
-    background: preferences.darkMode 
-      ? "bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900" 
-      : "bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50",
-    accent: "text-purple-600",
-    border: "border-purple-200"
-  } : {
-    background: preferences.darkMode 
-      ? "bg-gray-900" 
-      : "bg-gray-50",
-    accent: "text-blue-600",
-    border: "border-blue-200"
   };
+
+  const handleTextToSpeech = () => {
+    if (!speechSynthesis || !currentChapter) return;
+
+    if (preferences.textToSpeech) {
+      speechSynthesis.cancel();
+      setPreferences(prev => ({ ...prev, textToSpeech: false }));
+    } else {
+      const utterance = new SpeechSynthesisUtterance(currentChapter.content);
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      speechSynthesis.speak(utterance);
+      setPreferences(prev => ({ ...prev, textToSpeech: true }));
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  const getDesignStyles = (): React.CSSProperties => {
+    if (!designSettings) return {};
+    
+    return {
+      fontFamily: designSettings.fontFamily === 'serif' ? 'Georgia, serif' : 
+                  designSettings.fontFamily === 'sans-serif' ? 'Arial, sans-serif' : 
+                  'Monaco, monospace',
+      fontSize: `${designSettings.fontSize}px`,
+      lineHeight: designSettings.lineHeight,
+      letterSpacing: `${designSettings.letterSpacing}em`,
+      textAlign: designSettings.textAlignment as any,
+      marginTop: `${designSettings.marginTop}px`,
+      marginBottom: `${designSettings.marginBottom}px`,
+      marginLeft: `${designSettings.marginLeft}px`,
+      marginRight: `${designSettings.marginRight}px`,
+    };
+  };
+
+  const getColorSchemeColors = (scheme?: string) => {
+    if (!scheme) return { primary: '#8B5CF6', secondary: '#EC4899' };
+    
+    switch (scheme) {
+      case 'purple-pink':
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
+      case 'blue-green':
+        return { primary: '#3B82F6', secondary: '#10B981' };
+      case 'orange-red':
+        return { primary: '#F97316', secondary: '#EF4444' };
+      case 'monochrome':
+        return { primary: '#374151', secondary: '#6B7280' };
+      default:
+        return { primary: '#8B5CF6', secondary: '#EC4899' };
+    }
+  };
+
+  const formatReadingTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
+    } else {
+      return `${secs}s`;
+    }
+  };
+
+  const estimateReadingTime = (text: string) => {
+    const wordsPerMinute = 200;
+    const words = text.split(' ').length;
+    return Math.ceil(words / wordsPerMinute);
+  };
+
+  if (!chapters || chapters.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center space-y-4">
+          <BookOpen className="h-16 w-16 mx-auto text-gray-400" />
+          <h2 className="text-xl font-semibold text-gray-600">No Chapters Available</h2>
+          <p className="text-gray-500">This book doesn't have any chapters to read.</p>
+          {onClose && (
+            <Button onClick={onClose} variant="outline">
+              <Home className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
-      "min-h-screen max-h-screen overflow-y-auto transition-all duration-300",
-      themeClasses.background,
-      preferences.darkMode ? "text-white" : "text-gray-900"
+      "fixed inset-0 z-50 bg-gradient-to-br transition-all duration-300",
+      preferences.darkMode 
+        ? "from-gray-900 to-black text-white" 
+        : "from-gray-50 to-white text-gray-900"
     )}>
-      {/* Top Navigation Bar */}
+      {/* Header */}
       <div className={cn(
-        "sticky top-0 z-40 backdrop-blur-md border-b transition-all duration-300",
+        "fixed top-0 left-0 right-0 z-40 backdrop-blur-md border-b transition-all duration-300",
         preferences.darkMode 
           ? "bg-black/20 border-white/10" 
-          : "bg-white/80 border-gray-200"
+          : "bg-white/80 border-gray-200",
+        showNavigation && "ml-80",
+        (showBookmarks || showSettings) && "mr-80"
       )}>
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
-              className={cn("transition-colors", themeClasses.accent)}
-            >
-              <Home className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
               onClick={() => setShowNavigation(!showNavigation)}
-              className={cn("transition-colors", themeClasses.accent)}
             >
               <Menu className="h-4 w-4" />
             </Button>
+            <div>
+              <h1 className="font-semibold">Chapter {readingState.currentChapter + 1}</h1>
+              <p className="text-sm opacity-70">{currentChapter?.title}</p>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            {useTaylorSwiftThemes && (
-              <div className="flex items-center space-x-1">
-                <Star className="h-4 w-4 text-yellow-500" />
-                <Heart className="h-4 w-4 text-pink-500" />
-                <Music className="h-4 w-4 text-purple-500" />
-              </div>
-            )}
-            <h1 className="text-lg font-bold truncate max-w-xs">
-              {currentChapter?.title || "Book Reader"}
-            </h1>
-          </div>
-
-          <div className="flex items-center space-x-2">
+            <ReadingProgress
+              currentChapter={readingState.currentChapter}
+              totalChapters={chapters.length}
+              readingTime={readingState.readingTime}
+            />
+            
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleBookmark()}
-              className={cn("transition-colors", themeClasses.accent)}
+              onClick={handleBookmark}
             >
               <Bookmark className="h-4 w-4" />
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowBookmarks(!showBookmarks)}
-              className={cn("transition-colors", themeClasses.accent)}
+              onClick={handleTextToSpeech}
+              className={preferences.textToSpeech ? "bg-blue-100 text-blue-600" : ""}
             >
-              <Eye className="h-4 w-4" />
+              {preferences.textToSpeech ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowSettings(!showSettings)}
-              className={cn("transition-colors", themeClasses.accent)}
             >
               <Settings className="h-4 w-4" />
             </Button>
-          </div>
-        </div>
 
-        {/* Progress Bar */}
-        <div className="px-4 pb-2">
-          <ReadingProgress
-            currentChapter={readingState.currentChapter + 1}
-            totalChapters={chapters.length}
-            progress={progress}
-            readingTime={readingState.readingTime}
-            useTaylorSwiftThemes={useTaylorSwiftThemes}
-            darkMode={preferences.darkMode}
-          />
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+              >
+                <Home className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Reading Content */}
-      <div className="relative">
-        {/* Side Panels */}
-        {showNavigation && (
-          <div className="fixed left-0 top-16 bottom-0 w-80 z-30">
-            <BookNavigation
-              chapters={chapters}
-              currentChapter={readingState.currentChapter}
-              onChapterSelect={handleChapterChange}
-              onClose={() => setShowNavigation(false)}
-              useTaylorSwiftThemes={useTaylorSwiftThemes}
-              darkMode={preferences.darkMode}
-            />
-          </div>
-        )}
+      {/* Sidebar Navigation */}
+      {showNavigation && (
+        <BookNavigation
+          chapters={chapters}
+          currentChapter={readingState.currentChapter}
+          onChapterSelect={handleChapterChange}
+          onClose={() => setShowNavigation(false)}
+          useTaylorSwiftThemes={useTaylorSwiftThemes}
+        />
+      )}
 
-        {showBookmarks && (
-          <div className="fixed right-0 top-16 bottom-0 w-80 z-30">
-            <BookmarkManager
-              bookmarks={readingState.bookmarks}
-              chapters={chapters}
-              onBookmarkSelect={(bookmark) => {
-                handleChapterChange(bookmark.chapterIndex);
-                setShowBookmarks(false);
-              }}
-              onBookmarkDelete={(bookmarkId) => {
-                setReadingState(prev => ({
-                  ...prev,
-                  bookmarks: prev.bookmarks.filter(b => b.id !== bookmarkId)
-                }));
-              }}
-              onClose={() => setShowBookmarks(false)}
-              useTaylorSwiftThemes={useTaylorSwiftThemes}
-              darkMode={preferences.darkMode}
-            />
-          </div>
-        )}
+      {/* Settings Sidebar */}
+      {showSettings && (
+        <ReadingPreferences
+          preferences={preferences}
+          onPreferencesChange={setPreferences}
+          onClose={() => setShowSettings(false)}
+          designSettings={designSettings}
+        />
+      )}
 
-        {showSettings && (
-          <div className="fixed right-0 top-16 bottom-0 w-80 z-30">
-            <ReadingPreferences
-              preferences={preferences}
-              onPreferencesChange={setPreferences}
-              onClose={() => setShowSettings(false)}
-              useTaylorSwiftThemes={useTaylorSwiftThemes}
-            />
-          </div>
-        )}
+      {/* Bookmarks Sidebar */}
+      {showBookmarks && (
+        <BookmarkManager
+          bookmarks={readingState.bookmarks}
+          onBookmarkSelect={(bookmark) => {
+            handleChapterChange(bookmark.chapter);
+            handlePageChange(bookmark.page);
+            setShowBookmarks(false);
+          }}
+          onClose={() => setShowBookmarks(false)}
+        />
+      )}
 
-        {/* Main Reading Area */}
+      {/* Main Content */}
+      <div className="pt-20 pb-16 h-full overflow-hidden">
         <div className={cn(
-          "transition-all duration-300",
+          "transition-all duration-300 h-full",
           showNavigation && "ml-80",
           (showBookmarks || showSettings) && "mr-80"
         )}>
-          <BookPageView
-            chapter={currentChapter}
-            chapterIndex={readingState.currentChapter}
-            preferences={preferences}
-            useTaylorSwiftThemes={useTaylorSwiftThemes}
-            onPageChange={handlePageChange}
-          />
+          {/* Enhanced Book Page View with Design Settings */}
+          <div className="h-full overflow-y-auto">
+            <div className="max-w-4xl mx-auto p-8" style={getDesignStyles()}>
+              {/* Chapter Title */}
+              <div className="text-center mb-8">
+                <h1 className="font-bold mb-4" style={{
+                  fontSize: designSettings ? `${designSettings.chapterTitleSize}px` : '2.5rem',
+                  color: designSettings?.chapterHeadingColor || '#8B5CF6',
+                  marginBottom: designSettings ? `${designSettings.chapterSpacing}px` : '2rem'
+                }}>
+                  {currentChapter?.title}
+                </h1>
+                
+                {/* Reading info */}
+                <div className="flex items-center justify-center space-x-4 text-sm opacity-70">
+                  <span className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {estimateReadingTime(currentChapter?.content || '')} min read
+                  </span>
+                  <span>•</span>
+                  <span>Chapter {readingState.currentChapter + 1} of {chapters.length}</span>
+                </div>
+              </div>
+
+              {/* Chapter Content */}
+              <div className="prose max-w-none">
+                {currentChapter?.content.split('\n\n').map((paragraph, index) => (
+                  <p 
+                    key={index} 
+                    className="leading-relaxed"
+                    style={{
+                      marginBottom: designSettings ? `${designSettings.paragraphSpacing}px` : '1.5rem',
+                      textIndent: designSettings?.textAlignment === 'justify' ? '1.5em' : '0',
+                      color: designSettings?.textColor || '#374151'
+                    }}
+                  >
+                    {paragraph.startsWith('"') ? (
+                      <span className="italic font-medium" style={{
+                        color: getColorSchemeColors(designSettings?.colorScheme).secondary
+                      }}>
+                        {paragraph}
+                      </span>
+                    ) : (
+                      paragraph
+                    )}
+                  </p>
+                ))}
+              </div>
+
+              {/* Chapter Image */}
+              {currentChapter?.imageUrl && (
+                <div className="mt-8 text-center">
+                  <img
+                    src={currentChapter.imageUrl}
+                    alt={`Illustration for ${currentChapter.title}`}
+                    className="max-w-full h-auto rounded-lg shadow-lg mx-auto"
+                  />
+                </div>
+              )}
+
+              {/* Chapter End Decoration */}
+              <div className="text-center mt-12 mb-8">
+                <div className="inline-flex items-center space-x-2">
+                  {useTaylorSwiftThemes ? (
+                    <>
+                      <Star className="h-4 w-4 opacity-50" style={{
+                        color: getColorSchemeColors(designSettings?.colorScheme).primary
+                      }} />
+                      <Heart className="h-4 w-4 opacity-50" style={{
+                        color: getColorSchemeColors(designSettings?.colorScheme).secondary
+                      }} />
+                      <Star className="h-4 w-4 opacity-50" style={{
+                        color: getColorSchemeColors(designSettings?.colorScheme).primary
+                      }} />
+                    </>
+                  ) : (
+                    <div className="w-12 h-px opacity-30" style={{
+                      backgroundColor: getColorSchemeColors(designSettings?.colorScheme).primary
+                    }}></div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -452,107 +617,44 @@ export const BookReader = ({
         showNavigation && "ml-80",
         (showBookmarks || showSettings) && "mr-80"
       )}>
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={previousChapter}
-              disabled={readingState.currentChapter === 0}
-              className={cn("transition-colors", themeClasses.accent)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="hidden sm:inline ml-1">Previous</span>
-            </Button>
-            
-            <span className="text-sm px-2">
-              {readingState.currentChapter + 1} of {chapters.length}
-            </span>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={nextChapter}
-              disabled={readingState.currentChapter === chapters.length - 1}
-              className={cn("transition-colors", themeClasses.accent)}
-            >
-              <span className="hidden sm:inline mr-1">Next</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            {preferences.textToSpeech && speechSynthesis && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleTextToSpeech}
-                className={cn("transition-colors", themeClasses.accent)}
-              >
-                {isReading ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-            )}
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setPreferences(prev => ({ ...prev, darkMode: !prev.darkMode }))}
-              className={cn("transition-colors", themeClasses.accent)}
-            >
-              {preferences.darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleShare}
-              className={cn("transition-colors", themeClasses.accent)}
-            >
-              <Share2 className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownload}
-              className={cn("transition-colors", themeClasses.accent)}
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating Action for Speech */}
-      {preferences.textToSpeech && (
-        <div className="fixed bottom-20 right-6 z-50">
+        <div className="flex items-center justify-between px-6 py-4">
           <Button
-            onClick={handleTextToSpeech}
-            className={cn(
-              "rounded-full w-12 h-12 shadow-lg transition-all duration-300",
-              useTaylorSwiftThemes 
-                ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" 
-                : "bg-blue-500 hover:bg-blue-600",
-              isReading && "animate-pulse"
-            )}
+            variant="ghost"
+            onClick={handlePrevChapter}
+            disabled={readingState.currentChapter === 0}
           >
-            {isReading ? <Pause className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+
+          <div className="flex items-center space-x-2">
+            {chapters.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => handleChapterChange(index)}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all duration-200",
+                  index === readingState.currentChapter
+                    ? "w-8 opacity-100"
+                    : "opacity-40 hover:opacity-70"
+                )}
+                style={{
+                  backgroundColor: getColorSchemeColors(designSettings?.colorScheme).primary
+                }}
+              />
+            ))}
+          </div>
+
+          <Button
+            variant="ghost"
+            onClick={handleNextChapter}
+            disabled={readingState.currentChapter === chapters.length - 1}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
-      )}
-
-      {/* Download & Share Modal */}
-      <DownloadShareModal
-        isOpen={showDownloadShareModal}
-        onClose={() => setShowDownloadShareModal(false)}
-        content={{
-          id: `book-${Date.now()}`,
-          title: chapters[0]?.title || 'My Story Book',
-          content: chapters,
-          type: 'ebook',
-          author: 'FlipMyEra User'
-        }}
-      />
+      </div>
     </div>
   );
 };

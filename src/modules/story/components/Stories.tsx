@@ -1,10 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { supabase } from '@/core/integrations/supabase/client';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { getUserStories } from '@/modules/story/utils/storyPersistence';
 import { Loader2, BookOpen, Calendar, UserCircle } from "lucide-react";
 import { Button } from '@/modules/shared/components/ui/button';
 import { useNavigate } from "react-router-dom";
+// Remove ReactMarkdown import
 import ReactMarkdown from "react-markdown";
 
 interface Story {
@@ -22,6 +24,7 @@ const Stories = () => {
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { getToken } = useClerkAuth();
 
   useEffect(() => {
     loadStories();
@@ -29,13 +32,9 @@ const Stories = () => {
 
   const loadStories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setStories(data || []);
+      const token = await getToken({ template: 'supabase' });
+      const storiesData = await getUserStories(token);
+      setStories(storiesData || []);
     } catch (error: any) {
       toast({
         title: "Error loading stories",
@@ -102,8 +101,9 @@ const Stories = () => {
                       </>
                     )}
                   </div>
+                  {/* Replace ReactMarkdown with plain text */}
                   <div className="prose prose-sm line-clamp-3 mb-4 text-gray-600">
-                    <ReactMarkdown>{story.initial_story}</ReactMarkdown>
+                    {story.initial_story.substring(0, 150)}...
                   </div>
                   <div className="flex justify-between items-center mt-4">
                     <span className="text-sm text-gray-500">

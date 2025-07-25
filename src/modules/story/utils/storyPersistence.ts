@@ -1,6 +1,10 @@
 import { supabase, createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 
+// Edge function URLs
+const SAVE_STORY_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/save-story`;
+const GET_USER_STORIES_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-stories`;
+
 // Local storage keys
 const STORY_DATA_KEY = 'flip_my_era_story_data';
 const USER_PREFERENCES_KEY = 'flip_my_era_user_preferences';
@@ -34,36 +38,52 @@ interface AdditionalStoryData {
   [key: string]: string | number | boolean | undefined; // More specific types for additional properties
 }
 
-// Save story to Supabase and localStorage
-export const saveStory = async (story: string, name: string, date?: Date, prompt?: string, additionalData?: AdditionalStoryData) => {
+// Save story to Supabase via edge function and localStorage
+export const saveStory = async (story: string, name: string, date?: Date, prompt?: string, additionalData?: AdditionalStoryData, authToken?: string) => {
   try {
-    // First try to save to Supabase if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    
     let savedData;
+    // Generate a UUID for the story if we don't have one from the server
+    const localStoryId = crypto.randomUUID();
     
-    if (session) {
-      // User is authenticated, save to Supabase
-      const { data, error } = await supabase
-        .from('stories')
-        .insert({
-          name,
-          birth_date: date?.toISOString(),
-          initial_story: story,
-          prompt: prompt,
-          user_id: session.user.id,
-          ...additionalData
-        })
-        .select()
-        .single();
+    // Try to save to Supabase via edge function if user is authenticated
+    if (authToken) {
+      try {
+        console.log("Saving story to Supabase with auth token...");
+        // User is authenticated, save to Supabase via edge function
+        const response = await fetch(SAVE_STORY_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            name,
+            initial_story: story,
+            birth_date: date?.toISOString(),
+            prompt,
+            ...additionalData
+          })
+        });
 
-      if (error) {
-        console.error("Error saving story to Supabase:", error);
-        // Continue to save locally even if Supabase fails
-      } else {
-        savedData = data;
-        console.log("Story saved to Supabase:", data);
+        const responseData = await response.json();
+
+        if (response.ok) {
+          savedData = responseData.story;
+          console.log("Story saved to Supabase:", savedData);
+        } else {
+          const errorMessage = responseData.error || 'Unknown error';
+          const errorDetails = responseData.details || {};
+          console.error(`Error saving story to Supabase (${response.status}):`, errorMessage, errorDetails);
+          
+          // Throw a more detailed error
+          throw new Error(`Failed to save story: ${errorMessage}`);
+        }
+      } catch (error) {
+        console.error("Error calling save-story edge function:", error);
+        throw error; // Re-throw to be caught by the outer try/catch
       }
+    } else {
+      console.log("No auth token provided, saving to localStorage only");
     }
     
     // Always save to localStorage as backup
@@ -72,7 +92,7 @@ export const saveStory = async (story: string, name: string, date?: Date, prompt
       birth_date: date?.toISOString(),
       initial_story: story,
       prompt,
-      storyId: savedData?.id || crypto.randomUUID(),
+      storyId: savedData?.id || localStoryId,
       ...additionalData
     };
     
@@ -90,7 +110,12 @@ export const saveStory = async (story: string, name: string, date?: Date, prompt
     
     localStorage.setItem(USER_PREFERENCES_KEY, JSON.stringify(userPreferences));
     
-    return savedData || storyData;
+    // Ensure we return an object with either the server-generated ID or our local UUID
+    return savedData || { 
+      id: localStoryId,
+      storyId: localStoryId,
+      ...storyData
+    };
   } catch (error) {
     console.error("Error in saveStory:", error);
     throw error;
@@ -131,50 +156,60 @@ export const getUserPreferences = (): UserPreferences | null => {
   }
 };
 
-// Get all user stories from Supabase
-export const getUserStories = async () => {
+// Get all user stories from Supabase via edge function
+export const getUserStories = async (authToken?: string) => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.log("No active session, returning local story only");
+    if (!authToken) {
+      console.log("No auth token, returning local story only");
       const localStory = getLocalStory();
       return localStory ? [localStory] : [];
     }
     
-    const { data, error } = await supabase
-      .from('stories')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false });
-      
-    if (error) {
-      console.error("Error fetching user stories:", error);
-      throw error;
+    const response = await fetch(GET_USER_STORIES_FUNCTION_URL, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      return result.stories || [];
+    } else {
+      console.error("Error fetching user stories:", response.statusText);
+      // Fallback to local story
+      const localStory = getLocalStory();
+      return localStory ? [localStory] : [];
     }
-    
-    return data || [];
   } catch (error) {
     console.error("Error in getUserStories:", error);
-    throw error;
+    // Fallback to local story
+    const localStory = getLocalStory();
+    return localStory ? [localStory] : [];
   }
 };
 
 // Get a specific story by ID
-export const getStoryById = async (storyId: string) => {
-  // First try to fetch from Supabase
-  try {
-    const { data, error } = await supabase
-      .from('stories')
-      .select('*')
-      .eq('id', storyId)
-      .single();
-      
-    if (!error && data) {
-      return data;
+export const getStoryById = async (storyId: string, authToken?: string) => {
+  // First try to fetch from Supabase via edge function
+  if (authToken) {
+    try {
+      const response = await fetch(`${GET_USER_STORIES_FUNCTION_URL}?storyId=${storyId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.story) {
+          return result.story;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching story from Supabase:", error);
     }
-  } catch (error) {
-    console.error("Error fetching story from Supabase:", error);
   }
   
   // If not found in Supabase, check local storage

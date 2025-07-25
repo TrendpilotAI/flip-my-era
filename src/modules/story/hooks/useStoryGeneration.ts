@@ -25,7 +25,7 @@ interface SavedStory {
 }
 
 export const useStoryGeneration = (loadSavedStory: boolean = true) => {
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated, getToken } = useClerkAuth();
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
   const [date, setDate] = useState<Date>();
@@ -147,6 +147,10 @@ export const useStoryGeneration = (loadSavedStory: boolean = true) => {
       if (story) {
         setResult(story);
         
+        // Generate a new storyId immediately so we have it available
+        const newStoryId = crypto.randomUUID();
+        setStoryId(newStoryId);
+        
         // Save additional data along with the story
         const additionalData = {
           transformedName,
@@ -157,14 +161,28 @@ export const useStoryGeneration = (loadSavedStory: boolean = true) => {
           plotDescription
         };
         
-        const savedStory = await saveStory(story, name, date, prompt, additionalData);
-        const newStoryId = savedStory.id || savedStory.storyId;
-        setStoryId(newStoryId);
-        
-        toast({
-          title: "Alternate life discovered!",
-          description: "Your parallel universe self has been revealed!",
-        });
+        try {
+          const authToken = isAuthenticated ? await getToken({ template: 'supabase' }) : undefined;
+          const savedStory = await saveStory(story, name, date, prompt, additionalData, authToken);
+          // Update storyId with the one from the server if available
+          if (savedStory.id || savedStory.storyId) {
+            setStoryId(savedStory.id || savedStory.storyId);
+          }
+          
+          toast({
+            title: "Alternate life discovered!",
+            description: "Your parallel universe self has been revealed!",
+          });
+        } catch (saveError) {
+          console.error("Error saving story:", saveError);
+          
+          // Still set the result but show an error about saving
+          toast({
+            title: "Story generated but not saved",
+            description: "Your story was generated but couldn't be saved to your account. You can still view it now.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error generating story:", error);

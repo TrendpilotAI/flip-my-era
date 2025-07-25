@@ -60,6 +60,11 @@ vector_port = 54328
 backend = "postgres"
 
 [functions]
+[functions.save-story]
+verify_jwt = false
+
+[functions.get-user-stories]
+verify_jwt = false
 
 [functions.stripe-webhook-new]
 verify_jwt = false
@@ -93,7 +98,7 @@ verify_jwt = false
 
 [functions.ebook-generation]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/ebook-generation/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.
 # Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
