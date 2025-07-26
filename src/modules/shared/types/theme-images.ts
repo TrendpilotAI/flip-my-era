@@ -67,6 +67,64 @@ export const beatlesImages: ThemeImage[] = [
   }
 ];
 
+// Rolling Stones theme images - using the uploaded Rolling Stones photos
+export const rollingStonesImages: ThemeImage[] = [
+  {
+    id: 'rolling-stones-1',
+    src: '/images/themes/rolling-stones/rolling-stones-1.jpeg',
+    alt: 'The Rolling Stones - Live Performance',
+    caption: 'Live Legends 🎸'
+  },
+  {
+    id: 'rolling-stones-2',
+    src: '/images/themes/rolling-stones/rolling-stones-2.jpeg',
+    alt: 'The Rolling Stones - Classic Lineup',
+    caption: 'Classic Lineup ⭐'
+  },
+  {
+    id: 'rolling-stones-3',
+    src: '/images/themes/rolling-stones/rolling-stones-3.jpeg',
+    alt: 'The Rolling Stones - Group Portrait',
+    caption: 'Rock Icons 🎵'
+  },
+  {
+    id: 'rolling-stones-4',
+    src: '/images/themes/rolling-stones/rolling-stones-4.jpeg',
+    alt: 'The Rolling Stones - Logo',
+    caption: 'Tongue & Lips 👅'
+  },
+  {
+    id: 'rolling-stones-5',
+    src: '/images/themes/rolling-stones/rolling-stones-5.webp',
+    alt: 'The Rolling Stones - Sticky Fingers',
+    caption: 'Sticky Fingers 🎤'
+  },
+  {
+    id: 'rolling-stones-6',
+    src: '/images/themes/rolling-stones/rolling-stones-1.jpeg',
+    alt: 'The Rolling Stones - Live Performance',
+    caption: 'Live Legends 🎸'
+  },
+  {
+    id: 'rolling-stones-7',
+    src: '/images/themes/rolling-stones/rolling-stones-2.jpeg',
+    alt: 'The Rolling Stones - Classic Lineup',
+    caption: 'Classic Lineup ⭐'
+  },
+  {
+    id: 'rolling-stones-8',
+    src: '/images/themes/rolling-stones/rolling-stones-3.jpeg',
+    alt: 'The Rolling Stones - Group Portrait',
+    caption: 'Rock Icons 🎵'
+  },
+  {
+    id: 'rolling-stones-9',
+    src: '/images/themes/rolling-stones/rolling-stones-4.jpeg',
+    alt: 'The Rolling Stones - Logo',
+    caption: 'Tongue & Lips 👅'
+  }
+];
+
 // Default images for other themes (keeping the original Unsplash images)
 export const defaultImages: ThemeImage[] = [
   {
@@ -125,16 +183,71 @@ export const defaultImages: ThemeImage[] = [
   }
 ];
 
+// Eminem theme images - using the uploaded Eminem photos
+export const eminemImages: ThemeImage[] = [
+  {
+    id: 'eminem-1',
+    src: '/images/themes/eminem/eminem-1.webp',
+    alt: 'Eminem - MTV VMA Performance',
+    caption: 'MTV VMA 🎤'
+  },
+  {
+    id: 'eminem-2',
+    src: '/images/themes/eminem/eminem-2.webp',
+    alt: 'Eminem - 8 Mile',
+    caption: '8 Mile 🎬'
+  },
+  {
+    id: 'eminem-3',
+    src: '/images/themes/eminem/eminem-3.webp',
+    alt: 'Eminem - Rehearsing',
+    caption: 'Studio Time 🎵'
+  },
+  {
+    id: 'eminem-4',
+    src: '/images/themes/eminem/eminem-4.jpeg',
+    alt: 'Eminem - The Eminem Show',
+    caption: 'The Eminem Show ⭐'
+  },
+  {
+    id: 'eminem-5',
+    src: '/images/themes/eminem/eminem-5.webp',
+    alt: 'Eminem - Hooded Portrait',
+    caption: 'Slim Shady 💯'
+  },
+  {
+    id: 'eminem-6',
+    src: '/images/themes/eminem/eminem-1.webp',
+    alt: 'Eminem - MTV VMA Performance',
+    caption: 'MTV VMA 🎤'
+  },
+  {
+    id: 'eminem-7',
+    src: '/images/themes/eminem/eminem-2.webp',
+    alt: 'Eminem - 8 Mile',
+    caption: '8 Mile 🎬'
+  },
+  {
+    id: 'eminem-8',
+    src: '/images/themes/eminem/eminem-3.webp',
+    alt: 'Eminem - Rehearsing',
+    caption: 'Studio Time 🎵'
+  },
+  {
+    id: 'eminem-9',
+    src: '/images/themes/eminem/eminem-4.jpeg',
+    alt: 'Eminem - The Eminem Show',
+    caption: 'The Eminem Show ⭐'
+  }
+];
+
 // Theme image collections mapping
 export const themeImageCollections: ThemeImageCollection = {
   'the-beatles': beatlesImages,
+  'the-rolling-stones': rollingStonesImages,
   // Add other themes here as you upload more photos
   'taylor-swift': defaultImages,
-  'the-rolling-stones': defaultImages,
-  'lil-baby': defaultImages,
-  'morgan-wallen': defaultImages,
-  'guns-n-roses': defaultImages,
-  'eminem': defaultImages
+  'eminem': eminemImages
 };
 
 // Helper function to get images for a specific theme
