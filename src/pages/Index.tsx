@@ -11,10 +11,12 @@ import { Button } from "@/modules/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
+import { useTheme } from '@/modules/shared/contexts/ThemeContext';
 
 const Index = () => {
   useApiCheck();
   const { isAuthenticated } = useClerkAuth();
+  const { currentTheme } = useTheme();
   const {
     name,
     setName,
@@ -36,7 +38,10 @@ const Index = () => {
   } = useStoryGeneration();
 
   return (
-    <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
+    <div 
+      className="min-h-screen py-12 px-4 relative overflow-hidden"
+      style={{ backgroundColor: currentTheme.colors.background }}
+    >
       <SparkleEffect />
       <BackgroundImages />
 

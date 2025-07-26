@@ -1,14 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from '@/modules/shared/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/modules/shared/components/ui/dropdown-menu';
-import { BookOpen, LogOut, Settings, User, Crown, Sparkles, BookText, UserCircle, LayoutDashboard, History } from "lucide-react";
+import { BookOpen, LogOut, Settings, User, Crown, Sparkles, BookText, UserCircle, LayoutDashboard, History, Palette } from "lucide-react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useTheme } from '@/modules/shared/contexts/ThemeContext';
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { useState, useEffect, useRef } from "react";
 
 export const NavigationBar = () => {
   const { isAuthenticated, user, signOut } = useClerkAuth();
+  const { currentTheme } = useTheme();
   const { toast } = useToast();
   const location = useLocation();
   const [showAccountPopup, setShowAccountPopup] = useState(false);
@@ -66,10 +68,20 @@ export const NavigationBar = () => {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <div 
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ 
+                  background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+                }}
+              >
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span 
+                className="text-xl font-bold bg-clip-text text-transparent"
+                style={{ 
+                  backgroundImage: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+                }}
+              >
                 Flip My Era
               </span>
             </Link>
@@ -82,9 +94,25 @@ export const NavigationBar = () => {
               to="/about" 
               className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActive('/about') 
-                  ? 'text-purple-600 bg-purple-50' 
-                  : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
+                  ? 'bg-opacity-10' 
+                  : 'text-gray-700 hover:bg-opacity-10'
               }`}
+              style={{
+                color: isActive('/about') ? currentTheme.colors.primary : undefined,
+                backgroundColor: isActive('/about') ? `${currentTheme.colors.primary}20` : undefined,
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive('/about')) {
+                  e.currentTarget.style.color = currentTheme.colors.primary;
+                  e.currentTarget.style.backgroundColor = `${currentTheme.colors.primary}20`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive('/about')) {
+                  e.currentTarget.style.color = '';
+                  e.currentTarget.style.backgroundColor = '';
+                }
+              }}
             >
               <UserCircle className="w-4 h-4" />
               <span>About</span>
@@ -93,11 +121,23 @@ export const NavigationBar = () => {
             {/* Story Section */}
             <Link 
               to="/" 
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/') 
-                  ? 'text-purple-600 bg-purple-50' 
-                  : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
-              }`}
+              className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700"
+              style={{
+                color: isActive('/') ? currentTheme.colors.primary : undefined,
+                backgroundColor: isActive('/') ? `${currentTheme.colors.primary}20` : undefined,
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive('/')) {
+                  e.currentTarget.style.color = currentTheme.colors.primary;
+                  e.currentTarget.style.backgroundColor = `${currentTheme.colors.primary}20`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive('/')) {
+                  e.currentTarget.style.color = '';
+                  e.currentTarget.style.backgroundColor = '';
+                }
+              }}
             >
               <BookOpen className="w-4 h-4" />
               <span>Story</span>
@@ -106,11 +146,23 @@ export const NavigationBar = () => {
             {/* Ebook Section */}
             <Link 
               to="/ebook-builder" 
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/ebook-builder') 
-                  ? 'text-purple-600 bg-purple-50' 
-                  : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
-              }`}
+              className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700"
+              style={{
+                color: isActive('/ebook-builder') ? currentTheme.colors.primary : undefined,
+                backgroundColor: isActive('/ebook-builder') ? `${currentTheme.colors.primary}20` : undefined,
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive('/ebook-builder')) {
+                  e.currentTarget.style.color = currentTheme.colors.primary;
+                  e.currentTarget.style.backgroundColor = `${currentTheme.colors.primary}20`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive('/ebook-builder')) {
+                  e.currentTarget.style.color = '';
+                  e.currentTarget.style.backgroundColor = '';
+                }
+              }}
             >
               <BookText className="w-4 h-4" />
               <span>Ebook</span>
@@ -122,11 +174,11 @@ export const NavigationBar = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => setShowAccountPopup(!showAccountPopup)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname.startsWith('/dashboard') 
-                      ? 'text-purple-600 bg-purple-50' 
-                      : 'text-gray-700 hover:text-purple-600 hover:bg-purple-50'
-                  }`}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700"
+                  style={{
+                    color: location.pathname.startsWith('/dashboard') ? currentTheme.colors.primary : undefined,
+                    backgroundColor: location.pathname.startsWith('/dashboard') ? `${currentTheme.colors.primary}20` : undefined,
+                  }}
                 >
                   <User className="w-4 h-4" />
                   <span>Account</span>
@@ -157,6 +209,17 @@ export const NavigationBar = () => {
                       >
                         <History className="h-4 w-4 mr-2" />
                         Past Generations
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        onClick={() => {
+                          setShowAccountPopup(false);
+                          window.location.href = '/survey';
+                        }}
+                        className="w-full justify-start"
+                      >
+                        <Palette className="h-4 w-4 mr-2" />
+                        Change Theme
                       </Button>
                       <Button 
                         variant="ghost"
@@ -223,6 +286,12 @@ export const NavigationBar = () => {
                     <Link to="/dashboard" className="flex items-center">
                       <User className="h-4 w-4 mr-2" />
                       My Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/survey" className="flex items-center">
+                      <Palette className="h-4 w-4 mr-2" />
+                      Change Theme
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin && (

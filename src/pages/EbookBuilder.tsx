@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SparkleEffect } from "@/modules/shared/components/SparkleEffect";
 import { BackgroundImages } from "@/modules/shared/components/BackgroundImages";
+import { useTheme } from '@/modules/shared/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
 import { Input } from "@/modules/shared/components/ui/input";
@@ -40,6 +41,19 @@ import { CreditBasedEbookGenerator } from '@/modules/ebook/components/CreditBase
 import { EbookPublishDemo } from './EbookPublishDemo';
 import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { useToast } from '@/modules/shared/hooks/use-toast';
+
+// Helper function to generate UUID
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 interface EbookProject {
   id: string;
@@ -111,6 +125,7 @@ const defaultDesignSettings: EbookDesignSettings = {
 
 const EbookBuilder = () => {
   const { isAuthenticated, user, getToken } = useClerkAuth();
+  const { currentTheme } = useTheme();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
   const [currentProject, setCurrentProject] = useState<EbookProject | null>(null);
@@ -162,7 +177,7 @@ const EbookBuilder = () => {
     }
 
     const newProject: EbookProject = {
-      id: Date.now().toString(),
+      id: generateUUID(),
       title: projectForm.title,
       description: projectForm.description,
       genre: projectForm.genre,
@@ -206,14 +221,16 @@ const EbookBuilder = () => {
     });
   };
 
-  const handleGenerateChapters = async (chapters: any[]) => {
+  const handleGenerateChapters = async (chapters: any[], ebookId: string) => {
     if (!currentProject || !user?.id) return;
 
     setIsGenerating(true);
     
     try {
-      // No need to insert into database here - the backend stream-chapters-enhanced function already does this
-      // Just update the local project state with the generated chapters
+      // Store the generated ebook ID so the publish tab can access it
+      setGeneratedEbookId(ebookId);
+      
+      // Update the local project state with the generated chapters
       const updatedProject = {
         ...currentProject,
         chapters: chapters.map((chapter, index) => ({
@@ -227,9 +244,16 @@ const EbookBuilder = () => {
 
       setCurrentProject(updatedProject);
       
+      console.log('🔍 DEBUGGING: handleGenerateChapters called with ebook ID:', ebookId);
+      console.log('🔍 DEBUGGING: generatedEbookId is now set to:', ebookId);
+      console.log('🔍 DEBUGGING: This should now show content in the publish tab');
+      
+      // Don't automatically switch to publish - let users go through images section first
+      // setActiveTab("publish");
+      
       toast({
         title: "Chapters Generated!",
-        description: `Successfully created ${chapters.length} chapters for your ebook.`,
+        description: `Successfully created ${chapters.length} chapters for your ebook. You can now generate images and then publish.`,
       });
     } catch (error) {
       console.error('Error updating project:', error);
@@ -292,11 +316,16 @@ const EbookBuilder = () => {
         <div className="max-w-4xl mx-auto space-y-8 relative z-10">
           <div className="text-center space-y-6">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Sparkles className="h-8 w-8 text-purple-500" />
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <Sparkles className="h-8 w-8" style={{ color: currentTheme.colors.primary }} />
+              <h1 
+                className="text-4xl font-bold bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+                }}
+              >
                 Ebook Builder
               </h1>
-              <Sparkles className="h-8 w-8 text-purple-500" />
+              <Sparkles className="h-8 w-8" style={{ color: currentTheme.colors.primary }} />
             </div>
             <p className="text-xl text-gray-700 max-w-2xl mx-auto">
               Create, design, and publish your own ebooks with our powerful AI-powered builder
@@ -315,7 +344,12 @@ const EbookBuilder = () => {
             <CardContent className="text-center">
               <AuthDialog
                 trigger={
-                  <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 font-semibold px-8 py-3">
+                  <Button 
+                    className="text-white font-semibold px-8 py-3"
+                    style={{
+                      background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+                    }}
+                  >
                     <Sparkles className="h-4 w-4 mr-2" />
                     Sign In to Start Building
                   </Button>
@@ -337,7 +371,12 @@ const EbookBuilder = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 
+              className="text-3xl font-bold bg-clip-text text-transparent"
+              style={{
+                backgroundImage: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+              }}
+            >
               Ebook Builder
             </h1>
             <p className="text-gray-600 mt-2">
@@ -444,7 +483,16 @@ const EbookBuilder = () => {
 
                   <Button 
                     onClick={handleCreateProject}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                    className="w-full text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '0.9';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                    }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Create Ebook Project
@@ -743,7 +791,10 @@ const EbookBuilder = () => {
                     <div className="pt-6 border-t">
                       <Button 
                         onClick={() => setActiveTab("editor")}
-                        className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                        className="w-full text-white"
+                        style={{
+                          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+                        }}
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Continue to Content Generation
@@ -907,6 +958,7 @@ const EbookBuilder = () => {
                       bookTitle={currentProject.title}
                       authorName={user?.name || 'Anonymous'}
                       genre={currentProject.genre}
+                      ebookId={currentProject.id}
                       onImageGenerated={handleCoverImageGenerated}
                       onError={handleImageError}
                     />
@@ -932,6 +984,7 @@ const EbookBuilder = () => {
                           imageUrl: chapterImages[chapter.id]?.url,
                           imagePrompt: chapterImages[chapter.id]?.prompt
                         }))}
+                        ebookId={currentProject.id}
                         onChapterImageGenerated={handleChapterImageGenerated}
                         onError={handleImageError}
                         bookTitle={currentProject.title}
@@ -1018,7 +1071,7 @@ const EbookBuilder = () => {
           <TabsContent value="publish" className="space-y-6">
             {generatedEbookId ? (
               <EbookPublishDemo ebookId={generatedEbookId} />
-            ) : (
+            ) : currentProject ? (
               <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1034,15 +1087,28 @@ const EbookBuilder = () => {
                     <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Content Generated Yet</h3>
                     <p className="text-gray-600 mb-6">
-                      Generate your ebook content in the "Generate" tab first, then return here to preview and publish your complete book with cover and chapter images.
+                      Generate your ebook content to preview and publish your complete book with cover and chapter images.
                     </p>
-                    <Button 
-                      onClick={() => setActiveTab("generate")}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
-                    >
-                      <Zap className="h-4 w-4 mr-2" />
-                      Generate Content
-                    </Button>
+                    
+                    {/* Enhanced generation component for this project */}
+                    <div className="max-w-2xl mx-auto">
+                      <CreditBasedEbookGenerator
+                        originalStory={currentProject.description || "Enter your story idea here and watch the AI create a multi-chapter book with perfect continuity..."}
+                        useTaylorSwiftThemes={false}
+                        selectedTheme="coming-of-age"
+                        selectedFormat="short-story"
+                        designSettings={currentProject.designSettings}
+                        onChaptersGenerated={handleGenerateChapters}
+                        onError={(error) => {
+                          console.error('Generation error:', error);
+                          toast({
+                            title: "Generation Failed",
+                            description: error,
+                            variant: "destructive",
+                          });
+                        }}
+                      />
+                    </div>
                   </div>
                   
                   <div className="border-t pt-6">
@@ -1086,6 +1152,17 @@ const EbookBuilder = () => {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
+                <CardContent className="text-center py-12">
+                  <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
+                  <p className="text-gray-500 mb-4">Create a new ebook project to start publishing</p>
+                  <Button onClick={() => setActiveTab("overview")}>
+                    Create New Project
+                  </Button>
                 </CardContent>
               </Card>
             )}

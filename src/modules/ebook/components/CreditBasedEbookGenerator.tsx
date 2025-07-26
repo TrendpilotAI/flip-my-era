@@ -58,7 +58,7 @@ interface CreditBasedEbookGeneratorProps {
   selectedTheme: string;
   selectedFormat: string;
   designSettings?: EbookDesignSettings;
-  onChaptersGenerated?: (chapters: Chapter[]) => void;
+  onChaptersGenerated?: (chapters: Chapter[], ebookId: string) => void;
   onError?: (error: string) => void;
 }
 
@@ -125,14 +125,14 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
     fetchCreditBalance();
   }, [isAuthenticated, getToken]);
 
-  const handleChaptersGenerated = (generatedChapters: Chapter[]) => {
+  const handleChaptersGenerated = (generatedChapters: Chapter[], ebookId: string) => {
     setChapters(generatedChapters);
     setIsGenerating(false);
     
     // Automatically unlock the story to display content
     setIsUnlocked(true);
     
-    onChaptersGenerated?.(generatedChapters);
+    onChaptersGenerated?.(generatedChapters, ebookId);
   };
 
   const handleGenerationError = (error: string) => {

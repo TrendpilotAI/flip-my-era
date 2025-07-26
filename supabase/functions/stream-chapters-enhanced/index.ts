@@ -27,6 +27,9 @@ import {
   type CharacterBio
 } from '../_shared/story-memory.ts';
 
+// Import image generation utilities
+import { generateChapterImage } from '../_shared/image-generation.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -438,9 +441,18 @@ serve(async (req: Request) => {
           await saveStoryState(supabase, storyState);
 
           // PHASE 3: GENERATE CHAPTERS WITH MEMORY
+          const generatedImages: Array<{
+            imageUrl?: string;
+            prompt: string;
+            chapterNumber: number;
+            chapterTitle: string;
+            revisedPrompt?: string;
+            generatedAt: string;
+          }> = [];
+
           for (let i = 0; i < chapterCount; i++) {
             const chapterNumber = i + 1;
-            const progressPercent = 24 + (i / chapterCount) * 60;
+            const progressPercent = 24 + (i / chapterCount) * 50; // Reduced from 60 to 50 to make room for image generation
 
             sendEvent({
               type: 'progress',
@@ -468,6 +480,30 @@ serve(async (req: Request) => {
             );
 
             chapters.push(chapter);
+
+            // PHASE 3.5: GENERATE CHAPTER IMAGE
+            sendEvent({
+              type: 'progress',
+              progress: progressPercent + 3,
+              message: `Generating illustration for Chapter ${chapterNumber}...`
+            });
+
+            try {
+              const chapterImage = await generateChapterImage(
+                chapter.title,
+                chapter.content,
+                chapterNumber,
+                'children' // Default style, could be made configurable
+              );
+
+              if (chapterImage) {
+                generatedImages.push(chapterImage);
+                console.log(`Successfully generated image for Chapter ${chapterNumber}: ${chapterImage.imageUrl}`);
+              }
+            } catch (imageError) {
+              console.error(`Failed to generate image for Chapter ${chapterNumber}:`, imageError);
+              // Continue without image - don't fail the entire generation
+            }
 
             // PHASE 4: POST-CHAPTER PROCESSING
             sendEvent({
@@ -555,13 +591,25 @@ serve(async (req: Request) => {
 
             await saveStoryState(supabase, storyState);
 
-            // STAGE 3: UPDATE WITH GENERATED CHAPTERS (Progressive Updates)
+            // STAGE 3: UPDATE WITH GENERATED CHAPTERS AND IMAGES (Progressive Updates)
             if (userId) {
               try {
+                // Prepare current images data for progressive update
+                const currentImagesData = generatedImages.map(img => ({
+                  imageUrl: img.imageUrl,
+                  prompt: img.prompt,
+                  chapterNumber: img.chapterNumber,
+                  chapterTitle: img.chapterTitle,
+                  revisedPrompt: img.revisedPrompt,
+                  generatedAt: img.generatedAt,
+                  type: 'chapter_illustration'
+                }));
+
                 const { data: chapterUpdateEbook, error: chapterUpdateError } = await supabase
                   .from('ebook_generations')
                   .update({
                     chapters: chapters,
+                    images: currentImagesData, // Update images progressively
                     word_count: chapters.reduce((total, ch) => total + ch.content.length, 0),
                     updated_at: new Date().toISOString()
                   })
@@ -572,7 +620,7 @@ serve(async (req: Request) => {
                 if (chapterUpdateError) {
                   console.error('Error updating ebook with chapter:', chapterUpdateError);
                 } else {
-                  console.log(`Successfully updated ebook with Chapter ${chapterNumber}`);
+                  console.log(`Successfully updated ebook with Chapter ${chapterNumber} and ${currentImagesData.length} images`);
                 }
               } catch (dbError) {
                 console.error('Database chapter update error:', dbError);
@@ -591,24 +639,40 @@ serve(async (req: Request) => {
             });
           }
 
-          // STAGE 4: FINAL UPDATE - MARK AS COMPLETED
+          // STAGE 4: FINAL UPDATE - MARK AS COMPLETED WITH IMAGES
           sendEvent({
             type: 'progress',
             progress: 90,
-            message: 'Finalizing ebook generation...'
+            message: 'Finalizing ebook generation and saving images...'
           });
 
-          // Final update to mark the ebook as completed
+          // Prepare images data for database storage
+          const imagesData = generatedImages.map(img => ({
+            imageUrl: img.imageUrl,
+            prompt: img.prompt,
+            chapterNumber: img.chapterNumber,
+            chapterTitle: img.chapterTitle,
+            revisedPrompt: img.revisedPrompt,
+            generatedAt: img.generatedAt,
+            type: 'chapter_illustration'
+          }));
+
+          console.log(`Generated ${imagesData.length} images for ebook ${ebookGenerationId}`);
+
+          // Final update to mark the ebook as completed with images
           if (userId) {
             try {
+              const updateData = {
+                status: 'completed',
+                chapter_count: chapters.length,
+                word_count: chapters.reduce((total, ch) => total + ch.content.length, 0),
+                images: imagesData, // Store the generated images
+                updated_at: new Date().toISOString()
+              };
+
               const { data: ebookGeneration, error } = await supabase
                 .from('ebook_generations')
-                .update({
-                  status: 'completed',
-                  chapter_count: chapters.length,
-                  word_count: chapters.reduce((total, ch) => total + ch.content.length, 0),
-                  updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', ebookGenerationId)
                 .select()
                 .single();
@@ -616,7 +680,12 @@ serve(async (req: Request) => {
               if (error) {
                 console.error('Error finalizing ebook_generations:', error);
               } else {
-                console.log('Successfully completed memory-enhanced story:', ebookGeneration);
+                console.log('Successfully completed memory-enhanced story with images:', {
+                  id: ebookGeneration.id,
+                  title: ebookGeneration.title,
+                  chapters: chapters.length,
+                  images: imagesData.length
+                });
               }
             } catch (dbError) {
               console.error('Database finalization error:', dbError);

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout, ProtectedRoute, AdminRoute } from "@/modules/shared";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth";
+import { ThemeProvider } from "@/modules/shared/contexts/ThemeContext";
 import Index from "@/app/pages/Index";
 import About from "@/pages/About";
 import Settings from "@/modules/user/components/Settings";
@@ -21,12 +22,15 @@ import AdminUsers from "@/app/pages/AdminUsers";
 import AdminCredits from "@/app/pages/AdminCredits";
 import { MemorySystemDemo } from "@/app/pages/MemorySystemDemo";
 import EbookBuilder from "@/pages/EbookBuilder";
+import EbookViewer from "@/pages/EbookViewer";
 import PastGenerations from "@/modules/user/components/PastGenerations";
+import Survey from "@/pages/Survey";
 
 function App() {
   return (
-    <ClerkAuthProvider>
-      <Router>
+    <ThemeProvider>
+      <ClerkAuthProvider>
+        <Router>
         <Layout>
           <Routes>
             {/* Public routes */}
@@ -35,6 +39,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/survey" element={<Survey />} />
             <Route path="/ebook-builder" element={<EbookBuilder />} />
             
             {/* Memory System Demo - Public for testing */}
@@ -56,6 +61,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PastGenerations />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Ebook Viewer */}
+            <Route 
+              path="/ebook/:id" 
+              element={
+                <ProtectedRoute>
+                  <EbookViewer />
                 </ProtectedRoute>
               } 
             />
@@ -120,7 +135,7 @@ function App() {
               } 
             />
             
-            {/* Checkout routes */}
+            {/* Stripe Checkout routes */}
             <Route 
               path="/checkout" 
               element={
@@ -156,13 +171,14 @@ function App() {
               } 
             />
             
-            {/* Catch-all route */}
+            {/* 404 Not Found - Must be last */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <Toaster />
         </Layout>
-        <Toaster />
       </Router>
     </ClerkAuthProvider>
+    </ThemeProvider>
   );
 }
 

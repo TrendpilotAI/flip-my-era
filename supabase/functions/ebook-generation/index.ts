@@ -36,13 +36,6 @@ Deno.serve(async (req) => {
 
   // Extract user ID from JWT token
   const authHeader = req.headers.get('Authorization');
-  console.log('Auth header exists:', !!authHeader);
-  
-  // Log all headers for debugging
-  console.log('Request headers:');
-  for (const [key, value] of req.headers.entries()) {
-    console.log(`${key}: ${key === 'authorization' ? 'Bearer [hidden]' : value}`);
-  }
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return new Response(JSON.stringify({ error: "Missing or invalid authorization header" }), {
@@ -71,18 +64,14 @@ Deno.serve(async (req) => {
         }
         
         const decodedPayload = JSON.parse(atob(payload));
-        console.log('JWT payload:', JSON.stringify(decodedPayload, null, 2));
         
         userId = decodedPayload.sub || decodedPayload.user_id;
         
         // For development/testing, allow anon tokens and use a default user ID
         if (!userId && decodedPayload.role === 'anon') {
           userId = 'anonymous-user';
-          console.log('Using anonymous user ID for testing');
         } else if (!userId) {
           console.warn('No user ID found in token, using test user');
-        } else {
-          console.log('Successfully extracted user ID:', userId);
         }
       } catch (decodeError) {
         console.warn('Error decoding JWT payload:', decodeError);
@@ -147,8 +136,7 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   
-  console.log('Supabase URL exists:', !!supabaseUrl);
-  console.log('Supabase key exists:', !!supabaseKey);
+
 
   if (!supabaseUrl || !supabaseKey) {
     console.error('Missing Supabase configuration');
@@ -192,32 +180,147 @@ Deno.serve(async (req) => {
   if (epub_url !== undefined) updateData.epub_url = epub_url;
   if (cover_image_url !== undefined) updateData.cover_image_url = cover_image_url;
 
-  console.log('Attempting to update ebook data:', {
-    user_id: userId,
-    ebook_id,
-    title: updateData.title,
-    hasChapters: !!chapters,
-    hasDesignSettings: !!designSettings,
-    updateFields: Object.keys(updateData)
-  });
+
 
   try {
     // Find the existing ebook record by ebook_id
     const { data: existingEbook, error: checkError } = await supabase
       .from("ebook_generations")
-      .select("id, title, status")
+      .select("id, title, status, images, cover_image_url")
       .eq("id", ebook_id)
       .single();
 
-    if (checkError) {
+          if (checkError) {
+        console.error('Database error during lookup:', checkError);
+      
       if (checkError.code === 'PGRST116') {
-        // No existing record found
-        console.error('No existing ebook_generations record found for ebook_id:', ebook_id);
+        // No existing record found - create a new one
+        const newEbookData = {
+          id: ebook_id,
+          user_id: userId,
+          title: 'Untitled Ebook',
+          description: '',
+          status: 'draft',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...updateData
+        };
+        
+        const { data: newEbook, error: createError } = await supabase
+          .from("ebook_generations")
+          .insert(newEbookData)
+          .select()
+          .single();
+          
+                if (createError) {
+          console.error('Error creating new ebook record:', createError);
+          
+          // If it's a foreign key constraint error, try to create the profile first
+          if (createError.code === '23503' && createError.message.includes('user_id_fkey')) {
+            try {
+              // Try to create a profile record for the user
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: userId,
+                  email: `${userId}@example.com`,
+                  name: 'Test User',
+                  subscription_status: 'free',
+                  credits: 0,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }, {
+                  onConflict: 'id',
+                  ignoreDuplicates: false
+                });
+                
+              if (profileError) {
+                console.error('Error creating profile:', profileError);
+                return new Response(JSON.stringify({ 
+                  error: "Failed to create user profile", 
+                  details: profileError.message,
+                  code: profileError.code
+                }), {
+                  status: 500,
+                  headers: { 
+                    "Content-Type": "application/json",
+                    'Access-Control-Allow-Origin': '*'
+                  },
+                });
+              }
+              
+              // Retry creating the ebook record
+              const { data: retryEbook, error: retryError } = await supabase
+                .from("ebook_generations")
+                .insert(newEbookData)
+                .select()
+                .single();
+                
+              if (retryError) {
+                console.error('Error on retry creating ebook record:', retryError);
+                return new Response(JSON.stringify({ 
+                  error: "Failed to create ebook record after profile creation", 
+                  details: retryError.message,
+                  code: retryError.code
+                }), {
+                  status: 500,
+                  headers: { 
+                    "Content-Type": "application/json",
+                    'Access-Control-Allow-Origin': '*'
+                  },
+                });
+              }
+              
+              return new Response(JSON.stringify({ 
+                success: true,
+                data: retryEbook,
+                message: "New ebook record created successfully",
+                created: true
+              }), {
+                status: 200,
+                headers: { 
+                  "Content-Type": "application/json",
+                  'Access-Control-Allow-Origin': '*'
+                },
+              });
+              
+            } catch (profileCreateError) {
+              console.error('Unexpected error during profile creation:', profileCreateError);
+              return new Response(JSON.stringify({ 
+                error: "Failed to create user profile", 
+                details: profileCreateError instanceof Error ? profileCreateError.message : "Unknown error"
+              }), {
+                status: 500,
+                headers: { 
+                  "Content-Type": "application/json",
+                  'Access-Control-Allow-Origin': '*'
+                },
+              });
+            }
+          }
+          
+          return new Response(JSON.stringify({ 
+            error: "Failed to create ebook record", 
+            details: createError.message,
+            code: createError.code
+          }), {
+            status: 500,
+            headers: { 
+              "Content-Type": "application/json",
+              'Access-Control-Allow-Origin': '*'
+            },
+          });
+        }
+        
+
+        
         return new Response(JSON.stringify({ 
-          error: "No existing ebook record found. Records are created during the streaming generation process.",
-          ebook_id
+          success: true,
+          data: newEbook,
+          message: "New ebook record created successfully",
+          created: true
         }), {
-          status: 404,
+          status: 200,
           headers: { 
             "Content-Type": "application/json",
             'Access-Control-Allow-Origin': '*'
@@ -225,11 +328,35 @@ Deno.serve(async (req) => {
         });
       } else {
         console.error('Error checking for existing ebook:', checkError);
-        throw checkError;
+        return new Response(JSON.stringify({ 
+          error: "Database lookup failed", 
+          details: checkError.message,
+          code: checkError.code
+        }), {
+          status: 500,
+          headers: { 
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*'
+          },
+        });
       }
     }
 
-    console.log('Found existing ebook record:', existingEbook);
+
+
+    // Handle image appending logic
+    if (images && Array.isArray(images)) {
+      const currentImages = existingEbook.images || [];
+      
+      // Add timestamps to new images
+      const newImagesWithTimestamps = images.map(img => ({
+        ...img,
+        generated_at: img.generated_at || new Date().toISOString()
+      }));
+      
+      // Append new images to existing ones
+      updateData.images = [...currentImages, ...newImagesWithTimestamps];
+    }
 
     // Update the existing ebook record
     const { data, error } = await supabase
@@ -239,16 +366,23 @@ Deno.serve(async (req) => {
       .select()
       .single();
 
-    if (error) {
-      console.error('Database error:', error);
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
-        headers: { 
-          "Content-Type": "application/json",
-          'Access-Control-Allow-Origin': '*'
-        },
-      });
-    }
+          if (error) {
+        console.error('Database update error:', error);
+        return new Response(JSON.stringify({ 
+          error: "Database update failed", 
+          details: error.message,
+          code: error.code,
+          hint: error.hint
+        }), {
+          status: 500,
+          headers: { 
+            "Content-Type": "application/json",
+            'Access-Control-Allow-Origin': '*'
+          },
+        });
+      }
+
+
 
     return new Response(JSON.stringify({ 
       success: true,
@@ -262,19 +396,20 @@ Deno.serve(async (req) => {
         'Access-Control-Allow-Origin': '*'
       },
     });
-  } catch (dbError) {
-    console.error('Unexpected database error:', dbError);
-    return new Response(JSON.stringify({ 
-      error: "Database operation failed", 
-      details: dbError instanceof Error ? dbError.message : "Unknown error"
-    }), {
-      status: 500,
-      headers: { 
-        "Content-Type": "application/json",
-        'Access-Control-Allow-Origin': '*'
-      },
-    });
-  }
+      } catch (dbError) {
+      console.error('Unexpected database error:', dbError);
+      
+      return new Response(JSON.stringify({ 
+        error: "Database operation failed", 
+        details: dbError instanceof Error ? dbError.message : "Unknown error"
+      }), {
+        status: 500,
+        headers: { 
+          "Content-Type": "application/json",
+          'Access-Control-Allow-Origin': '*'
+        },
+      });
+    }
 });
 
 /* To invoke locally:

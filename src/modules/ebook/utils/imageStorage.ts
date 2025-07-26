@@ -21,7 +21,7 @@ export interface UpdateEbookImagesParams {
 }
 
 /**
- * Save a single generated image to the ebook_generations table
+ * Save a single generated image to the ebook_generations table via edge function
  */
 export async function saveImageToEbook({
   ebookId,
@@ -29,47 +29,44 @@ export async function saveImageToEbook({
   token
 }: SaveImageToEbookParams): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = createSupabaseClientWithClerkToken(token);
+    console.log('🔍 DEBUGGING: saveImageToEbook called with:', { ebookId, imageData });
     
-    // First, get the current images array
-    const { data: currentEbook, error: fetchError } = await supabase
-      .from('ebook_generations')
-      .select('images')
-      .eq('id', ebookId)
-      .single();
+    // Use the ebook-generation edge function instead of direct database update
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const functionUrl = `${supabaseUrl}/functions/v1/ebook-generation`;
     
-    if (fetchError) {
-      console.error('Error fetching current ebook:', fetchError);
-      return { success: false, error: fetchError.message };
-    }
-    
-    // Prepare the new image data with timestamp
-    const newImageData: ImageData = {
-      ...imageData,
-      generated_at: new Date().toISOString()
+    // Prepare the request body for the edge function
+    const requestBody = {
+      ebook_id: ebookId,
+      images: [imageData] // Send as array to append to existing images
     };
     
-    // Merge with existing images
-    const currentImages = currentEbook?.images || [];
-    const updatedImages = [...currentImages, newImageData];
+    console.log('🔍 DEBUGGING: Calling ebook-generation edge function with:', requestBody);
     
-    // Update the ebook with the new images array
-    const { error: updateError } = await supabase
-      .from('ebook_generations')
-      .update({
-        images: updatedImages,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', ebookId);
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+      },
+      body: JSON.stringify(requestBody)
+    });
     
-    if (updateError) {
-      console.error('Error updating ebook images:', updateError);
-      return { success: false, error: updateError.message };
+    console.log('🔍 DEBUGGING: Edge function response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔍 DEBUGGING: Edge function error:', errorText);
+      throw new Error(`Edge function call failed: ${response.status} ${errorText}`);
     }
+    
+    const result = await response.json();
+    console.log('🔍 DEBUGGING: Edge function success result:', result);
     
     return { success: true };
   } catch (error) {
-    console.error('Error saving image to ebook:', error);
+    console.error('Error saving image to ebook via edge function:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
@@ -127,15 +124,38 @@ export async function saveCoverImageToEbook(
   prompt: string,
   token: string
 ): Promise<{ success: boolean; error?: string }> {
-  return saveImageToEbook({
-    ebookId,
-    imageData: {
-      type: 'cover',
-      url: imageUrl,
-      prompt
-    },
-    token
-  });
+  try {
+    // First, save to the images array
+    const imageResult = await saveImageToEbook({
+      ebookId,
+      imageData: {
+        type: 'cover',
+        url: imageUrl,
+        prompt
+      },
+      token
+    });
+
+    if (!imageResult.success) {
+      return imageResult;
+    }
+
+    // Also update the cover_image_url field
+    const coverUrlResult = await updateCoverImageUrl(ebookId, imageUrl, token);
+    
+    if (!coverUrlResult.success) {
+      console.warn('Failed to update cover_image_url field:', coverUrlResult.error);
+      // Don't fail the entire operation if this fails
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving cover image:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
 }
 
 /**
@@ -192,7 +212,7 @@ export async function getEbookImages(
 }
 
 /**
- * Update cover image URL in the ebook_generations table
+ * Update cover image URL in the ebook_generations table via edge function
  */
 export async function updateCoverImageUrl(
   ebookId: string,
@@ -200,24 +220,43 @@ export async function updateCoverImageUrl(
   token: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = createSupabaseClientWithClerkToken(token);
+    console.log('🔍 DEBUGGING: updateCoverImageUrl called with:', { ebookId, coverImageUrl });
     
-    const { error } = await supabase
-      .from('ebook_generations')
-      .update({
-        cover_image_url: coverImageUrl,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', ebookId);
+    // Use the ebook-generation edge function
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const functionUrl = `${supabaseUrl}/functions/v1/ebook-generation`;
     
-    if (error) {
-      console.error('Error updating cover image URL:', error);
-      return { success: false, error: error.message };
+    const requestBody = {
+      ebook_id: ebookId,
+      cover_image_url: coverImageUrl
+    };
+    
+    console.log('🔍 DEBUGGING: Calling ebook-generation edge function for cover URL:', requestBody);
+    
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    console.log('🔍 DEBUGGING: Cover URL update response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔍 DEBUGGING: Cover URL update error:', errorText);
+      throw new Error(`Edge function call failed: ${response.status} ${errorText}`);
     }
+    
+    const result = await response.json();
+    console.log('🔍 DEBUGGING: Cover URL update success:', result);
     
     return { success: true };
   } catch (error) {
-    console.error('Error updating cover image URL:', error);
+    console.error('Error updating cover image URL via edge function:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

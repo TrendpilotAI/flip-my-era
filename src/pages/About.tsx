@@ -2,13 +2,19 @@ import { SparkleEffect } from "@/modules/shared/components/SparkleEffect";
 import { BackgroundImages } from "@/modules/shared/components/BackgroundImages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
-import { Sparkles, BookOpen, Users, Star, Heart, Zap } from "lucide-react";
+import { Sparkles, BookOpen, Users, Star, Heart, Zap, Music } from "lucide-react";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import AboutCarousel from "@/modules/shared/components/AboutCarousel";
+import { useTheme } from "@/modules/shared/contexts/ThemeContext";
 
 const About = () => {
+  const { currentTheme, isThemeSet } = useTheme();
+
   return (
-    <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
+    <div 
+      className="min-h-screen py-12 px-4 relative overflow-hidden" 
+      style={{ backgroundColor: currentTheme.colors.background }}
+    >
       <SparkleEffect />
       <BackgroundImages />
 
@@ -40,6 +46,145 @@ const About = () => {
           </div>
           <AboutCarousel />
         </div>
+
+        {/* Artist-Inspired Section */}
+        {isThemeSet && (
+          <>
+            {/* Artist Bio Section */}
+            <Card 
+              className="backdrop-blur-lg border shadow-xl"
+              style={{ 
+                backgroundColor: `${currentTheme.colors.card}cc`,
+                borderColor: currentTheme.colors.border,
+                color: currentTheme.colors.cardForeground
+              }}
+            >
+              <CardHeader className="text-center">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <Music 
+                    className="h-8 w-8" 
+                    style={{ color: currentTheme.colors.primary }}
+                  />
+                  <CardTitle 
+                    className="text-3xl font-bold"
+                    style={{ color: currentTheme.colors.foreground }}
+                  >
+                    Inspired by {currentTheme.name}
+                  </CardTitle>
+                  <Music 
+                    className="h-8 w-8" 
+                    style={{ color: currentTheme.colors.primary }}
+                  />
+                </div>
+                <CardDescription 
+                  className="text-lg"
+                  style={{ color: currentTheme.colors.mutedForeground }}
+                >
+                  Your personalized experience draws inspiration from the musical legacy of {currentTheme.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h3 
+                      className="text-xl font-semibold mb-4"
+                      style={{ color: currentTheme.colors.foreground }}
+                    >
+                      About {currentTheme.name}
+                    </h3>
+                    <p 
+                      className="text-base leading-relaxed max-w-3xl mx-auto"
+                      style={{ color: currentTheme.colors.mutedForeground }}
+                    >
+                      {currentTheme.bio}
+                    </p>
+                    <div className="flex justify-center gap-4 mt-4 text-sm">
+                      <span 
+                        className="px-3 py-1 rounded-full"
+                        style={{ 
+                          backgroundColor: `${currentTheme.colors.primary}20`,
+                          color: currentTheme.colors.primary
+                        }}
+                      >
+                        Era: {currentTheme.era}
+                      </span>
+                      <span 
+                        className="px-3 py-1 rounded-full"
+                        style={{ 
+                          backgroundColor: `${currentTheme.colors.secondary}20`,
+                          color: currentTheme.colors.foreground
+                        }}
+                      >
+                        Genre: {currentTheme.genre}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top Songs Billboard */}
+            <Card 
+              className="backdrop-blur-lg border shadow-xl"
+              style={{ 
+                backgroundColor: `${currentTheme.colors.card}cc`,
+                borderColor: currentTheme.colors.border
+              }}
+            >
+              <CardHeader className="text-center">
+                <CardTitle 
+                  className="text-2xl font-bold flex items-center justify-center gap-2"
+                  style={{ color: currentTheme.colors.foreground }}
+                >
+                  <Star 
+                    className="h-6 w-6" 
+                    style={{ color: currentTheme.colors.accent }}
+                  />
+                  Top Songs Billboard
+                  <Star 
+                    className="h-6 w-6" 
+                    style={{ color: currentTheme.colors.accent }}
+                  />
+                </CardTitle>
+                <CardDescription 
+                  className="text-lg"
+                  style={{ color: currentTheme.colors.mutedForeground }}
+                >
+                  The most popular hits from {currentTheme.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {currentTheme.topSongs.map((song, index) => (
+                    <div 
+                      key={index}
+                      className="flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 hover:shadow-md"
+                      style={{ 
+                        backgroundColor: `${currentTheme.colors.muted}50`,
+                        borderColor: `${currentTheme.colors.border}80`
+                      }}
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                        style={{ 
+                          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <span 
+                        className="font-medium"
+                        style={{ color: currentTheme.colors.foreground }}
+                      >
+                        {song}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* Mission Section */}
         <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">

@@ -12,10 +12,12 @@ import { Button } from "@/modules/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
+import { useTheme } from '@/modules/shared/contexts/ThemeContext';
 
 const Index = () => {
   useApiCheck();
   const { isAuthenticated } = useClerkAuth();
+  const { currentTheme } = useTheme();
   const [showStoryResult, setShowStoryResult] = useState(false);
   const {
     name,
@@ -54,7 +56,10 @@ const Index = () => {
   };
 
   return (
-          <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
+    <div 
+      className="min-h-screen py-12 px-4 relative overflow-hidden"
+      style={{ backgroundColor: currentTheme.colors.background }}
+    >
       <SparkleEffect />
       <BackgroundImages />
 
@@ -66,9 +71,9 @@ const Index = () => {
           <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-900">
-                <Sparkles className="h-6 w-6 text-purple-500" />
+                <Sparkles className="h-6 w-6" style={{ color: currentTheme.colors.primary }} />
                 Unlock Your Full Potential
-                <Sparkles className="h-6 w-6 text-purple-500" />
+                <Sparkles className="h-6 w-6" style={{ color: currentTheme.colors.primary }} />
               </CardTitle>
               <CardDescription className="text-lg text-gray-600">
                 Sign up to save your stories, access your personal dashboard, and unlock premium features
@@ -77,22 +82,27 @@ const Index = () => {
             <CardContent className="text-center space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center gap-2 justify-center">
-                  <BookOpen className="h-4 w-4 text-purple-500" />
+                  <BookOpen className="h-4 w-4" style={{ color: currentTheme.colors.primary }} />
                   <span>Save & organize stories</span>
                 </div>
                 <div className="flex items-center gap-2 justify-center">
-                  <User className="h-4 w-4 text-pink-500" />
+                  <User className="h-4 w-4" style={{ color: currentTheme.colors.secondary }} />
                   <span>Personal dashboard</span>
                 </div>
                 <div className="flex items-center gap-2 justify-center">
-                  <Star className="h-4 w-4 text-blue-500" />
+                  <Star className="h-4 w-4" style={{ color: currentTheme.colors.accent }} />
                   <span>Premium features</span>
                 </div>
               </div>
               <div className="flex justify-center">
                 <AuthDialog
                   trigger={
-                    <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+                    <Button 
+                      className="text-white"
+                      style={{
+                        background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
+                      }}
+                    >
                       <Sparkles className="h-4 w-4 mr-2" />
                       Get Started - It's Free!
                     </Button>

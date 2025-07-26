@@ -4,6 +4,8 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { Alert, AlertDescription } from '@/modules/shared/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/modules/shared/components/ui/tabs';
+import { ScrollArea } from '@/modules/shared/components/ui/scroll-area';
+import { Separator } from '@/modules/shared/components/ui/separator';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { EbookPreview } from './EbookPreview';
 import { CoverImageGenerator } from './CoverImageGenerator';
@@ -22,7 +24,11 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  Zap
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  Settings
 } from 'lucide-react';
 
 interface EbookPublishPreviewProps {
@@ -41,27 +47,44 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
   const { toast } = useToast();
   const { isAuthenticated, getToken } = useClerkAuth();
   const { ebookData, loading, error, refetch } = useEbookData(ebookId);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [currentStep, setCurrentStep] = useState('');
-  const [progress, setProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState('preview');
+  const [currentPage, setCurrentPage] = useState(0); // 0 = cover, 1+ = chapters
+  const [imageZoomed, setImageZoomed] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
+  const [showImageGeneration, setShowImageGeneration] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
 
-  const handleCoverImageGenerated = (imageUrl: string, prompt: string) => {
+  const handleCoverImageGenerated = async (imageUrl: string, prompt: string) => {
+    // Save generated cover image to database
+    try {
+      const token = await getToken({ template: 'supabase' });
+      if (token) {
+        await saveCoverImageToEbook(ebookId, imageUrl, prompt, token);
+      }
+    } catch (error) {
+      console.error('Error saving cover image:', error);
+    }
     toast({
       title: "Cover Generated!",
       description: "Your book cover has been created and saved.",
     });
-    // Refresh the ebook data to show the new cover
-    refetch();
+    await refetch();
   };
 
-  const handleChapterImageGenerated = (chapterId: string, imageUrl: string, prompt: string) => {
+  const handleChapterImageGenerated = async (chapterId: string, imageUrl: string, prompt: string) => {
+    // Save generated chapter image to database
+    try {
+      const token = await getToken({ template: 'supabase' });
+      if (token) {
+        await saveChapterImageToEbook(ebookId, chapterId, imageUrl, prompt, token);
+      }
+    } catch (error) {
+      console.error('Error saving chapter image:', error);
+    }
     toast({
       title: "Chapter Image Generated!",
       description: "Chapter illustration has been created and saved.",
     });
-    // Refresh the ebook data to show the new image
-    refetch();
+    await refetch();
   };
 
   const handleError = (error: string) => {
@@ -72,334 +95,496 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
     });
   };
 
-  const handleGenerateCompleteEbook = async () => {
-    if (!ebookData || !isAuthenticated) return;
+  const handleImageZoom = (imageUrl: string) => {
+    setZoomedImageUrl(imageUrl);
+    setImageZoomed(true);
+  };
 
-    try {
-      setIsGenerating(true);
-      setProgress(0);
-      setCurrentStep('Starting complete ebook generation...');
-
-      const token = await getToken({ template: 'supabase' });
-      if (!token) {
-        throw new Error('Authentication token not available');
-      }
-
-      let currentProgress = 10;
-      setProgress(currentProgress);
-
-      // Check if cover image is missing and generate it
-      const hasCover = !!ebookData.cover_image_url || 
-        ebookData.images?.some(img => img.type === 'cover');
-      
-      if (!hasCover) {
-        setCurrentStep('Generating book cover...');
-        setProgress(20);
-
-        const coverPrompt = `Professional book cover for "${ebookData.title}"${ebookData.author_name ? ` by ${ebookData.author_name}` : ''}, based on story: ${ebookData.chapters.map(ch => ch.content).join(' ').substring(0, 300)}..., modern book cover design, high quality, detailed artwork`;
-
-        const coverImageUrl = await generateImage({
-          prompt: coverPrompt,
-          size: '1024x1024',
-          quality: 'hd'
-        });
-
-        await saveCoverImageToEbook(ebookId, coverImageUrl, coverPrompt, token);
-        await updateCoverImageUrl(ebookId, coverImageUrl, token);
-        currentProgress = 50;
-        setProgress(currentProgress);
-        setCurrentStep('Cover image generated successfully');
-      } else {
-        currentProgress = 50;
-        setProgress(currentProgress);
-        setCurrentStep('Cover image already exists, skipping...');
-      }
-
-      // Generate missing chapter images
-      const chaptersNeedingImages = ebookData.chapters.filter(chapter => 
-        !chapter.imageUrl && 
-        !ebookData.images?.some(img => img.chapter_id === chapter.id && img.type === 'chapter')
-      );
-
-      if (chaptersNeedingImages.length > 0) {
-        setCurrentStep('Generating chapter illustrations...');
-        
-        for (let i = 0; i < chaptersNeedingImages.length; i++) {
-          const chapter = chaptersNeedingImages[i];
-          const progressIncrement = (40 / chaptersNeedingImages.length);
-          
-          setCurrentStep(`Generating image for "${chapter.title}"...`);
-          setProgress(currentProgress + (i * progressIncrement));
-
-          try {
-            const chapterPrompt = `Detailed illustration for chapter "${chapter.title}", scene depicting: ${chapter.content.substring(0, 300)}, artistic style, book illustration, high quality artwork`;
-            
-            const chapterImageUrl = await generateImage({
-              prompt: chapterPrompt,
-              size: '1024x1024',
-              quality: 'hd'
-            });
-
-            await saveChapterImageToEbook(ebookId, chapter.id, chapterImageUrl, chapterPrompt, token);
-
-            // Small delay to avoid rate limits
-            if (i < chaptersNeedingImages.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-          } catch (error) {
-            console.warn(`Failed to generate image for chapter "${chapter.title}":`, error);
-            // Continue with other chapters even if one fails
-          }
-        }
-        
-        currentProgress = 90;
-        setProgress(currentProgress);
-      } else {
-        currentProgress = 90;
-        setProgress(currentProgress);
-        setCurrentStep('All chapter images already exist, skipping...');
-      }
-
-      // Finalize
-      setCurrentStep('Complete ebook generation finished!');
-      setProgress(100);
-
+  const handleDownload = () => {
+    if (onDownload) {
+      onDownload();
+    } else {
       toast({
-        title: "Complete Ebook Generated!",
-        description: "Your ebook with cover and chapter images is ready.",
+        title: "Download Feature",
+        description: "Download functionality will be available soon.",
+        variant: "default",
       });
+    }
+  };
 
-      // Refresh the data after generation
-      setTimeout(() => {
-        refetch();
-        setIsGenerating(false);
-      }, 1000);
-
-    } catch (error) {
-      console.error('Complete ebook generation failed:', error);
-      setIsGenerating(false);
+  const handleShare = () => {
+    if (onShare) {
+      onShare();
+    } else {
       toast({
-        title: "Generation Failed",
-        description: "Failed to generate complete ebook. Please try again.",
-        variant: "destructive",
+        title: "Share Feature",
+        description: "Share functionality will be available soon.",
+        variant: "default",
       });
     }
   };
 
   if (loading) {
     return (
-      <Card className={className}>
-        <CardContent className="flex items-center justify-center p-8">
-          <div className="text-center space-y-4">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-600" />
-            <p className="text-gray-600">Loading your ebook...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+        <span className="ml-2 text-gray-600">Loading ebook...</span>
+      </div>
     );
   }
 
   if (error || !ebookData) {
     return (
-      <Card className={className}>
-        <CardContent className="p-8">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {error || 'Failed to load ebook data. Please try again.'}
-            </AlertDescription>
-          </Alert>
-          <Button 
-            onClick={refetch} 
-            className="mt-4"
-            variant="outline"
-          >
-            Try Again
-          </Button>
-        </CardContent>
-      </Card>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Failed to load ebook data: {error || 'Ebook not found'}
+        </AlertDescription>
+      </Alert>
     );
   }
 
-  // Calculate completion status
-  const hasContent = ebookData.chapters.length > 0;
-  const hasCover = !!ebookData.cover_image_url || 
-    ebookData.images?.some(img => img.type === 'cover');
-  const chaptersWithImages = ebookData.chapters.filter(chapter => 
-    chapter.imageUrl || 
-    ebookData.images?.some(img => img.chapter_id === chapter.id && img.type === 'chapter')
-  );
-  const imageCompletionRate = ebookData.chapters.length > 0 
-    ? (chaptersWithImages.length / ebookData.chapters.length) * 100 
-    : 0;
+  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData:', ebookData);
+  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData.images:', ebookData.images);
+  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData.cover_image_url:', ebookData.cover_image_url);
+  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData.chapters:', ebookData.chapters);
 
-  // Check if we need to show the generate complete ebook button
-  const needsCompleteGeneration = hasContent && (!hasCover || imageCompletionRate < 100);
-  const isReadyToPublish = ebookData.status === 'completed' && hasCover && imageCompletionRate === 100;
+  // Helper function to extract image URL from any image object
+  const extractImageUrl = (imageObj: any): string | undefined => {
+    if (!imageObj) return undefined;
+    // Prioritize 'imageUrl' field since that's what stream-chapters-enhanced stores
+    return imageObj.imageUrl || imageObj.url || imageObj.image_url;
+  };
+
+  // Update the image handling logic to support streaming-generated and manual images
+  const chaptersWithImages = ebookData.chapters.map((chapter, index) => {
+    // Find streaming-generated image by chapterNumber
+    const streamingImage = ebookData.images?.find(
+      img => img.chapterNumber === index + 1 && img.type === 'chapter_illustration'
+    );
+    // Find manually-generated image by chapter_id
+    const manualImage = ebookData.images?.find(
+      img => (img as any).chapter_id === chapter.id && img.type === 'chapter'
+    );
+    // Also check for any image with matching chapter number (fallback)
+    const fallbackImage = ebookData.images?.find(
+      img => (img as any).chapterNumber === index + 1
+    );
+    // Check for any image that might be associated with this chapter
+    const anyChapterImage = ebookData.images?.find(
+      img => img.type === 'chapter' || img.type === 'chapter_illustration'
+    );
+    
+    // More robust image matching
+    // Try to find any image that could be associated with this chapter
+    const chapterImage = ebookData.images?.find(img => {
+      // Check if it's a chapter image (updated to include 'chapter_illustration' type)
+      if (img.type !== 'chapter' && img.type !== 'chapter_illustration') {
+        return false;
+      }
+      
+      // Try multiple matching strategies
+      return (
+        // Exact chapter_id match (for manually generated images)
+        img.chapter_id === chapter.id ||
+        // Chapter number match (1-based index) - primary method for stream-generated images
+        img.chapterNumber === index + 1 ||
+        // Chapter title match (case insensitive)
+        (img.chapterTitle && img.chapterTitle.toLowerCase() === chapter.title.toLowerCase()) ||
+        // Fallback: any chapter image if this is the first chapter and no other chapter has an image
+        (index === 0 && !ebookData.images?.some(otherImg => 
+          (otherImg.type === 'chapter' || otherImg.type === 'chapter_illustration') && otherImg !== img
+        ))
+      );
+    });
+    
+    // Also try to find any image by chapter number as a fallback
+    const chapterImageByNumber = ebookData.images?.find(img => 
+      (img.type === 'chapter' || img.type === 'chapter_illustration') && img.chapterNumber === index + 1
+    );
+    
+    // Try all possible image sources in order of preference
+    const imageUrl =
+      extractImageUrl(chapterImage) || // Try our improved matching first
+      extractImageUrl(chapterImageByNumber) || // Try by chapter number
+      extractImageUrl(streamingImage) ||
+      extractImageUrl(manualImage) ||
+      extractImageUrl(fallbackImage) ||
+      extractImageUrl(anyChapterImage);
+    
+    return {
+      ...chapter,
+      imageUrl
+    };
+  });
+
+  // Get cover image from cover_image_url field first, then from images array
+  const coverImage = ebookData.cover_image_url || 
+    extractImageUrl(ebookData.images?.find(img => img.type === 'cover'));
+
+  const totalPages = chaptersWithImages.length + 1; // +1 for cover
+
+  const handlePreviousPage = () => {
+    setCurrentPage(Math.max(0, currentPage - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(Math.min(totalPages - 1, currentPage + 1));
+  };
 
   return (
-    <div className={className}>
-      {/* Status Overview */}
-      <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-purple-900">
-            <BookOpen className="w-5 h-5" />
-            Publish Your Ebook
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${hasContent ? 'bg-green-100' : 'bg-gray-100'}`}>
-                {hasContent ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Content</p>
-                <p className="text-sm text-gray-600">
-                  {ebookData.chapters.length} chapters
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${hasCover ? 'bg-green-100' : 'bg-yellow-100'}`}>
-                {hasCover ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <ImageIcon className="w-5 h-5 text-yellow-600" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Cover Image</p>
-                <p className="text-sm text-gray-600">
-                  {hasCover ? 'Ready' : 'Generate cover'}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${imageCompletionRate === 100 ? 'bg-green-100' : 'bg-yellow-100'}`}>
-                {imageCompletionRate === 100 ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                ) : (
-                  <ImageIcon className="w-5 h-5 text-yellow-600" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Chapter Images</p>
-                <p className="text-sm text-gray-600">
-                  {chaptersWithImages.length} of {ebookData.chapters.length} complete
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Generate Complete Ebook Button */}
-          {needsCompleteGeneration && !isGenerating && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-blue-900 mb-1">Generate Complete Ebook</h3>
-                  <p className="text-sm text-blue-700">
-                    Combine your content with cover and chapter images to create the final ebook.
-                  </p>
-                </div>
-                <Button 
-                  onClick={handleGenerateCompleteEbook}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600"
-                  size="lg"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Generate Complete Ebook
-                </Button>
-              </div>
-            </div>
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      {/* Header with book info and actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{ebookData.title}</h1>
+          {ebookData.subtitle && (
+            <p className="text-lg text-gray-600 mt-1">{ebookData.subtitle}</p>
           )}
-
-          {/* Generation Progress */}
-          {isGenerating && (
-            <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-3 mb-3">
-                <Loader2 className="w-5 h-5 animate-spin text-green-600" />
-                <div>
-                  <h3 className="font-semibold text-green-900">Generating Your Complete Ebook</h3>
-                  <p className="text-sm text-green-700">{currentStep}</p>
-                </div>
-              </div>
-              <div className="w-full bg-green-100 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-xs text-green-600 mt-1">{Math.round(progress)}% complete</p>
-            </div>
+          {ebookData.author_name && (
+            <p className="text-sm text-gray-500 mt-1">by {ebookData.author_name}</p>
           )}
-          
-          {isReadyToPublish && (
-            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="font-medium text-green-800">Ready to Publish!</span>
-              </div>
-              <p className="text-sm text-green-700 mt-1">
-                Your ebook is complete with all content and images.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="preview" className="flex items-center gap-2">
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowDebugInfo(!showDebugInfo)}
+            className="flex items-center gap-2"
+          >
             <Eye className="w-4 h-4" />
-            Preview
-          </TabsTrigger>
-          <TabsTrigger value="cover" className="flex items-center gap-2">
-            <ImageIcon className="w-4 h-4" />
-            Cover Image
-          </TabsTrigger>
-          <TabsTrigger value="illustrations" className="flex items-center gap-2">
-            <Wand2 className="w-4 h-4" />
-            Chapter Images
-          </TabsTrigger>
-        </TabsList>
+            {showDebugInfo ? 'Hide' : 'Show'} Debug Info
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowImageGeneration(!showImageGeneration)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            {showImageGeneration ? 'Hide' : 'Show'} Image Tools
+          </Button>
+          <Button onClick={handleDownload} className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Download
+          </Button>
+          <Button onClick={handleShare} variant="outline" className="flex items-center gap-2">
+            <Share2 className="w-4 h-4" />
+            Share
+          </Button>
+        </div>
+      </div>
 
-        <TabsContent value="preview" className="mt-6">
-          <EbookPreview
-            ebookData={ebookData}
-            onDownload={onDownload}
-            onShare={onShare}
-          />
-        </TabsContent>
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Book Preview - Main Area */}
+        <div className="lg:col-span-3">
+          <Card className="bg-white shadow-lg">
+            <CardContent className="p-0">
+              {/* Navigation */}
+              <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 0}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages - 1}
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  Page {currentPage + 1} of {totalPages}
+                </div>
+              </div>
 
-        <TabsContent value="cover" className="mt-6">
-          <CoverImageGenerator
-            storyText={ebookData.chapters.map(ch => ch.content).join('\n\n')}
-            bookTitle={ebookData.title}
-            authorName={ebookData.author_name}
-            ebookId={ebookId}
-            onImageGenerated={handleCoverImageGenerated}
-            onError={handleError}
-          />
-        </TabsContent>
+              {/* Book Content */}
+              <div className="min-h-[600px] p-8">
+                {currentPage === 0 ? (
+                  // Cover Page
+                  <div className="text-center space-y-6">
+                    {coverImage && (
+                      <div className="mb-8">
+                        <img
+                          src={coverImage}
+                          alt="Book Cover"
+                          className="max-w-md mx-auto rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                          onClick={() => handleImageZoom(coverImage)}
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="space-y-4">
+                      <h1 className="text-4xl font-bold text-gray-900">{ebookData.title}</h1>
+                      {ebookData.subtitle && (
+                        <h2 className="text-2xl text-gray-600">{ebookData.subtitle}</h2>
+                      )}
+                      {ebookData.author_name && (
+                        <p className="text-xl text-gray-700">by {ebookData.author_name}</p>
+                      )}
+                      {ebookData.description && (
+                        <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                          {ebookData.description}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {!coverImage && (
+                      <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 max-w-md mx-auto">
+                        <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500">No cover image generated yet</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Chapter Page
+                  (() => {
+                    const chapter = chaptersWithImages[currentPage - 1];
+                    if (!chapter) return null;
+                    
+                    return (
+                      <div className="space-y-6">
+                        <div className="text-center">
+                          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                            {chapter.title}
+                          </h2>
+                          
+                          {chapter.imageUrl && (
+                            <div className="mb-8">
+                              <img
+                                src={chapter.imageUrl}
+                                alt={`Illustration for ${chapter.title}`}
+                                className="max-w-lg mx-auto rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                                onClick={() => handleImageZoom(chapter.imageUrl!)}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="prose prose-lg max-w-none">
+                          {chapter.content.split('\n\n').map((paragraph, index) => (
+                            <p key={index} className="mb-4 leading-relaxed text-gray-800">
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                        
+                        {!chapter.imageUrl && (
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                            <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-gray-500 text-sm">No illustration generated for this chapter yet</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <TabsContent value="illustrations" className="mt-6">
-          <ChapterImageGenerator
-            chapters={ebookData.chapters}
-            bookTitle={ebookData.title}
-            ebookId={ebookId}
-            onChapterImageGenerated={handleChapterImageGenerated}
-            onError={handleError}
-          />
-        </TabsContent>
-      </Tabs>
+        {/* Sidebar - Table of Contents and Stats */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Table of Contents */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Contents
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setCurrentPage(0)}
+                  className={`w-full text-left p-2 rounded text-sm transition-colors ${
+                    currentPage === 0 
+                      ? 'bg-purple-100 text-purple-800 font-medium' 
+                      : 'hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  Cover Page
+                </button>
+                
+                {chaptersWithImages.map((chapter, index) => (
+                  <button
+                    key={chapter.id}
+                    onClick={() => setCurrentPage(index + 1)}
+                    className={`w-full text-left p-2 rounded text-sm transition-colors ${
+                      currentPage === index + 1 
+                        ? 'bg-purple-100 text-purple-800 font-medium' 
+                        : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="truncate">{chapter.title}</span>
+                      {chapter.imageUrl && (
+                        <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0 ml-1" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Book Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Book Statistics</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Chapters:</span>
+                <span className="font-medium">{chaptersWithImages.length}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Word Count:</span>
+                <span className="font-medium">
+                  {ebookData.word_count || 
+                    chaptersWithImages.reduce((total, ch) => total + (ch.content?.split(' ').length || 0), 0)
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Images:</span>
+                <span className="font-medium">
+                  {(coverImage ? 1 : 0) + chaptersWithImages.filter(ch => ch.imageUrl).length} / {chaptersWithImages.length + 1}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Status:</span>
+                <Badge variant={ebookData.status === 'completed' ? 'default' : 'secondary'}>
+                  {ebookData.status}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Debug Info Panel - Collapsible */}
+      {showDebugInfo && (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-900">
+              <Eye className="w-5 h-5" />
+              Debug Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-yellow-900 mb-2">Raw Ebook Data:</h4>
+                <pre className="bg-white p-3 rounded border text-xs overflow-auto max-h-40">
+                  {JSON.stringify(ebookData, null, 2)}
+                </pre>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-yellow-900 mb-2">Images Array:</h4>
+                <pre className="bg-white p-3 rounded border text-xs overflow-auto max-h-40">
+                  {JSON.stringify(ebookData.images, null, 2)}
+                </pre>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-yellow-900 mb-2">Cover Image URL:</h4>
+                <p className="bg-white p-3 rounded border text-sm break-all">
+                  {ebookData.cover_image_url || 'No cover image URL found'}
+                </p>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-yellow-900 mb-2">Chapters with Images:</h4>
+                <pre className="bg-white p-3 rounded border text-xs overflow-auto max-h-40">
+                  {JSON.stringify(chaptersWithImages.map(ch => ({
+                    title: ch.title,
+                    imageUrl: ch.imageUrl,
+                    id: ch.id
+                  })), null, 2)}
+                </pre>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Image Generation Tools - Collapsible */}
+      {showImageGeneration && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-900">
+              <Wand2 className="w-5 h-5" />
+              Image Generation Tools
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="cover" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="cover">Cover Image</TabsTrigger>
+                <TabsTrigger value="chapters">Chapter Images</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="cover" className="mt-4">
+                <CoverImageGenerator
+                  storyText={ebookData.chapters.map(ch => ch.content).join('\n\n')}
+                  bookTitle={ebookData.title}
+                  authorName={ebookData.author_name}
+                  ebookId={ebookId}
+                  onImageGenerated={handleCoverImageGenerated}
+                  onError={handleError}
+                />
+              </TabsContent>
+              
+              <TabsContent value="chapters" className="mt-4">
+                <ChapterImageGenerator
+                  chapters={ebookData.chapters}
+                  bookTitle={ebookData.title}
+                  ebookId={ebookId}
+                  onChapterImageGenerated={handleChapterImageGenerated}
+                  onError={handleError}
+                />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Image Zoom Modal */}
+      {imageZoomed && zoomedImageUrl && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={() => setImageZoomed(false)}
+        >
+          <div className="relative max-w-4xl max-h-full">
+            <img
+              src={zoomedImageUrl}
+              alt="Zoomed image"
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="absolute top-4 right-4 bg-white"
+              onClick={() => setImageZoomed(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }; 

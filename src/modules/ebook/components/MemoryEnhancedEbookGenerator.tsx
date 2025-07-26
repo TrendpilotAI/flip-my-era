@@ -77,7 +77,7 @@ interface MemoryEnhancedEbookGeneratorProps {
   selectedTheme: string;
   selectedFormat: string;
   designSettings?: EbookDesignSettings;
-  onChaptersGenerated?: (chapters: Chapter[]) => void;
+  onChaptersGenerated?: (chapters: Chapter[], ebookId: string) => void;
   onError?: (error: string) => void;
   onProgress?: (progressData: any) => void;
   isGenerating?: boolean;
@@ -168,6 +168,7 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
       console.log('designSettings type:', typeof designSettings);
       console.log('designSettings is null:', designSettings === null);
       console.log('designSettings is undefined:', designSettings === undefined);
+      console.log('🔍 DEBUGGING: Generated ebook ID that should be passed to preview:', uniqueEbookGenerationId);
       
       // Start enhanced generation
       await memoryAI.generateEnhancedStory({
@@ -233,7 +234,10 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
           }));
           
           setChapters(formattedChapters);
-          onChaptersGenerated?.(formattedChapters);
+          onChaptersGenerated?.(formattedChapters, uniqueEbookGenerationId);
+          
+          console.log('🔍 DEBUGGING: Generation complete, ebook ID should be:', uniqueEbookGenerationId);
+          console.log('🔍 DEBUGGING: But this ID is NOT being passed back to EbookBuilder!');
           
           toast({
             title: "Generation Complete!",

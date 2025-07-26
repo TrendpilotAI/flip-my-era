@@ -16,11 +16,15 @@ export interface EbookData {
     imageUrl?: string;
   }>;
   images?: Array<{
-    chapter_id?: string;
-    type: 'cover' | 'chapter';
-    url: string;
+    imageUrl?: string;
+    url?: string; // Fallback for legacy or manual images
     prompt?: string;
-    generated_at?: string;
+    chapterNumber?: number;
+    chapterTitle?: string;
+    revisedPrompt?: string;
+    generatedAt?: string;
+    chapter_id?: string; // For manual images
+    type: 'cover' | 'chapter_illustration' | 'chapter';
   }>;
   created_at: string;
   updated_at: string;
@@ -44,11 +48,13 @@ export function useEbookData(ebookId: string | null): UseEbookDataResult {
 
   const fetchEbookData = async () => {
     if (!ebookId || !isAuthenticated) {
+      console.log('🔍 DEBUGGING: useEbookData - no ebookId or not authenticated:', { ebookId, isAuthenticated });
       setEbookData(null);
       setLoading(false);
       return;
     }
 
+    console.log('🔍 DEBUGGING: useEbookData - fetching data for ebookId:', ebookId);
     setLoading(true);
     setError(null);
 
@@ -90,12 +96,12 @@ export function useEbookData(ebookId: string | null): UseEbookDataResult {
 
       // Transform the data to match our interface
       const transformedData: EbookData = {
-        id: data.id,
-        title: data.title,
-        subtitle: data.subtitle,
-        author_name: data.author_name,
-        description: data.description,
-        cover_image_url: data.cover_image_url,
+        id: data.id as string,
+        title: data.title as string,
+        subtitle: data.subtitle as string | undefined,
+        author_name: data.author_name as string | undefined,
+        description: data.description as string | undefined,
+        cover_image_url: data.cover_image_url as string | undefined,
         chapters: Array.isArray(data.chapters) 
           ? data.chapters.map((chapter: any, index: number) => ({
               id: chapter.id || `chapter-${index}`,
@@ -105,11 +111,11 @@ export function useEbookData(ebookId: string | null): UseEbookDataResult {
             }))
           : [],
         images: Array.isArray(data.images) ? data.images : [],
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        status: data.status,
-        word_count: data.word_count,
-        chapter_count: data.chapter_count
+        created_at: data.created_at as string,
+        updated_at: data.updated_at as string,
+        status: data.status as string,
+        word_count: data.word_count as number | undefined,
+        chapter_count: data.chapter_count as number | undefined
       };
 
       setEbookData(transformedData);

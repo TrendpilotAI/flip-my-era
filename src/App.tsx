@@ -4,10 +4,13 @@ import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
 import { AdminRoute } from "@/modules/shared/components/AdminRoute";
+import { ThemeProvider } from "@/modules/shared/contexts/ThemeContext";
 import Index from "@/pages/Index";
 import About from "@/pages/About";
 import Ebook from "@/pages/Ebook";
 import EbookBuilder from "@/pages/EbookBuilder";
+import EbookViewer from "@/pages/EbookViewer";
+import StoryViewer from "@/pages/StoryViewer";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import Stories from "@/pages/Stories";
@@ -23,12 +26,16 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import AdminIntegrations from "@/pages/AdminIntegrations";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminCredits from "@/pages/AdminCredits";
+import { ImageLoadingTest } from "@/modules/ebook/components/ImageLoadingTest";
+import TestEbookPreview from "@/pages/TestEbookPreview";
+import Survey from "@/pages/Survey";
 
 function App() {
   return (
     <ClerkAuthProvider>
-      <Router>
-        <Layout>
+      <ThemeProvider>
+        <Router>
+          <Layout>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
@@ -38,6 +45,9 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/survey" element={<Survey />} />
+            <Route path="/test-images" element={<ImageLoadingTest />} />
+            <Route path="/test-ebook-preview" element={<TestEbookPreview />} />
             
             {/* Protected routes - New unified dashboard */}
             <Route 
@@ -45,6 +55,26 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Ebook Viewer */}
+            <Route 
+              path="/ebook/:id" 
+              element={
+                <ProtectedRoute>
+                  <EbookViewer />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Story Viewer */}
+            <Route 
+              path="/story/:id" 
+              element={
+                <ProtectedRoute>
+                  <StoryViewer />
                 </ProtectedRoute>
               } 
             />
@@ -109,7 +139,7 @@ function App() {
               } 
             />
             
-            {/* Checkout routes */}
+            {/* Stripe Checkout routes */}
             <Route 
               path="/checkout" 
               element={
@@ -145,12 +175,13 @@ function App() {
               } 
             />
             
-            {/* Catch-all route */}
+            {/* 404 Not Found - Must be last */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <Toaster />
         </Layout>
-        <Toaster />
       </Router>
+    </ThemeProvider>
     </ClerkAuthProvider>
   );
 }
