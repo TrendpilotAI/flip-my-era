@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Badge } from '@/modules/shared/components/ui/badge';
@@ -14,6 +14,7 @@ import { useEbookData } from '../hooks/useEbookData';
 import { generateImage } from '@/modules/story/services/ai';
 import { saveCoverImageToEbook, saveChapterImageToEbook, updateCoverImageUrl } from '../utils/imageStorage';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { 
   BookOpen, 
   Eye, 
@@ -52,6 +53,36 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
   const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
   const [showImageGeneration, setShowImageGeneration] = useState(false);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [imagesFromDb, setImagesFromDb] = useState<any[] | null>(null);
+  const [coverUrlFromDb, setCoverUrlFromDb] = useState<string | null>(null);
+
+  // Fetch images directly from Supabase using simple pattern
+  useEffect(() => {
+    if (!ebookId || !isAuthenticated) return;
+    
+    const fetchImages = async () => {
+      try {
+        const token = await getToken({ template: 'supabase' });
+        if (!token) return;
+        
+        const supabase = createSupabaseClientWithClerkToken(token);
+        const { data, error } = await supabase
+          .from('ebook_generations')
+          .select('images, cover_image_url')
+          .eq('id', ebookId)
+          .single();
+          
+        if (!error && data) {
+          setImagesFromDb(Array.isArray(data.images) ? data.images : []);
+          setCoverUrlFromDb(typeof data.cover_image_url === 'string' ? data.cover_image_url : null);
+        }
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      }
+    };
+    
+    fetchImages();
+  }, [ebookId, isAuthenticated, getToken]);
 
   const handleCoverImageGenerated = async (imageUrl: string, prompt: string) => {
     // Save generated cover image to database
@@ -144,10 +175,57 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
     );
   }
 
-  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData:', ebookData);
-  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData.images:', ebookData.images);
-  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData.cover_image_url:', ebookData.cover_image_url);
-  console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData.chapters:', ebookData.chapters);
+  // Simple image display components following React pattern
+  const CoverImage = ({ title, imageUrl }: { title: string; imageUrl?: string }) => {
+    if (!imageUrl) {
+      return (
+        <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-dashed border-purple-300 rounded-lg p-8 max-w-md mx-auto">
+          <ImageIcon className="w-12 h-12 text-purple-400 mx-auto mb-2" />
+          <p className="text-purple-600 font-medium mb-2">No cover image generated yet</p>
+          <p className="text-sm text-purple-500">Use the "Show Image Tools" button to generate a cover image</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="mb-8">
+        <img
+          src={imageUrl}
+          alt={`Cover for ${title}`}
+          className="max-w-md mx-auto rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+          onClick={() => handleImageZoom(imageUrl)}
+        />
+      </div>
+    );
+  };
+
+  const ChapterImage = ({ title, imageUrl }: { title: string; imageUrl?: string }) => {
+    if (!imageUrl) {
+      return (
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 text-center">
+          <ImageIcon className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+          <p className="text-blue-600 text-sm font-medium mb-1">No illustration generated for this chapter yet</p>
+          <p className="text-xs text-blue-500">Use "Show Image Tools" to generate chapter illustrations</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="mb-8">
+        <img
+          src={imageUrl}
+          alt={`Illustration for ${title}`}
+          className="max-w-lg mx-auto rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+          onClick={() => handleImageZoom(imageUrl)}
+        />
+      </div>
+    );
+  };
+
+  // Debug logs can be enabled by uncommenting these lines
+  // console.log('🔍 DEBUGGING: EbookPublishPreview - ebookData:', ebookData);
+  // console.log('🔍 DEBUGGING: EbookPublishPreview - imagesFromDb:', imagesFromDb);
+  // console.log('🔍 DEBUGGING: EbookPublishPreview - coverUrlFromDb:', coverUrlFromDb);
 
   // Helper function to extract image URL from any image object
   const extractImageUrl = (imageObj: any): string | undefined => {
@@ -157,27 +235,31 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
   };
 
   // Update the image handling logic to support streaming-generated and manual images
+  const imagesToUse = imagesFromDb ?? ebookData.images;
+  // Debug: Images to use
+  // console.log('🔍 DEBUGGING: EbookPublishPreview - Images to use:', { imagesToUse, imagesToUseLength: imagesToUse?.length });
+  
   const chaptersWithImages = ebookData.chapters.map((chapter, index) => {
     // Find streaming-generated image by chapterNumber
-    const streamingImage = ebookData.images?.find(
+    const streamingImage = imagesToUse?.find(
       img => img.chapterNumber === index + 1 && img.type === 'chapter_illustration'
     );
     // Find manually-generated image by chapter_id
-    const manualImage = ebookData.images?.find(
+    const manualImage = imagesToUse?.find(
       img => (img as any).chapter_id === chapter.id && img.type === 'chapter'
     );
     // Also check for any image with matching chapter number (fallback)
-    const fallbackImage = ebookData.images?.find(
+    const fallbackImage = imagesToUse?.find(
       img => (img as any).chapterNumber === index + 1
     );
     // Check for any image that might be associated with this chapter
-    const anyChapterImage = ebookData.images?.find(
+    const anyChapterImage = imagesToUse?.find(
       img => img.type === 'chapter' || img.type === 'chapter_illustration'
     );
     
     // More robust image matching
     // Try to find any image that could be associated with this chapter
-    const chapterImage = ebookData.images?.find(img => {
+    const chapterImage = imagesToUse?.find(img => {
       // Check if it's a chapter image (updated to include 'chapter_illustration' type)
       if (img.type !== 'chapter' && img.type !== 'chapter_illustration') {
         return false;
@@ -192,14 +274,14 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
         // Chapter title match (case insensitive)
         (img.chapterTitle && img.chapterTitle.toLowerCase() === chapter.title.toLowerCase()) ||
         // Fallback: any chapter image if this is the first chapter and no other chapter has an image
-        (index === 0 && !ebookData.images?.some(otherImg => 
+        (index === 0 && !imagesToUse?.some(otherImg => 
           (otherImg.type === 'chapter' || otherImg.type === 'chapter_illustration') && otherImg !== img
         ))
       );
     });
     
     // Also try to find any image by chapter number as a fallback
-    const chapterImageByNumber = ebookData.images?.find(img => 
+    const chapterImageByNumber = imagesToUse?.find(img => 
       (img.type === 'chapter' || img.type === 'chapter_illustration') && img.chapterNumber === index + 1
     );
     
@@ -219,8 +301,12 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
   });
 
   // Get cover image from cover_image_url field first, then from images array
-  const coverImage = ebookData.cover_image_url || 
-    extractImageUrl(ebookData.images?.find(img => img.type === 'cover'));
+  const coverImageFromUrl = coverUrlFromDb || ebookData.cover_image_url;
+  const coverImageFromArray = extractImageUrl((imagesFromDb ?? ebookData.images)?.find(img => img.type === 'cover'));
+  const coverImage = coverImageFromUrl || coverImageFromArray;
+  
+  // Debug: Cover image resolution
+  // console.log('🔍 DEBUGGING: EbookPublishPreview - Cover image resolution:', { finalCoverImage: coverImage });
 
   const totalPages = chaptersWithImages.length + 1; // +1 for cover
 
@@ -256,12 +342,12 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
             {showDebugInfo ? 'Hide' : 'Show'} Debug Info
           </Button>
           <Button
-            variant="outline"
+            variant={showImageGeneration ? "outline" : "default"}
             onClick={() => setShowImageGeneration(!showImageGeneration)}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${!showImageGeneration && (coverImage || chaptersWithImages.some(ch => ch.imageUrl)) ? '' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}
           >
-            <Settings className="w-4 h-4" />
-            {showImageGeneration ? 'Hide' : 'Show'} Image Tools
+            <Wand2 className="w-4 h-4" />
+            {showImageGeneration ? 'Hide' : 'Generate'} Images
           </Button>
           <Button onClick={handleDownload} className="flex items-center gap-2">
             <Download className="w-4 h-4" />
@@ -313,16 +399,7 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
                 {currentPage === 0 ? (
                   // Cover Page
                   <div className="text-center space-y-6">
-                    {coverImage && (
-                      <div className="mb-8">
-                        <img
-                          src={coverImage}
-                          alt="Book Cover"
-                          className="max-w-md mx-auto rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
-                          onClick={() => handleImageZoom(coverImage)}
-                        />
-                      </div>
-                    )}
+                    <CoverImage title={ebookData.title} imageUrl={coverImage} />
                     
                     <div className="space-y-4">
                       <h1 className="text-4xl font-bold text-gray-900">{ebookData.title}</h1>
@@ -338,13 +415,6 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
                         </p>
                       )}
                     </div>
-                    
-                    {!coverImage && (
-                      <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 max-w-md mx-auto">
-                        <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500">No cover image generated yet</p>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   // Chapter Page
@@ -359,16 +429,7 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
                             {chapter.title}
                           </h2>
                           
-                          {chapter.imageUrl && (
-                            <div className="mb-8">
-                              <img
-                                src={chapter.imageUrl}
-                                alt={`Illustration for ${chapter.title}`}
-                                className="max-w-lg mx-auto rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
-                                onClick={() => handleImageZoom(chapter.imageUrl!)}
-                              />
-                            </div>
-                          )}
+                          <ChapterImage title={chapter.title} imageUrl={chapter.imageUrl} />
                         </div>
                         
                         <div className="prose prose-lg max-w-none">
@@ -378,13 +439,6 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
                             </p>
                           ))}
                         </div>
-                        
-                        {!chapter.imageUrl && (
-                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-                            <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-gray-500 text-sm">No illustration generated for this chapter yet</p>
-                          </div>
-                        )}
                       </div>
                     );
                   })()
@@ -486,10 +540,14 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h4 className="font-medium text-yellow-900 mb-2">Raw Ebook Data:</h4>
-                <pre className="bg-white p-3 rounded border text-xs overflow-auto max-h-40">
-                  {JSON.stringify(ebookData, null, 2)}
-                </pre>
+                <h4 className="font-medium text-yellow-900 mb-2">Ebook Status:</h4>
+                <div className="bg-white p-3 rounded border text-sm">
+                  <p><strong>Title:</strong> {ebookData.title}</p>
+                  <p><strong>Status:</strong> {ebookData.status}</p>
+                  <p><strong>Chapters:</strong> {ebookData.chapters.length}</p>
+                  <p><strong>Images Generated:</strong> {ebookData.images.length}</p>
+                  <p><strong>Cover Image:</strong> {ebookData.cover_image_url ? 'Yes' : 'No'}</p>
+                </div>
               </div>
               
               <div>
@@ -500,19 +558,12 @@ export const EbookPublishPreview: React.FC<EbookPublishPreviewProps> = ({
               </div>
               
               <div>
-                <h4 className="font-medium text-yellow-900 mb-2">Cover Image URL:</h4>
-                <p className="bg-white p-3 rounded border text-sm break-all">
-                  {ebookData.cover_image_url || 'No cover image URL found'}
-                </p>
-              </div>
-              
-              <div>
                 <h4 className="font-medium text-yellow-900 mb-2">Chapters with Images:</h4>
                 <pre className="bg-white p-3 rounded border text-xs overflow-auto max-h-40">
                   {JSON.stringify(chaptersWithImages.map(ch => ({
                     title: ch.title,
-                    imageUrl: ch.imageUrl,
-                    id: ch.id
+                    hasImage: !!ch.imageUrl,
+                    imageUrl: ch.imageUrl
                   })), null, 2)}
                 </pre>
               </div>

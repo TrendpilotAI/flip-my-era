@@ -48,13 +48,11 @@ export function useEbookData(ebookId: string | null): UseEbookDataResult {
 
   const fetchEbookData = async () => {
     if (!ebookId || !isAuthenticated) {
-      console.log('🔍 DEBUGGING: useEbookData - no ebookId or not authenticated:', { ebookId, isAuthenticated });
       setEbookData(null);
       setLoading(false);
       return;
     }
 
-    console.log('🔍 DEBUGGING: useEbookData - fetching data for ebookId:', ebookId);
     setLoading(true);
     setError(null);
 
@@ -102,7 +100,7 @@ export function useEbookData(ebookId: string | null): UseEbookDataResult {
         author_name: data.author_name as string | undefined,
         description: data.description as string | undefined,
         cover_image_url: data.cover_image_url as string | undefined,
-        chapters: Array.isArray(data.chapters) 
+        chapters: Array.isArray(data.chapters)
           ? data.chapters.map((chapter: any, index: number) => ({
               id: chapter.id || `chapter-${index}`,
               title: chapter.title || `Chapter ${index + 1}`,
