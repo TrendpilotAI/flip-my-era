@@ -398,12 +398,47 @@ const EbookBuilder = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="design">Design</TabsTrigger>
-            <TabsTrigger value="editor">Editor</TabsTrigger>
-            <TabsTrigger value="images">Images</TabsTrigger>
-            <TabsTrigger value="publish">Publish</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger 
+              value="overview" 
+              className={`data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-md data-[state=active]:font-semibold transition-all duration-200 ${
+                activeTab === 'overview' ? 'bg-white text-purple-600 shadow-md font-semibold' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="design" 
+              className={`data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-md data-[state=active]:font-semibold transition-all duration-200 ${
+                activeTab === 'design' ? 'bg-white text-purple-600 shadow-md font-semibold' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Design
+            </TabsTrigger>
+            <TabsTrigger 
+              value="editor" 
+              className={`data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-md data-[state=active]:font-semibold transition-all duration-200 ${
+                activeTab === 'editor' ? 'bg-white text-purple-600 shadow-md font-semibold' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Editor
+            </TabsTrigger>
+            <TabsTrigger 
+              value="images" 
+              className={`data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-md data-[state=active]:font-semibold transition-all duration-200 ${
+                activeTab === 'images' ? 'bg-white text-purple-600 shadow-md font-semibold' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Images
+            </TabsTrigger>
+            <TabsTrigger 
+              value="publish" 
+              className={`data-[state=active]:bg-white data-[state=active]:text-purple-600 data-[state=active]:shadow-md data-[state=active]:font-semibold transition-all duration-200 ${
+                activeTab === 'publish' ? 'bg-white text-purple-600 shadow-md font-semibold' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              Publish
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -483,10 +518,7 @@ const EbookBuilder = () => {
 
                   <Button 
                     onClick={handleCreateProject}
-                    className="w-full text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`,
-                    }}
+                    className="w-full text-white bg-purple-600 hover:bg-purple-700 border-0 shadow-lg"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = '0.9';
                     }}
@@ -791,10 +823,7 @@ const EbookBuilder = () => {
                     <div className="pt-6 border-t">
                       <Button 
                         onClick={() => setActiveTab("editor")}
-                        className="w-full text-white"
-                        style={{
-                          background: `linear-gradient(135deg, ${currentTheme.colors.primary}, ${currentTheme.colors.secondary})`
-                        }}
+                        className="w-full text-white bg-purple-600 hover:bg-purple-700 border-0 shadow-lg"
                       >
                         <Edit className="h-4 w-4 mr-2" />
                         Continue to Content Generation
@@ -865,7 +894,10 @@ const EbookBuilder = () => {
                   <Palette className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
                   <p className="text-gray-500 mb-4">Create a new ebook project to start customizing design</p>
-                  <Button onClick={() => setActiveTab("overview")}>
+                  <Button 
+                    onClick={() => setActiveTab("overview")}
+                    className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg"
+                  >
                     Create New Project
                   </Button>
                 </CardContent>
@@ -929,7 +961,10 @@ const EbookBuilder = () => {
                   <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
                   <p className="text-gray-500 mb-4">Create a new ebook project to start editing</p>
-                  <Button onClick={() => setActiveTab("overview")}>
+                  <Button 
+                    onClick={() => setActiveTab("overview")}
+                    className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg"
+                  >
                     Create New Project
                   </Button>
                 </CardContent>
@@ -1059,7 +1094,10 @@ const EbookBuilder = () => {
                   <Image className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
                   <p className="text-gray-500 mb-4">Create a new ebook project to generate images</p>
-                  <Button onClick={() => setActiveTab("overview")}>
+                  <Button 
+                    onClick={() => setActiveTab("overview")}
+                    className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg"
+                  >
                     Create New Project
                   </Button>
                 </CardContent>
@@ -1160,7 +1198,10 @@ const EbookBuilder = () => {
                   <BookOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No Project Selected</h3>
                   <p className="text-gray-500 mb-4">Create a new ebook project to start publishing</p>
-                  <Button onClick={() => setActiveTab("overview")}>
+                  <Button 
+                    onClick={() => setActiveTab("overview")}
+                    className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg"
+                  >
                     Create New Project
                   </Button>
                 </CardContent>

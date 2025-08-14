@@ -525,7 +525,7 @@ export const MemoryEnhancedEbookGenerator: React.FC<MemoryEnhancedEbookGenerator
             onClick={handleGenerateWithMemory}
             disabled={isGenerating || !originalStory.trim()}
             size="lg"
-            className="px-8"
+            className="px-8 bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg"
           >
             {isGenerating ? (
               <>
