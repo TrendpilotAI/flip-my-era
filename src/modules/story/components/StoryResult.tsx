@@ -58,6 +58,7 @@ export const StoryResult = ({
 
     let computedTitle = 'Untitled Story';
     let contentStartLine = 0;
+    let derivedFromFirstSentence = false;
 
     // Find first non-empty line
     let i = 0;
@@ -78,14 +79,24 @@ export const StoryResult = ({
         const remainder = nonEmptyLines.slice(i).join('\n');
         const firstSentence = remainder.split(/(?<=[.!?])\s+/)[0];
         computedTitle = firstSentence.length > 90 ? `${firstSentence.slice(0, 90)}...` : firstSentence;
-        contentStartLine = i; // keep full content
+        contentStartLine = i; // start from same place, but we'll remove the first sentence below
+        derivedFromFirstSentence = true;
       }
     }
 
-    // Build content from contentStartLine to end, collapse extra blank lines, and remove heading markers
-    const rebuilt = allLines
-      .slice(contentStartLine)
-      .join('\n')
+    // Build content from contentStartLine to end
+    let rebuilt = allLines.slice(contentStartLine).join('\n');
+
+    // If we derived the title from the first sentence, remove that sentence from the content
+    if (derivedFromFirstSentence) {
+      const match = rebuilt.match(/^(.*?[.!?])(\s+|$)/s);
+      if (match) {
+        rebuilt = rebuilt.slice(match[0].length);
+      }
+    }
+
+    // Cleanup: remove heading markers and collapse extra blank lines
+    rebuilt = rebuilt
       .replace(/^#{1,6}\s+/gm, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
@@ -180,7 +191,7 @@ export const StoryResult = ({
       {/* Title */}
       <div className="text-center mb-8">
         <h1 
-          className="text-3xl md:text-5xl font-extrabold tracking-tight mb-2"
+          className="story-title text-3xl md:text-5xl font-extrabold tracking-tight mb-2"
           style={{ color: currentTheme.colors?.foreground || '#111827' }}
         >
           {title}
@@ -188,7 +199,7 @@ export const StoryResult = ({
       </div>
 
       {/* Story Content - enforce smaller paragraph typography regardless of parent */}
-      <div className="max-w-none mb-8">
+      <div className="story-content max-w-none mb-8">
         <ReactMarkdown
           components={{
             p: ({ children }) => (

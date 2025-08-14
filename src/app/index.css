@@ -451,3 +451,20 @@
   color: var(--drop-cap-color, #1e40af);
 }
 
+/* Story display specific typography */
+.story-title {
+  line-height: 1.15;
+}
+
+.story-content p {
+  font-size: 1rem; /* base on mobile */
+  line-height: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .story-content p {
+    font-size: 1.125rem; /* smaller than title */
+    line-height: 2rem;
+  }
+}
+
