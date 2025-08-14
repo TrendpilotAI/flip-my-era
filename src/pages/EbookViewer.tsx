@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEbookData } from '@/modules/ebook/hooks/useEbookData';
 import { BookReader } from '@/modules/ebook/components/BookReader';
 import { Button } from '@/modules/shared/components/ui/button';
+import { useTheme } from '@/modules/shared/contexts/ThemeContext';
+import { useThemeColors } from '@/modules/shared/utils/themeUtils';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/modules/shared/components/ui/card';
 
@@ -10,13 +12,18 @@ const EbookViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { ebookData, loading, error } = useEbookData(id || null);
+  const { currentTheme } = useTheme();
+  const themeColors = useThemeColors();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: currentTheme.images.backgroundPattern }}
+      >
         <Card className="p-8">
           <CardContent className="flex flex-col items-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: themeColors.primary }} />
             <p className="text-gray-600">Loading your ebook...</p>
           </CardContent>
         </Card>
@@ -26,7 +33,10 @@ const EbookViewer: React.FC = () => {
 
   if (error || !ebookData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 px-4">
+      <div 
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: currentTheme.images.backgroundPattern }}
+      >
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Ebook Not Found</h2>
@@ -44,7 +54,8 @@ const EbookViewer: React.FC = () => {
               </Button>
               <Button
                 onClick={() => navigate('/dashboard')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="text-white"
+                style={{ background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
               >
                 Return to Dashboard
               </Button>
@@ -73,11 +84,11 @@ const EbookViewer: React.FC = () => {
           fontSize: 16,
           lineHeight: 1.6,
           letterSpacing: 0,
-          textColor: '#1f2937',
-          chapterHeadingColor: '#7c3aed',
-          backgroundColor: '#ffffff',
-          pageBackgroundColor: '#f9fafb',
-          accentColor: '#7c3aed'
+          textColor: currentTheme.colors.foreground,
+          chapterHeadingColor: currentTheme.colors.primary,
+          backgroundColor: currentTheme.colors.background,
+          pageBackgroundColor: currentTheme.colors.card,
+          accentColor: currentTheme.colors.primary
         }}
         onClose={() => navigate('/past-generations')}
         initialChapter={0}

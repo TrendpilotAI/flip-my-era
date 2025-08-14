@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button';
 import { artistOptions, artistThemes } from '@/modules/shared/types/artist-themes';
 import { Music, ChevronRight, Sparkles } from 'lucide-react';
+import { useThemeColors } from '@/modules/shared/utils/themeUtils';
 
 interface ArtistSurveyProps {
   onArtistSelect: (artistId: string) => void;
@@ -10,6 +11,7 @@ interface ArtistSurveyProps {
 
 export const ArtistSurvey = ({ onArtistSelect }: ArtistSurveyProps) => {
   const [selectedArtist, setSelectedArtist] = useState<string>('');
+  const themeColors = useThemeColors();
 
   const handleArtistClick = (artistId: string) => {
     setSelectedArtist(artistId);
@@ -31,16 +33,22 @@ export const ArtistSurvey = ({ onArtistSelect }: ArtistSurveyProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4 flex items-center justify-center">
+    <div 
+      className="min-h-screen py-12 px-4 flex items-center justify-center"
+      style={{ background: themeColors.getBackgroundPattern() }}
+    >
       <div className="max-w-4xl mx-auto w-full">
-        <Card className="bg-white/90 backdrop-blur-lg border border-purple-200 shadow-2xl">
+        <Card className="bg-white/90 backdrop-blur-lg border shadow-2xl" style={{ borderColor: themeColors.border }}>
           <CardHeader className="text-center pb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <Music className="h-8 w-8 text-purple-500" />
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <Music className="h-8 w-8" style={{ color: themeColors.primary }} />
+              <CardTitle 
+                className="text-3xl font-bold bg-clip-text text-transparent"
+                style={{ background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
+              >
                 Choose Your Musical Inspiration
               </CardTitle>
-              <Music className="h-8 w-8 text-purple-500" />
+              <Music className="h-8 w-8" style={{ color: themeColors.primary }} />
             </div>
             <CardDescription className="text-lg text-gray-600 max-w-2xl mx-auto">
               Select your favorite artist or band to personalize your FlipMyEra experience. 
@@ -58,14 +66,15 @@ export const ArtistSurvey = ({ onArtistSelect }: ArtistSurveyProps) => {
                   <div
                     key={artist.id}
                     className={`relative cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-                      isSelected ? 'scale-105 ring-4 ring-purple-400 ring-opacity-50' : ''
+                      isSelected ? 'scale-105 ring-4 ring-opacity-50' : ''
                     }`}
+                    style={isSelected ? { '--tw-ring-color': theme.colors.primary } as React.CSSProperties : {}}
                     onClick={() => handleArtistClick(artist.id)}
                   >
                     <Card 
                       className={`h-full border-2 transition-all duration-300 ${
                         isSelected 
-                          ? 'border-purple-500 shadow-lg' 
+                          ? 'shadow-lg' 
                           : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                       }`}
                       style={isSelected ? getArtistCardColors(artist.id) : undefined}
@@ -86,7 +95,7 @@ export const ArtistSurvey = ({ onArtistSelect }: ArtistSurveyProps) => {
                         
                         {isSelected && (
                           <div className="mt-4 flex items-center justify-center">
-                            <Sparkles className="h-5 w-5 text-purple-500" />
+                            <Sparkles className="h-5 w-5" style={{ color: theme.colors.primary }} />
                           </div>
                         )}
                       </CardContent>
@@ -102,9 +111,12 @@ export const ArtistSurvey = ({ onArtistSelect }: ArtistSurveyProps) => {
                 disabled={!selectedArtist}
                 className={`px-8 py-3 text-lg font-semibold transition-all duration-300 ${
                   selectedArtist
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                    ? 'text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
+                style={selectedArtist ? {
+                  background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`
+                } : {}}
               >
                 Continue to Your Personalized Experience
                 <ChevronRight className="h-5 w-5 ml-2" />
@@ -112,7 +124,7 @@ export const ArtistSurvey = ({ onArtistSelect }: ArtistSurveyProps) => {
               
               {selectedArtist && (
                 <p className="mt-3 text-sm text-gray-600">
-                  Great choice! You've selected <span className="font-semibold text-purple-600">
+                  Great choice! You've selected <span className="font-semibold" style={{ color: themeColors.primary }}>
                     {artistThemes[selectedArtist].name}
                   </span>
                 </p>

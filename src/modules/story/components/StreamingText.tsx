@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from '@/core/lib/utils';
+import { useThemeColors } from '@/modules/shared/utils/themeUtils';
 
 interface StreamingTextProps {
   text: string;
@@ -20,6 +21,7 @@ export const StreamingText = ({
 }: StreamingTextProps) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
+  const themeColors = useThemeColors();
 
   useEffect(() => {
     if (!text) return;
@@ -78,7 +80,7 @@ export const StreamingText = ({
       <span className="whitespace-pre-wrap">
         {displayedText}
         {!isComplete && (
-          <span className="animate-pulse text-purple-500">|</span>
+          <span className="animate-pulse" style={{ color: themeColors.primary }}>|</span>
         )}
       </span>
     </div>

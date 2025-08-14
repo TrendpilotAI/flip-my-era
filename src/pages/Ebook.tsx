@@ -2,19 +2,27 @@ import { SparkleEffect } from "@/modules/shared/components/SparkleEffect";
 import { BackgroundImages } from "@/modules/shared/components/BackgroundImages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
-import { Sparkles, BookOpen, Download, Share2, Star, Zap, Heart } from "lucide-react";
+import { Sparkles, BookOpen, Download, Share2, Star, Zap, Heart, ArrowRight } from "lucide-react";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { CreditBasedEbookGenerator } from '@/modules/ebook/components/CreditBasedEbookGenerator';
 import { createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { useToast } from '@/modules/shared/hooks/use-toast';
+import { useTheme } from '@/modules/shared/contexts/ThemeContext';
+import { useThemeColors } from '@/modules/shared/utils/themeUtils';
+import { Link } from 'react-router-dom';
 
 const Ebook = () => {
   const { isAuthenticated, user, getToken } = useClerkAuth();
   const { toast } = useToast();
+  const { currentTheme } = useTheme();
+  const themeColors = useThemeColors();
 
   return (
-    <div className="min-h-screen bg-white py-12 px-4 relative overflow-hidden">
+    <div 
+      className="min-h-screen py-12 px-4 relative overflow-hidden"
+      style={{ backgroundColor: currentTheme.colors.background }}
+    >
       <SparkleEffect />
       <BackgroundImages />
 
@@ -22,11 +30,14 @@ const Ebook = () => {
         {/* Hero Section */}
         <div className="text-center space-y-6">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="h-8 w-8 text-purple-500" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <Sparkles className="h-8 w-8" style={{ color: themeColors.primary }} />
+            <h1 
+              className="text-4xl font-bold bg-clip-text text-transparent"
+              style={{ background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
+            >
               Create Your Ebook
             </h1>
-            <Sparkles className="h-8 w-8 text-purple-500" />
+            <Sparkles className="h-8 w-8" style={{ color: themeColors.primary }} />
           </div>
           <p className="text-xl text-gray-700 max-w-2xl mx-auto">
             Transform your stories into beautiful, downloadable ebooks with AI-generated illustrations and chapters.
@@ -37,8 +48,11 @@ const Ebook = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BookOpen className="h-6 w-6 text-purple-600" />
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ backgroundColor: `${themeColors.primary}20` }}
+              >
+                <BookOpen className="h-6 w-6" style={{ color: themeColors.primary }} />
               </div>
               <CardTitle className="text-lg font-semibold">Multi-Chapter Books</CardTitle>
               <CardDescription>
@@ -49,8 +63,8 @@ const Ebook = () => {
 
           <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Sparkles className="h-6 w-6 text-gray-600" />
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-6 w-6 text-gray-600" />
               </div>
               <CardTitle className="text-lg font-semibold">AI Illustrations</CardTitle>
               <CardDescription>
@@ -117,40 +131,25 @@ const Ebook = () => {
                       if (error) {
                         console.error('Error saving ebook:', error);
                         toast({
-                          title: "Save Failed",
-                          description: "Ebook generated but couldn't be saved to your library.",
+                          title: "Error",
+                          description: "Failed to save your ebook. Please try again.",
                           variant: "destructive",
                         });
                       } else {
-                        console.log('Successfully saved ebook:', ebookGeneration);
                         toast({
-                          title: "Ebook Saved!",
-                          description: `Successfully created and saved ${chapters.length} chapters.`,
+                          title: "Success!",
+                          description: "Your ebook has been saved to your dashboard.",
                         });
                       }
-                    } else {
-                      toast({
-                        title: "Authentication Required",
-                        description: "Please sign in to save your generated ebooks.",
-                        variant: "destructive",
-                      });
                     }
-                  } catch (dbError) {
-                    console.error('Database save error:', dbError);
+                  } catch (error) {
+                    console.error('Error saving ebook:', error);
                     toast({
-                      title: "Save Error",
-                      description: "Ebook generated but couldn't be saved. Please try again.",
+                      title: "Error",
+                      description: "Failed to save your ebook. Please try again.",
                       variant: "destructive",
                     });
                   }
-                }}
-                onError={(error) => {
-                  console.error('Generation error:', error);
-                  toast({
-                    title: "Generation Failed",
-                    description: error,
-                    variant: "destructive",
-                  });
                 }}
               />
             </CardContent>
@@ -159,21 +158,40 @@ const Ebook = () => {
           <Card className="bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
-                Sign In to Create Ebooks
+                Sign Up to Create Ebooks
               </CardTitle>
               <CardDescription className="text-lg text-gray-600">
-                Join our community to start creating beautiful ebooks with AI assistance
+                Join thousands of users creating beautiful ebooks with AI assistance
               </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
-              <AuthDialog
-                trigger={
-                  <Button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 font-semibold px-8 py-3">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Sign In to Start Creating
-                  </Button>
-                }
-              />
+            <CardContent className="text-center space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center gap-2 justify-center">
+                  <BookOpen className="h-4 w-4" style={{ color: themeColors.primary }} />
+                  <span>Unlimited ebooks</span>
+                </div>
+                <div className="flex items-center gap-2 justify-center">
+                  <Sparkles className="h-4 w-4 text-gray-500" />
+                  <span>AI illustrations</span>
+                </div>
+                <div className="flex items-center gap-2 justify-center">
+                  <Download className="h-4 w-4 text-blue-500" />
+                  <span>Multiple formats</span>
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <AuthDialog
+                  trigger={
+                    <Button 
+                      className="text-white font-semibold px-8 py-3"
+                      style={{ background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Get Started - It's Free!
+                    </Button>
+                  }
+                />
+              </div>
             </CardContent>
           </Card>
         )}
@@ -264,34 +282,56 @@ const Ebook = () => {
           </CardContent>
         </Card>
 
-        {/* CTA Section */}
-        <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold mb-2">
+        {/* Call to Action */}
+        <Card className="text-center p-8">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-gray-900 mb-4">
               Ready to Create Your First Ebook?
             </CardTitle>
-            <CardDescription className="text-purple-100">
-              Join thousands of authors creating beautiful ebooks with AI assistance
+            <CardDescription className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Transform your stories into beautiful, downloadable books with AI assistance
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            {isAuthenticated ? (
-              <Button 
-                onClick={() => window.location.href = '/ebook-builder'}
-                className="bg-white text-purple-600 hover:bg-gray-100 font-semibold px-8 py-3"
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Start Creating Now
-              </Button>
+          <CardContent className="space-y-4">
+            {!isAuthenticated ? (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <AuthDialog
+                  trigger={
+                    <Button 
+                      className="text-white px-8 py-3 text-lg"
+                      style={{ background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
+                    >
+                      <Sparkles className="h-5 w-5 mr-2" />
+                      Start Creating - It's Free!
+                    </Button>
+                  }
+                />
+                <Button variant="outline" className="px-8 py-3 text-lg" asChild>
+                  <Link to="/about">
+                    Learn More
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
             ) : (
-              <AuthDialog
-                trigger={
-                  <Button className="bg-white text-purple-600 hover:bg-gray-100 font-semibold px-8 py-3">
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Get Started - It's Free!
-                  </Button>
-                }
-              />
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  className="text-white px-8 py-3 text-lg"
+                  style={{ background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
+                  asChild
+                >
+                  <Link to="/ebook-builder">
+                    <BookOpen className="h-5 w-5 mr-2" />
+                    Create Your Ebook
+                  </Link>
+                </Button>
+                <Button variant="outline" className="px-8 py-3 text-lg" asChild>
+                  <Link to="/dashboard">
+                    View Dashboard
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

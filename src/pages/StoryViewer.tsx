@@ -1,27 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
-import { getStoryById } from '@/modules/story/utils/storyPersistence';
-import { StoryResult } from '@/modules/story/components/StoryResult';
-import { Button } from '@/modules/shared/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/modules/shared/components/ui/card';
+import { Button } from '@/modules/shared/components/ui/button';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useTheme } from '@/modules/shared/contexts/ThemeContext';
+import { useThemeColors } from '@/modules/shared/utils/themeUtils';
+import { StoryResult } from '@/modules/story/components/StoryResult';
+import { getStoryById } from '@/modules/story/utils/storyPersistence';
+import { Story } from '@/modules/story/types/story';
+import { Loader2, ArrowLeft } from 'lucide-react';
 
-interface Story {
-  id: string;
-  title?: string;
-  name: string;
-  birth_date: string;
-  initial_story: string;
-  created_at: string;
-  personality_type?: string;
-  location?: string;
-}
-
-const StoryViewer: React.FC = () => {
+const StoryViewer = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getToken } = useClerkAuth();
+  const { currentTheme } = useTheme();
+  const themeColors = useThemeColors();
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,10 +51,13 @@ const StoryViewer: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div 
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: currentTheme.images.backgroundPattern }}
+      >
         <Card className="p-8">
           <CardContent className="flex flex-col items-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <Loader2 className="h-8 w-8 animate-spin" style={{ color: themeColors.primary }} />
             <p className="text-gray-600">Loading your story...</p>
           </CardContent>
         </Card>
@@ -70,7 +67,10 @@ const StoryViewer: React.FC = () => {
 
   if (error || !story) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 px-4">
+      <div 
+        className="min-h-screen flex items-center justify-center px-4"
+        style={{ background: currentTheme.images.backgroundPattern }}
+      >
         <Card className="max-w-md w-full">
           <CardContent className="p-8 text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Story Not Found</h2>
@@ -88,7 +88,8 @@ const StoryViewer: React.FC = () => {
               </Button>
               <Button
                 onClick={() => navigate('/dashboard')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="text-white"
+                style={{ background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})` }}
               >
                 Return to Dashboard
               </Button>
@@ -100,12 +101,19 @@ const StoryViewer: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12 px-4">
+    <div 
+      className="min-h-screen py-12 px-4"
+      style={{ background: currentTheme.images.backgroundPattern }}
+    >
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
         <Button
           variant="ghost"
-          className="mb-6 text-purple-700 hover:bg-purple-100"
+          className="mb-6 hover:bg-opacity-20"
+          style={{ 
+            color: themeColors.primary,
+            '--tw-bg-opacity': '0.1'
+          } as React.CSSProperties}
           onClick={() => navigate('/past-generations')}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />

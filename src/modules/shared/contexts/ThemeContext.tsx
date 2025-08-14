@@ -12,7 +12,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = 'flipmyera-artist-theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentTheme, setCurrentTheme] = useState<ArtistTheme>(artistThemes['taylor-swift']); // Default theme
+  const [currentTheme, setCurrentTheme] = useState<ArtistTheme>(artistThemes['the-beatles']); // Default theme - changed from taylor-swift
   const [isThemeSet, setIsThemeSet] = useState(false);
 
   // Load theme from localStorage on mount

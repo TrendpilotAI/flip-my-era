@@ -126,7 +126,7 @@ export const artistThemes: Record<string, ArtistTheme> = {
     name: 'Taylor Swift',
     colors: {
       primary: '#a855f7', // purple-500
-      secondary: '#ec4899', // pink-500
+      secondary: '#7c3aed', // purple-600 (changed from pink)
       accent: '#fbbf24', // yellow-400
       background: '#fdf4ff', // purple-50
       foreground: '#581c87', // purple-900
@@ -141,13 +141,13 @@ export const artistThemes: Record<string, ArtistTheme> = {
       destructiveForeground: '#ffffff',
     },
     gradients: {
-      hero: 'from-purple-500 to-pink-500',
+      hero: 'from-purple-500 to-purple-600', // changed from pink
       button: 'from-purple-500 to-purple-700',
-      card: 'from-purple-50 to-pink-50',
+      card: 'from-purple-50 to-purple-100', // changed from pink
     },
     images: {
-      backgroundPattern: 'radial-gradient(circle at 25% 25%, #a855f7 0%, transparent 50%), radial-gradient(circle at 75% 75%, #ec4899 0%, transparent 50%)',
-      heroBackground: 'linear-gradient(135deg, #a855f7, #ec4899), url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Cpath d="M30 0c16.569 0 30 13.431 30 30s-13.431 30-30 30S0 46.569 0 30 13.431 0 30 0zm0 6c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24S43.255 6 30 6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      backgroundPattern: 'radial-gradient(circle at 25% 25%, #a855f7 0%, transparent 50%), radial-gradient(circle at 75% 75%, #7c3aed 0%, transparent 50%)', // changed from pink
+      heroBackground: 'linear-gradient(135deg, #a855f7, #7c3aed), url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Cpath d="M30 0c16.569 0 30 13.431 30 30s-13.431 30-30 30S0 46.569 0 30 13.431 0 30 0zm0 6c-13.255 0-24 10.745-24 24s10.745 24 24 24 24-10.745 24-24S43.255 6 30 6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")', // changed from pink
     },
     topSongs: [
       'Anti-Hero',

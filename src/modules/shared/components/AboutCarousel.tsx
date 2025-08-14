@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
 import { ChevronLeft, ChevronRight, Quote, Sparkles, BookOpen, Heart } from 'lucide-react';
+import { useThemeColors } from '@/modules/shared/utils/themeUtils';
 
 interface CarouselItem {
   id: number;
@@ -15,65 +16,66 @@ interface CarouselItem {
   color: string;
 }
 
-const carouselItems: CarouselItem[] = [
-  {
-    id: 1,
-    type: 'story',
-    title: 'The Road Not Taken',
-    content: "In an alternate timeline, Sarah chose to study abroad in Paris instead of staying close to home. Now she's a renowned pastry chef, running a charming café in Montmartre, where every morning she serves croissants to locals who've become her second family...",
-    color: 'from-purple-500 to-pink-500',
-    icon: <BookOpen className="h-6 w-6" />
-  },
-  {
-    id: 2,
-    type: 'quote',
-    content: "Every choice we make creates a new universe. The question isn't what could have been, but what could still be.",
-    author: "Dr. Elena Rodriguez",
-    source: "Quantum Narratives Institute",
-    color: 'from-blue-500 to-cyan-500',
-    icon: <Quote className="h-6 w-6" />
-  },
-  {
-    id: 3,
-    type: 'image',
-    title: 'Alternate Reality',
-    content: "A bustling cyberpunk cityscape where neon lights reflect in rain puddles, showing a world where technology evolved differently...",
-    imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop&crop=center",
-    color: 'from-green-500 to-emerald-500',
-    icon: <Sparkles className="h-6 w-6" />
-  },
-  {
-    id: 4,
-    type: 'story',
-    title: 'The Artist\'s Path',
-    content: "When Maria decided to pursue her passion for painting instead of following her family's medical tradition, she discovered a world of creativity she never knew existed. Her art now hangs in galleries worldwide...",
-    color: 'from-orange-500 to-red-500',
-    icon: <Heart className="h-6 w-6" />
-  },
-  {
-    id: 5,
-    type: 'quote',
-    content: "The most beautiful stories are the ones that could have been, and the ones that still can be.",
-    author: "Marcus Chen",
-    source: "Temporal Storytelling Collective",
-    color: 'from-indigo-500 to-purple-500',
-    icon: <Quote className="h-6 w-6" />
-  },
-  {
-    id: 6,
-    type: 'image',
-    title: 'Parallel Worlds',
-    content: "A serene countryside scene with a Victorian mansion, where steam-powered technology coexists with nature in perfect harmony...",
-    imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&crop=center",
-    color: 'from-teal-500 to-blue-500',
-    icon: <Sparkles className="h-6 w-6" />
-  }
-];
-
 const AboutCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const themeColors = useThemeColors();
+
+  const carouselItems: CarouselItem[] = [
+    {
+      id: 1,
+      type: 'story',
+      title: 'The Road Not Taken',
+      content: "In an alternate timeline, Sarah chose to study abroad in Paris instead of staying close to home. Now she's a renowned pastry chef, running a charming café in Montmartre, where every morning she serves croissants to locals who've become her second family...",
+      color: `from-[${themeColors.primary}] to-[${themeColors.secondary}]`,
+      icon: <BookOpen className="h-6 w-6" />
+    },
+    {
+      id: 2,
+      type: 'quote',
+      content: "Every choice we make creates a new universe. The question isn't what could have been, but what could still be.",
+      author: "Dr. Elena Rodriguez",
+      source: "Quantum Narratives Institute",
+      color: 'from-blue-500 to-cyan-500',
+      icon: <Quote className="h-6 w-6" />
+    },
+    {
+      id: 3,
+      type: 'image',
+      title: 'Alternate Reality',
+      content: "A bustling cyberpunk cityscape where neon lights reflect in rain puddles, showing a world where technology evolved differently...",
+      imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop&crop=center",
+      color: 'from-green-500 to-emerald-500',
+      icon: <Sparkles className="h-6 w-6" />
+    },
+    {
+      id: 4,
+      type: 'story',
+      title: 'The Artist\'s Path',
+      content: "When Maria decided to pursue her passion for painting instead of following her family's medical tradition, she discovered a world of creativity she never knew existed. Her art now hangs in galleries worldwide...",
+      color: 'from-orange-500 to-red-500',
+      icon: <Heart className="h-6 w-6" />
+    },
+    {
+      id: 5,
+      type: 'quote',
+      content: "The most beautiful stories are the ones that could have been, and the ones that still can be.",
+      author: "Marcus Chen",
+      source: "Temporal Storytelling Collective",
+      color: 'from-indigo-500 to-purple-500',
+      icon: <Quote className="h-6 w-6" />
+    },
+    {
+      id: 6,
+      type: 'image',
+      title: 'Parallel Worlds',
+      content: "A serene countryside scene with a Victorian mansion, where steam-powered technology coexists with nature in perfect harmony...",
+      imageUrl: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&crop=center",
+      color: 'from-teal-500 to-blue-500',
+      icon: <Sparkles className="h-6 w-6" />
+    }
+  ];
 
   const nextSlide = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % carouselItems.length);
@@ -102,7 +104,7 @@ const AboutCarousel = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isAutoPlaying, currentIndex]);
+  }, [isAutoPlaying]);
 
   // Pause auto-play on hover
   const handleMouseEnter = () => setIsAutoPlaying(false);
@@ -111,67 +113,65 @@ const AboutCarousel = () => {
   const currentItem = carouselItems[currentIndex];
 
   return (
-    <div 
-      className="relative w-full max-w-4xl mx-auto"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {/* Main Carousel */}
-      <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-        <div className="relative h-96 md:h-[500px]">
-          {/* Background Gradient */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${currentItem.color} opacity-90`} />
-          
-          {/* Content */}
-          <div className="relative h-full flex items-center justify-center p-8">
-            <Card className="bg-white/95 backdrop-blur-lg border-0 shadow-xl max-w-2xl w-full">
-              <CardContent className="p-8 text-center">
-                {/* Icon */}
-                <div className="flex justify-center mb-4">
-                  <div className={`p-3 rounded-full bg-gradient-to-r ${currentItem.color} text-white shadow-lg`}>
-                    {currentItem.icon}
-                  </div>
+    <div className="relative">
+      <div 
+        className="relative overflow-hidden rounded-xl shadow-2xl"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className="relative">
+          <Card className="border-0 shadow-none bg-transparent">
+            <CardContent className="p-8 text-center relative">
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
+                <div 
+                  className="p-3 rounded-full text-white shadow-lg"
+                  style={{ 
+                    background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`
+                  }}
+                >
+                  {currentItem.icon}
                 </div>
+              </div>
 
-                {/* Title */}
-                {currentItem.title && (
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                    {currentItem.title}
-                  </h3>
+              {/* Title */}
+              {currentItem.title && (
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  {currentItem.title}
+                </h3>
+              )}
+
+              {/* Content */}
+              <div className="mb-6">
+                {currentItem.type === 'image' && currentItem.imageUrl ? (
+                  <div className="space-y-4">
+                    <img 
+                      src={currentItem.imageUrl} 
+                      alt={currentItem.title || 'Alternate timeline'}
+                      className="w-full h-48 object-cover rounded-lg shadow-lg mx-auto"
+                    />
+                    <p className="text-gray-700 italic text-lg">
+                      {currentItem.content}
+                    </p>
+                  </div>
+                ) : (
+                  <blockquote className="text-lg text-gray-700 leading-relaxed">
+                    "{currentItem.content}"
+                  </blockquote>
                 )}
+              </div>
 
-                {/* Content */}
-                <div className="mb-6">
-                  {currentItem.type === 'image' && currentItem.imageUrl ? (
-                    <div className="space-y-4">
-                      <img 
-                        src={currentItem.imageUrl} 
-                        alt={currentItem.title || 'Alternate timeline'}
-                        className="w-full h-48 object-cover rounded-lg shadow-lg mx-auto"
-                      />
-                      <p className="text-gray-700 italic text-lg">
-                        {currentItem.content}
-                      </p>
-                    </div>
-                  ) : (
-                    <blockquote className="text-lg text-gray-700 leading-relaxed">
-                      "{currentItem.content}"
-                    </blockquote>
+              {/* Author/Source */}
+              {currentItem.author && (
+                <div className="text-sm text-gray-600">
+                  <p className="font-semibold">{currentItem.author}</p>
+                  {currentItem.source && (
+                    <p className="text-gray-500">{currentItem.source}</p>
                   )}
                 </div>
-
-                {/* Author/Source */}
-                {currentItem.author && (
-                  <div className="text-sm text-gray-600">
-                    <p className="font-semibold">{currentItem.author}</p>
-                    {currentItem.source && (
-                      <p className="text-gray-500">{currentItem.source}</p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Navigation Buttons */}
@@ -212,9 +212,10 @@ const AboutCarousel = () => {
       {/* Progress Bar */}
       <div className="mt-4 w-full bg-gray-200 rounded-full h-1">
         <div 
-          className="bg-gradient-to-r from-purple-500 to-pink-500 h-1 rounded-full transition-all duration-300"
+          className="h-1 rounded-full transition-all duration-300"
           style={{ 
-            width: `${((currentIndex + 1) / carouselItems.length) * 100}%` 
+            width: `${((currentIndex + 1) / carouselItems.length) * 100}%`,
+            background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary})`
           }}
         />
       </div>
