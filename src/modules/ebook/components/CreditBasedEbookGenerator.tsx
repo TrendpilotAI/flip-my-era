@@ -207,8 +207,8 @@ export const CreditBasedEbookGenerator: React.FC<CreditBasedEbookGeneratorProps>
   return (
     <div className="space-y-6">
 
-      {/* Story Prompt Input (when no original story is provided) */}
-      {!originalStory && !isUnlocked && (
+      {/* Story Prompt Input (always available before generation) */}
+      {!isUnlocked && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
