@@ -1,14 +1,12 @@
 import { Button } from '@/modules/shared/components/ui/button';
-import { Repeat, Undo, Download, Share2, ArrowLeft } from "lucide-react";
-import { StreamingText } from './StreamingText';
+import { Undo, Download, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { findRelevantSong } from "@/modules/story/utils/taylorSwiftSongs";
 import { MoralSection } from "./MoralSection";
 import { EnhancedSongPreview } from "./EnhancedSongPreview";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '@/core/integrations/supabase/client';
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { CreditBasedEbookGenerator } from "@/modules/ebook/components/CreditBasedEbookGenerator";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { DownloadShareModal } from '@/modules/shared/components/DownloadShareModal';
@@ -31,11 +29,11 @@ export const StoryResult = ({
   hasPreviousStory 
 }: StoryResultProps) => {
   console.log('StoryResult rendered with:', { result, storyId });
-  
+
   // Early return with error message if no result
   if (!result) {
     return (
-      <div className="glass-card rounded-2xl p-8 animate-fadeIn bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
+      <div className="glass-card rounded-2xl p-8 animate-fadeIn bg-white/95 backdrop-blur border border-gray-200 shadow-xl">
         <p className="text-red-600">No story content available to display.</p>
       </div>
     );
@@ -45,16 +43,55 @@ export const StoryResult = ({
   const { isAuthenticated } = useClerkAuth();
   const { currentTheme } = useTheme();
   const themeColors = useThemeColors();
-  const relevantSong = findRelevantSong(result);
   const [showMemoryEnhancedGenerator, setShowMemoryEnhancedGenerator] = useState(false);
   const [showDownloadShareModal, setShowDownloadShareModal] = useState(false);
-  // Generate a temporary ID if storyId is not provided
   const effectiveStoryId = storyId || crypto.randomUUID();
 
-  // Apply theme colors to drop-cap via CSS custom properties
-  useEffect(() => {
-    document.documentElement.style.setProperty('--drop-cap-color', themeColors.primary);
-  }, [themeColors.primary]);
+  // New: deterministic parsing of title and content from raw story text
+  const { title, content } = useMemo(() => {
+    // Normalize line endings and trim
+    const normalized = result.replace(/\r\n?/g, '\n').trim();
+
+    // Work line-by-line so we can handle a title followed immediately by content
+    const allLines = normalized.split('\n');
+    const nonEmptyLines = allLines.map(l => l.trim());
+
+    let computedTitle = 'Untitled Story';
+    let contentStartLine = 0;
+
+    // Find first non-empty line
+    let i = 0;
+    while (i < nonEmptyLines.length && nonEmptyLines[i] === '') i++;
+
+    if (i < nonEmptyLines.length) {
+      const firstLine = nonEmptyLines[i];
+      if (/^#+\s+/.test(firstLine)) {
+        // Markdown heading
+        computedTitle = firstLine.replace(/^#+\s+/, '').trim();
+        contentStartLine = i + 1;
+      } else if (firstLine.length <= 90 && /[.?!]$/.test(firstLine) === false) {
+        // Short heading-like line
+        computedTitle = firstLine;
+        contentStartLine = i + 1;
+      } else {
+        // Derive title from first sentence of the remaining text
+        const remainder = nonEmptyLines.slice(i).join('\n');
+        const firstSentence = remainder.split(/(?<=[.!?])\s+/)[0];
+        computedTitle = firstSentence.length > 90 ? `${firstSentence.slice(0, 90)}...` : firstSentence;
+        contentStartLine = i; // keep full content
+      }
+    }
+
+    // Build content from contentStartLine to end, collapse extra blank lines, and remove heading markers
+    const rebuilt = allLines
+      .slice(contentStartLine)
+      .join('\n')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    return { title: computedTitle || 'Untitled Story', content: rebuilt };
+  }, [result]);
 
   const handleCreateMemoryEnhancedEbook = async () => {
     try {
@@ -99,76 +136,6 @@ export const StoryResult = ({
     }
   };
 
-  // Extract title from the story content with improved logic
-  const getStoryTitle = (content: string) => {
-    const lines = content.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return "Untitled Story";
-    
-    const firstLine = lines[0].trim();
-    
-    // Check for markdown title format
-    if (firstLine.startsWith('#')) {
-      return firstLine.replace(/^#+\s*/, '');
-    }
-    
-    // Check if first line looks like a title (contains colon, is shorter than typical paragraph)
-    if (firstLine.includes(':') && firstLine.length < 100) {
-      return firstLine;
-    }
-    
-    // Check if first line is significantly shorter than the second line (title-like)
-    if (lines.length > 1) {
-      const secondLine = lines[1].trim();
-      if (firstLine.length < secondLine.length * 0.6 && firstLine.length < 80) {
-        return firstLine;
-      }
-    }
-    
-    // Fallback: use first line but limit to reasonable title length
-    return firstLine.length > 60 ? firstLine.slice(0, 60) + '...' : firstLine;
-  };
-
-  // Get era description based on story content
-  const getEraDescription = (content: string) => {
-    if (content.toLowerCase().includes('90s')) {
-      return "Journey back to the vibrant era of the 1990s";
-    } else if (content.toLowerCase().includes('80s')) {
-      return "Step into the bold and colorful world of the 1980s";
-    } else {
-      return "Experience your life in a simpler, pre-2020 timeline";
-    }
-  };
-
-  // Remove the title from the story content since we'll display it separately
-  const getStoryContent = (content: string) => {
-    if (!content) return '';
-    
-    // Split content into lines and remove empty ones
-    const lines = content.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return '';
-    
-    let contentStart = 0;
-    const firstLine = lines[0].trim();
-    
-    // Skip markdown headings and empty lines
-    if (firstLine.startsWith('#')) {
-      contentStart = 1;
-      while (contentStart < lines.length && !lines[contentStart].trim()) {
-        contentStart++;
-      }
-    }
-    
-    // Join the remaining lines
-    const storyContent = lines.slice(contentStart).join('\n').trim();
-    console.log('Processed story content:', {
-      originalLength: content.length,
-      processedLength: storyContent.length,
-      firstLine: storyContent.substring(0, 100) + '...'
-    });
-    
-    return storyContent;
-  };
-
   // If showing the memory-enhanced generator, render it instead of the story preview
   if (showMemoryEnhancedGenerator) {
     return (
@@ -208,102 +175,47 @@ export const StoryResult = ({
     );
   }
 
-  // Helper function to enhance the first sentence
-  const enhanceFirstSentence = (content: string) => {
-    if (!content) return null;
-    
-    // Split into sentences more reliably
-    const sentences = content.split(/(?<=[.!?])\s+/).filter(s => s.trim());
-    if (sentences.length === 0) return content;
-    
-    const firstSentence = sentences[0].trim();
-    const restOfContent = sentences.slice(1).join(' ').trim();
-    
-    console.log('Enhancing content:', {
-      firstSentence: firstSentence.substring(0, 50) + '...',
-      hasRestOfContent: Boolean(restOfContent),
-      restContentLength: restOfContent.length
-    });
-    
-    return (
-      <>
-        <p 
-          className="text-xl md:text-2xl leading-9 font-medium mb-8 first:mt-0 text-justify drop-cap text-gray-900"
-          style={{ color: currentTheme.colors?.foreground || 'inherit' }}
-        >
-          {firstSentence}
-        </p>
-        {restOfContent && (
-          <ReactMarkdown
-            components={{
-              p: ({ children }) => (
-                <p 
-                  className="text-lg leading-8 mb-6 first:mt-0 last:mb-0 text-justify text-gray-900"
-                  style={{ color: currentTheme.colors?.foreground || 'inherit' }}
-                >
-                  {children}
-                </p>
-              ),
-              strong: ({ children }) => (
-                <strong style={{ color: themeColors.primary }} className="font-semibold">{children}</strong>
-              ),
-              em: ({ children }) => (
-                <em style={{ color: themeColors.secondary }} className="italic">{children}</em>
-              ),
-              // Handle any remaining headings in content
-              h1: ({ children }) => (
-                <h2 
-                  className="text-2xl font-bold mt-8 mb-4"
-                  style={{ color: currentTheme.colors.foreground }}
-                >
-                  {children}
-                </h2>
-              ),
-              h2: ({ children }) => (
-                <h3 
-                  className="text-xl font-semibold mt-6 mb-3"
-                  style={{ color: currentTheme.colors.foreground }}
-                >
-                  {children}
-                </h3>
-              ),
-            }}
-          >
-            {restOfContent}
-          </ReactMarkdown>
-        )}
-      </>
-    );
-  };
-
   return (
-    <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:400ms] bg-white/90 backdrop-blur-lg border border-gray-200 shadow-xl">
-      {/* Title Section - Made much more prominent */}
-      <div className="text-center mb-10 pb-8 border-b border-gray-200">
+    <div className="glass-card rounded-2xl p-8 animate-fadeIn [animation-delay:200ms] bg-white/95 backdrop-blur border border-gray-200 shadow-xl text-gray-900">
+      {/* Title */}
+      <div className="text-center mb-8">
         <h1 
-          className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight bg-clip-text text-transparent"
-          style={{ 
-            background: `linear-gradient(to right, ${themeColors.primary}, ${themeColors.secondary}, ${themeColors.accent})`
+          className="text-3xl md:text-5xl font-extrabold tracking-tight mb-2"
+          style={{ color: currentTheme.colors?.foreground || '#111827' }}
+        >
+          {title}
+        </h1>
+      </div>
+
+      {/* Story Content - enforce smaller paragraph typography regardless of parent */}
+      <div className="max-w-none mb-8">
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => (
+              <p className="text-base md:text-lg leading-7 md:leading-8 mb-6 break-words text-justify">{children}</p>
+            ),
+            h1: ({ children }) => (
+              <h2 className="text-xl md:text-2xl font-bold mt-6 mb-3">{children}</h2>
+            ),
+            h2: ({ children }) => (
+              <h3 className="text-lg md:text-xl font-semibold mt-5 mb-2">{children}</h3>
+            ),
+            h3: ({ children }) => (
+              <h4 className="text-base md:text-lg font-semibold mt-4 mb-2">{children}</h4>
+            ),
+            li: ({ children }) => (
+              <li className="text-base md:text-lg leading-7 md:leading-8 mb-2">{children}</li>
+            ),
+            strong: ({ children }) => (
+              <strong style={{ color: themeColors.primary }} className="font-semibold">{children}</strong>
+            ),
+            em: ({ children }) => (
+              <em style={{ color: themeColors.secondary }} className="italic">{children}</em>
+            )
           }}
         >
-          {getStoryTitle(result)}
-        </h1>
-        <p 
-          className="text-lg md:text-xl italic font-medium"
-          style={{ color: themeColors.primary }}
-        >
-          {getEraDescription(result)}
-        </p>
-      </div>
-      
-      {/* Story Content - Enhanced paragraph formatting with distinguished first sentence */}
-      <div className="max-w-none mb-8 text-gray-900">
-        <StreamingText
-          text={result}
-          speed={20}
-          className="prose prose-lg max-w-none"
-          wordByWord={false}
-        />
+          {content}
+        </ReactMarkdown>
       </div>
 
       <div className="flex flex-wrap gap-4 items-center justify-between mb-8 pt-4 border-t border-gray-200">
@@ -339,10 +251,10 @@ export const StoryResult = ({
         </div>
       </div>
 
-      {result && (
+      {content && (
         <>
-          <MoralSection story={getStoryContent(result)} />
-          <EnhancedSongPreview story={getStoryContent(result)} />
+          <MoralSection story={content} />
+          <EnhancedSongPreview story={content} />
           
           <div className="mt-12 text-center space-y-4">
             <div className="flex justify-center">
@@ -372,8 +284,8 @@ export const StoryResult = ({
         onClose={() => setShowDownloadShareModal(false)}
         content={{
           id: effectiveStoryId,
-          title: getStoryTitle(result),
-          content: getStoryContent(result),
+          title: title,
+          content: content,
           type: 'story',
           author: 'FlipMyEra User'
         }}
