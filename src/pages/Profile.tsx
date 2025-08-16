@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { UserProfile } from "@clerk/clerk-react";
+import { supabase } from "@/integrations/supabase/client";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -127,6 +129,36 @@ const Profile = () => {
               <div className="text-2xl font-bold text-pink-600">{profile.total_likes}</div>
               <div className="text-sm text-pink-800">Likes</div>
             </div>
+          </div>
+        </div>
+
+        {/* Embedded Clerk User Profile (uses current session; no re-auth) */}
+        <div className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Account</h3>
+          <div className="border rounded-xl p-2">
+            <UserProfile routing="hash"/>
+          </div>
+          <div className="mt-4">
+            <Button
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500"
+              onClick={async () => {
+                try {
+                  const { data, error } = await supabase.functions.invoke('stripe-portal', { method: 'POST' });
+                  if (error) throw error as any;
+                  if (data?.url) {
+                    window.location.href = data.url as string;
+                  }
+                } catch (err) {
+                  toast({
+                    title: 'Unable to open billing portal',
+                    description: 'Please try again in a moment.',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            >
+              Manage Billing
+            </Button>
           </div>
         </div>
 
