@@ -4,6 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  # Allowlist public client keys that must appear in the browser bundle
+  # to avoid Netlify's secrets scanner failing the build.
+  SECRETS_SCAN_OMIT_KEYS = "VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_STRIPE_PUBLISHABLE_KEY"
 
 [[redirects]]
   from = "/*"
