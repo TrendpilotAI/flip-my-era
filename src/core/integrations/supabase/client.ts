@@ -14,31 +14,46 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Singleton pattern to avoid multiple client instances
-let supabaseInstance: ReturnType<typeof createClient>;
+let supabaseInstance: ReturnType<typeof createClient> | undefined;
+
+function createStubClient(): any {
+  const notConfigured = () => {
+    throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  };
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: new Error('Supabase not configured') }),
+      signOut: async () => ({ error: new Error('Supabase not configured') }),
+    },
+    from: () => ({ select: notConfigured, insert: notConfigured, update: notConfigured, delete: notConfigured }),
+    functions: { invoke: async () => ({ data: null, error: new Error('Supabase not configured') }) },
+  };
+}
 
 // Create Supabase client with native third-party auth support
 export const supabase = (() => {
-  if (supabaseInstance) return supabaseInstance;
-  
-  // Always use the production Supabase URL since Edge Functions are deployed
-  const baseUrl = supabaseUrl || '';
-  
-  // Create a client with the global configuration
-  supabaseInstance = createClient(baseUrl, supabaseAnonKey || '', {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-      flowType: 'pkce',
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'supabase-js-web/2.x'
+  if (supabaseInstance) return supabaseInstance as any;
+
+  // Only create a real client when envs are present to avoid runtime URL errors
+  if (supabaseUrl && supabaseAnonKey) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        flowType: 'pkce',
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'supabase-js-web/2.x'
+        }
       }
-    }
-  });
-  
-  return supabaseInstance;
+    });
+    return supabaseInstance;
+  }
+
+  // Fallback stub to keep app rendering even if envs are missing
+  return createStubClient();
 })();
 
 // Helper to get the current Supabase session
