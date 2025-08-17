@@ -2,29 +2,35 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout, ProtectedRoute, AdminRoute } from "@/modules/shared";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth";
+import React, { lazy, Suspense } from 'react';
+
+// Public components (eagerly loaded)
 import Index from "@/app/pages/Index";
-import Settings from "@/modules/user/components/Settings";
-import NotFound from "@/app/pages/NotFound";
-import Stories from "@/modules/story/components/Stories";
 import Auth from "@/modules/auth/components/Auth";
-import SettingsDashboard from "@/modules/user/components/SettingsDashboard";
-import UserDashboard from "@/modules/user/components/UserDashboard";
-import Checkout from "@/app/pages/Checkout";
-import CheckoutSuccess from "@/app/pages/CheckoutSuccess";
-import UpgradePlan from "@/app/pages/UpgradePlan";
 import AuthCallback from "@/modules/auth/components/AuthCallback";
 import ResetPassword from "@/modules/auth/components/ResetPassword";
-import AdminDashboard from "@/app/pages/AdminDashboard";
-import AdminIntegrations from "@/app/pages/AdminIntegrations";
-import AdminUsers from "@/app/pages/AdminUsers";
-import AdminCredits from "@/app/pages/AdminCredits";
+import NotFound from "@/app/pages/NotFound";
+
+// Lazy-loaded components
+const Settings = lazy(() => import("@/modules/user/components/Settings"));
+const Stories = lazy(() => import("@/modules/story/components/Stories"));
+const SettingsDashboard = lazy(() => import("@/modules/user/components/SettingsDashboard"));
+const UserDashboard = lazy(() => import("@/modules/user/components/UserDashboard"));
+const Checkout = lazy(() => import("@/app/pages/Checkout"));
+const CheckoutSuccess = lazy(() => import("@/app/pages/CheckoutSuccess"));
+const UpgradePlan = lazy(() => import("@/app/pages/UpgradePlan"));
+const AdminDashboard = lazy(() => import("@/app/pages/AdminDashboard"));
+const AdminIntegrations = lazy(() => import("@/app/pages/AdminIntegrations"));
+const AdminUsers = lazy(() => import("@/app/pages/AdminUsers"));
+const AdminCredits = lazy(() => import("@/app/pages/AdminCredits"));
 
 function App() {
   return (
     <ClerkAuthProvider>
       <Router>
         <Layout>
-          <Routes>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
@@ -32,119 +38,120 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Protected routes - New unified dashboard */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <UserDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
             
             {/* Legacy routes - redirect to new dashboard */}
-            <Route 
-              path="/stories" 
+            <Route
+              path="/stories"
               element={
                 <ProtectedRoute>
-                  <UserDashboard />
+                  <Stories />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/settings-dashboard" 
+            <Route
+              path="/settings-dashboard"
               element={
                 <ProtectedRoute>
-                  <UserDashboard />
+                  <SettingsDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/settings" 
+            <Route
+              path="/settings"
               element={
                 <ProtectedRoute>
-                  <UserDashboard />
+                  <Settings />
                 </ProtectedRoute>
-              } 
+              }
             />
             
             {/* Admin routes */}
-            <Route 
-              path="/admin" 
+            <Route
+              path="/admin"
               element={
                 <AdminRoute>
                   <AdminDashboard />
                 </AdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/integrations" 
+            <Route
+              path="/admin/integrations"
               element={
                 <AdminRoute>
                   <AdminIntegrations />
                 </AdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/users" 
+            <Route
+              path="/admin/users"
               element={
                 <AdminRoute>
                   <AdminUsers />
                 </AdminRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/credits" 
+            <Route
+              path="/admin/credits"
               element={
                 <AdminRoute>
                   <AdminCredits />
                 </AdminRoute>
-              } 
+              }
             />
             
             {/* Checkout routes */}
-            <Route 
-              path="/checkout" 
+            <Route
+              path="/checkout"
               element={
                 <ProtectedRoute>
                   <Checkout />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/checkout/success" 
+            <Route
+              path="/checkout/success"
               element={
                 <ProtectedRoute>
                   <CheckoutSuccess />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/upgrade" 
+            <Route
+              path="/upgrade"
               element={
                 <ProtectedRoute>
                   <UpgradePlan />
                 </ProtectedRoute>
-              } 
+              }
             />
             
             {/* Premium features */}
-            <Route 
-              path="/premium-features" 
+            <Route
+              path="/premium-features"
               element={
                 <ProtectedRoute requiredSubscription="premium">
                   <div>Premium Features</div>
                 </ProtectedRoute>
-              } 
+              }
             />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </Layout>
         <Toaster />
       </Router>
     </ClerkAuthProvider>
   );
 }
-
+ 
 export default App;

@@ -72,7 +72,11 @@ class InputValidator {
       
       return urlObj.toString();
     } catch (error) {
-      throw new Error(`Invalid URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Log the problematic URL only in non-production environments
+      if (!import.meta.env.PROD) {
+        console.error(`Attempted to validate invalid URL: "${url}"`);
+      }
+      throw new Error(`Invalid URL: ${url}. Details: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -173,12 +177,17 @@ class SamCartClient {
   /**
    * Safely log errors without exposing sensitive information
    */
-  private logError(message: string, error?: unknown): void {
-    // In production, avoid logging sensitive details
+  private logError(message: string, error?: unknown, details?: Record<string, unknown>): void {
+    // In production, avoid logging sensitive details directly to console,
+    // consider sending to an error tracking service instead.
+    const errorDetails = error instanceof Error ? error.message : String(error);
+
     if (import.meta.env.PROD) {
-      console.error(`SamCart Error: ${message}`);
+      console.error(`SamCart Error: ${message}. Details: ${errorDetails}`);
+      // In a real app, you might send this to Sentry, DataDog, etc.
+      // E.g., Sentry.captureException(new Error(message), { extra: { details, error: errorDetails } });
     } else {
-      console.error(`SamCart Error: ${message}`, error);
+      console.error(`SamCart Error: ${message}`, error, details);
     }
   }
 
@@ -227,12 +236,12 @@ class SamCartClient {
         if (sanitizedAffiliateId) params.append('affiliate_id', sanitizedAffiliateId);
       }
       
-      if (redirectUrl) {
+      if (redirectUrl && redirectUrl.length > 0) {
         const validatedRedirectUrl = InputValidator.validateUrl(redirectUrl);
         params.append('redirect_url', validatedRedirectUrl);
       }
       
-      if (cancelUrl) {
+      if (cancelUrl && cancelUrl.length > 0) {
         const validatedCancelUrl = InputValidator.validateUrl(cancelUrl);
         params.append('cancel_url', validatedCancelUrl);
       }
@@ -253,7 +262,7 @@ class SamCartClient {
       
       return checkoutUrl;
     } catch (error) {
-      this.logError('Failed to generate checkout URL', error);
+      this.logError('Failed to generate checkout URL', error, { options });
       throw new Error('Invalid checkout parameters provided');
     }
   }
@@ -278,7 +287,7 @@ class SamCartClient {
         if (sanitizedCustomerId) params.append('customer_id', sanitizedCustomerId);
       }
       
-      if (returnUrl) {
+      if (returnUrl && returnUrl.length > 0) {
         const validatedReturnUrl = InputValidator.validateUrl(returnUrl);
         params.append('return_url', validatedReturnUrl);
       }

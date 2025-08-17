@@ -2,13 +2,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 
 // Do not hard-crash the app in production if envs are missing; log clearly instead.
 if (!supabaseUrl || !supabaseAnonKey) {
   // eslint-disable-next-line no-console
   console.error(
-    'Missing Supabase environment variables: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. ' +
+    'Missing Supabase environment variables: VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY. ' +
     'The app will load, but Supabase features will not function until these are set.'
   );
 }

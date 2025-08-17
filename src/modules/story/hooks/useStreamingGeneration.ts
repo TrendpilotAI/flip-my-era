@@ -77,7 +77,7 @@ export const useStreamingGeneration = () => {
       // Prepare headers
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY || '',
       };
       
       if (clerkToken) {
