@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Integration Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log-entry {
+            padding: 5px 10px;
+            margin: 5px 0;
+            background: white;
+            border-left: 3px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Clerk-Supabase Integration Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+            <button onclick="window.open('https://flipmyera.com', '_blank')">🌐 Open Production Site</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Detailed Logs</h2>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const PRODUCTION_URL = 'https://flipmyera.com';
+        let testResults = [];
+        let logEntries = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logEntries.push({ timestamp, message, type });
+            updateLogsDisplay();
+        }
+
+        function updateLogsDisplay() {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML = logEntries.map(entry => 
+                `<div class="log-entry">[${entry.timestamp}] ${entry.message}</div>`
+            ).join('');
+        }
+
+        function clearLogs() {
+            logEntries = [];
+            testResults = [];
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+
+        function addResult(test, status, message) {
+            testResults.push({ test, status, message });
+            updateResultsDisplay();
+        }
+
+        function updateResultsDisplay() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = testResults.map(result => {
+                const statusClass = result.status === 'success' ? 'success' : 
+                                   result.status === 'error' ? 'error' : 
+                                   result.status === 'warning' ? 'warning' : 'info';
+                const icon = result.status === 'success' ? '✅' : 
+                            result.status === 'error' ? '❌' : 
+                            result.status === 'warning' ? '⚠️' : 'ℹ️';
+                return `<div class="status ${statusClass}">${icon} <strong>${result.test}:</strong> ${result.message}</div>`;
+            }).join('');
+        }
+
+        async function testEndpoint(url, description) {
+            log(`Testing ${description}: ${url}`);
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
+                    mode: 'no-cors' // Use no-cors for basic connectivity test
+                });
+                
+                // With no-cors, we can't read the response but we know the request completed
+                addResult(description, 'info', 'Endpoint reachable (no-cors mode)');
+                log(`✓ ${description} endpoint is reachable`);
+                return true;
+            } catch (error) {
+                addResult(description, 'error', `Failed: ${error.message}`);
+                log(`✗ ${description} failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testProductionSite() {
+            log('Testing production site accessibility...');
+            try {
+                const response = await fetch(PRODUCTION_URL, {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                addResult('Production Site', 'success', 'Site is accessible');
+                log('✓ Production site is accessible');
+                return true;
+            } catch (error) {
+                addResult('Production Site', 'error', `Site unreachable: ${error.message}`);
+                log(`✗ Production site error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function checkConsoleErrors() {
+            log('Checking for console errors in production...');
+            addResult('Console Errors', 'info', 'Please check the browser console when visiting the production site for any JWT or authentication errors');
+            log('ℹ️ Manual verification needed: Check browser console on production site');
+        }
+
+        async function verifyEnvironmentVariables() {
+            log('Verifying environment variables setup...');
+            const requiredVars = [
+                'VITE_SUPABASE_URL',
+                'VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY',
+                'VITE_CLERK_PUBLISHABLE_KEY'
+            ];
+            
+            addResult('Environment Variables', 'info', `Required vars: ${requiredVars.join(', ')}`);
+            log('ℹ️ Ensure these are set in Netlify dashboard');
+        }
+
+        async function testSupabaseConnection() {
+            const supabaseUrl = 'https://tusdijypopftcmlenahr.supabase.co';
+            log(`Testing Supabase connection to ${supabaseUrl}`);
+            
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                addResult('Supabase Connection', 'success', 'Supabase endpoint is reachable');
+                log('✓ Supabase endpoint is reachable');
+                return true;
+            } catch (error) {
+                addResult('Supabase Connection', 'error', `Failed: ${error.message}`);
+                log(`✗ Supabase connection error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testClerkEndpoint() {
+            const clerkDomain = 'https://clerk.flipmyera.com';
+            log(`Testing Clerk endpoint at ${clerkDomain}`);
+            
+            try {
+                const response = await fetch(`${clerkDomain}/v1/client`, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                addResult('Clerk Endpoint', 'success', 'Clerk endpoint is reachable');
+                log('✓ Clerk endpoint is reachable');
+                return true;
+            } catch (error) {
+                addResult('Clerk Endpoint', 'warning', `Possible CORS restriction: ${error.message}`);
+                log(`⚠️ Clerk endpoint test: ${error.message}`, 'warning');
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            clearLogs();
+            log('🚀 Starting comprehensive auth integration tests...', 'info');
+            
+            // Add spinner while testing
+            document.getElementById('results').innerHTML = '<div class="status info">Testing in progress... <span class="spinner"></span></div>';
+            
+            // Run tests sequentially
+            await testProductionSite();
+            await testSupabaseConnection();
+            await testClerkEndpoint();
+            await verifyEnvironmentVariables();
+            await checkConsoleErrors();
+            
+            // Summary
+            const successCount = testResults.filter(r => r.status === 'success').length;
+            const errorCount = testResults.filter(r => r.status === 'error').length;
+            const warningCount = testResults.filter(r => r.status === 'warning').length;
+            
+            log('═══════════════════════════════════════', 'info');
+            log(`Test Summary: ${successCount} passed, ${errorCount} failed, ${warningCount} warnings`, 'info');
+            
+            if (errorCount === 0 && successCount > 0) {
+                addResult('Overall Status', 'success', 'Basic connectivity tests passed! Now visit the production site and check the browser console for JWT errors.');
+            } else if (errorCount > 0) {
+                addResult('Overall Status', 'error', 'Some tests failed. Please review the results above.');
+            }
+            
+            // Provide next steps
+            log('', 'info');
+            log('📋 Next Steps:', 'info');
+            log('1. Open the production site using the button above', 'info');
+            log('2. Open browser Developer Tools (F12)', 'info');
+            log('3. Check the Console tab for any errors about "JWT template" or "supabase"', 'info');
+            log('4. Try to sign in and perform an action that requires authentication', 'info');
+            log('5. If you see JWT errors, the template may need adjustment in Clerk dashboard', 'info');
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            log('Test page loaded. Click "Run All Tests" to begin.', 'info');
+        });
+    </script>
+</body>
+</html>
