@@ -168,16 +168,17 @@ async function allocateCreditsForPurchase(supabase: SupabaseClient, userId: stri
   // Map SamCart product IDs to credit amounts and subscription types
   // These IDs should match your actual SamCart product configuration
   const productMapping: Record<number, { type: 'credits' | 'subscription', amount?: number, subscription_type?: string }> = {
-    // Credit Products
-    350001: { type: 'credits', amount: 1 },      // Single Credit ($2.99)
-    350002: { type: 'credits', amount: 3 },      // 3-Credit Bundle ($7.99)
-    350003: { type: 'credits', amount: 5 },      // 5-Credit Bundle ($11.99)
-    
-    // Subscription Products
-    350004: { type: 'subscription', subscription_type: 'monthly_unlimited' },  // Monthly Unlimited ($9.99)
-    350005: { type: 'subscription', subscription_type: 'annual_unlimited' },   // Annual Unlimited ($89.99)
-    
-    // Legacy subscription mappings (keeping for backward compatibility)
+    // Credit Products (One-time payments)
+    1010274: { type: 'credits', amount: 5 },      // Credit Packs - Mini Pack ($9.95)
+    1010275: { type: 'credits', amount: 20 },     // Creator Pack – 20 Credits ($29.95)
+    1010276: { type: 'credits', amount: 60 },     // Studio Pack – 60 Credits ($59.95)
+
+    // Subscription Products (Recurring)
+    950969: { type: 'subscription', subscription_type: 'pro_storyteller' },        // Pro Storyteller ($12.99/month)
+    1010283: { type: 'subscription', subscription_type: 'swiftie_deluxe' },       // Swiftie Deluxe - Era-Explorer Pass ($29.95/month)
+    1010284: { type: 'subscription', subscription_type: 'opus_unlimited' },       // Opus Unlimited - Creator Studio VIP ($49.99/month)
+
+    // Legacy subscription mappings (keeping for backward compatibility if needed)
     350399: { type: 'subscription', subscription_type: 'monthly_unlimited' },  // Legacy basic plan
     440369: { type: 'subscription', subscription_type: 'annual_unlimited' },   // Legacy premium plan
   };
@@ -327,7 +328,10 @@ async function updateSubscriptionStatus(supabase: SupabaseClient, userId: string
   
   // Update legacy subscription fields in profiles for backward compatibility
   if (payload.order.subscription_id) {
-    const legacySubscriptionLevel = subscriptionType === 'monthly_unlimited' ? 'basic' :
+    const legacySubscriptionLevel = subscriptionType === 'pro_storyteller' ? 'pro' :
+                                   subscriptionType === 'swiftie_deluxe' ? 'premium' :
+                                   subscriptionType === 'opus_unlimited' ? 'vip' :
+                                   subscriptionType === 'monthly_unlimited' ? 'basic' :
                                    subscriptionType === 'annual_unlimited' ? 'premium' : 'free';
     
     const { error: profileError } = await supabase
@@ -491,13 +495,18 @@ async function handleSubscriptionRestart(supabase: SupabaseClient, payload: SamC
   
   if (profileData?.id) {
     // Determine subscription level based on product ID
-    let subscriptionLevel: 'free' | 'basic' | 'premium' = 'free';
-    
+    let subscriptionLevel: 'free' | 'basic' | 'premium' | 'pro' | 'vip' = 'free';
+
     // Map product IDs to subscription levels
-    // You'll need to customize this based on your actual product IDs
-    if (payload.product.id === 350399) { // Replace with your actual product ID for basic plan
+    if (payload.product.id === 950969) { // Pro Storyteller
+      subscriptionLevel = 'pro';
+    } else if (payload.product.id === 1010283) { // Swiftie Deluxe
+      subscriptionLevel = 'premium';
+    } else if (payload.product.id === 1010284) { // Opus Unlimited VIP
+      subscriptionLevel = 'vip';
+    } else if (payload.product.id === 350399) { // Legacy basic
       subscriptionLevel = 'basic';
-    } else if (payload.product.id === 440369) { // Replace with your actual product ID for premium plan
+    } else if (payload.product.id === 440369) { // Legacy premium
       subscriptionLevel = 'premium';
     }
     
