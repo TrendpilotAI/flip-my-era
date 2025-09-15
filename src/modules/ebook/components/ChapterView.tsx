@@ -15,10 +15,14 @@ interface ChapterViewProps {
 }
 
 export const ChapterView = ({ chapter, index, isGeneratingImages }: ChapterViewProps) => {
+  console.log('ChapterView rendering:', { chapter, index, isGeneratingImages });
+
   return (
     <div
       className="bg-white/90 backdrop-blur-sm rounded-lg p-8 space-y-6 animate-fadeIn"
       style={{ animationDelay: `${index * 200}ms` }}
+      role="article"
+      aria-label={`Chapter ${index + 1}: ${chapter.title}`}
     >
       <h2 className="text-2xl font-bold text-gray-900 mb-6">{chapter.title}</h2>
       <div className="prose prose-lg prose-pink max-w-none space-y-6">
@@ -45,9 +49,9 @@ export const ChapterView = ({ chapter, index, isGeneratingImages }: ChapterViewP
       ) : (
         <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center mt-8">
           {isGeneratingImages ? (
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" role="img" aria-label="Loading illustration" />
           ) : (
-            <ImageIcon className="h-8 w-8 text-gray-400" />
+            <ImageIcon className="h-8 w-8 text-gray-400" role="img" aria-label="Image placeholder" />
           )}
         </div>
       )}
