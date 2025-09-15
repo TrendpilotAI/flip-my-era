@@ -65,6 +65,11 @@ export const useStreamingGeneration = () => {
   // Mock image generation function - this would be replaced with actual image generation API
   const generateImageForChapter = useCallback(async (chapterIndex: number, imagePrompt: ImagePrompt) => {
     try {
+      // Check if aborted before starting
+      if (abortController?.signal.aborted) {
+        throw new Error('Image generation aborted');
+      }
+
       // Update status to generating
       setState(prev => ({
         ...prev,
@@ -80,7 +85,17 @@ export const useStreamingGeneration = () => {
 
       // Simulate image generation progress
       for (let progress = 0; progress <= 100; progress += 20) {
+        // Check abort signal before each progress update
+        if (abortController?.signal.aborted) {
+          throw new Error('Image generation aborted');
+        }
+        
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate processing time
+        
+        // Check abort signal after waiting
+        if (abortController?.signal.aborted) {
+          throw new Error('Image generation aborted');
+        }
         
         setState(prev => ({
           ...prev,
@@ -89,6 +104,11 @@ export const useStreamingGeneration = () => {
             [chapterIndex]: progress
           }
         }));
+      }
+
+      // Check abort signal before final operations
+      if (abortController?.signal.aborted) {
+        throw new Error('Image generation aborted');
       }
 
       // Simulate successful image generation
@@ -121,7 +141,7 @@ export const useStreamingGeneration = () => {
       
       throw error;
     }
-  }, []);
+  }, [abortController]);
 
   const startGeneration = useCallback(async (options: StreamingGenerationOptions) => {
     const {
@@ -143,12 +163,14 @@ export const useStreamingGeneration = () => {
       progress: 0,
       message: "Initializing...",
       isComplete: false,
-      chapters: []
+      chapters: [],
+      imageGenerationStatus: {},
+      imageGenerationProgress: {}
     });
 
     try {
       // Get Clerk token for authentication
-      const clerkToken = await getToken({ template: 'supabase' });
+      const clerkToken = await getToken();
       console.log('Clerk token retrieved:', clerkToken ? 'Token exists' : 'No token');
       
       // Prepare headers
@@ -171,6 +193,10 @@ export const useStreamingGeneration = () => {
       
       console.log('Calling function URL:', functionUrl);
       
+      // Create a new AbortController for this request
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers,
@@ -180,7 +206,8 @@ export const useStreamingGeneration = () => {
           selectedTheme,
           selectedFormat,
           numChapters
-        })
+        }),
+        signal: controller.signal
       });
 
       console.log('Response status:', response.status, response.statusText);
@@ -364,6 +391,18 @@ export const useStreamingGeneration = () => {
       }
 
     } catch (error) {
+      // Check if the error is due to abort
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Generation aborted by user');
+        setState(prev => ({
+          ...prev,
+          isGenerating: false,
+          isComplete: false,
+          message: 'Generation cancelled'
+        }));
+        return;
+      }
+      
       console.error('Streaming generation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
@@ -382,11 +421,15 @@ export const useStreamingGeneration = () => {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, getToken]);
 
   const stopGeneration = useCallback(() => {
-    // Note: With fetch streaming, we can't easily abort the request
-    // The stream will continue until completion or error
+    // Abort the fetch request if it's in progress
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
     setState(prev => ({
       ...prev,
       isGenerating: false,
@@ -398,9 +441,15 @@ export const useStreamingGeneration = () => {
       description: "Chapter generation has been cancelled.",
       variant: "destructive",
     });
-  }, [toast]);
+  }, [abortController, toast]);
 
   const resetGeneration = useCallback(() => {
+    // Abort any ongoing request when resetting
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
     setState({
       isGenerating: false,
       currentChapter: 0,
@@ -408,9 +457,20 @@ export const useStreamingGeneration = () => {
       progress: 0,
       message: "",
       isComplete: false,
-      chapters: []
+      chapters: [],
+      imageGenerationStatus: {},
+      imageGenerationProgress: {}
     });
-  }, []);
+  }, [abortController]);
+
+  // Cleanup effect to abort request on unmount
+  useEffect(() => {
+    return () => {
+      if (abortController) {
+        abortController.abort();
+      }
+    };
+  }, [abortController]);
 
   return {
     ...state,

@@ -110,6 +110,19 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
         .select('*')
         .order('created_at', { ascending: false });
 
+      // Handle errors immediately after the query
+      if (error) {
+        console.error('Error fetching ebooks:', error);
+        setError('Failed to load your books');
+        toast({
+          title: "Error",
+          description: "Failed to load your books. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Process data only if no error occurred
       let data = null;
       if (ebookData && ebookData.length > 0) {
         // Map ebook_generations data to a common format
@@ -128,17 +141,7 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
         }));
       }
 
-      if (error) {
-        console.error('Error fetching ebooks:', error);
-        setError('Failed to load your books');
-        toast({
-          title: "Error",
-          description: "Failed to load your books. Please try again.",
-          variant: "destructive",
-        });
-      } else {
-        setBooks(data || []);
-      }
+      setBooks(data || []);
     } catch (err) {
       console.error('Error fetching books:', err);
       setError('Failed to load your books');
