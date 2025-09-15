@@ -28,7 +28,7 @@ const AdminCreditsTest = () => {
 
     setIsLoading(true);
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       const { data, error } = await supabase.functions.invoke('admin-credits', {
         method: 'GET',
@@ -96,7 +96,7 @@ const AdminCreditsTest = () => {
 
     setIsLoading(true);
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       const { data, error } = await supabase.functions.invoke('admin-credits', {
         method: 'POST',

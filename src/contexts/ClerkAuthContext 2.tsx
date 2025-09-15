@@ -41,7 +41,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       if (clerkUser) {
         try {
           // Get Clerk session token for Supabase
-          const clerkToken = await getToken({ template: 'supabase' });
+          const clerkToken = await getToken();
           
           if (!clerkToken) {
             throw new Error("No Clerk token available");

@@ -103,50 +103,45 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
       // Create authenticated Supabase client
       const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
       
-      // Try to fetch from memory_books first (newer table for user books)
-      let { data, error } = await supabaseWithAuth
-        .from('memory_books')
+      // First, try to fetch from ebook_generations which is the primary table
+      // memory_books is a future feature that may not be deployed yet
+      const { data: ebookData, error } = await supabaseWithAuth
+        .from('ebook_generations')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // If memory_books is empty or doesn't exist, fallback to ebook_generations
-      if (!data || data.length === 0) {
-        console.log('No books found in memory_books, trying ebook_generations...');
-        const fallbackResult = await supabaseWithAuth
-          .from('ebook_generations')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (fallbackResult.data && fallbackResult.data.length > 0) {
-          // Map ebook_generations data to memory_books format
-          data = fallbackResult.data.map(book => ({
-            ...book,
-            chapters: book.content, // content field maps to chapters
-            description: book.title || 'Generated ebook',
-            status: book.status || 'completed',
-            generation_settings: {},
-            style_preferences: {},
-            view_count: 0,
-            download_count: 0,
-            share_count: 0,
-            rating_average: 0,
-            rating_count: 0
-          }));
-          error = fallbackResult.error;
-        }
-      }
-
+      // Handle errors immediately after the query
       if (error) {
-        console.error('Error fetching books:', error);
+        console.error('Error fetching ebooks:', error);
         setError('Failed to load your books');
         toast({
           title: "Error",
           description: "Failed to load your books. Please try again.",
           variant: "destructive",
         });
-      } else {
-        setBooks(data || []);
+        return;
       }
+
+      // Process data only if no error occurred
+      let data = null;
+      if (ebookData && ebookData.length > 0) {
+        // Map ebook_generations data to a common format
+        data = ebookData.map(book => ({
+          ...book,
+          chapters: book.content, // content field maps to chapters
+          description: book.title || 'Generated ebook',
+          status: book.status || 'completed',
+          generation_settings: {},
+          style_preferences: {},
+          view_count: 0,
+          download_count: 0,
+          share_count: 0,
+          rating_average: 0,
+          rating_count: 0
+        }));
+      }
+
+      setBooks(data || []);
     } catch (err) {
       console.error('Error fetching books:', err);
       setError('Failed to load your books');

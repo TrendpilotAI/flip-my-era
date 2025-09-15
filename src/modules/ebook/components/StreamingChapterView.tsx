@@ -2,23 +2,24 @@ import { useState, useEffect } from "react";
 import { StreamingText } from '@/modules/story/components/StreamingText';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
-import { 
-  Sparkles, 
-  Heart, 
-  Star, 
+import { ImageSkeleton } from '@/modules/shared/components/ui/image-skeleton';
+import {
+  Sparkles,
+  Heart,
+  Star,
   Music,
   Eye,
-  EyeOff,
-  ImageIcon,
-  Loader2
+  EyeOff
 } from "lucide-react";
 import { cn } from '@/core/lib/utils';
 
 interface Chapter {
   title: string;
   content: string;
+  streamingContent?: string;
   imageUrl?: string;
   id?: string;
+  isStreaming?: boolean;
 }
 
 interface StreamingChapterViewProps {
@@ -28,110 +29,116 @@ interface StreamingChapterViewProps {
   useTaylorSwiftThemes?: boolean;
   showStreamingText?: boolean;
   onStreamingComplete?: () => void;
+  imageGenerationStatus?: 'pending' | 'generating' | 'complete' | 'error';
+  imageGenerationProgress?: number;
 }
 
-export const StreamingChapterView = ({ 
-  chapter, 
-  index, 
+export const StreamingChapterView = ({
+  chapter,
+  index,
   isGeneratingImages = false,
   useTaylorSwiftThemes = true,
   showStreamingText = true,
-  onStreamingComplete
+  onStreamingComplete,
+  imageGenerationStatus,
+  imageGenerationProgress = 0
 }: StreamingChapterViewProps) => {
   const [showFullContent, setShowFullContent] = useState(!showStreamingText);
   const [streamingComplete, setStreamingComplete] = useState(!showStreamingText);
-  const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
 
-  // Generate sparkles for Taylor Swift theme
   useEffect(() => {
-    if (useTaylorSwiftThemes && streamingComplete) {
-      const newSparkles = Array.from({ length: 4 }, (_, i) => ({
-        id: Date.now() + i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        delay: Math.random() * 2
-      }));
-      setSparkles(newSparkles);
+    if (streamingComplete && onStreamingComplete) {
+      onStreamingComplete();
     }
-  }, [streamingComplete, useTaylorSwiftThemes]);
-
-  const handleStreamingComplete = () => {
-    setStreamingComplete(true);
-    onStreamingComplete?.();
-  };
+  }, [streamingComplete, onStreamingComplete]);
 
   const getThemeIcon = () => {
-    if (!useTaylorSwiftThemes) return <Star className="h-5 w-5 text-blue-500" />;
+    if (!useTaylorSwiftThemes) {
+      return <Star className="h-6 w-6" />;
+    }
     
     const icons = [
-      <Heart className="h-5 w-5 text-pink-500" />,
-      <Star className="h-5 w-5 text-yellow-500" />,
-      <Music className="h-5 w-5 text-purple-500" />,
-      <Sparkles className="h-5 w-5 text-blue-500" />
+      <Heart className="h-6 w-6" key="heart" />,
+      <Star className="h-6 w-6" key="star" />,
+      <Sparkles className="h-6 w-6" key="sparkles" />,
+      <Music className="h-6 w-6" key="music" />
     ];
     return icons[index % icons.length];
   };
 
-  const getThemeGradient = () => {
-    if (!useTaylorSwiftThemes) return "from-blue-50 to-gray-50";
+  const getThemeColors = () => {
+    if (!useTaylorSwiftThemes) {
+      return {
+        card: "bg-white/95 border-blue-200",
+        header: "bg-gradient-to-r from-blue-500 to-blue-600",
+        accent: "text-blue-600"
+      };
+    }
     
-    const gradients = [
-      "from-pink-50 via-purple-50 to-blue-50",
-      "from-yellow-50 via-orange-50 to-pink-50",
-      "from-purple-50 via-blue-50 to-indigo-50",
-      "from-blue-50 via-cyan-50 to-teal-50"
+    const themes = [
+      {
+        card: "bg-white/95 border-pink-200",
+        header: "bg-gradient-to-r from-pink-500 to-rose-500",
+        accent: "text-pink-600"
+      },
+      {
+        card: "bg-white/95 border-purple-200", 
+        header: "bg-gradient-to-r from-purple-500 to-indigo-500",
+        accent: "text-purple-600"
+      },
+      {
+        card: "bg-white/95 border-amber-200",
+        header: "bg-gradient-to-r from-amber-500 to-orange-500", 
+        accent: "text-amber-600"
+      },
+      {
+        card: "bg-white/95 border-emerald-200",
+        header: "bg-gradient-to-r from-emerald-500 to-teal-500",
+        accent: "text-emerald-600"
+      }
     ];
-    return gradients[index % gradients.length];
+    return themes[index % themes.length];
   };
 
-  return (
-    <Card 
-      className={cn(
-        "relative overflow-hidden transition-all duration-700 ease-out",
-        `bg-gradient-to-br ${getThemeGradient()}`,
-        useTaylorSwiftThemes ? "border-purple-200" : "border-blue-200",
-        streamingComplete && "shadow-lg"
-      )}
-      style={{ 
-        animationDelay: `${index * 300}ms`,
-        animation: "slideInFromBottom 0.8s ease-out forwards"
-      }}
-    >
-      {/* Floating sparkles for Taylor Swift theme */}
-      {useTaylorSwiftThemes && streamingComplete && sparkles.map((sparkle) => (
-        <div
-          key={sparkle.id}
-          className="absolute pointer-events-none z-10"
-          style={{
-            left: `${sparkle.x}%`,
-            top: `${sparkle.y}%`,
-            animationDelay: `${sparkle.delay}s`
-          }}
-        >
-          <Sparkles 
-            className="h-2 w-2 text-purple-300 animate-pulse opacity-40" 
-            style={{
-              animation: `pulse 2s infinite ${sparkle.delay}s, float 4s ease-in-out infinite ${sparkle.delay}s`
-            }}
-          />
-        </div>
-      ))}
+  const themeColors = getThemeColors();
 
-      <CardHeader className="pb-4">
+  return (
+    <Card className={cn(
+      "w-full max-w-4xl mx-auto shadow-xl backdrop-blur-sm transition-all duration-500 hover:shadow-2xl",
+      themeColors.card,
+      "animate-fadeIn"
+    )} style={{ animationDelay: `${index * 300}ms` }}>
+      <CardHeader className={cn(
+        "text-white relative overflow-hidden",
+        themeColors.header
+      )}>
+        <div className="absolute inset-0 bg-black/10"></div>
         <CardTitle className={cn(
-          "flex items-center space-x-3 text-xl font-bold transition-colors duration-500",
-          useTaylorSwiftThemes ? "text-purple-800" : "text-blue-800"
+          "relative z-10 flex items-center space-x-3 text-xl font-bold",
+          useTaylorSwiftThemes ? "text-white" : "text-white"
         )}>
           {getThemeIcon()}
-          <span>{chapter.title}</span>
-          {showStreamingText && (
+          <span>
+            {chapter.isStreaming && !chapter.title ? (
+              <span className="flex items-center space-x-2">
+                <span>Chapter {index + 1}</span>
+                <div className="animate-pulse w-2 h-2 bg-white rounded-full"></div>
+              </span>
+            ) : (
+              chapter.title || `Chapter ${index + 1}`
+            )}
+          </span>
+          {showStreamingText && !chapter.isStreaming && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowFullContent(!showFullContent)}
-              className="ml-auto"
+              className="ml-auto text-white/80 hover:text-white hover:bg-white/20"
             >
               {showFullContent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="ml-1 text-xs">
+                {showFullContent ? "Hide" : "Show"} Full
+              </span>
             </Button>
           )}
         </CardTitle>
@@ -140,32 +147,59 @@ export const StreamingChapterView = ({
       <CardContent className="space-y-6">
         {/* Chapter Content */}
         <div className="prose prose-lg max-w-none">
-          {showStreamingText && !showFullContent ? (
-            <StreamingText
-              text={chapter.content}
-              speed={25}
-              wordByWord={false}
-              onComplete={handleStreamingComplete}
-              className={cn(
-                "leading-relaxed text-gray-800",
-                useTaylorSwiftThemes && "prose-purple"
-              )}
-            />
-          ) : (
+          {chapter.isStreaming ? (
+            // Show streaming content as it comes in
             <div className="space-y-4 leading-relaxed text-gray-800">
-              {chapter.content.split('\n\n').map((paragraph, pIndex) => (
-                <p 
-                  key={pIndex} 
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="animate-pulse w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm text-purple-600 font-medium">Writing chapter...</span>
+              </div>
+              {(chapter.streamingContent || '').split('\n\n').map((paragraph, pIndex) => (
+                <p
+                  key={pIndex}
                   className={cn(
                     "transition-all duration-300",
                     paragraph.startsWith('"') && "text-blue-600 italic font-medium"
                   )}
-                  style={{ 
+                >
+                  {paragraph}
+                </p>
+              ))}
+              {/* Streaming cursor */}
+              <span className="inline-block w-2 h-5 bg-purple-500 animate-pulse ml-1"></span>
+            </div>
+          ) : showStreamingText && !showFullContent ? (
+            <StreamingText
+              text={chapter.content}
+              speed={25}
+              className="space-y-4 leading-relaxed text-gray-800"
+              onComplete={() => setStreamingComplete(true)}
+              highlightDialogue={true}
+              useTaylorSwiftThemes={useTaylorSwiftThemes}
+            />
+          ) : (
+            <div className="space-y-4 leading-relaxed text-gray-800">
+              {chapter.content.split('\n\n').map((paragraph, pIndex) => (
+                <p
+                  key={pIndex}
+                  className={cn(
+                    "transition-all duration-300",
+                    paragraph.startsWith('"') && "text-blue-600 italic font-medium"
+                  )}
+                  style={{
                     animationDelay: `${pIndex * 100}ms`,
                     animation: showFullContent ? "fadeIn 0.5s ease-out forwards" : undefined
                   }}
                 >
-                  {paragraph}
+                  {paragraph.startsWith('"') ? (
+                    <span className="relative">
+                      <span className="absolute -left-2 text-2xl text-blue-400 opacity-50">"</span>
+                      {paragraph.slice(1, -1)}
+                      <span className="absolute -right-2 text-2xl text-blue-400 opacity-50">"</span>
+                    </span>
+                  ) : (
+                    paragraph
+                  )}
                 </p>
               ))}
             </div>
@@ -179,55 +213,45 @@ export const StreamingChapterView = ({
               <img
                 src={chapter.imageUrl}
                 alt={`Illustration for ${chapter.title}`}
-                className="w-full h-auto rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-[1.02]"
+                className="w-full h-auto rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
-          ) : (
-            <div className={cn(
-              "w-full h-48 rounded-lg flex items-center justify-center border-2 border-dashed transition-all duration-300",
-              isGeneratingImages 
-                ? useTaylorSwiftThemes 
-                  ? "bg-purple-50 border-purple-200" 
-                  : "bg-blue-50 border-blue-200"
-                : "bg-gray-100 border-gray-300"
-            )}>
-              {isGeneratingImages ? (
-                <div className="flex flex-col items-center space-y-2">
-                  <Loader2 className={cn(
-                    "h-8 w-8 animate-spin",
-                    useTaylorSwiftThemes ? "text-purple-500" : "text-blue-500"
-                  )} />
-                  <span className={cn(
-                    "text-sm font-medium",
-                    useTaylorSwiftThemes ? "text-purple-600" : "text-blue-600"
-                  )}>
-                    Creating magical illustration...
-                  </span>
+          ) : imageGenerationStatus === 'generating' ? (
+            <div className="relative w-full">
+              <ImageSkeleton
+                aspectRatio="video"
+                useTaylorSwiftThemes={useTaylorSwiftThemes}
+                showLabel={true}
+                className="w-full"
+              />
+              <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+                <div className="bg-white/90 rounded-lg p-4 text-center">
+                  <div className="text-sm font-medium text-gray-700 mb-2">
+                    Generating illustration...
+                  </div>
+                  <div className="w-32 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${imageGenerationProgress}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {imageGenerationProgress}% complete
+                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center space-y-2 text-gray-400">
-                  <ImageIcon className="h-8 w-8" />
-                  <span className="text-sm">Illustration will appear here</span>
-                </div>
-              )}
+              </div>
             </div>
+          ) : (
+            <ImageSkeleton
+              aspectRatio="video"
+              useTaylorSwiftThemes={useTaylorSwiftThemes}
+              showLabel={isGeneratingImages}
+              className="w-full"
+            />
           )}
         </div>
       </CardContent>
-
-      {/* Completion glow effect */}
-      {streamingComplete && (
-        <div className="absolute inset-0 pointer-events-none">
-          <div className={cn(
-            "absolute inset-0 rounded-lg",
-            useTaylorSwiftThemes 
-              ? "bg-gradient-to-r from-purple-400/10 via-pink-400/10 to-blue-400/10" 
-              : "bg-gradient-to-r from-blue-400/10 via-cyan-400/10 to-teal-400/10",
-            "animate-pulse"
-          )} />
-        </div>
-      )}
     </Card>
   );
 };

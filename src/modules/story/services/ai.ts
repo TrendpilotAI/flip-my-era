@@ -110,7 +110,7 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
         'Content-Type': 'application/json'
       },
       data: {
-        model: 'llama3-70b-8192',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: 'You are a creative storyteller who specializes in creating engaging, imaginative stories for children and young adults.' },
           { role: 'user', content: prompt }
@@ -149,7 +149,7 @@ export async function generateChapters(story: string, numChapters: number = 3): 
         'Content-Type': 'application/json'
       },
       data: {
-        model: 'llama3-70b-8192',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: 'You are a creative children\'s book author who specializes in creating engaging chapter books.' },
           { role: 'user', content: prompt }
@@ -227,7 +227,7 @@ export async function generateTaylorSwiftChapters(
         'Content-Type': 'application/json'
       },
       data: {
-        model: 'llama3-70b-8192',
+        model: 'openai/gpt-oss-120b',
         messages: [
           {
             role: 'system',
@@ -275,7 +275,7 @@ export async function generateName(options: GenerateNameOptions): Promise<string
         'Content-Type': 'application/json'
       },
       data: {
-        model: 'llama3-70b-8192',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

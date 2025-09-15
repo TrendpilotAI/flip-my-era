@@ -210,9 +210,9 @@ async function generateSingleChapter(
       'Authorization': `Bearer ${groqApiKey}`,
       'Content-Type': 'application/json'
     },
-    data: {
-      model: 'llama3-70b-8192',
-      messages: [
+      data: {
+        model: 'openai/gpt-oss-120b',
+        messages: [
         {
           role: 'system',
           content: useTaylorSwiftThemes
@@ -222,7 +222,7 @@ async function generateSingleChapter(
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
-      max_tokens: format === 'novella' ? 4096 : 2048,
+      max_tokens: format === 'novella' ? 8192 : 4096,
       response_format: { type: "json_object" }
     }
   });

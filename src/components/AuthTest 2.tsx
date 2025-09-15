@@ -18,7 +18,7 @@ export default function AuthTest() {
     
     try {
       // Get token with specific audience for Supabase
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       addResult(`Clerk token received: ${token ? 'YES' : 'NO'}`);
       
       if (token) {
@@ -48,7 +48,7 @@ export default function AuthTest() {
     addResult('Testing Supabase connection...');
     
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       if (!token) {
         addResult('No Clerk token available');
         setIsLoading(false);
@@ -79,7 +79,7 @@ export default function AuthTest() {
     addResult('Testing credits Edge Function...');
     
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       if (!token) {
         addResult('No Clerk token available');
         setIsLoading(false);
@@ -129,7 +129,7 @@ export default function AuthTest() {
     
     try {
       // Test getting token with supabase template
-      const supabaseToken = await getToken({ template: 'supabase' });
+      const supabaseToken = await getToken();
       if (!supabaseToken) {
         addResult('ERROR: No supabase template token available');
         addResult('This means the Clerk JWT template is not configured');
