@@ -18,7 +18,7 @@ export const generateWithGroq = async (prompt: string) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "llama3-70b-8192",
+        model: "openai/gpt-oss-120b",
         messages: [
           {
             role: "system",
@@ -30,7 +30,7 @@ export const generateWithGroq = async (prompt: string) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 4096,
         top_p: 1,
         stop: null
       })

@@ -55,11 +55,13 @@ export async function signOutFromSupabase() {
 
 // Helper to create a Supabase client with Clerk session token
 // This uses Clerk's native integration approach
+// Note: Creating multiple clients can cause warnings, use sparingly
 export function createSupabaseClientWithClerkToken(sessionToken: string | null) {
+  console.warn("Creating new Supabase client instance - consider using the singleton client instead");
   return createClient(supabaseUrl || '', supabaseAnonKey || '', {
     auth: {
-      autoRefreshToken: true,
-      persistSession: true,
+      autoRefreshToken: false, // Disable to avoid conflicts with main client
+      persistSession: false,   // Disable to avoid conflicts with main client
       detectSessionInUrl: false,
       flowType: 'pkce',
     },

@@ -164,6 +164,7 @@ serve(async (req) => {
     // Check if user is admin
     const isAdmin = adminProfile.email === "admin@flipmyera.com" || 
                     adminProfile.email === "danny.ijdo@gmail.com" ||
+                    adminProfile.email === "trendpilot.ai@gmail.com" ||
                     adminProfile.email?.includes("trendpilot");
 
     if (!isAdmin) {

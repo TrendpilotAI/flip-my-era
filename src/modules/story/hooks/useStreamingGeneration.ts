@@ -188,7 +188,22 @@ export const useStreamingGeneration = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Streaming response error:', response.status, errorText);
-        throw new Error(`Failed to start generation: ${response.status} ${response.statusText}`);
+        
+        // Provide more specific error messages based on status code
+        let errorMessage = 'Failed to start generation';
+        if (response.status === 401) {
+          errorMessage = 'Authentication failed. Please sign in and try again.';
+        } else if (response.status === 403) {
+          errorMessage = 'Access denied. Please check your permissions.';
+        } else if (response.status === 429) {
+          errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+        } else if (response.status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (response.status >= 400 && response.status < 500) {
+          errorMessage = 'Invalid request. Please check your settings and try again.';
+        }
+        
+        throw new Error(`${errorMessage} (${response.status})`);
       }
 
       const reader = response.body?.getReader();
