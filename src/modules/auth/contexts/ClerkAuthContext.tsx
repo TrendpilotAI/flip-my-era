@@ -168,7 +168,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               .insert({
                 id: clerkUserId,
                 email: clerkUser.primaryEmailAddress?.emailAddress || "",
-                full_name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
+                name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
                 avatar_url: clerkUser.imageUrl,
                 subscription_status: "free",
               });
@@ -191,7 +191,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               .from('profiles')
               .update({
                 email: clerkUser.primaryEmailAddress?.emailAddress || "",
-                full_name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
+                name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
                 avatar_url: clerkUser.imageUrl,
               })
               .eq('id', clerkUserId);
@@ -201,7 +201,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             setUserProfile({
               id: String(existingProfile.id),
               email: String(existingProfile.email),
-              name: String(existingProfile.full_name || existingProfile.name),
+              name: String(existingProfile.name),
               avatar_url: String(existingProfile.avatar_url),
               subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
               created_at: String(existingProfile.created_at),

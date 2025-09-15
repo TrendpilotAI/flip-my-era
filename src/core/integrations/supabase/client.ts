@@ -53,12 +53,21 @@ export async function signOutFromSupabase() {
   return { error };
 }
 
+// Singleton for Clerk-authenticated Supabase client
+let clerkSupabaseInstance: ReturnType<typeof createClient> | null = null;
+let currentClerkToken: string | null = null;
+
 // Helper to create a Supabase client with Clerk session token
-// This uses Clerk's native integration approach
-// Note: Creating multiple clients can cause warnings, use sparingly
+// This uses Clerk's native integration approach with singleton pattern
 export function createSupabaseClientWithClerkToken(sessionToken: string | null) {
-  console.warn("Creating new Supabase client instance - consider using the singleton client instead");
-  return createClient(supabaseUrl || '', supabaseAnonKey || '', {
+  // If we have a cached instance with the same token, return it
+  if (clerkSupabaseInstance && currentClerkToken === sessionToken) {
+    return clerkSupabaseInstance;
+  }
+  
+  // Create or update the singleton instance
+  currentClerkToken = sessionToken;
+  clerkSupabaseInstance = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     auth: {
       autoRefreshToken: false, // Disable to avoid conflicts with main client
       persistSession: false,   // Disable to avoid conflicts with main client
@@ -72,6 +81,8 @@ export function createSupabaseClientWithClerkToken(sessionToken: string | null) 
       },
     },
   });
+  
+  return clerkSupabaseInstance;
 }
 
 // Alternative approach using Clerk's accessToken function
