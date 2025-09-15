@@ -1,13 +1,18 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { TaylorSwiftTheme, StoryFormat } from "@/modules/story/utils/storyPrompts";
+import { extractImagePromptFromStream, ImagePrompt } from "@/modules/story/utils/imagePromptExtraction";
+import { handleStreamingGenerationError, GenerationErrorContext, normalizeError } from '@/modules/shared/utils/errorHandlingUtils';
 
 interface Chapter {
   title: string;
   content: string;
+  streamingContent?: string;
   imageUrl?: string;
   id?: string;
+  isStreaming?: boolean;
+  imagePrompt?: ImagePrompt | null;
 }
 
 interface StreamingState {
@@ -19,6 +24,8 @@ interface StreamingState {
   estimatedTimeRemaining?: number;
   isComplete: boolean;
   chapters: Chapter[];
+  imageGenerationStatus: Record<number, 'pending' | 'generating' | 'complete' | 'error'>;
+  imageGenerationProgress: Record<number, number>;
 }
 
 interface StreamingGenerationOptions {
@@ -30,6 +37,10 @@ interface StreamingGenerationOptions {
   onChapterComplete?: (chapter: Chapter) => void;
   onComplete?: (chapters: Chapter[]) => void;
   onError?: (error: string) => void;
+  onImagePromptExtracted?: (prompt: ImagePrompt, chapterIndex: number) => void;
+  onImageGenerationStart?: (chapterIndex: number) => void;
+  onImageGenerationComplete?: (chapterIndex: number, imageUrl: string) => void;
+  onImageGenerationError?: (chapterIndex: number, error: string) => void;
 }
 
 export const useStreamingGeneration = () => {
@@ -43,8 +54,74 @@ export const useStreamingGeneration = () => {
     progress: 0,
     message: "",
     isComplete: false,
-    chapters: []
+    chapters: [],
+    imageGenerationStatus: {},
+    imageGenerationProgress: {}
   });
+
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [imageGenerationQueue, setImageGenerationQueue] = useState<Set<number>>(new Set());
+
+  // Mock image generation function - this would be replaced with actual image generation API
+  const generateImageForChapter = useCallback(async (chapterIndex: number, imagePrompt: ImagePrompt) => {
+    try {
+      // Update status to generating
+      setState(prev => ({
+        ...prev,
+        imageGenerationStatus: {
+          ...prev.imageGenerationStatus,
+          [chapterIndex]: 'generating'
+        },
+        imageGenerationProgress: {
+          ...prev.imageGenerationProgress,
+          [chapterIndex]: 0
+        }
+      }));
+
+      // Simulate image generation progress
+      for (let progress = 0; progress <= 100; progress += 20) {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate processing time
+        
+        setState(prev => ({
+          ...prev,
+          imageGenerationProgress: {
+            ...prev.imageGenerationProgress,
+            [chapterIndex]: progress
+          }
+        }));
+      }
+
+      // Simulate successful image generation
+      const mockImageUrl = `https://via.placeholder.com/800x600/4F46E5/FFFFFF?text=Chapter+${chapterIndex + 1}+Image`;
+      
+      setState(prev => ({
+        ...prev,
+        chapters: prev.chapters.map((chapter, index) =>
+          index === chapterIndex
+            ? { ...chapter, imageUrl: mockImageUrl }
+            : chapter
+        ),
+        imageGenerationStatus: {
+          ...prev.imageGenerationStatus,
+          [chapterIndex]: 'complete'
+        }
+      }));
+
+      return mockImageUrl;
+    } catch (error) {
+      console.error(`Image generation failed for chapter ${chapterIndex}:`, error);
+      
+      setState(prev => ({
+        ...prev,
+        imageGenerationStatus: {
+          ...prev.imageGenerationStatus,
+          [chapterIndex]: 'error'
+        }
+      }));
+      
+      throw error;
+    }
+  }, []);
 
   const startGeneration = useCallback(async (options: StreamingGenerationOptions) => {
     const {
