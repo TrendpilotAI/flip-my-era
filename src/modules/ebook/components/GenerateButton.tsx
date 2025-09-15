@@ -19,12 +19,12 @@ export const GenerateButton = ({ type, onClick, isGenerating, hasImages }: Gener
       >
         {isGenerating ? (
           <>
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            <Loader2 className="h-6 w-6 animate-spin mr-2" role="img" aria-label="Loading icon" />
             Generating Chapters...
           </>
         ) : (
           <>
-            <Book className="h-6 w-6 mr-2" />
+            <Book className="h-6 w-6 mr-2" role="img" aria-label="Book icon" />
             Generate Chapters
           </>
         )}
@@ -40,14 +40,14 @@ export const GenerateButton = ({ type, onClick, isGenerating, hasImages }: Gener
     >
       {isGenerating ? (
         <>
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
+          <Loader2 className="h-6 w-6 animate-spin mr-2" role="img" aria-label="Loading icon" />
           Generating Illustrations...
         </>
       ) : hasImages ? (
         "Images Generated!"
       ) : (
         <>
-          <ImageIcon className="h-6 w-6 mr-2" />
+          <ImageIcon className="h-6 w-6 mr-2" role="img" aria-label="Image icon" />
           Generate Images for All Chapters
         </>
       )}
