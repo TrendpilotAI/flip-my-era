@@ -20,19 +20,12 @@ CREATE INDEX IF NOT EXISTS idx_stories_user_id_is_public
 ON public.stories(user_id, is_public);
 
 -- Update RLS policies to handle public stories
--- Drop existing policy if it exists
+-- Drop existing policies to consolidate them
 DROP POLICY IF EXISTS "Anyone can view public stories" ON public.stories;
-
--- Create policy for viewing public stories
-CREATE POLICY "Anyone can view public stories" 
-ON public.stories
-FOR SELECT 
-USING (is_public = true);
-
--- Update the existing "Users can view own stories" policy to be more explicit
 DROP POLICY IF EXISTS "Users can view own stories" ON public.stories;
 
-CREATE POLICY "Users can view own stories" 
+-- Create a single, consolidated policy for viewing stories
+CREATE POLICY "Users can view own or public stories" 
 ON public.stories
 FOR SELECT 
 USING (
