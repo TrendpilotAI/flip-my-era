@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
-import { samcartClient } from '@/core/integrations/samcart/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/modules/shared/components/ui/radio-group';
@@ -16,7 +16,8 @@ interface PlanOption {
   price: number;
   description: string;
   features: string[];
-  samcartProductId: string;
+  stripeProductId: string;
+  stripePriceId: string;  
 }
 
 const planOptions: PlanOption[] = [
@@ -31,7 +32,8 @@ const planOptions: PlanOption[] = [
       "PDF downloads",
       "Email support"
     ],
-    samcartProductId: "starter-service"
+    stripeProductId: "prod_T66l2ofWiIeXwG",
+    stripePriceId: "price_1S9uXm5U03MNTw3qiId3Kpcj"
   },
   {
     id: "premium",
@@ -45,7 +47,8 @@ const planOptions: PlanOption[] = [
       "Video generation",
       "Priority support"
     ],
-    samcartProductId: "e-memory-book"
+    stripeProductId: "prod_T66sHD5TeKOubL",
+    stripePriceId: "price_1S9ueU5U03MNTw3qgpnfLi89"
   },
   {
     id: "family",
@@ -59,7 +62,8 @@ const planOptions: PlanOption[] = [
       "Family collaboration tools",
       "24/7 support"
     ],
-    samcartProductId: "e-memory-book"
+    stripeProductId: "prod_T66skpDMZXB6Qx",
+    stripePriceId: "price_1S9uek5U03MNTw3q1B9LgLYo"
   }
 ];
 
@@ -81,7 +85,7 @@ const Checkout = () => {
     }
   }, [location.search]);
 
-  const handleProceedToCheckout = () => {
+  const handleProceedToCheckout = async () => {
     setIsProcessing(true);
     
     try {
@@ -95,43 +99,35 @@ const Checkout = () => {
       if (!user?.email) {
         throw new Error("User email is required for checkout");
       }
-      
-      // Prepare checkout options for SamCart with input validation
-      const checkoutOptions = {
-        productId: selectedPlanOption.samcartProductId,
-        customerEmail: user.email,
-        customerName: user.name || undefined,
-        couponCode: couponCode.trim() || undefined,
-        redirectUrl: `${window.location.origin}/checkout/success?plan=${encodeURIComponent(selectedPlan)}`,
-        cancelUrl: `${window.location.origin}/checkout?plan=${encodeURIComponent(selectedPlan)}`,
-        metadata: {
-          userId: user.id || 'anonymous',
-          planId: selectedPlan,
-          source: "website"
-        }
-      };
-      
-      // In a real implementation, this would redirect to SamCart
-      // For demo purposes, we'll simulate the process
-      setTimeout(() => {
-        toast({
-          title: "Redirecting to secure checkout",
-          description: "You'll be redirected to complete your purchase securely.",
-        });
-        
-        // In production, use this to redirect to SamCart:
-        // samcartClient.redirectToCheckout(checkoutOptions);
-        
-        // For demo, we'll navigate to a success page
-        navigate("/checkout/success?plan=" + encodeURIComponent(selectedPlan));
-      }, 1500);
+
+      toast({
+        title: "Redirecting to secure checkout",
+        description: "You'll be redirected to Stripe to complete your purchase securely.",
+      });
+
+      // Call Stripe checkout function
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan: selectedPlan }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to create checkout session');
+      }
+
+      if (data?.url) {
+        // Open Stripe checkout in new tab
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL received');
+      }
     } catch (error) {
-      // Log error without exposing sensitive information
-      console.error("Checkout error occurred");
+      console.error("Checkout error occurred:", error);
       
       // Show user-friendly error message
-      const errorMessage = error instanceof Error && error.message.includes('email')
-        ? "Please ensure you're logged in with a valid email address."
+      const errorMessage = error instanceof Error 
+        ? error.message.includes('email')
+          ? "Please ensure you're logged in with a valid email address."
+          : error.message
         : "There was a problem initiating checkout. Please try again.";
       
       toast({
@@ -139,6 +135,7 @@ const Checkout = () => {
         description: errorMessage,
         variant: "destructive",
       });
+    } finally {
       setIsProcessing(false);
     }
   };
