@@ -6,6 +6,7 @@ Welcome to the FlipMyEra project documentation. This directory contains comprehe
 
 ### 🗺️ Project Planning
 - [**Production Roadmap**](./PRODUCTION_ROADMAP.md) - Complete production readiness plan
+- [**Pricing Plans**](./PRICING_PLANS.md) - Pricing strategy and plan structures
 - [**Architecture Overview**](./ARCHITECTURE.md) - System architecture and design patterns
 - [**API Documentation**](./API.md) - Backend API specifications
 

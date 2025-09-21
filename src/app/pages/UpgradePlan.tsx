@@ -114,7 +114,7 @@ const UpgradePlan = () => {
         <Card className="relative border-gray-200">
           <CardHeader>
             <CardTitle>Free Plan</CardTitle>
-            <CardDescription>Get started with basic features</CardDescription>
+            <CardDescription>Get started with 3 credits refreshed monthly</CardDescription>
             <div className="mt-4">
               <span className="text-3xl font-bold">$0</span>
               <span className="text-gray-500 ml-1">/month</span>
@@ -132,7 +132,7 @@ const UpgradePlan = () => {
                   <div className="flex items-center">
                     <span className="mr-2">{feature.name}</span>
                     {feature.name === "Stories per month" && feature.included.free && (
-                      <Badge variant="outline">3 stories</Badge>
+                      <Badge variant="outline">3 credits/month</Badge>
                     )}
                   </div>
                 </li>

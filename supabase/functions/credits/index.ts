@@ -102,6 +102,59 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
       .select('*')
       .eq('user_id', userId) // Using TEXT field, not UUID
       .single();
+
+    // Check if user profile exists to determine subscription status
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('subscription_status')
+      .eq('id', userId)
+      .single();
+
+    const userSubscriptionStatus = profileData?.subscription_status || 'free';
+
+    // Handle free user monthly credit refresh
+    if (creditData && userSubscriptionStatus === 'free') {
+      const now = new Date();
+      const currentPeriodEnd = creditData.current_period_end ? new Date(creditData.current_period_end) : null;
+
+      // If no current period or period has ended, refresh credits
+      if (!currentPeriodEnd || now >= currentPeriodEnd) {
+        const periodStart = new Date(now.getFullYear(), now.getMonth(), 1); // Start of current month
+        const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1); // Start of next month
+
+        // Reset monthly credits for free users
+        const { error: updateError } = await supabase
+          .from('user_credits')
+          .update({
+            balance: 3, // Free users get 3 credits per month
+            monthly_credits_used: 0,
+            current_period_start: periodStart.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            updated_at: now.toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (!updateError) {
+          // Create transaction record for monthly refresh
+          await supabase
+            .from('credit_transactions')
+            .insert({
+              user_id: userId,
+              amount: 3,
+              transaction_type: 'monthly_refresh',
+              description: 'Monthly free credits refresh',
+              balance_after_transaction: 3,
+              metadata: { period_start: periodStart.toISOString(), period_end: periodEnd.toISOString() }
+            });
+
+          // Update creditData with refreshed values
+          creditData.balance = 3;
+          creditData.monthly_credits_used = 0;
+          creditData.current_period_start = periodStart.toISOString();
+          creditData.current_period_end = periodEnd.toISOString();
+        }
+      }
+    }
     
     if (creditError) {
       console.error('Error fetching credit data:', creditError);
