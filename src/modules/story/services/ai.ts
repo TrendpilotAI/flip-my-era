@@ -2,6 +2,7 @@ import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
 import { RunwareService, createEbookIllustrationPrompt, enhancePromptWithGroq } from '@/modules/shared/utils/runware';
 import { TaylorSwiftTheme } from '@/modules/story/utils/storyPrompts';
 import { type ImageMood } from '@/modules/story/utils/taylorSwiftImagePrompts';
+import { getEnchantedQuillPrompt } from '@/modules/story/utils/enchantedQuillPrompt';
 
 interface GenerateStoryOptions {
   prompt: string;
@@ -112,7 +113,7 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
       data: {
         model: 'openai/gpt-oss-120b',
         messages: [
-          { role: 'system', content: 'You are a creative storyteller who specializes in creating engaging, imaginative stories for children and young adults.' },
+          { role: 'system', content: getEnchantedQuillPrompt() },
           { role: 'user', content: prompt }
         ],
         temperature,
@@ -151,7 +152,7 @@ export async function generateChapters(story: string, numChapters: number = 3): 
       data: {
         model: 'openai/gpt-oss-120b',
         messages: [
-          { role: 'system', content: 'You are a creative children\'s book author who specializes in creating engaging chapter books.' },
+          { role: 'system', content: getEnchantedQuillPrompt() },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
@@ -229,10 +230,7 @@ export async function generateTaylorSwiftChapters(
       data: {
         model: 'openai/gpt-oss-120b',
         messages: [
-          {
-            role: 'system',
-            content: `You are a creative young adult author who specializes in emotionally resonant ${format === 'novella' ? 'novellas' : 'short stories'} with Taylor Swift-inspired themes. You write age-appropriate content that captures the intensity and authenticity of teenage emotions.`
-          },
+          { role: 'system', content: getEnchantedQuillPrompt() },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,

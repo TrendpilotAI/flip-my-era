@@ -167,3 +167,4 @@ export class StoryGenerationErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
+
