@@ -110,12 +110,12 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             if (updateError) throw updateError;
 
             setUserProfile({
-              id: existingProfile.id,
-              email: existingProfile.email,
-              name: existingProfile.name,
-              avatar_url: existingProfile.avatar_url,
-              subscription_status: existingProfile.subscription_status || "free",
-              created_at: existingProfile.created_at,
+              id: existingProfile.id as string,
+              email: existingProfile.email as string,
+              name: existingProfile.name as string,
+              avatar_url: existingProfile.avatar_url as string,
+              subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
+              created_at: existingProfile.created_at as string,
             });
           }
         } catch (error) {
@@ -166,12 +166,12 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (profile) {
           setUserProfile({
-            id: profile.id,
-            email: profile.email,
-            name: profile.name,
-            avatar_url: profile.avatar_url,
-            subscription_status: profile.subscription_status || "free",
-            created_at: profile.created_at,
+            id: profile.id as string,
+            email: profile.email as string,
+            name: profile.name as string,
+            avatar_url: profile.avatar_url as string,
+            subscription_status: (profile.subscription_status as "free" | "basic" | "premium") || "free",
+            created_at: profile.created_at as string,
           });
         }
       } catch (error) {

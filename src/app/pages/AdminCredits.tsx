@@ -66,7 +66,7 @@ const AdminCredits = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       // Get all profiles
       const { data: profiles, error: profilesError } = await supabase
@@ -114,7 +114,7 @@ const AdminCredits = () => {
         };
       });
 
-      setUsers(usersWithCredits);
+      setUsers(usersWithCredits as User[]);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -142,7 +142,7 @@ const AdminCredits = () => {
         return;
       }
 
-      setUserTransactions(transactions || []);
+      setUserTransactions((transactions || []) as CreditTransaction[]);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     }
@@ -170,7 +170,7 @@ const AdminCredits = () => {
 
     setIsAddingCredits(true);
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       const { data, error } = await supabase.functions.invoke('admin-credits', {
         method: 'POST',
@@ -233,14 +233,14 @@ const AdminCredits = () => {
   // Get user credit information
   const getUserCreditInfo = async (userId: string) => {
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       const { data, error } = await supabase.functions.invoke('admin-credits', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        query: {
+        body: {
           user_id: userId
         }
       });

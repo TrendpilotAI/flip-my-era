@@ -34,7 +34,7 @@ export const StoriesList = ({ onStorySelect }: StoriesListProps) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setStories(data || []);
+      setStories((data || []) as unknown as Story[]);
     } catch (error: any) {
       toast({
         title: "Error loading stories",

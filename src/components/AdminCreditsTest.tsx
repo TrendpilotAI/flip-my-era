@@ -28,14 +28,14 @@ const AdminCreditsTest = () => {
 
     setIsLoading(true);
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       const { data, error } = await supabase.functions.invoke('admin-credits', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        query: {
+        body: {
           user_id: userId.trim()
         }
       });
@@ -96,7 +96,7 @@ const AdminCreditsTest = () => {
 
     setIsLoading(true);
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       const { data, error } = await supabase.functions.invoke('admin-credits', {
         method: 'POST',

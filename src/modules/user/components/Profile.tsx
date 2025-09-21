@@ -47,7 +47,7 @@ const Profile = () => {
         .single();
 
       if (error) throw error;
-      setProfile(data);
+      setProfile(data as any);
     } catch (error: any) {
       toast({
         title: "Error fetching profile",
