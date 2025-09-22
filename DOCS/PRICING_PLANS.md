@@ -12,7 +12,7 @@ Free ($0) → Swiftie Starter ($12.99) → Swiftie Deluxe ($25) → Opus VIP ($4
 ## Current Pricing Structure
 
 ### Subscription Plans
-- **Free Plan**: $0/month - 3 credits/month (refreshed monthly), basic story generation
+- **Free Plan**: $0/month - 10 credits/month (refreshed monthly), 3-5 complete stories
 - **Basic Plan**: $9.99/month - 10 stories/month, basic illustrations, PDF downloads
 - **Premium Plan**: $19.99/month - Unlimited stories, high-quality illustrations, PDF/ePub downloads, video generation
 - **Family Plan**: $29.99/month - Everything in Premium + up to 5 family members, shared library
@@ -134,90 +134,117 @@ Free ($0) → Swiftie Starter ($12.99) → Swiftie Deluxe ($25) → Opus VIP ($4
 - Community forum integration
 - Clear upgrade prompts and feature teasers for higher plans
 
-## Credit Pricing System
+## Redesigned Generous Pricing Structure
 
-### AI Usage Cost Structure
+### Philosophy: Simple, Generous, and Easy to Understand
 
-Credits are consumed based on the type, complexity, and speed of AI operations performed.
+**Free Plan**: Give users real value to fall in love with the platform
+**Paid Plans**: Clear value ladders with generous credit allocations
+**Credit System**: Transparent pricing that makes sense for creators
 
-#### **Story Generation (LLM Models)**
-| Operation | Basic Model | Advanced Model | Priority Speed |
-|-----------|-------------|----------------|----------------|
-| **Short Story** (500-1,500 words) | 1 credit | 2 credits | +0.5 credits |
-| **Chapter Generation** | 1.5 credits | 3 credits | +0.5 credits |
-| **Novel Outline** | 2 credits | 4 credits | +0.5 credits |
-| **Character Development** | 1 credit | 2 credits | +0.5 credits |
-| **Plot Enhancement** | 1.5 credits | 3 credits | +0.5 credits |
+### New Plan Structure
 
-#### **Image Generation (Visual Models)**
-| Operation | Basic Quality | High Quality | Ultra Quality | Priority Speed |
-|-----------|----------------|--------------|----------------|----------------|
-| **Story Illustration** | 0.5 credits | 1 credit | 2 credits | +0.5 credits |
-| **Character Portrait** | 1 credit | 2 credits | 4 credits | +0.5 credits |
-| **Scene Background** | 0.8 credits | 1.5 credits | 3 credits | +0.5 credits |
-| **Cover Art** | 1.5 credits | 3 credits | 6 credits | +0.5 credits |
-| **Multi-Panel Spread** | 2 credits | 4 credits | 8 credits | +0.5 credits |
+#### **Free Forever** - "Story Starter"
+**Price:** $0/month
+**Credits:** 10 credits/month (refreshed monthly)
+**What You Get:**
+- ✅ 3-5 short stories per month
+- ✅ Basic story illustrations
+- ✅ PDF exports
+- ✅ Community access
+- ✅ Taylor Swift theme basics
 
-#### **Video Generation (A/V Models)**
-| Operation | Basic Quality | High Quality | Ultra Quality | Priority Speed |
-|-----------|----------------|--------------|----------------|----------------|
-| **Story Recap Video** (15s) | 5 credits | 10 credits | 20 credits | +2 credits |
-| **Character Introduction** (30s) | 8 credits | 15 credits | 30 credits | +3 credits |
-| **Scene Animation** (60s) | 12 credits | 25 credits | 50 credits | +5 credits |
-| **Full Story Adaptation** | 25 credits | 50 credits | 100 credits | +10 credits |
+**Perfect For:** Trying out FlipMyEra, casual storytelling, sharing with friends
 
-#### **Audio Generation (Text-to-Speech)**
-| Operation | Basic Voice | Premium Voice | Celebrity Voice | Priority Speed |
-|-----------|-------------|----------------|-----------------|----------------|
-| **Narration** (per minute) | 0.5 credits | 1 credit | 3 credits | +0.2 credits |
-| **Sound Effects** | 0.3 credits | 0.6 credits | 1.2 credits | +0.1 credits |
-| **Background Music** | 0.8 credits | 1.5 credits | 3 credits | +0.3 credits |
+---
 
-#### **Advanced Features**
-| Feature | Credit Cost | Description |
-|---------|-------------|-------------|
-| **Commercial License** | +50% of base cost | Allows commercial use/sale of generated content |
-| **Bulk Generation** | -10% per item (5+ items) | Volume discount for batch processing |
-| **Custom Model Training** | 100 credits | Train custom AI model on user data |
-| **API Access** | 10 credits/month | Direct API access for integrations |
+#### **Swiftie Starter** - "Theme Explorer"
+**Price:** $12.99/month
+**Credits:** 30 credits/month
+**What You Get:**
+- ✅ Everything in Free + 3x more credits
+- ✅ Taylor Swift era-specific templates
+- ✅ High-quality story illustrations
+- ✅ Character portraits
+- ✅ Priority support
+- ✅ Advanced customization
 
-### Credit Cost Examples
+**Perfect For:** Taylor Swift fans, social media creators, dedicated storytellers
 
-#### **Complete Story Package Examples:**
+---
 
-**Basic Story Package** (Free/Swiftie Starter):
-- Story generation: 1 credit (basic)
-- 3 illustrations: 3 × 0.5 = 1.5 credits
-- PDF export: 0 credits (included)
-- **Total: 2.5 credits**
+#### **Swiftie Deluxe** - "Content Creator"
+**Price:** $25/month
+**Credits:** 75 credits/month
+**What You Get:**
+- ✅ Everything in Starter + 2.5x more credits
+- ✅ Cinematic multi-page spreads
+- ✅ TikTok-ready animated previews
+- ✅ Priority GPU processing (3x faster)
+- ✅ Commercial licensing rights
+- ✅ 30% off extra credit purchases
 
-**Premium Story Package** (Swiftie Deluxe/Opus VIP):
-- Story generation: 2 credits (advanced model)
-- 5 high-quality illustrations: 5 × 1 = 5 credits
-- Priority speed: +1 credit
-- Audio narration (10 min): 10 × 1 = 10 credits
-- Commercial license: +50% of total
-- **Total: 22 credits** (18 + 50% commercial)
+**Perfect For:** Professional creators, content entrepreneurs, social media influencers
 
-**Ultimate Creator Package** (Opus VIP):
-- Novel outline: 4 credits (advanced)
-- 20 chapters: 20 × 3 = 60 credits
-- 50 illustrations: 50 × 1.5 = 75 credits
-- Full story video: 50 credits
-- Audio narration: 120 minutes × 1 = 120 credits
-- Commercial license: +50% of total
-- **Total: 512 credits** (341 + 50% commercial)
+---
 
-### Subscription Credit Allocations
+#### **Opus VIP** - "Publishing Studio"
+**Price:** $49.99/month
+**Credits:** 150 credits/month
+**What You Get:**
+- ✅ Everything in Deluxe + 2x more credits
+- ✅ AI audio narration (podcast-quality)
+- ✅ Analytics dashboard & insights
+- ✅ Commercial distribution tools
+- ✅ Sell on Kindle, Gumroad, etc.
+- ✅ Custom creator features
 
-Based on the new pricing system:
+**Perfect For:** Authors, podcasters, professional publishers, monetizing creators
 
-| Plan | Monthly Credits | Effective Value | Best For |
-|------|----------------|-----------------|----------|
-| **Free** | 3 credits | ~$1.00 value | Basic story creation |
-| **Swiftie Starter** ($12.99) | 12 credits | ~$4.33 value | Casual creators |
-| **Swiftie Deluxe** ($25) | 25 credits | ~$8.33 value | Content creators |
-| **Opus VIP** ($49.99) | 60 credits | ~$20.00 value | Professional creators |
+### Credit Usage Guide (Simple & Clear)
+
+| What You Want to Create | Credits Needed | What It Includes |
+|-------------------------|----------------|------------------|
+| **Single Short Story** | 1-2 credits | Story + 1-2 illustrations |
+| **Story with Illustrations** | 2-4 credits | Story + 3-5 high-quality images |
+| **Children's Book** | 4-6 credits | Story + chapters + illustrations |
+| **Social Media Content** | 3-5 credits | Story + cinematic visuals + TikTok ready |
+| **Audiobook Chapter** | 2-3 credits | 10-15 minutes of AI narration |
+| **Full Story Video** | 10-20 credits | 30-60 second animated adaptation |
+| **Commercial Book** | 8-15 credits | Full book + commercial license |
+
+### Why This Structure Works Better
+
+#### **Generous Free Plan**
+- **10 credits/month** vs old 3 credits = **3x more generous**
+- Enough for 3-5 complete stories with illustrations
+- Real value that gets users hooked
+
+#### **Clear Value Ladders**
+- **Free**: Basic creator
+- **$13**: Taylor Swift enthusiast
+- **$25**: Professional content creator
+- **$50**: Publishing studio
+
+#### **Easy to Understand**
+- No complex credit breakdowns
+- Bundled use cases ("make a children's book")
+- Clear upgrade paths with tangible benefits
+
+#### **Business Benefits**
+- **Higher conversion**: More valuable free tier
+- **Clear differentiation**: Each plan serves distinct user types
+- **Upsell opportunities**: Credit bundles encourage upgrades
+- **Retention**: Monthly refresh keeps users engaged
+
+### Updated Subscription Allocations
+
+| Plan | Monthly Credits | Stories/Month | Value | Best For |
+|------|----------------|----------------|-------|----------|
+| **Free Forever** | 10 credits | 3-5 stories | **$0** | Trial users |
+| **Swiftie Starter** ($12.99) | 30 credits | 10-15 stories | **$4.33/story** | Taylor Swift fans |
+| **Swiftie Deluxe** ($25) | 75 credits | 25-40 stories | **$2.78/story** | Content creators |
+| **Opus VIP** ($49.99) | 150 credits | 50-75 stories | **$2.22/story** | Professional creators |
 
 ### Credit Purchasing Options
 

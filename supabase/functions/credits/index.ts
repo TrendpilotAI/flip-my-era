@@ -126,7 +126,7 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
         const { error: updateError } = await supabase
           .from('user_credits')
           .update({
-            balance: 3, // Free users get 3 credits per month
+            balance: 10, // Free users get 10 credits per month (generous!)
             monthly_credits_used: 0,
             current_period_start: periodStart.toISOString(),
             current_period_end: periodEnd.toISOString(),
@@ -140,15 +140,15 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
             .from('credit_transactions')
             .insert({
               user_id: userId,
-              amount: 3,
+              amount: 10,
               transaction_type: 'monthly_refresh',
               description: 'Monthly free credits refresh',
-              balance_after_transaction: 3,
+              balance_after_transaction: 10,
               metadata: { period_start: periodStart.toISOString(), period_end: periodEnd.toISOString() }
             });
 
           // Update creditData with refreshed values
-          creditData.balance = 3;
+          creditData.balance = 10;
           creditData.monthly_credits_used = 0;
           creditData.current_period_start = periodStart.toISOString();
           creditData.current_period_end = periodEnd.toISOString();
