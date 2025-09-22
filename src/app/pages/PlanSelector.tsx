@@ -5,6 +5,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { CheckCircle, Star, Users, Zap, BookOpen, Video, Download, MessageSquare, Crown, Sparkles, Heart, Music } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface PlanFeature {
   name: string;
@@ -184,6 +185,32 @@ const PlanSelector = () => {
   const navigate = useNavigate();
   const { user } = useClerkAuth();
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.3,
+      }
+    }
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 50, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut",
+        type: "spring",
+        stiffness: 100
+      }
+    }
+  };
+
   const handleSelectPlan = (planId: string) => {
     if (planId === 'free') {
       navigate('/');
@@ -193,25 +220,73 @@ const PlanSelector = () => {
   };
 
   return (
-    <div className="container py-12">
-      <div className="text-center max-w-4xl mx-auto mb-12">
-        <h1 className="text-4xl font-bold mb-4">Choose Your Creative Journey</h1>
+    <motion.div
+      className="container py-12"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div
+        className="text-center max-w-4xl mx-auto mb-12"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+      >
+        <motion.h1
+          className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600"
+          animate={{
+            backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          style={{
+            background: "linear-gradient(45deg, #9333ea, #ec4899, #3b82f6)",
+            backgroundSize: "200% 200%",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            WebkitTextFillColor: "transparent"
+          }}
+        >
+          Choose Your Creative Journey
+        </motion.h1>
         <p className="text-gray-600 text-lg mb-8">
           From casual storytelling to professional publishing - find the perfect plan for your creativity
         </p>
+      </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-7xl mx-auto">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-7xl mx-auto"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
           {/* Free Forever Plan */}
-          <Card className="relative border-gray-200">
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-xl">Free Forever</CardTitle>
-              <CardDescription className="text-sm">Story Starter</CardDescription>
-              <div className="mt-4">
-                <span className="text-3xl font-bold">$0</span>
-                <span className="text-gray-500 text-sm ml-1">/month</span>
-              </div>
-              <Badge variant="secondary" className="mt-2">10 credits/month</Badge>
-            </CardHeader>
+          <motion.div variants={cardVariants}>
+            <Card className="relative border-gray-200 h-full hover:shadow-xl transition-all duration-300 group">
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                initial={false}
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-xl">Free Forever</CardTitle>
+                <CardDescription className="text-sm">Story Starter</CardDescription>
+                <div className="mt-4">
+                  <motion.span
+                    className="text-3xl font-bold"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ type: "spring", stiffness: 400 }}
+                  >
+                    $0
+                  </motion.span>
+                  <span className="text-gray-500 text-sm ml-1">/month</span>
+                </div>
+                <Badge variant="secondary" className="mt-2">10 credits/month</Badge>
+              </CardHeader>
             <CardContent className="pt-0">
               <ul className="space-y-3">
                 {features.map((feature, index) => (
@@ -227,24 +302,43 @@ const PlanSelector = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button
-                variant={user?.subscription_status === "free" ? "secondary" : "outline"}
-                className="w-full"
-                disabled={user?.subscription_status === "free"}
-                onClick={() => handleSelectPlan("free")}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {user?.subscription_status === "free" ? "Current Plan" : "Get Started"}
-              </Button>
+                <Button
+                  variant={user?.subscription_status === "free" ? "secondary" : "outline"}
+                  className="w-full"
+                  disabled={user?.subscription_status === "free"}
+                  onClick={() => handleSelectPlan("free")}
+                >
+                  {user?.subscription_status === "free" ? "Current Plan" : "Get Started"}
+                </Button>
+              </motion.div>
             </CardFooter>
           </Card>
+          </motion.div>
 
           {/* Swiftie Starter Plan */}
-          <Card className="relative border-primary/20">
+          <motion.div variants={cardVariants}>
+            <Card className="relative border-primary/20 h-full hover:shadow-xl transition-all duration-300 group">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={false}
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-xl">Swiftie Starter</CardTitle>
               <CardDescription className="text-sm">Theme Explorer</CardDescription>
               <div className="mt-4">
-                <span className="text-3xl font-bold">$12.99</span>
+                <motion.span
+                  className="text-3xl font-bold"
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  $12.99
+                </motion.span>
                 <span className="text-gray-500 text-sm ml-1">/month</span>
               </div>
               <Badge variant="default" className="mt-2">30 credits/month</Badge>
@@ -264,27 +358,46 @@ const PlanSelector = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button
-                className="w-full"
-                variant={user?.subscription_status === "basic" ? "secondary" : "default"}
-                disabled={user?.subscription_status === "basic"}
-                onClick={() => handleSelectPlan("starter")}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {user?.subscription_status === "basic" ? "Current Plan" : "Choose Starter"}
-              </Button>
+                <Button
+                  className="w-full"
+                  variant={user?.subscription_status === "basic" ? "secondary" : "default"}
+                  disabled={user?.subscription_status === "basic"}
+                  onClick={() => handleSelectPlan("starter")}
+                >
+                  {user?.subscription_status === "basic" ? "Current Plan" : "Choose Starter"}
+                </Button>
+              </motion.div>
             </CardFooter>
           </Card>
+          </motion.div>
 
           {/* Swiftie Deluxe Plan */}
-          <Card className="relative bg-gradient-to-b from-white to-purple-50 border-purple-200">
+          <motion.div variants={cardVariants}>
+            <Card className="relative bg-gradient-to-b from-white to-purple-50 border-purple-200 h-full hover:shadow-xl transition-all duration-300 group">
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <Badge className="bg-purple-500 text-white px-3 py-1">POPULAR</Badge>
             </div>
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={false}
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-xl">Swiftie Deluxe</CardTitle>
               <CardDescription className="text-sm">Content Creator</CardDescription>
               <div className="mt-4">
-                <span className="text-3xl font-bold">$25</span>
+                <motion.span
+                  className="text-3xl font-bold"
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  $25
+                </motion.span>
                 <span className="text-gray-500 text-sm ml-1">/month</span>
               </div>
               <Badge variant="default" className="mt-2 bg-purple-100 text-purple-800">75 credits/month</Badge>
@@ -304,23 +417,42 @@ const PlanSelector = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                disabled={user?.subscription_status === "premium"}
-                onClick={() => handleSelectPlan("deluxe")}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {user?.subscription_status === "premium" ? "Current Plan" : "Choose Deluxe"}
-              </Button>
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  disabled={user?.subscription_status === "premium"}
+                  onClick={() => handleSelectPlan("deluxe")}
+                >
+                  {user?.subscription_status === "premium" ? "Current Plan" : "Choose Deluxe"}
+                </Button>
+              </motion.div>
             </CardFooter>
           </Card>
+          </motion.div>
 
           {/* Opus VIP Plan */}
-          <Card className="relative bg-gradient-to-b from-white to-amber-50 border-amber-200">
+          <motion.div variants={cardVariants}>
+            <Card className="relative bg-gradient-to-b from-white to-amber-50 border-amber-200 h-full hover:shadow-xl transition-all duration-300 group">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              initial={false}
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-xl">Opus VIP</CardTitle>
               <CardDescription className="text-sm">Publishing Studio</CardDescription>
               <div className="mt-4">
-                <span className="text-3xl font-bold">$49.99</span>
+                <motion.span
+                  className="text-3xl font-bold"
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  $49.99
+                </motion.span>
                 <span className="text-gray-500 text-sm ml-1">/month</span>
               </div>
               <Badge variant="default" className="mt-2 bg-amber-100 text-amber-800">150 credits/month</Badge>
@@ -340,83 +472,167 @@ const PlanSelector = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                disabled={user?.subscription_status === "premium"}
-                onClick={() => handleSelectPlan("vip")}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                {user?.subscription_status === "premium" ? "Current Plan" : "Choose VIP"}
-              </Button>
+                <Button
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                  disabled={user?.subscription_status === "premium"}
+                  onClick={() => handleSelectPlan("vip")}
+                >
+                  {user?.subscription_status === "premium" ? "Current Plan" : "Choose VIP"}
+                </Button>
+              </motion.div>
             </CardFooter>
           </Card>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Credit Top-Up Section */}
-        <div className="mt-16 max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-4">Need Extra Credits?</h2>
-          <p className="text-gray-600 mb-8">Top up your account with one-time credit purchases</p>
+        <motion.div
+          className="mt-16 max-w-4xl mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          viewport={{ once: true }}
+        >
+          <motion.h2
+            className="text-2xl font-bold mb-4 text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            viewport={{ once: true }}
+          >
+            Need Extra Credits?
+          </motion.h2>
+          <motion.p
+            className="text-gray-600 mb-8 text-center"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            viewport={{ once: true }}
+          >
+            Top up your account with one-time credit purchases
+          </motion.p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="text-center">
-              <CardHeader>
-                <CardTitle className="text-lg">$25</CardTitle>
-                <CardDescription>25 credits</CardDescription>
-                <Badge variant="outline" className="mt-2">$1.00 per credit</Badge>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">Perfect for a story project</p>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full" variant="outline">
-                  Buy Credits
-                </Button>
-              </CardFooter>
-            </Card>
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.8, staggerChildren: 0.1 }}
+            viewport={{ once: true }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5 }}
+            >
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-lg">$25</CardTitle>
+                  <CardDescription>25 credits</CardDescription>
+                  <Badge variant="outline" className="mt-2">$1.00 per credit</Badge>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">Perfect for a story project</p>
+                </CardContent>
+                <CardFooter>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button className="w-full" variant="outline">
+                      Buy Credits
+                    </Button>
+                  </motion.div>
+                </CardFooter>
+              </Card>
+            </motion.div>
 
-            <Card className="text-center border-primary">
-              <CardHeader>
-                <CardTitle className="text-lg">$50</CardTitle>
-                <CardDescription>55 credits</CardDescription>
-                <Badge variant="default" className="mt-2 bg-green-100 text-green-800">10% bonus!</Badge>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">Best value for creators</p>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full">
-                  Buy Credits
-                </Button>
-              </CardFooter>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5 }}
+            >
+              <Card className="text-center border-primary hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-lg">$50</CardTitle>
+                  <CardDescription>55 credits</CardDescription>
+                  <Badge variant="default" className="mt-2 bg-green-100 text-green-800">10% bonus!</Badge>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">Best value for creators</p>
+                </CardContent>
+                <CardFooter>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button className="w-full">
+                      Buy Credits
+                    </Button>
+                  </motion.div>
+                </CardFooter>
+              </Card>
+            </motion.div>
 
-            <Card className="text-center">
-              <CardHeader>
-                <CardTitle className="text-lg">$100</CardTitle>
-                <CardDescription>120 credits</CardDescription>
-                <Badge variant="default" className="mt-2 bg-purple-100 text-purple-800">20% bonus!</Badge>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600">Maximum value pack</p>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full" variant="outline">
-                  Buy Credits
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5 }}
+            >
+              <Card className="text-center hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-lg">$100</CardTitle>
+                  <CardDescription>120 credits</CardDescription>
+                  <Badge variant="default" className="mt-2 bg-purple-100 text-purple-800">20% bonus!</Badge>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">Maximum value pack</p>
+                </CardContent>
+                <CardFooter>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button className="w-full" variant="outline">
+                      Buy Credits
+                    </Button>
+                  </motion.div>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
-        <div className="mt-12 text-center">
+        <motion.div
+          className="mt-12 text-center"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          viewport={{ once: true }}
+        >
           <p className="text-sm text-gray-500 mb-4">
             All plans include 30-day money-back guarantee • Credits never expire • Cancel anytime
           </p>
-          <Button variant="link" onClick={() => navigate('/faq')}>
-            View Pricing FAQ
-          </Button>
-        </div>
-      </div>
-    </div>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Button variant="link" onClick={() => navigate('/faq')}>
+              View Pricing FAQ
+            </Button>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
 

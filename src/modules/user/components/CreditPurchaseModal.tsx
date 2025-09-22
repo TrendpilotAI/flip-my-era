@@ -14,6 +14,9 @@ import {
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useToast } from '@/modules/shared/hooks/use-toast';
 
 interface CreditPurchaseModalProps {
   isOpen: boolean;
@@ -33,7 +36,8 @@ interface PricingTier {
   popular?: boolean;
   type: 'credits' | 'subscription';
   billingCycle?: string;
-  samcartProductId: number;
+  stripeProductId: string;
+  stripePriceId: string;
 }
 
 const pricingTiers: PricingTier[] = [
@@ -45,7 +49,8 @@ const pricingTiers: PricingTier[] = [
     description: 'Perfect for a story project',
     features: ['25 Credits', 'Never expires', 'Use anytime', '$1.00 per credit'],
     type: 'credits',
-    samcartProductId: 350001, // Replace with actual SamCart product ID
+    stripeProductId: 'prod_T6Bh9entCOJCNA',
+    stripePriceId: 'price_1S9zK25U03MNTw3qMH90DnC1',
   },
   {
     id: 'creator-pack',
@@ -56,7 +61,8 @@ const pricingTiers: PricingTier[] = [
     features: ['55 Credits (10% bonus!)', 'Never expires', 'Most popular choice', '$0.91 per credit'],
     popular: true,
     type: 'credits',
-    samcartProductId: 350002, // Replace with actual SamCart product ID
+    stripeProductId: 'prod_T6BhQaa0OH644p',
+    stripePriceId: 'price_1S9zK25U03MNTw3qFkq00yiu',
   },
   {
     id: 'studio-pack',
@@ -66,7 +72,8 @@ const pricingTiers: PricingTier[] = [
     description: 'Maximum value pack',
     features: ['120 Credits (20% bonus!)', 'Never expires', 'Best long-term value', '$0.83 per credit'],
     type: 'credits',
-    samcartProductId: 350003, // Replace with actual SamCart product ID
+    stripeProductId: 'prod_T6BhrpyA6MJQzK',
+    stripePriceId: 'price_1S9zK35U03MNTw3qpmqEDL80',
   },
 ];
 
@@ -77,43 +84,58 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   currentBalance,
 }) => {
   const [loading, setLoading] = useState<string | null>(null);
+  const { user } = useClerkAuth();
+  const { toast } = useToast();
 
   const handlePurchase = async (tier: PricingTier) => {
     setLoading(tier.id);
-    
+
     try {
-      // Construct SamCart checkout URL
-      const checkoutUrl = `https://flipmyera.samcart.com/products/${tier.samcartProductId}`;
-      
-      // Open SamCart checkout in new window
-      const checkoutWindow = window.open(
-        checkoutUrl,
-        'samcart-checkout',
-        'width=800,height=600,scrollbars=yes,resizable=yes'
-      );
+      // Validate user data before proceeding
+      if (!user?.email) {
+        throw new Error("User email is required for checkout");
+      }
 
-      // Poll for window closure (basic implementation)
-      const pollTimer = setInterval(() => {
-        if (checkoutWindow?.closed) {
-          clearInterval(pollTimer);
-          setLoading(null);
-          
-          // Assume success and trigger refresh
-          // In a production app, you might want to verify the purchase via webhook
-          setTimeout(() => {
-            onSuccess();
-          }, 2000); // Give webhook time to process
+      toast({
+        title: "Redirecting to secure checkout",
+        description: "You'll be redirected to Stripe to complete your purchase securely.",
+      });
+
+      // Call Stripe checkout function for one-time credit purchases
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          plan: tier.id,
+          productType: 'credits',
+          stripePriceId: tier.stripePriceId
         }
-      }, 1000);
+      });
 
-      // Clean up after 5 minutes
-      setTimeout(() => {
-        clearInterval(pollTimer);
-        setLoading(null);
-      }, 300000);
+      if (error) {
+        throw new Error(error.message || 'Failed to create checkout session');
+      }
 
+      if (data?.url) {
+        // Open Stripe checkout in new tab
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL received');
+      }
     } catch (error) {
       console.error('Error opening checkout:', error);
+
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error
+        ? error.message.includes('email')
+          ? "Please ensure you're logged in with a valid email address."
+          : error.message
+        : "There was a problem initiating checkout. Please try again.";
+
+      toast({
+        title: "Checkout Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
       setLoading(null);
     }
   };
@@ -234,9 +256,9 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
 
         <div className="mt-6 p-4 bg-muted rounded-lg">
           <p className="text-sm text-muted-foreground">
-            <strong>Note:</strong> Credits never expire and can be used anytime. 
-            Subscriptions provide unlimited access and can be cancelled at any time. 
-            All purchases are processed securely through SamCart.
+            <strong>Note:</strong> Credits never expire and can be used anytime.
+            Subscriptions provide unlimited access and can be cancelled at any time.
+            All purchases are processed securely through Stripe.
           </p>
         </div>
       </DialogContent>

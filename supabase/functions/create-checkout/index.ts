@@ -41,22 +41,46 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get the plan from request body
-    const { plan } = await req.json();
-    logStep("Plan received", { plan });
+    // Get the plan or stripePriceId from request body
+    const { plan, productType, stripePriceId } = await req.json();
+    logStep("Request received", { plan, productType, stripePriceId });
 
-    // Define price IDs for each plan (update these with actual Stripe price IDs after running setup script)
-    const priceIds: Record<string, string> = {
-      starter: "price_swiftie_starter", // Replace with actual Stripe price ID
-      deluxe: "price_swiftie_deluxe", // Replace with actual Stripe price ID
-      vip: "price_opus_vip" // Replace with actual Stripe price ID
+    let priceId: string;
+    let checkoutMode: "subscription" | "payment";
+    let successUrl: string;
+    let cancelUrl: string;
+
+    // Define price IDs for subscription plans
+    const subscriptionPriceIds: Record<string, string> = {
+      starter: "price_1S9zK15U03MNTw3qAO5JnplW",
+      deluxe: "price_1S9zK25U03MNTw3qdDnUn7hk",
+      vip: "price_1S9zK25U03MNTw3qoCHo9KzE"
     };
 
-    const priceId = priceIds[plan];
-    if (!priceId) {
-      throw new Error(`Invalid plan: ${plan}`);
+    // Define price IDs for credit packs
+    const creditPriceIds: Record<string, string> = {
+      'starter-pack': "price_1S9zK25U03MNTw3qMH90DnC1",
+      'creator-pack': "price_1S9zK25U03MNTw3qFkq00yiu",
+      'studio-pack': "price_1S9zK35U03MNTw3qpmqEDL80"
+    };
+
+    if (stripePriceId) {
+      // Direct price ID provided (for credit purchases)
+      priceId = stripePriceId;
+      checkoutMode = "payment";
+      successUrl = `${origin}/dashboard?success=true`;
+      cancelUrl = `${origin}/dashboard`;
+      logStep("Using direct price ID", { priceId, mode: checkoutMode });
+    } else if (plan && subscriptionPriceIds[plan]) {
+      // Subscription plan
+      priceId = subscriptionPriceIds[plan];
+      checkoutMode = "subscription";
+      successUrl = `${origin}/checkout/success?plan=${encodeURIComponent(plan)}`;
+      cancelUrl = `${origin}/checkout?plan=${encodeURIComponent(plan)}`;
+      logStep("Using subscription plan", { plan, priceId, mode: checkoutMode });
+    } else {
+      throw new Error(`Invalid plan or price ID: ${plan || stripePriceId}`);
     }
-    logStep("Price ID found", { priceId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
@@ -79,12 +103,13 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      mode: "subscription",
-      success_url: `${origin}/checkout/success?plan=${encodeURIComponent(plan)}`,
-      cancel_url: `${origin}/checkout?plan=${encodeURIComponent(plan)}`,
+      mode: checkoutMode,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         userId: user.id,
-        plan: plan,
+        plan: plan || 'credits',
+        productType: productType || 'subscription',
       },
     });
 

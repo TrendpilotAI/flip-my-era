@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { Footer } from './Footer';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user, signOut, UserButton } = useClerkAuth();
@@ -36,7 +37,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <nav className="fixed top-0 right-0 p-4 z-50 flex gap-2">
         <SignedIn>
           <DropdownMenu>
@@ -89,7 +90,10 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           </Link>
         </SignedOut>
       </nav>
-      {children}
+      <main className="flex-1">
+        {children}
+      </main>
+      <Footer />
     </div>
   );
 };

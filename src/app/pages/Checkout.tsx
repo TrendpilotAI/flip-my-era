@@ -33,8 +33,8 @@ const planOptions: PlanOption[] = [
       "Character portraits",
       "Priority support"
     ],
-    stripeProductId: "prod_swiftie_starter", // Replace with actual Stripe product ID
-    stripePriceId: "price_swiftie_starter" // Replace with actual Stripe price ID
+    stripeProductId: "prod_T6BhtW05ZjAkHC",
+    stripePriceId: "price_1S9zK15U03MNTw3qAO5JnplW"
   },
   {
     id: "deluxe",
@@ -50,8 +50,8 @@ const planOptions: PlanOption[] = [
       "Commercial licensing",
       "30% off extra credits"
     ],
-    stripeProductId: "prod_swiftie_deluxe", // Replace with actual Stripe product ID
-    stripePriceId: "price_swiftie_deluxe" // Replace with actual Stripe price ID
+    stripeProductId: "prod_T6BhX2nQGqxdmm",
+    stripePriceId: "price_1S9zK25U03MNTw3qdDnUn7hk"
   },
   {
     id: "vip",
@@ -67,8 +67,8 @@ const planOptions: PlanOption[] = [
       "Sell on Kindle, Gumroad, etc.",
       "Custom creator features"
     ],
-    stripeProductId: "prod_opus_vip", // Replace with actual Stripe product ID
-    stripePriceId: "price_opus_vip" // Replace with actual Stripe price ID
+    stripeProductId: "prod_T6Bhc1NIFJgcuW",
+    stripePriceId: "price_1S9zK25U03MNTw3qoCHo9KzE"
   }
 ];
 

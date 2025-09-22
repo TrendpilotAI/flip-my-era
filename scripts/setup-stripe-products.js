@@ -7,7 +7,40 @@
  * Run with: node scripts/setup-stripe-products.js
  */
 
-const Stripe = require('stripe');
+import Stripe from 'stripe';
+import fs from 'fs';
+
+// Load environment variables from .env.local
+function loadEnv() {
+  try {
+    const envContent = fs.readFileSync('.env.local', 'utf8');
+    const envLines = envContent.split('\n');
+    const envVars = {};
+
+    for (const line of envLines) {
+      const trimmedLine = line.trim();
+      if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const [key, ...valueParts] = trimmedLine.split('=');
+        if (key && valueParts.length > 0) {
+          envVars[key.trim()] = valueParts.join('=').trim();
+        }
+      }
+    }
+
+    // Set environment variables
+    Object.keys(envVars).forEach(key => {
+      process.env[key] = envVars[key];
+    });
+
+    return envVars;
+  } catch (error) {
+    console.error('Error loading .env.local:', error.message);
+    return {};
+  }
+}
+
+// Load environment variables
+loadEnv();
 
 // Initialize Stripe with your secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_...');
@@ -139,8 +172,4 @@ async function createProducts() {
 }
 
 // Run the setup
-if (require.main === module) {
-  createProducts();
-}
-
-module.exports = { createProducts };
+createProducts();
