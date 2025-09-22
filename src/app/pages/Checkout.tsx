@@ -22,48 +22,53 @@ interface PlanOption {
 
 const planOptions: PlanOption[] = [
   {
-    id: "basic",
-    name: "Basic Plan",
-    price: 9.99,
-    description: "Perfect for beginners",
+    id: "starter",
+    name: "Swiftie Starter",
+    price: 12.99,
+    description: "Perfect for Taylor Swift fans",
     features: [
-      "10 stories per month",
-      "Basic illustrations",
-      "PDF downloads",
-      "Email support"
-    ],
-    stripeProductId: "prod_T66l2ofWiIeXwG",
-    stripePriceId: "price_1S9uXm5U03MNTw3qiId3Kpcj"
-  },
-  {
-    id: "premium",
-    name: "Premium Plan",
-    price: 19.99,
-    description: "Our most popular plan",
-    features: [
-      "Unlimited stories",
+      "30 credits per month",
+      "Taylor Swift era templates",
       "High-quality illustrations",
-      "PDF and ePub downloads",
-      "Video generation",
+      "Character portraits",
       "Priority support"
     ],
-    stripeProductId: "prod_T66sHD5TeKOubL",
-    stripePriceId: "price_1S9ueU5U03MNTw3qgpnfLi89"
+    stripeProductId: "prod_swiftie_starter", // Replace with actual Stripe product ID
+    stripePriceId: "price_swiftie_starter" // Replace with actual Stripe price ID
   },
   {
-    id: "family",
-    name: "Family Plan",
-    price: 29.99,
-    description: "Share with your family",
+    id: "deluxe",
+    name: "Swiftie Deluxe",
+    price: 25.00,
+    description: "For content creators",
     features: [
-      "Everything in Premium",
-      "Up to 5 family members",
-      "Shared story library",
-      "Family collaboration tools",
-      "24/7 support"
+      "75 credits per month",
+      "Everything in Starter",
+      "Cinematic spreads",
+      "TikTok-ready animations",
+      "Priority GPU processing",
+      "Commercial licensing",
+      "30% off extra credits"
     ],
-    stripeProductId: "prod_T66skpDMZXB6Qx",
-    stripePriceId: "price_1S9uek5U03MNTw3q1B9LgLYo"
+    stripeProductId: "prod_swiftie_deluxe", // Replace with actual Stripe product ID
+    stripePriceId: "price_swiftie_deluxe" // Replace with actual Stripe price ID
+  },
+  {
+    id: "vip",
+    name: "Opus VIP",
+    price: 49.99,
+    description: "For professional creators",
+    features: [
+      "150 credits per month",
+      "Everything in Deluxe",
+      "AI audio narration",
+      "Analytics dashboard",
+      "Commercial distribution tools",
+      "Sell on Kindle, Gumroad, etc.",
+      "Custom creator features"
+    ],
+    stripeProductId: "prod_opus_vip", // Replace with actual Stripe product ID
+    stripePriceId: "price_opus_vip" // Replace with actual Stripe price ID
   }
 ];
 

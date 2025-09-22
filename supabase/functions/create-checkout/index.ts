@@ -45,11 +45,11 @@ serve(async (req) => {
     const { plan } = await req.json();
     logStep("Plan received", { plan });
 
-    // Define price IDs for each plan
+    // Define price IDs for each plan (update these with actual Stripe price IDs after running setup script)
     const priceIds: Record<string, string> = {
-      basic: "price_1S9uXm5U03MNTw3qiId3Kpcj",
-      premium: "price_1S9ueU5U03MNTw3qgpnfLi89", 
-      family: "price_1S9uek5U03MNTw3q1B9LgLYo"
+      starter: "price_swiftie_starter", // Replace with actual Stripe price ID
+      deluxe: "price_swiftie_deluxe", // Replace with actual Stripe price ID
+      vip: "price_opus_vip" // Replace with actual Stripe price ID
     };
 
     const priceId = priceIds[plan];
