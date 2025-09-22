@@ -17,6 +17,8 @@ import Auth from "@/modules/auth/components/Auth";
 import AuthCallback from "@/modules/auth/components/AuthCallback";
 import ResetPassword from "@/modules/auth/components/ResetPassword";
 import UserDashboard from "@/modules/user/components/UserDashboard";
+import PlanSelector from "@/app/pages/PlanSelector";
+import FAQ from "@/app/pages/FAQ";
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
+            <Route path="/plans" element={<PlanSelector />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />

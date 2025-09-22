@@ -377,3 +377,98 @@ POST /api/credits-validate
 - User behavior analytics
 - Revenue attribution
 - Plan upgrade/downgrade tracking
+
+## Frequently Asked Questions (FAQ)
+
+### General Questions
+
+**Q: What is the difference between credits and subscriptions?**
+A: Credits are the currency you use to create content on FlipMyEra. Subscriptions give you a monthly allowance of credits, while one-time credit purchases let you top up as needed.
+
+**Q: Can I change plans anytime?**
+A: Yes! You can upgrade or downgrade your subscription at any time. Changes take effect immediately, and we'll prorate any billing adjustments.
+
+**Q: What happens if I cancel my subscription?**
+A: Your subscription will remain active until the end of your billing period. After that, you'll revert to the free plan with 10 credits per month.
+
+**Q: Are there any hidden fees?**
+A: No hidden fees! All pricing is transparent. Credits never expire, and subscriptions auto-renew unless cancelled.
+
+### Free Plan Questions
+
+**Q: What's included in the free plan?**
+A: Free users get 10 credits per month (refreshed automatically), basic story generation, simple illustrations, PDF exports, and community access.
+
+**Q: How many stories can I create with the free plan?**
+A: With 10 credits, you can typically create 3-5 complete stories with illustrations, depending on the complexity of your creations.
+
+**Q: Do free credits roll over?**
+A: No, unused credits expire at the end of each month. Your credits refresh to 10 every month automatically.
+
+### Credit Usage Questions
+
+**Q: How do credits work?**
+A: Credits are consumed based on what you create:
+- Single story: 1-2 credits
+- Story with illustrations: 2-4 credits
+- Children's book: 4-6 credits
+- Social media content: 3-5 credits
+- Audiobook chapter: 2-3 credits
+
+**Q: Can I buy extra credits without a subscription?**
+A: Yes! You can purchase credit packs anytime:
+- $4.99 for 5 credits
+- $9.99 for 12 credits (bonus credit included)
+- $19.99 for 30 credits (5 bonus credits)
+- $39.99 for 75 credits (15 bonus credits)
+- $99.99 for 200 credits (50 bonus credits)
+
+**Q: Do credits expire?**
+A: Subscription credits refresh monthly. One-time purchased credits never expire and can be used anytime.
+
+### Plan-Specific Questions
+
+**Q: What's special about Swiftie Starter ($12.99)?**
+A: Perfect for Taylor Swift fans! Includes 30 credits/month, era-specific templates, high-quality illustrations, and character portraits.
+
+**Q: Who should get Swiftie Deluxe ($25)?**
+A: Content creators and social media influencers. Includes 75 credits/month, cinematic spreads, TikTok-ready animations, and commercial licensing rights.
+
+**Q: What's Opus VIP ($49.99) for?**
+A: Professional creators. Includes 150 credits/month, AI audio narration, analytics dashboard, and tools for selling your creations commercially.
+
+### Technical Questions
+
+**Q: How fast is content generation?**
+A: Standard generation takes 30-60 seconds. Swiftie Deluxe and Opus VIP users get priority processing (3x faster) during peak hours.
+
+**Q: Can I use FlipMyEra commercially?**
+A: Swiftie Deluxe and Opus VIP plans include commercial licensing rights to sell or monetize your creations.
+
+**Q: Is there an API for developers?**
+A: Opus VIP includes API access (10 credits/month). Contact us for enterprise API solutions.
+
+### Billing & Payment Questions
+
+**Q: What payment methods do you accept?**
+A: We accept all major credit cards through our secure Stripe integration.
+
+**Q: Is my payment information secure?**
+A: Yes, we use Stripe's PCI-compliant payment processing. We never store your card details.
+
+**Q: Can I get a refund?**
+A: We offer a 30-day money-back guarantee for all subscription plans. Credit purchases are non-refundable.
+
+**Q: Do you offer annual plans?**
+A: Currently, we offer monthly subscriptions only, but annual options are in development.
+
+### Support Questions
+
+**Q: How do I contact support?**
+A: Free users get community support. Paid plans include email support. Opus VIP gets priority support and 24/7 availability.
+
+**Q: Can I transfer credits between accounts?**
+A: Credits are non-transferable for security reasons.
+
+**Q: What if I need more credits than my plan allows?**
+A: You can purchase additional credit packs anytime, or upgrade your subscription for higher monthly allowances.
