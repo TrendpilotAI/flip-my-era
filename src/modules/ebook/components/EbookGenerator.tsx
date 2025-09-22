@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
+import { calculateCreditCost, type CreditCostParams } from '@/modules/shared/utils/creditPricing';
 import { supabase, createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
 import { generateWithGroq } from "@/modules/shared/utils/groq";
 import { ChapterView } from "./ChapterView";
@@ -89,8 +90,8 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   // Initialize streaming generation hook
   const streaming = useStreamingGeneration();
 
-  // Credit validation function
-  const validateCredits = async (creditsRequired: number = 1): Promise<{ success: boolean; transactionId?: string; bypassCredits?: boolean }> => {
+  // Credit validation function with new pricing system
+  const validateCredits = async (operations: CreditCostParams[]): Promise<{ success: boolean; transactionId?: string; bypassCredits?: boolean; totalCost?: number }> => {
     if (!isSignedIn) {
       toast({
         title: "Authentication Required",
@@ -102,7 +103,12 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
 
     try {
       const token = await getToken({ template: 'supabase' });
-      
+
+      // Calculate total cost using new pricing system
+      const costResult = operations.length === 1
+        ? calculateCreditCost(operations[0])
+        : { totalCost: operations.reduce((sum, op) => sum + calculateCreditCost(op).totalCost, 0) };
+
       const { data, error } = await supabase.functions.invoke('credits-validate', {
         method: 'POST',
         headers: {
@@ -110,8 +116,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          credits_required: creditsRequired,
-          story_type: 'ebook',
+          operations: operations,
           generation_id: storyId,
         }),
       });
@@ -132,21 +137,21 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         // Update local state
         setCreditBalance(current_balance);
         setHasUnlimitedSubscription(subscription_type === 'monthly_unlimited' || subscription_type === 'annual_unlimited');
-        
+
         if (has_sufficient_credits) {
           if (transaction_id) {
             setCurrentTransactionId(transaction_id);
           }
-          return { success: true, transactionId: transaction_id, bypassCredits: bypass_credits };
+          return { success: true, transactionId: transaction_id, bypassCredits: bypass_credits, totalCost: costResult.totalCost };
         } else {
           // Show credit purchase modal
           setShowCreditModal(true);
           toast({
             title: "Insufficient Credits",
-            description: `You need ${creditsRequired} credit(s) to generate this ebook. Current balance: ${current_balance}`,
+            description: `You need ${costResult.totalCost} credit(s) to generate this ebook. Current balance: ${current_balance}`,
             variant: "destructive",
           });
-          return { success: false };
+          return { success: false, totalCost: costResult.totalCost };
         }
       } else {
         toast({
@@ -177,8 +182,13 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   };
 
   const generateChaptersWithStreaming = async () => {
-    // Validate credits before generation
-    const creditValidation = await validateCredits(1);
+    // Validate credits before generation using new pricing system
+    const operations: CreditCostParams[] = [{
+      operationType: 'chapter_generation',
+      modelQuality: 'advanced', // Use advanced model for ebooks
+      quantity: 1
+    }];
+    const creditValidation = await validateCredits(operations);
     if (!creditValidation.success) {
       return;
     }
@@ -294,8 +304,13 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   };
 
   const generateChaptersFromStory = async () => {
-    // Validate credits before generation
-    const creditValidation = await validateCredits(1);
+    // Validate credits before generation using new pricing system
+    const operations: CreditCostParams[] = [{
+      operationType: 'chapter_generation',
+      modelQuality: 'advanced', // Use advanced model for ebooks
+      quantity: 1
+    }];
+    const creditValidation = await validateCredits(operations);
     if (!creditValidation.success) {
       return;
     }
@@ -740,7 +755,7 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
               )}
               {isSignedIn && !hasUnlimitedSubscription && (
                 <span className="block mt-2 text-sm font-medium">
-                  Cost: 1 credit per ebook generation
+                  Cost: ~3 credits per ebook (story + chapters + illustrations)
                 </span>
               )}
             </p>

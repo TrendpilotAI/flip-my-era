@@ -7,6 +7,81 @@
 // @ts-ignore - HTTPS imports are supported in Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Import credit pricing logic (inlined for Edge Function compatibility)
+const CREDIT_PRICING = {
+  // Story Generation (LLM Models)
+  story_generation: { basic: 1, advanced: 2, ultra: 4 },
+  chapter_generation: { basic: 1.5, advanced: 3, ultra: 6 },
+  novel_outline: { basic: 2, advanced: 4, ultra: 8 },
+  character_development: { basic: 1, advanced: 2, ultra: 4 },
+  plot_enhancement: { basic: 1.5, advanced: 3, ultra: 6 },
+
+  // Image Generation (Visual Models)
+  image_generation: {
+    story_illustration: { basic: 0.5, advanced: 1, ultra: 2 },
+    character_portrait: { basic: 1, advanced: 2, ultra: 4 },
+    scene_background: { basic: 0.8, advanced: 1.5, ultra: 3 },
+    cover_art: { basic: 1.5, advanced: 3, ultra: 6 },
+    multi_panel_spread: { basic: 2, advanced: 4, ultra: 8 }
+  },
+
+  // Video Generation (A/V Models)
+  video_generation: {
+    story_recrap: { basic: 5, advanced: 10, ultra: 20 },
+    character_intro: { basic: 8, advanced: 15, ultra: 30 },
+    scene_animation: { basic: 12, advanced: 25, ultra: 50 },
+    full_adaptation: { basic: 25, advanced: 50, ultra: 100 }
+  },
+
+  // Audio Generation (Text-to-Speech)
+  audio_narration: { basic: 0.5, advanced: 1, ultra: 3 }, // per minute
+  sound_effects: { basic: 0.3, advanced: 0.6, ultra: 1.2 },
+  background_music: { basic: 0.8, advanced: 1.5, ultra: 3 }
+};
+
+function calculateCreditCost(operation: any): number {
+  const { type, quality = 'basic', speedPriority = false, commercialLicense = false, quantity = 1 } = operation;
+
+  let baseCost = 0;
+
+  // Get base cost from pricing table
+  if (type === 'image_generation') {
+    baseCost = CREDIT_PRICING.image_generation[operation.subject || 'story_illustration'][quality] || 1;
+  } else if (type === 'video_generation') {
+    baseCost = CREDIT_PRICING.video_generation[operation.videoType || 'story_recrap'][quality] || 5;
+  } else if (type.includes('audio')) {
+    const duration = operation.durationMinutes || 1;
+    if (type === 'audio_narration') {
+      baseCost = CREDIT_PRICING.audio_narration[quality] * duration;
+    } else {
+      baseCost = CREDIT_PRICING[type][quality] || 1;
+    }
+  } else {
+    baseCost = CREDIT_PRICING[type]?.[quality] || 1;
+  }
+
+  // Apply quantity
+  baseCost *= quantity;
+
+  // Speed priority (+25-50% based on operation)
+  if (speedPriority) {
+    const speedMultiplier = type.includes('image') ? 0.5 : type.includes('video') ? 0.4 : 0.25;
+    baseCost += baseCost * speedMultiplier;
+  }
+
+  // Commercial license (+50%)
+  if (commercialLicense) {
+    baseCost *= 1.5;
+  }
+
+  // Bulk discount (10% off for 5+ items)
+  if (quantity >= 5) {
+    baseCost *= 0.9;
+  }
+
+  return Math.max(0.1, Math.round(baseCost * 100) / 100);
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',  // More permissive for development
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -38,10 +113,22 @@ const getCorsHeaders = (req: Request) => {
   };
 };
 
+interface Operation {
+  type: string;
+  quality?: 'basic' | 'advanced' | 'ultra';
+  speedPriority?: boolean;
+  commercialLicense?: boolean;
+  quantity?: number;
+  subject?: string; // for image generation
+  videoType?: string; // for video generation
+  durationMinutes?: number; // for audio generation
+}
+
 interface ValidationRequest {
-  credits_required?: number;
-  story_type?: string;
+  credits_required?: number; // Legacy support
+  story_type?: string; // Legacy support
   generation_id?: string;
+  operations?: Operation[]; // New operation-based pricing
 }
 
 interface ValidationResponse {
@@ -231,19 +318,32 @@ Deno.serve(async (req: Request) => {
         );
       }
       
-      const creditsRequired = body.credits_required || 1;
-      const storyType = body.story_type || 'short_story';
+      // Handle both legacy and new pricing systems
+      let totalCreditsRequired = 0;
+      let operations = body.operations || [];
+
+      if (operations.length > 0) {
+        // New operation-based pricing
+        totalCreditsRequired = operations.reduce((total, operation) => {
+          return total + calculateCreditCost(operation);
+        }, 0);
+        console.log(`Validating ${totalCreditsRequired} credits for ${operations.length} operations`);
+      } else {
+        // Legacy pricing (backward compatibility)
+        totalCreditsRequired = body.credits_required || 1;
+        const storyType = body.story_type || 'short_story';
+        console.log(`Validating ${totalCreditsRequired} credits for ${storyType} (legacy)`);
+      }
+
       const generationId = body.generation_id;
 
-      console.log(`Validating ${creditsRequired} credits for ${storyType}`);
-
       // Try to validate with real Supabase data first
-      let validationData = await validateCreditsWithSupabase(userId, creditsRequired);
-      
+      let validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);
+
       // Fallback to mock data if Supabase validation fails
       if (!validationData) {
         console.log('Falling back to mock validation data');
-        validationData = getMockValidationData(creditsRequired);
+        validationData = getMockValidationData(totalCreditsRequired);
       }
       
       const response: ValidationResponse = {
