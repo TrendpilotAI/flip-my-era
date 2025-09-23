@@ -67,5 +67,124 @@ describe('useStreamingGeneration (integration-style)', () => {
     expect(screen.getByTestId('title').textContent).toBe('Ch 1');
     expect(screen.getByTestId('pos').textContent).toBe('1/1');
   });
+
+  it('handles error events from stream', async () => {
+    (globalThis as any).fetch = vi.fn(async () =>
+      makeSseResponse([
+        { type: 'progress', currentChapter: 0, totalChapters: 1, progress: 0, message: 'init' },
+        { type: 'error', message: 'Upstream error' },
+      ])
+    );
+
+    const Test: React.FC = () => {
+      const { startGeneration, isGenerating, isComplete, message } = useStreamingGeneration();
+      useEffect(() => {
+        startGeneration({ originalStory: 'Once', useTaylorSwiftThemes: false, numChapters: 1 });
+      }, [startGeneration]);
+      return (
+        <div>
+          <div data-testid="gen">{String(isGenerating)}</div>
+          <div data-testid="done">{String(isComplete)}</div>
+          <div data-testid="msg">{message}</div>
+        </div>
+      );
+    };
+
+    render(<Test />);
+    await waitFor(() => expect(screen.getByTestId('gen').textContent).toBe('false'));
+    expect(screen.getByTestId('done').textContent).toBe('false');
+    expect(screen.getByTestId('msg').textContent).toMatch(/Error: Upstream error/);
+  });
+
+  it('continues on parse errors in the stream', async () => {
+    (globalThis as any).fetch = vi.fn(async () => {
+      // malformed line without JSON, then a valid chapter and completion
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const enc = new TextEncoder();
+          controller.enqueue(enc.encode('data: {not json}\n\n'));
+          controller.enqueue(enc.encode('data: {"type":"chapter","currentChapter":1,"totalChapters":1,"chapterTitle":"T","chapterContent":"C"}\n\n'));
+          controller.enqueue(enc.encode('data: {"type":"complete","progress":100}\n\n'));
+          controller.close();
+        },
+      });
+      return new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
+    });
+
+    const Test: React.FC = () => {
+      const { startGeneration, chapters, isComplete } = useStreamingGeneration();
+      useEffect(() => {
+        startGeneration({ originalStory: 'Once', useTaylorSwiftThemes: false, numChapters: 1 });
+      }, [startGeneration]);
+      return (
+        <div>
+          <div data-testid="count">{chapters.length}</div>
+          <div data-testid="done">{String(isComplete)}</div>
+        </div>
+      );
+    };
+
+    render(<Test />);
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+    await waitFor(() => expect(screen.getByTestId('done').textContent).toBe('true'));
+  });
+
+  it('handles 401 unauthorized response up front', async () => {
+    (globalThis as any).fetch = vi.fn(async () => new Response('unauthorized', { status: 401 }));
+
+    const Test: React.FC = () => {
+      const { startGeneration, isGenerating, isComplete, message } = useStreamingGeneration();
+      useEffect(() => {
+        startGeneration({ originalStory: 'Once', useTaylorSwiftThemes: false, numChapters: 1 });
+      }, [startGeneration]);
+      return (
+        <div>
+          <div data-testid="gen">{String(isGenerating)}</div>
+          <div data-testid="done">{String(isComplete)}</div>
+          <div data-testid="msg">{message}</div>
+        </div>
+      );
+    };
+
+    render(<Test />);
+    await waitFor(() => expect(screen.getByTestId('gen').textContent).toBe('false'));
+    expect(screen.getByTestId('done').textContent).toBe('false');
+    expect(screen.getByTestId('msg').textContent).toMatch(/Failed to start generation \(401\)/);
+  });
+
+  it('aborts generation via stopGeneration', async () => {
+    // Long running stream to allow abort
+    (globalThis as any).fetch = vi.fn(async () => {
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const enc = new TextEncoder();
+          controller.enqueue(enc.encode('data: {"type":"progress","currentChapter":1,"totalChapters":2,"progress":0,"message":"start"}\n\n'));
+          // keep open, caller will abort
+        },
+        cancel() {},
+      });
+      return new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
+    });
+
+    const Test: React.FC = () => {
+      const { startGeneration, stopGeneration, isGenerating, isComplete, message } = useStreamingGeneration();
+      useEffect(() => {
+        startGeneration({ originalStory: 'Once', useTaylorSwiftThemes: false, numChapters: 2 });
+        setTimeout(() => stopGeneration(), 50);
+      }, [startGeneration, stopGeneration]);
+      return (
+        <div>
+          <div data-testid="gen">{String(isGenerating)}</div>
+          <div data-testid="done">{String(isComplete)}</div>
+          <div data-testid="msg">{message}</div>
+        </div>
+      );
+    };
+
+    render(<Test />);
+    await waitFor(() => expect(screen.getByTestId('gen').textContent).toBe('false'));
+    expect(screen.getByTestId('done').textContent).toBe('false');
+    expect(screen.getByTestId('msg').textContent).toMatch(/Generation cancelled|Generation stopped/);
+  });
 });
 
