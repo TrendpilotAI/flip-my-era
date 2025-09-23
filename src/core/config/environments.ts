@@ -37,7 +37,7 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
     services: {
       supabase: {
         url: import.meta.env.VITE_SUPABASE_URL,
-        publishableKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+        publishableKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         secretKey: import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '', // Assuming service role key is the 'secret' referred
       },
     },
@@ -97,7 +97,7 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
     throw new Error(`Invalid Supabase URL (${config.services.supabase.url}) configured for ${env} environment. Please set a valid VITE_SUPABASE_URL.`);
   }
   if (!config.services.supabase.publishableKey) {
-    throw new Error(`Missing Supabase Publishable Key for ${env} environment. Please set VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY.`);
+    throw new Error(`Missing Supabase Publishable Key for ${env} environment. Please set VITE_SUPABASE_PUBLISHABLE_KEY.`);
   }
 
   // Helper function to validate URLs

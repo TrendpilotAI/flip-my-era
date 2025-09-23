@@ -31,7 +31,7 @@ export const EnvironmentValidator = () => {
     },
     {
       name: 'Supabase Anon Key',
-      key: 'VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY',
+      key: 'VITE_SUPABASE_PUBLISHABLE_KEY',
       required: true,
       description: 'Required for database access'
     },
@@ -219,4 +219,5 @@ export const EnvironmentValidator = () => {
     </Card>
   );
 };
+
 

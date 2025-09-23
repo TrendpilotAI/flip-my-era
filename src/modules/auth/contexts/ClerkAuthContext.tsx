@@ -68,12 +68,9 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("Got Clerk token, creating Supabase client...");
       
-      // Use the regular supabase client with proper headers
       const { data, error } = await supabase.functions.invoke('credits', {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${clerkToken}`,
-        },
+        headers: { Authorization: `Bearer ${clerkToken}` },
       });
       
       if (error) {

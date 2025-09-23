@@ -7,7 +7,7 @@ import { useSession } from '@clerk/clerk-react';
 
 // Environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY!;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY!;
 
 // Create a custom Supabase client that injects the Clerk session token
 export function createClerkSupabaseClient() {

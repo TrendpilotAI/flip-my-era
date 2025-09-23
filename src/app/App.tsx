@@ -19,6 +19,7 @@ const UserDashboard = lazy(() => import("@/modules/user/components/UserDashboard
 const Checkout = lazy(() => import("@/app/pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("@/app/pages/CheckoutSuccess"));
 const UpgradePlan = lazy(() => import("@/app/pages/UpgradePlan"));
+const Credits = lazy(() => import("@/app/pages/Credits"));
 const AdminDashboard = lazy(() => import("@/app/pages/AdminDashboard"));
 const AdminIntegrations = lazy(() => import("@/app/pages/AdminIntegrations"));
 const AdminUsers = lazy(() => import("@/app/pages/AdminUsers"));
@@ -126,6 +127,24 @@ function App() {
             />
             <Route
               path="/upgrade"
+              element={
+                <ProtectedRoute>
+                  <UpgradePlan />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* New credits and plans routes */}
+            <Route
+              path="/credits"
+              element={
+                <ProtectedRoute>
+                  <Credits />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/plans"
               element={
                 <ProtectedRoute>
                   <UpgradePlan />

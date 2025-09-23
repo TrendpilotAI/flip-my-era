@@ -87,7 +87,7 @@ CREATE POLICY "Users can delete own ebooks" ON ebook_generations
 -- Note: is_public column has been added via migration 20250915_001_add_stories_is_public.sql
 
 CREATE TABLE IF NOT EXISTS stories (
-  id TEXT PRIMARY KEY DEFAULT substr(md5(random()::text), 1, 20),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -230,7 +230,7 @@ CREATE POLICY "Users can view own credit transactions" ON credit_transactions
 CREATE TABLE IF NOT EXISTS tiktok_shares (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  story_id TEXT REFERENCES stories(id) ON DELETE CASCADE,
+  story_id UUID REFERENCES stories(id) ON DELETE CASCADE,
   share_url TEXT,
   platform TEXT DEFAULT 'tiktok',
   metadata JSONB DEFAULT '{}'::jsonb,

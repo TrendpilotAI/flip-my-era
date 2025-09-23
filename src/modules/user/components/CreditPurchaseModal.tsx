@@ -25,7 +25,7 @@ interface CreditPurchaseModalProps {
   currentBalance: number;
 }
 
-interface PricingTier {
+export interface PricingTier {
   id: string;
   name: string;
   credits: number | null; // null for unlimited
@@ -40,7 +40,7 @@ interface PricingTier {
   stripePriceId: string;
 }
 
-const pricingTiers: PricingTier[] = [
+export const pricingTiers: PricingTier[] = [
   {
     id: 'starter-pack',
     name: '$25 Credit Pack',

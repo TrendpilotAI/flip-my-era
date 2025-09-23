@@ -2,13 +2,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Do not hard-crash the app in production if envs are missing; log clearly instead.
 if (!supabaseUrl || !supabaseAnonKey) {
   // eslint-disable-next-line no-console
   console.error(
-    'Missing Supabase environment variables: VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY. ' +
+    'Missing Supabase environment variables: VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. ' +
     'The app will load, but Supabase features will not function until these are set.'
   );
 }
@@ -30,6 +30,8 @@ export const supabase = (() => {
       persistSession: true,
       detectSessionInUrl: false,
       flowType: 'pkce',
+      // Use a dedicated storageKey to avoid collisions with other clients
+      storageKey: 'sb-anon',
     },
     global: {
       headers: {
@@ -73,6 +75,8 @@ export function createSupabaseClientWithClerkToken(sessionToken: string | null) 
       persistSession: false,   // Disable to avoid conflicts with main client
       detectSessionInUrl: false,
       flowType: 'pkce',
+      // Use a distinct storageKey for Clerk-authenticated client to avoid GoTrue warnings
+      storageKey: 'sb-clerk-auth',
     },
     global: {
       headers: {
@@ -90,10 +94,12 @@ export async function createClerkSupabaseClient(getToken: () => Promise<string |
   const token = await getToken();
   return createClient(supabaseUrl || '', supabaseAnonKey || '', {
     auth: {
+      // Keep refresh enabled but do not persist session to avoid storage collisions
       autoRefreshToken: true,
-      persistSession: true,
+      persistSession: false,
       detectSessionInUrl: false,
       flowType: 'pkce',
+      storageKey: 'sb-clerk-auth',
     },
     global: {
       headers: {

@@ -229,13 +229,15 @@ Key Moments:
 - Primary Scene: ${viralTropes[0]}
 - Supporting Scene: ${viralTropes[1]}
 
-Writing Style:
-1. Use beautiful, descriptive prose with proper paragraph breaks for readability
-2. Integrate dialogue naturally within paragraphs
-3. Create vivid imagery through careful word choice
-4. Build emotional resonance through detailed observations
-5. Maintain a dreamy, enchanting tone
-6. Include poetic descriptions of settings and feelings
+Writing Style and Readability:
+1. Use short paragraphs (2–4 sentences) with clear line breaks for readability
+2. Prefer clear, direct sentences; split long multi‑clause sentences into two
+3. Keep the magic, but simplify overly ornate or abstract phrasing when possible
+4. Ground imagery in concrete sensory details from the protagonist’s perspective
+5. Show, don’t tell character traits (reveal through actions, gestures, choices; avoid explicit labels)
+6. Use dialogue to break up exposition and advance emotion
+7. Maintain a dreamy, enchanting tone while letting the prose breathe
+8. Vary sentence length; avoid repetitive metaphors and purple prose
 
 Structure:
 First Paragraph: Set the scene with rich detail and introduce ${transformedName} through elegant description and meaningful action.
@@ -243,6 +245,13 @@ First Paragraph: Set the scene with rich detail and introduce ${transformedName}
 Second Paragraph: Develop the story through a mix of internal thoughts, external dialogue, and atmospheric description. Focus on the emotional journey and the magic of the moment.
 
 Final Paragraph: Bring the story to a satisfying close with poetic imagery and profound realization, ending with a beautiful observation or meaningful exchange that lingers in the reader's mind.
+
+Readability Rules:
+- Start a new paragraph for a new action, thought, or line of dialogue
+- Keep paragraphs focused on a single idea
+- Aim for an average sentence length under ~25 words; split longer ones
+
+TARGET PREVIEW LENGTH: Aim for 400–700 words.
 
 Format the response with:
 1. Title at the top prefixed with #
@@ -325,6 +334,13 @@ Act II-B (Chapters 5-6): Build toward the emotional climax with increasing tensi
 Act III (Chapters 7-8): Resolve the central conflict with emotional truth, character growth, and a satisfying conclusion that honors the ${themeInfo.title.toLowerCase()} journey.`}
 
 TARGET LENGTH: Write ${formatInfo.targetLength} with rich character development and emotional depth appropriate for the ${formatInfo.name.toLowerCase()} format.
+
+READABILITY RULES:
+- Use short paragraphs (2–4 sentences) and clear line breaks for readability
+- Prefer clear, direct sentences; split long multi‑clause sentences
+- Keep the lyrical tone but simplify overly ornate or abstract phrasing when possible
+- Ground abstract ideas in concrete observations and actions; show traits rather than telling them explicitly
+- Use dialogue to break up exposition and advance character emotion
 
 Format the response with:
 1. Title at the top prefixed with #

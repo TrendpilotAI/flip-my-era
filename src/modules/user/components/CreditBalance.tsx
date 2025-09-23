@@ -50,12 +50,9 @@ export const CreditBalance: React.FC<{
     try {
       setError(null);
       const token = await getToken({ template: 'supabase' });
-      
       const { data, error } = await supabase.functions.invoke('credits', {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
       if (error) {

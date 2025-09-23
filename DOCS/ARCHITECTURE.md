@@ -2,258 +2,206 @@
 
 ## 🏗️ System Architecture
 
-### High-Level Architecture Diagram
+### Current Implementation Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                             │
+│                     CLIENT LAYER                                │
 ├─────────────────────────────────────────────────────────────────┤
-│  Web App (React/TypeScript)  │  Mobile App (React Native)      │
-│  - Modular Components        │  - Shared Components             │
-│  - State Management          │  - Offline Capabilities          │
-│  - Service Workers           │  - Push Notifications            │
-└─────────────────┬───────────────────────────────┬───────────────┘
-                  │                               │
-┌─────────────────▼───────────────────────────────▼───────────────┐
-│                      API GATEWAY                                │
-│  - Authentication Middleware  - Rate Limiting                   │
-│  - Request Routing            - Response Caching                │
-│  - Load Balancing            - API Versioning                   │
+│                Web App (React/TypeScript)                       │
+│  - Modular Component Architecture                              │
+│  - Clerk Authentication                                        │
+│  - Real-time Streaming UI                                      │
+│  - Responsive Design with Tailwind CSS                        │
 └─────────────────┬───────────────────────────────────────────────┘
                   │
 ┌─────────────────▼───────────────────────────────────────────────┐
-│                   MICROSERVICES LAYER                           │
-├─────────────┬─────────────┬─────────────┬─────────────┬─────────┤
-│ Auth        │ Story       │ Ebook       │ User        │ AI      │
-│ Service     │ Service     │ Service     │ Service     │ Service │
-│             │             │             │             │         │
-│ - Clerk     │ - Story     │ - Chapter   │ - Profile   │ - Groq  │
-│   Integration│   Generation│   Creation  │   Mgmt      │ - RUNWARE│
-│ - Session   │ - Validation│ - PDF Gen   │ - Settings  │ - OpenAI│
-│   Mgmt      │ - Storage   │ - Image Gen │ - Analytics │         │
-└─────────────┴─────────────┴─────────────┴─────────────┴─────────┘
+│                   SUPABASE BACKEND                              │
+├─────────────────┬─────────────────┬─────────────────┬───────────┤
+│   Database      │  Edge Functions │  Auth System    │  Storage  │
+│   (PostgreSQL)  │                 │  (Clerk)        │  (S3)     │
+│                 │                 │                 │           │
+│ - User Profiles │ - Story Gen     │ - JWT Tokens    │ - Images  │
+│ - Stories       │ - Ebook Gen     │ - Sessions      │ - PDFs    │
+│ - Memory Books  │ - Credit Mgmt   │ - User Mgmt     │ - Assets  │
+│ - Analytics     │ - TikTok Share  │ - Permissions   │           │
+│ - Credit System │ - TTS/Audio     │                 │           │
+└─────────────────┴─────────────────┴─────────────────┴───────────┘
                   │
 ┌─────────────────▼───────────────────────────────────────────────┐
-│                     DATA LAYER                                  │
-├─────────────────┬───────────────────────────────┬───────────────┤
-│   Supabase      │        File Storage           │     Cache     │
-│   PostgreSQL    │                               │               │
-│                 │  - AWS S3 (Images/PDFs)       │  - Redis      │
-│  - User Data    │  - CloudFront CDN             │  - Session    │
-│  - Stories      │  - Image Optimization         │    Store      │
-│  - Memory Books │  - Backup & Versioning        │  - API Cache  │
-│  - Analytics    │                               │               │
-└─────────────────┴───────────────────────────────┴───────────────┘
+│                   AI SERVICES LAYER                             │
+├─────────────┬─────────────┬─────────────┬─────────────┬─────────┤
+│ Story Gen   │ Image Gen   │ Audio Gen   │ Video Gen   │ Queue   │
+│ (Groq)      │ (RUNWARE)   │ (TTS)       │ (Future)    │ Mgmt    │
+│             │             │             │             │         │
+│ - Llama 3.1  │ - FLUX 1.1  │ - ElevenLabs│ - RunwayML  │ - Rate  │
+│ - Streaming  │ - Pro       │ - Natural   │ - ML        │ Limiting│
+│ - JSON Mode  │ - High Res  │ - Voices    │             │         │
+└─────────────┴─────────────┴─────────────┴─────────────┴─────────┘
 ```
 
-## 🧩 Modular Frontend Architecture
+## 🧩 Current Modular Frontend Architecture
 
-### Module Structure
+### Implemented Module Structure
 
 ```typescript
-// src/modules/auth/
-export interface AuthModule {
-  components: {
-    LoginForm: React.FC<LoginFormProps>
-    SignupForm: React.FC<SignupFormProps>
-    AuthGuard: React.FC<AuthGuardProps>
-    UserProfile: React.FC<UserProfileProps>
-  }
-  hooks: {
-    useAuth: () => AuthState
-    useSession: () => SessionState
-    usePermissions: () => PermissionState
-  }
-  services: {
-    authService: AuthService
-    sessionService: SessionService
-  }
-  types: {
-    User: UserType
-    AuthState: AuthStateType
-    Session: SessionType
-  }
-}
+// Current src/modules/ structure
+src/modules/
+├── auth/                    # Authentication & user session management
+│   ├── components/         # Auth UI components (Auth.tsx, AuthCallback.tsx, ResetPassword.tsx)
+│   ├── contexts/           # ClerkAuthContext for authentication state
+│   └── index.ts            # Module exports
+├── story/                  # Story generation and management
+│   ├── components/         # Story UI (Stories.tsx, StoryForm.tsx, StoryResult.tsx, etc.)
+│   ├── hooks/              # useStoryGeneration, useStreamingGeneration
+│   ├── services/           # AI service integration (ai.ts)
+│   ├── types/              # personality.ts (story types)
+│   ├── utils/              # storyPrompts.ts, enchantedQuillPrompt.ts, etc.
+│   └── index.ts
+├── ebook/                  # Ebook creation and reading experience
+│   ├── components/         # EbookGenerator.tsx, BookReader.tsx, ChapterView.tsx, etc.
+│   └── index.ts
+├── user/                   # User profile and dashboard
+│   ├── components/         # UserDashboard.tsx, Settings.tsx, CreditPurchaseModal.tsx, etc.
+│   └── index.ts
+└── shared/                 # Shared utilities and components
+    ├── components/         # UI components, Layout.tsx, ProtectedRoute.tsx, etc.
+    ├── hooks/              # use-toast.ts, useApiCheck.ts
+    ├── utils/              # API utilities, credit pricing, download utils, etc.
+    └── index.ts
 ```
 
-### Core Modules
+### Current Module Implementations
 
 #### 1. Authentication Module (`src/modules/auth/`)
-```typescript
-interface AuthService {
-  // Authentication methods
-  signIn(credentials: LoginCredentials): Promise<AuthResult>
-  signUp(userData: SignupData): Promise<AuthResult>
-  signOut(): Promise<void>
-  
-  // Session management
-  getCurrentUser(): Promise<User | null>
-  refreshToken(): Promise<string>
-  validateSession(): Promise<boolean>
-  
-  // Permissions
-  hasPermission(permission: string): boolean
-  getUserRoles(): string[]
-}
-```
+- **Components**: Auth.tsx, AuthCallback.tsx, ResetPassword.tsx
+- **Context**: ClerkAuthContext providing useClerkAuth hook
+- **Integration**: Clerk authentication with JWT tokens
+- **Features**: Google OAuth, session management, protected routes
 
 #### 2. Story Module (`src/modules/story/`)
-```typescript
-interface StoryService {
-  // Story generation
-  generateStory(prompt: StoryPrompt): Promise<Story>
-  regenerateStory(storyId: string): Promise<Story>
-  
-  // Story management
-  saveStory(story: Story): Promise<string>
-  getStory(storyId: string): Promise<Story>
-  getUserStories(userId: string): Promise<Story[]>
-  deleteStory(storyId: string): Promise<void>
-  
-  // Story validation
-  validateStoryContent(content: string): ValidationResult
-  sanitizeStoryContent(content: string): string
-}
-```
+- **Components**: StoryForm, StoryResult, StreamingText, TikTokShareSection
+- **Hooks**: useStoryGeneration (streaming), useStreamingGeneration
+- **Services**: AI service integration with Groq API
+- **Utils**: Story prompts, personality types, image prompt extraction
+- **Features**: Real-time streaming generation, Taylor Swift themed prompts
 
 #### 3. Ebook Module (`src/modules/ebook/`)
-```typescript
-interface EbookService {
-  // Ebook creation
-  createEbook(story: Story, settings: EbookSettings): Promise<Ebook>
-  generateChapters(story: Story): Promise<Chapter[]>
-  generateIllustrations(chapters: Chapter[]): Promise<string[]>
-  
-  // File generation
-  generatePDF(ebook: Ebook): Promise<Blob>
-  generateEPUB(ebook: Ebook): Promise<Blob>
-  generateCover(ebook: Ebook): Promise<string>
-  
-  // Ebook management
-  saveEbook(ebook: Ebook): Promise<string>
-  getEbook(ebookId: string): Promise<Ebook>
-  getUserEbooks(userId: string): Promise<Ebook[]>
-  publishEbook(ebookId: string): Promise<void>
-}
-```
+- **Components**: EbookGenerator, BookReader, ChapterView, StreamingChapterView
+- **Features**: Chapter-by-chapter generation, illustration creation, PDF export
+- **UI**: Immersive reading mode, progress tracking, bookmark management
+- **Integration**: RUNWARE for image generation, streaming content
 
 #### 4. User Module (`src/modules/user/`)
-```typescript
-interface UserService {
-  // Profile management
-  getProfile(userId: string): Promise<UserProfile>
-  updateProfile(userId: string, updates: Partial<UserProfile>): Promise<void>
-  
-  // Preferences
-  getPreferences(userId: string): Promise<UserPreferences>
-  updatePreferences(userId: string, preferences: UserPreferences): Promise<void>
-  
-  // Analytics
-  trackActivity(userId: string, activity: UserActivity): Promise<void>
-  getUserAnalytics(userId: string): Promise<UserAnalytics>
-  
-  // Subscription
-  getSubscription(userId: string): Promise<Subscription>
-  updateSubscription(userId: string, tier: SubscriptionTier): Promise<void>
-}
-```
+- **Components**: UserDashboard, Settings, CreditPurchaseModal, PersonalitySelector
+- **Features**: Profile management, subscription handling, credit system
+- **UI**: Dashboard with story/ebook management, settings panel
 
 #### 5. Shared Module (`src/modules/shared/`)
+- **Components**: Layout, ProtectedRoute, AdminRoute, UI components (shadcn/ui)
+- **Hooks**: use-toast, useApiCheck
+- **Utils**: API retry logic, credit pricing, download utilities, social sharing
+- **Features**: Cross-module utilities and reusable components
+
+## 🔧 Current Backend Implementation
+
+### Supabase Edge Functions Architecture
+
+The backend is implemented using Supabase Edge Functions (serverless Deno functions) deployed globally via Supabase's infrastructure. This provides:
+
+#### Edge Functions Overview
+- **Runtime**: Deno (secure TypeScript runtime)
+- **Deployment**: Global CDN with automatic scaling
+- **Database**: Direct PostgreSQL access with connection pooling
+- **Authentication**: JWT token validation with Clerk integration
+
+#### Current Edge Functions
 ```typescript
-interface SharedModule {
-  components: {
-    Button: React.FC<ButtonProps>
-    Modal: React.FC<ModalProps>
-    LoadingSpinner: React.FC<LoadingSpinnerProps>
-    ErrorBoundary: React.FC<ErrorBoundaryProps>
-  }
-  hooks: {
-    useApi: <T>(endpoint: string) => ApiState<T>
-    useLocalStorage: <T>(key: string) => [T, (value: T) => void]
-    useDebounce: <T>(value: T, delay: number) => T
-  }
-  utils: {
-    formatDate: (date: Date) => string
-    sanitizeInput: (input: string) => string
-    generateId: () => string
-    validateEmail: (email: string) => boolean
-  }
-}
+supabase/functions/
+├── story-generation/     # Main story creation endpoint
+├── ebook-generation/     # Chapter-by-chapter ebook creation
+├── credits/             # Credit balance management
+├── credits-validate/    # Credit validation for operations
+├── check-subscription/  # Subscription status checking
+├── create-checkout/     # Stripe checkout session creation
+├── customer-portal/     # Stripe customer portal access
+├── tiktok-share-analytics/ # Social sharing analytics
+├── text-to-speech/      # Audio narration generation
+└── admin-credits/       # Administrative credit management
 ```
 
-## 🔧 Backend Microservices Architecture
+#### Database Schema (Current)
+- **profiles**: User profiles with Clerk integration
+- **stories**: Generated stories with metadata
+- **ebook_generations**: Ebook creation tracking
+- **memory_books**: Completed ebooks
+- **user_credits**: Credit system management
+- **credit_transactions**: Transaction history
+- **tiktok_shares**: Social media analytics
 
-### Service Communication
+#### Authentication Flow
+1. User authenticates via Clerk (frontend)
+2. Clerk provides JWT token with user claims
+3. Edge functions validate JWT and extract user ID
+4. Database operations use RLS policies with user context
 
-```typescript
-// Service-to-service communication patterns
-interface ServiceCommunication {
-  // Synchronous communication (REST)
-  http: {
-    baseUrl: string
-    timeout: number
-    retries: number
-    headers: Record<string, string>
-  }
-  
-  // Asynchronous communication (Message Queue)
-  messageQueue: {
-    publisher: MessagePublisher
-    subscriber: MessageSubscriber
-    topics: string[]
-  }
-  
-  // Service discovery
-  discovery: {
-    register: (service: ServiceInfo) => Promise<void>
-    discover: (serviceName: string) => Promise<ServiceInfo>
-    healthCheck: () => Promise<HealthStatus>
-  }
-}
+### Key Technical Decisions
+
+#### Why Supabase Edge Functions?
+- **Serverless**: No server management, automatic scaling
+- **TypeScript**: Type-safe backend development
+- **Global CDN**: Low latency for users worldwide
+- **PostgreSQL Direct Access**: Efficient database operations
+- **Built-in Auth**: Seamless Clerk integration
+
+#### Modular Architecture Benefits
+- **Separation of Concerns**: Each module handles specific functionality
+- **Maintainability**: Clear boundaries and responsibilities
+- **Testability**: Isolated modules can be tested independently
+- **Scalability**: Modules can be optimized and scaled individually
+- **Developer Experience**: Focused development on specific features
+
+### Data Flow Architecture
+
+```
+User Request → Clerk Auth → Edge Function → Database (RLS) → AI Services → Response
 ```
 
-### Individual Services
+1. **Authentication**: Clerk handles user authentication and provides JWT
+2. **Authorization**: Edge functions validate tokens and enforce RLS policies
+3. **Business Logic**: Serverless functions process requests and manage credits
+4. **AI Integration**: Direct API calls to Groq, RUNWARE, and other services
+5. **Data Persistence**: PostgreSQL with row-level security ensures data isolation
 
-#### 1. Authentication Service
-```typescript
-// backend/services/auth-service/src/
-interface AuthServiceAPI {
-  // Clerk integration
-  POST /auth/clerk/webhook
-  POST /auth/clerk/validate
-  
-  // Session management
-  POST /auth/sessions/create
-  GET  /auth/sessions/validate
-  DELETE /auth/sessions/destroy
-  
-  // User management
-  GET  /auth/users/:id
-  PUT  /auth/users/:id
-  DELETE /auth/users/:id
-  
-  // Permissions
-  GET  /auth/permissions/:userId
-  POST /auth/permissions/check
-}
-```
+## 🎯 Architecture Benefits
 
-#### 2. Story Service
-```typescript
-// backend/services/story-service/src/
-interface StoryServiceAPI {
-  // Story CRUD
-  POST /stories
-  GET  /stories/:id
-  PUT  /stories/:id
-  DELETE /stories/:id
-  
-  // Story generation
-  POST /stories/generate
-  POST /stories/:id/regenerate
-  
-  // User stories
-  GET  /users/:userId/stories
+### Scalability
+- **Serverless Backend**: Automatic scaling with Supabase Edge Functions
+- **Modular Frontend**: Independent module optimization and deployment
+- **CDN Delivery**: Global content delivery for static assets
+
+### Developer Experience
+- **TypeScript**: End-to-end type safety from frontend to backend
+- **Modular Development**: Clear separation of concerns and responsibilities
+- **Consistent Patterns**: Standardized hooks, services, and component structures
+
+### Maintainability
+- **Clear Boundaries**: Each module has defined responsibilities
+- **Testable Units**: Isolated modules enable focused testing
+- **Documentation**: Comprehensive inline documentation and API specs
+
+### Performance
+- **Streaming Generation**: Real-time content delivery for better UX
+- **Lazy Loading**: Component-level code splitting for faster initial loads
+- **Edge Computing**: Reduced latency through global function deployment
+
+## 🚀 Future Enhancements
+
+### Planned Improvements
+- **Mobile App**: React Native implementation using shared modules
+- **Advanced AI**: Integration with additional AI models and capabilities
+- **Analytics Dashboard**: Enhanced user behavior tracking and insights
+- **API Access**: Third-party developer API for integrations
   
   // Story analytics
   GET  /stories/:id/analytics

@@ -146,21 +146,23 @@ interface ValidationResponse {
 // Function to extract user ID from Clerk JWT token
 const extractUserIdFromClerkToken = (req: Request): string | null => {
   try {
-    const authHeader = req.headers.get('authorization');
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return null;
     }
-    
+
     const token = authHeader.substring(7);
-    
-    // For testing purposes, we'll use a mock user ID
-    // In production, you would decode the JWT and extract the user ID from the 'sub' claim
-    console.log('Using mock Clerk user ID for testing');
-    return 'user_2zFAK78eCctIYm4mAd07mDWhNoA'; // Mock Clerk user ID format
-    
-    // TODO: In production, implement proper JWT decoding:
-    // const decoded = jwt.verify(token, CLERK_JWT_SECRET);
-    // return decoded.sub; // This will be the Clerk user ID
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+
+    // Base64URL decode JWT payload and return 'sub'
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const json = atob(padded);
+    const payload = JSON.parse(json);
+
+    const userId = payload?.sub || payload?.user_id || payload?.uid || null;
+    return typeof userId === 'string' ? userId : null;
   } catch (error) {
     console.error('Error extracting user ID from token:', error);
     return null;

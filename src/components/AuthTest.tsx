@@ -89,33 +89,17 @@ export default function AuthTest() {
       addResult(`Token received: ${token.substring(0, 50)}...`);
       
       // Test direct fetch to get more detailed error information
-      const response = await fetch('https://tusdijypopftcmlenahr.supabase.co/functions/v1/credits', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-          'Content-Type': 'application/json'
-        }
-      });
+      // Prefer Supabase client invocation to avoid manual CORS pitfalls
+      const { data, error } = await createSupabaseClientWithClerkToken(token)
+        .functions.invoke('credits', { method: 'GET' });
       
-      addResult(`Response status: ${response.status}`);
-      addResult(`Response status text: ${response.statusText}`);
-      
-      const responseText = await response.text();
-      addResult(`Response body: ${responseText}`);
-      
-      if (response.ok) {
-        try {
-          const data = JSON.parse(responseText);
-          addResult(`Credits function success! Data: ${JSON.stringify(data)}`);
-        } catch (e) {
-          addResult(`Success but couldn't parse JSON: ${responseText}`);
-        }
+      if (error) {
+        addResult(`Credits function failed: ${error.message}`);
       } else {
-        addResult(`Credits function failed with status ${response.status}`);
-        addResult(`Error response: ${responseText}`);
+        addResult(`Credits function success! Data: ${JSON.stringify(data)}`);
       }
-    } catch (error) {
+      
+          } catch (error) {
       addResult(`Error testing credits function: ${error}`);
       addResult(`Error details: ${JSON.stringify(error)}`);
     }
