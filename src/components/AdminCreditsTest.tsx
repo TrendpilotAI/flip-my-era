@@ -14,7 +14,12 @@ const AdminCreditsTest = () => {
   const [creditsToAdd, setCreditsToAdd] = useState(1);
   const [reason, setReason] = useState('Testing');
   const [isLoading, setIsLoading] = useState(false);
-  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfo, setUserInfo] = useState<{
+    id: string;
+    email: string;
+    credits: number;
+    subscription_status: string;
+  } | null>(null);
 
   const getUserInfo = async () => {
     if (!userId.trim()) {

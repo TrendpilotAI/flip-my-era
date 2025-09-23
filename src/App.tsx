@@ -4,6 +4,7 @@ import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
 import { AdminRoute } from "@/modules/shared/components/AdminRoute";
+import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
 import Index from "@/app/pages/Index";
 import NotFound from "@/app/pages/NotFound";
 import Checkout from "@/app/pages/Checkout";
@@ -22,10 +23,19 @@ import FAQ from "@/app/pages/FAQ";
 
 function App() {
   return (
-    <ClerkAuthProvider>
-      <Router>
-        <Layout>
-          <Routes>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // Log to error reporting service in production
+        if (process.env.NODE_ENV === 'production') {
+          // Example: logErrorToService(error, errorInfo);
+          console.error('Application error:', error, errorInfo);
+        }
+      }}
+    >
+      <ClerkAuthProvider>
+        <Router>
+          <Layout>
+            <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/plans" element={<PlanSelector />} />
@@ -147,6 +157,7 @@ function App() {
         <Toaster />
       </Router>
     </ClerkAuthProvider>
+    </ErrorBoundary>
   );
 }
 

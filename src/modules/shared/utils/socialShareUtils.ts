@@ -101,24 +101,36 @@ export const generatePlatformContent = (
       if (contentType === 'ebook') {
         hashtags.push('EBook', 'DigitalBook', 'PersonalizedStory');
       }
+      }
+
       break;
     case 'tiktok':
       hashtags.push('FlipMyEra', 'AlternateTimeline', 'WhatIf', 'Storytelling');
       if (contentType === 'ebook') {
         hashtags.push('BookTok', 'DigitalBook', 'StoryTime');
       }
+      }
+
       break;
     case 'twitter':
       hashtags.push('FlipMyEra', 'AlternateTimeline', 'StoryTime');
+      }
+
       break;
     case 'facebook':
       hashtags.push('FlipMyEra', 'AlternateTimeline', 'StoryTime');
+      }
+
       break;
     case 'linkedin':
       hashtags.push('FlipMyEra', 'CreativeWriting', 'StoryTelling');
+      }
+
       break;
     case 'pinterest':
       hashtags.push('FlipMyEra', 'StoryTime', 'CreativeWriting', 'BookLovers');
+      }
+
       break;
   }
 
@@ -423,28 +435,42 @@ export const shareContent = async (
         const instagramResult = shareToInstagram(content);
         shareMethod = 'copy';
         userMessage = instagramResult;
+        }
+
         break;
       case 'tiktok':
         const tiktokResult = shareToTikTok(content);
         shareMethod = 'copy';
         userMessage = tiktokResult;
+        }
+
         break;
       case 'twitter':
         shareToTwitter(content);
+        }
+
         break;
       case 'facebook':
         shareToFacebook(content);
+        }
+
         break;
       case 'whatsapp':
         shareToWhatsApp(content);
+        }
+
         break;
       case 'linkedin':
         const linkedinResult = shareToLinkedIn(content);
         shareMethod = 'copy';
         userMessage = linkedinResult;
+        }
+
         break;
       case 'pinterest':
         shareToPinterest(content);
+        }
+
         break;
       default:
         // Try native sharing first
