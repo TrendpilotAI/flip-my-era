@@ -32,20 +32,27 @@ vi.mock('@/core/integrations/supabase/client', () => ({
   },
 }));
 
-// Mock Runware Service
-vi.mock('@/utils/runware', () => ({
-  RunwareService: {
-    getInstance: vi.fn(),
-  },
-}));
+// Mock Runware module with constructor-based service and exported constants
+vi.mock('@/modules/shared/utils/runware', () => {
+  class MockRunwareService {
+    isConfigured = vi.fn(() => false);
+    isConnected = vi.fn(async () => false);
+    generateEbookIllustration = vi.fn(async () => ({ imageURL: '' }));
+    generateTaylorSwiftIllustration = vi.fn(async () => ({ imageURL: '' }));
+    generateImage = vi.fn(async () => ({ imageURL: '' }));
+  }
 
-// Mock Groq
-vi.mock('@/utils/groq', () => ({
-  generateWithGroq: vi.fn(),
-}));
+  return {
+    RunwareService: MockRunwareService,
+    RUNWARE_MODELS: { FLUX_1_1_PRO: 'FLUX_1_1_PRO' },
+    RUNWARE_SCHEDULERS: { FLOW_MATCH_EULER_DISCRETE: 'FLOW_MATCH_EULER_DISCRETE' },
+    createEbookIllustrationPrompt: vi.fn(() => 'illustration prompt'),
+    enhancePromptWithGroq: vi.fn(async (p: any) => 'enhanced ' + JSON.stringify(p)),
+  };
+});
 
-// Mock AI Services
-vi.mock('@/services/ai', () => ({
-  generateChapters: vi.fn(),
-  generateImage: vi.fn(),
-})); 
+
+// Provide a default fetch mock to prevent accidental network calls
+if (!(globalThis as any).fetch) {
+  (globalThis as any).fetch = vi.fn();
+}

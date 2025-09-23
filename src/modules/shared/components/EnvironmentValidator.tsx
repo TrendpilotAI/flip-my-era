@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getEnvVar } from '@/modules/shared/utils/env';
 import { Alert, AlertDescription, AlertTitle } from '@/modules/shared/components/ui/alert';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
@@ -59,7 +60,7 @@ export const EnvironmentValidator = () => {
     setIsValidating(true);
     
     const results = environmentChecks.map(check => {
-      const value = import.meta.env[check.key];
+      const value = getEnvVar(check.key);
       let status: EnvironmentCheck['status'] = 'missing';
       
       if (value) {
