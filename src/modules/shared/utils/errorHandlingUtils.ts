@@ -43,7 +43,7 @@ export const normalizeError = (error: unknown, context?: GenerationErrorContext)
     genError.context = context;
     
     // Classify error type and set retryable flag
-    if (error.message.includes('fetch')) {
+    if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Network')) {
       genError.code = 'NETWORK_ERROR';
       genError.retryable = true;
     } else if (error.message.includes('timeout')) {

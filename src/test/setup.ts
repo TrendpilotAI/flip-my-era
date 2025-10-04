@@ -21,31 +21,183 @@ mockIntersectionObserver.mockReturnValue({
 });
 window.IntersectionObserver = mockIntersectionObserver;
 
+// Mock ResizeObserver
+const mockResizeObserver = vi.fn();
+mockResizeObserver.mockReturnValue({
+  observe: () => null,
+  unobserve: () => null,
+  disconnect: () => null
+});
+window.ResizeObserver = mockResizeObserver;
+
+// Mock matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Mock scrollTo
+Object.defineProperty(window, 'scrollTo', {
+  writable: true,
+  value: vi.fn(),
+});
+
+// Mock crypto.randomUUID
+Object.defineProperty(global, 'crypto', {
+  value: {
+    randomUUID: vi.fn(() => 'test-uuid-123')
+  }
+});
+
+// Mock WebSocket
+class MockWebSocket {
+  static CONNECTING = 0;
+  static OPEN = 1;
+  static CLOSING = 2;
+  static CLOSED = 3;
+
+  public readyState = MockWebSocket.CONNECTING;
+  public onopen: ((event: Event) => void) | null = null;
+  public onclose: ((event: CloseEvent) => void) | null = null;
+  public onerror: ((event: Event) => void) | null = null;
+  public onmessage: ((event: MessageEvent) => void) | null = null;
+
+  constructor(public url: string) {
+    // Simulate connection opening
+    setTimeout(() => {
+      this.readyState = MockWebSocket.OPEN;
+      if (this.onopen) {
+        this.onopen(new Event('open'));
+      }
+    }, 10);
+  }
+
+  send(data: string) {
+    // Mock implementation
+  }
+
+  close() {
+    this.readyState = MockWebSocket.CLOSED;
+    if (this.onclose) {
+      this.onclose(new CloseEvent('close'));
+    }
+  }
+}
+
+Object.defineProperty(global, 'WebSocket', {
+  value: MockWebSocket
+});
+
+// Mock fetch
+global.fetch = vi.fn();
+
+// Mock environment variables
+vi.stubEnv('VITE_GROQ_API_KEY', 'gsk_test123456789');
+vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
+vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
+vi.stubEnv('VITE_RUNWARE_API_KEY', 'test-runware-key');
+vi.stubEnv('VITE_OPENAI_API_KEY', 'test-openai-key');
+
 // Mock Supabase
 vi.mock('@/core/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getUser: vi.fn(),
       signOut: vi.fn(),
+      signInWithIdToken: vi.fn(),
+      getSession: vi.fn()
     },
-    from: vi.fn(),
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn()
+        }))
+      })),
+      insert: vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn()
+        }))
+      })),
+      update: vi.fn(() => ({
+        eq: vi.fn()
+      }))
+    }))
   },
+  getSupabaseSession: vi.fn(),
+  signOutFromSupabase: vi.fn(),
+  createSupabaseClientWithClerkToken: vi.fn()
 }));
 
 // Mock Runware Service
-vi.mock('@/utils/runware', () => ({
+vi.mock('@/modules/shared/utils/runware', () => ({
   RunwareService: {
     getInstance: vi.fn(),
   },
+  enhancePromptWithGroq: vi.fn(),
+  createEbookIllustrationPrompt: vi.fn()
 }));
 
 // Mock Groq
-vi.mock('@/utils/groq', () => ({
+vi.mock('@/modules/shared/utils/groq', () => ({
   generateWithGroq: vi.fn(),
 }));
 
 // Mock AI Services
-vi.mock('@/services/ai', () => ({
+vi.mock('@/modules/story/services/ai', () => ({
   generateChapters: vi.fn(),
   generateImage: vi.fn(),
-})); 
+  generateEbookIllustration: vi.fn(),
+  generateTaylorSwiftChapters: vi.fn(),
+  generateTaylorSwiftIllustration: vi.fn()
+}));
+
+// Mock story persistence
+vi.mock('@/modules/story/utils/storyPersistence', () => ({
+  saveStory: vi.fn(),
+  getLocalStory: vi.fn(),
+  getUserPreferences: vi.fn()
+}));
+
+// Mock gender utils
+vi.mock('@/modules/user/utils/genderUtils', () => ({
+  detectGender: vi.fn(),
+  transformName: vi.fn()
+}));
+
+// Mock star signs
+vi.mock('@/modules/user/utils/starSigns', () => ({
+  getStarSign: vi.fn()
+}));
+
+// Mock story prompts
+vi.mock('@/modules/story/utils/storyPrompts', () => ({
+  getRandomViralTropes: vi.fn(() => ['trope1', 'trope2']),
+  getRandomSceneSettings: vi.fn(() => ['setting1', 'setting2']),
+  generateStoryPrompt: vi.fn(() => 'Generated prompt')
+}));
+
+// Mock toast hook
+vi.mock('@/modules/shared/hooks/use-toast', () => ({
+  useToast: () => ({
+    toast: vi.fn(() => ({ dismiss: vi.fn() }))
+  })
+}));
+
+// Mock react-router-dom
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useLocation: () => ({ pathname: '/test' })
+  };
+});
