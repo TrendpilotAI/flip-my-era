@@ -14,33 +14,49 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Singleton pattern to avoid multiple client instances
-let supabaseInstance: ReturnType<typeof createClient>;
+let supabaseInstance: ReturnType<typeof createClient> | undefined;
+
+function createStubClient(): any {
+  const notConfigured = () => {
+    throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  };
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: new Error('Supabase not configured') }),
+      signOut: async () => ({ error: new Error('Supabase not configured') }),
+    },
+    from: () => ({ select: notConfigured, insert: notConfigured, update: notConfigured, delete: notConfigured }),
+    functions: { invoke: async () => ({ data: null, error: new Error('Supabase not configured') }) },
+  };
+}
 
 // Create Supabase client with Clerk integration
 export const supabase = (() => {
-  if (supabaseInstance) return supabaseInstance;
+  if (supabaseInstance) return supabaseInstance as any;
 
-  // Always use the production Supabase URL since Edge Functions are deployed
-  const baseUrl = supabaseUrl || '';
-
-  // Create a client with Clerk-compatible configuration
-  supabaseInstance = createClient(baseUrl, supabaseAnonKey || '', {
-    auth: {
-      autoRefreshToken: false, // Disable auto-refresh to avoid conflicts with Clerk
-      persistSession: false,   // Disable session persistence for Clerk integration
-      detectSessionInUrl: false,
-      flowType: 'pkce',
-      // Use a dedicated storageKey to avoid collisions
-      storageKey: 'sb-clerk-integrated',
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'supabase-js-web/2.x'
+  // Only create a real client when envs are present to avoid runtime URL errors
+  if (supabaseUrl && supabaseAnonKey) {
+    // Create a client with Clerk-compatible configuration
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false, // Disable auto-refresh to avoid conflicts with Clerk
+        persistSession: false,   // Disable session persistence for Clerk integration
+        detectSessionInUrl: false,
+        flowType: 'pkce',
+        // Use a dedicated storageKey to avoid collisions
+        storageKey: 'sb-clerk-integrated',
+      },
+      global: {
+        headers: {
+          'X-Client-Info': 'supabase-js-web/2.x'
+        }
       }
-    }
-  });
+    });
+    return supabaseInstance;
+  }
 
-  return supabaseInstance;
+  // Fallback stub to keep app rendering even if envs are missing
+  return createStubClient();
 })();
 
 // Helper to get the current Supabase session
