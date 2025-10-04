@@ -229,7 +229,7 @@ export function validateCreditCostParams(params: CreditCostParams): { valid: boo
     errors.push('Model quality is required');
   }
 
-  if (params.quantity && (params.quantity < 1 || params.quantity > 1000)) {
+  if (params.quantity !== undefined && (params.quantity < 1 || params.quantity > 1000)) {
     errors.push('Quantity must be between 1 and 1000');
   }
 
