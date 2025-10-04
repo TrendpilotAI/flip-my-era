@@ -1,5 +1,7 @@
+import { getGroqApiKey } from '@/modules/shared/utils/env';
+
 export const generateWithGroq = async (prompt: string) => {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  const apiKey = getGroqApiKey();
   
   if (!apiKey) {
     throw new Error('GROQ_API_KEY_MISSING');

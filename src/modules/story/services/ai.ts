@@ -1,5 +1,6 @@
 import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
 import { RunwareService, createEbookIllustrationPrompt, enhancePromptWithGroq } from '@/modules/shared/utils/runware';
+import { getGroqApiKey, getOpenAiApiKey } from '@/modules/shared/utils/env';
 import { TaylorSwiftTheme } from '@/modules/story/utils/storyPrompts';
 import { type ImageMood } from '@/modules/story/utils/taylorSwiftImagePrompts';
 import { getEnchantedQuillPrompt } from '@/modules/story/utils/enchantedQuillPrompt';
@@ -107,7 +108,7 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+        'Authorization': `Bearer ${getGroqApiKey()}`,
         'Content-Type': 'application/json'
       },
       data: {
@@ -146,7 +147,7 @@ export async function generateChapters(story: string, numChapters: number = 3): 
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+        'Authorization': `Bearer ${getGroqApiKey()}`,
         'Content-Type': 'application/json'
       },
       data: {
@@ -224,7 +225,7 @@ export async function generateTaylorSwiftChapters(
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+        'Authorization': `Bearer ${getGroqApiKey()}`,
         'Content-Type': 'application/json'
       },
       data: {
@@ -269,7 +270,7 @@ export async function generateName(options: GenerateNameOptions): Promise<string
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+        'Authorization': `Bearer ${getGroqApiKey()}`,
         'Content-Type': 'application/json'
       },
       data: {
@@ -464,7 +465,7 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
         method: 'POST',
         url: 'https://api.openai.com/v1/images/generations',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${getOpenAiApiKey()}`,
           'Content-Type': 'application/json'
         },
         data: {

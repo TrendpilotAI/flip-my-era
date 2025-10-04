@@ -137,14 +137,24 @@ vi.mock('@/core/integrations/supabase/client', () => ({
   createSupabaseClientWithClerkToken: vi.fn()
 }));
 
-// Mock Runware Service
-vi.mock('@/modules/shared/utils/runware', () => ({
-  RunwareService: {
-    getInstance: vi.fn(),
-  },
-  enhancePromptWithGroq: vi.fn(),
-  createEbookIllustrationPrompt: vi.fn()
-}));
+// Mock Runware module with constructor-based service and exported constants
+vi.mock('@/modules/shared/utils/runware', () => {
+  class MockRunwareService {
+    isConfigured = vi.fn(() => false);
+    isConnected = vi.fn(async () => false);
+    generateEbookIllustration = vi.fn(async () => ({ imageURL: '' }));
+    generateTaylorSwiftIllustration = vi.fn(async () => ({ imageURL: '' }));
+    generateImage = vi.fn(async () => ({ imageURL: '' }));
+  }
+
+  return {
+    RunwareService: MockRunwareService,
+    RUNWARE_MODELS: { FLUX_1_1_PRO: 'FLUX_1_1_PRO' },
+    RUNWARE_SCHEDULERS: { FLOW_MATCH_EULER_DISCRETE: 'FLOW_MATCH_EULER_DISCRETE' },
+    createEbookIllustrationPrompt: vi.fn(() => 'illustration prompt'),
+    enhancePromptWithGroq: vi.fn(async (p: any) => 'enhanced ' + JSON.stringify(p)),
+  };
+});
 
 // Mock Groq
 vi.mock('@/modules/shared/utils/groq', () => ({
@@ -201,3 +211,8 @@ vi.mock('react-router-dom', async () => {
     useLocation: () => ({ pathname: '/test' })
   };
 });
+
+// Provide a default fetch mock to prevent accidental network calls
+if (!(globalThis as any).fetch) {
+  (globalThis as any).fetch = vi.fn();
+}
