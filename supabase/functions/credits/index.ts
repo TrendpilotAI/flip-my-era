@@ -69,14 +69,28 @@ interface ApiResponse {
 // Function to extract user ID from Clerk JWT token
 const extractUserIdFromClerkToken = (req: Request): string | null => {
   try {
+    console.log('🔍 Edge Function: Extracting user ID from Clerk token...');
+
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    console.log('🔍 Edge Function: Auth header present:', !!authHeader);
+    console.log('🔍 Edge Function: Auth header starts with Bearer:', authHeader?.startsWith('Bearer '));
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('🔍 Edge Function: No valid auth header found');
       return null;
     }
 
     const token = authHeader.substring(7);
+    console.log('🔍 Edge Function: Token extracted, length:', token.length);
+    console.log('🔍 Edge Function: Token preview:', token.substring(0, 20) + '...');
+
     const parts = token.split('.');
-    if (parts.length < 2) return null;
+    console.log('🔍 Edge Function: Token parts:', parts.length);
+
+    if (parts.length < 2) {
+      console.log('🔍 Edge Function: Invalid JWT format');
+      return null;
+    }
 
     // Base64URL decode the payload without verifying signature (sufficient to read 'sub')
     const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -84,10 +98,17 @@ const extractUserIdFromClerkToken = (req: Request): string | null => {
     const json = atob(padded);
     const payload = JSON.parse(json);
 
+    console.log('🔍 Edge Function: Decoded payload keys:', Object.keys(payload));
+    console.log('🔍 Edge Function: Payload sub:', payload?.sub);
+    console.log('🔍 Edge Function: Payload user_id:', payload?.user_id);
+    console.log('🔍 Edge Function: Payload uid:', payload?.uid);
+
     const userId = payload?.sub || payload?.user_id || payload?.uid || null;
+    console.log('🔍 Edge Function: Extracted userId:', userId);
+
     return typeof userId === 'string' ? userId : null;
   } catch (error) {
-    console.error('Error extracting user ID from token:', error);
+    console.error('🔍 Edge Function: Error extracting user ID from token:', error);
     return null;
   }
 };
@@ -233,23 +254,31 @@ serve(async (req: Request) => {
   }
 
   try {
+    console.log('🔍 Edge Function: Received request');
+    console.log('🔍 Edge Function: Method:', req.method);
+    console.log('🔍 Edge Function: URL:', req.url);
+    console.log('🔍 Edge Function: Authorization header present:', !!req.headers.get('authorization'));
+    console.log('🔍 Edge Function: Authorization header value:', req.headers.get('authorization')?.substring(0, 20) + '...');
+    console.log('🔍 Edge Function: Content-Type header:', req.headers.get('content-type'));
+
     // Extract user ID from Clerk token
     const userId = extractUserIdFromClerkToken(req);
-    
+
     if (!userId) {
+      console.log('🔍 Edge Function: No userId extracted, returning 401');
       return new Response(
         JSON.stringify({
           success: false,
           error: 'Unauthorized - Invalid or missing token'
         }),
-        { 
-          status: 401, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 401,
+          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    console.log(`Processing request for Clerk user: ${userId}`);
+    console.log(`🔍 Edge Function: Processing request for Clerk user: ${userId}`);
 
     if (req.method === 'GET' || req.method === 'POST') {
       // Parse query parameters

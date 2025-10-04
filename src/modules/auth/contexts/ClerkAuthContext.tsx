@@ -52,22 +52,25 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch credit balance using Supabase client
   const fetchCreditBalance = useCallback(async (): Promise<number> => {
     if (!clerkUser) {
-      console.log("No Clerk user available for credit balance fetch");
+      console.log("🔍 ClerkAuthContext: No Clerk user available for credit balance fetch");
       return 0;
     }
-    
+
     try {
-      console.log("Fetching credit balance for user:", clerkUser.id);
-      
+      console.log("🔍 ClerkAuthContext: Fetching credit balance for user:", clerkUser.id);
+
       // Get Clerk token for authentication with Supabase template
       const clerkToken = await getToken({ template: 'supabase' });
+      console.log("🔍 ClerkAuthContext: Clerk token received:", clerkToken ? 'YES (length: ' + clerkToken.length + ')' : 'NO');
+      console.log("🔍 ClerkAuthContext: Token preview:", clerkToken ? clerkToken.substring(0, 20) + '...' : 'null');
+
       if (!clerkToken) {
-        console.warn("No Clerk token available for credit balance fetch");
+        console.warn("🔍 ClerkAuthContext: No Clerk token available for credit balance fetch");
         return 0;
       }
-      
-      console.log("Got Clerk token, creating Supabase client...");
-      
+
+      console.log("🔍 ClerkAuthContext: Got Clerk token, invoking credits function...");
+
       const { data, error } = await supabase.functions.invoke('credits', {
         method: 'GET',
         headers: { Authorization: `Bearer ${clerkToken}` },

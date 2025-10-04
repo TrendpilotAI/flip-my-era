@@ -182,4 +182,9 @@ The Supabase setup is **mostly complete** with all necessary files in place. How
 5. ⚠️ Environment variables need to be set
 6. ⚠️ JWT decoding needs to be fixed in edge functions
 
+<<<<<<< HEAD
 **Recommendation**: Run the APPLY_MIGRATIONS.sql script in your Supabase SQL Editor immediately, then deploy the edge functions and set the required environment variables.
+=======
+**Recommendation**: Run the APPLY_MIGRATIONS.sql script in your Supabase SQL Editor immediately, then deploy the edge functions and set the required environment variables.
+>>>>>>> cursor/verify-supabase-deployment-and-integrity-85d4
+

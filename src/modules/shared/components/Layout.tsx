@@ -58,6 +58,18 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
+                <Link to="/credits" className="flex items-center">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Credits
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/plans" className="flex items-center">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Plans & Pricing
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link to="/dashboard?tab=billing" className="flex items-center">
                   <Settings className="h-4 w-4 mr-2" />
                   Account & Billing

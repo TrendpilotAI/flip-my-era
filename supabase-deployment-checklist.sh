@@ -130,4 +130,9 @@ echo "2. Test authentication flow"
 echo "3. Verify database operations"
 echo "4. Check edge function logs in Supabase Dashboard"
 echo ""
+<<<<<<< HEAD
 echo "================================================"
+=======
+echo "================================================"
+>>>>>>> cursor/verify-supabase-deployment-and-integrity-85d4
+

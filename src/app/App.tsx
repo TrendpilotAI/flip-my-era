@@ -20,6 +20,7 @@ const Checkout = lazy(() => import("@/app/pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("@/app/pages/CheckoutSuccess"));
 const UpgradePlan = lazy(() => import("@/app/pages/UpgradePlan"));
 const Credits = lazy(() => import("@/app/pages/Credits"));
+const TestCredits = lazy(() => import("@/app/pages/TestCredits"));
 const AdminDashboard = lazy(() => import("@/app/pages/AdminDashboard"));
 const AdminIntegrations = lazy(() => import("@/app/pages/AdminIntegrations"));
 const AdminUsers = lazy(() => import("@/app/pages/AdminUsers"));
@@ -148,6 +149,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UpgradePlan />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/test-credits"
+              element={
+                <ProtectedRoute>
+                  <TestCredits />
                 </ProtectedRoute>
               }
             />

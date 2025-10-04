@@ -102,7 +102,13 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     }
 
     try {
+      console.log('🔍 EbookGenerator: Starting credit validation...');
+      console.log('🔍 EbookGenerator: isSignedIn:', isSignedIn);
+      console.log('🔍 EbookGenerator: Operations:', operations);
+
       const token = await getToken({ template: 'supabase' });
+      console.log('🔍 EbookGenerator: Token received:', token ? 'YES (length: ' + token.length + ')' : 'NO');
+      console.log('🔍 EbookGenerator: Token preview:', token ? token.substring(0, 20) + '...' : 'null');
 
       // Calculate total cost using new pricing system
       const costResult = operations.length === 1

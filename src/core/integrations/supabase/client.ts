@@ -16,22 +16,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Singleton pattern to avoid multiple client instances
 let supabaseInstance: ReturnType<typeof createClient>;
 
-// Create Supabase client with native third-party auth support
+// Create Supabase client with Clerk integration
 export const supabase = (() => {
   if (supabaseInstance) return supabaseInstance;
-  
+
   // Always use the production Supabase URL since Edge Functions are deployed
   const baseUrl = supabaseUrl || '';
-  
-  // Create a client with the global configuration
+
+  // Create a client with Clerk-compatible configuration
   supabaseInstance = createClient(baseUrl, supabaseAnonKey || '', {
     auth: {
-      autoRefreshToken: true,
-      persistSession: true,
+      autoRefreshToken: false, // Disable auto-refresh to avoid conflicts with Clerk
+      persistSession: false,   // Disable session persistence for Clerk integration
       detectSessionInUrl: false,
       flowType: 'pkce',
-      // Use a dedicated storageKey to avoid collisions with other clients
-      storageKey: 'sb-anon',
+      // Use a dedicated storageKey to avoid collisions
+      storageKey: 'sb-clerk-integrated',
     },
     global: {
       headers: {
@@ -39,7 +39,7 @@ export const supabase = (() => {
       }
     }
   });
-  
+
   return supabaseInstance;
 })();
 
@@ -66,7 +66,7 @@ export function createSupabaseClientWithClerkToken(sessionToken: string | null) 
   if (clerkSupabaseInstance && currentClerkToken === sessionToken) {
     return clerkSupabaseInstance;
   }
-  
+
   // Create or update the singleton instance
   currentClerkToken = sessionToken;
   clerkSupabaseInstance = createClient(supabaseUrl || '', supabaseAnonKey || '', {
@@ -85,7 +85,7 @@ export function createSupabaseClientWithClerkToken(sessionToken: string | null) 
       },
     },
   });
-  
+
   return clerkSupabaseInstance;
 }
 

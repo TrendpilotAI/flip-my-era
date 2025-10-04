@@ -173,4 +173,9 @@ SELECT
   has_ebooks || ' ebooks, ' || 
   has_credits || ' credits, ' ||
   policy_count || ' RLS policies' AS details
+<<<<<<< HEAD
 FROM status_checks;
+=======
+FROM status_checks;
+>>>>>>> cursor/verify-supabase-deployment-and-integrity-85d4
+
