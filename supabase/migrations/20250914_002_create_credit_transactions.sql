@@ -21,7 +21,7 @@ ALTER TABLE public.credit_transactions ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 CREATE POLICY "Users can view own transactions" ON public.credit_transactions
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING (auth.jwt() ->> 'sub' = user_id);
 
 CREATE POLICY "Allow service role full access" ON public.credit_transactions
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
@@ -33,7 +33,7 @@ CREATE TRIGGER update_credit_transactions_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Create function to get user credit balance
-CREATE OR REPLACE FUNCTION get_user_credit_balance(user_uuid UUID)
+CREATE OR REPLACE FUNCTION get_user_credit_balance(user_uuid TEXT)
 RETURNS INTEGER AS $$
 DECLARE
     total_purchased INTEGER;
@@ -56,9 +56,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Create view for user credit balances
 CREATE OR REPLACE VIEW public.user_credit_balances AS
 SELECT
-    u.id as user_id,
+    p.id as user_id,
     COALESCE(SUM(CASE WHEN ct.transaction_type IN ('purchase', 'refund', 'bonus') THEN ct.credits ELSE 0 END), 0) -
     COALESCE(SUM(CASE WHEN ct.transaction_type = 'usage' THEN ct.credits ELSE 0 END), 0) as balance
-FROM auth.users u
-LEFT JOIN public.credit_transactions ct ON u.id = ct.user_id
-GROUP BY u.id;
+FROM public.profiles p
+LEFT JOIN public.credit_transactions ct ON p.id = ct.user_id
+GROUP BY p.id;

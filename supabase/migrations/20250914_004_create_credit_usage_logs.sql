@@ -20,14 +20,14 @@ ALTER TABLE public.credit_usage_logs ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 CREATE POLICY "Users can view own usage logs" ON public.credit_usage_logs
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING (auth.jwt() ->> 'sub' = user_id);
 
 CREATE POLICY "Allow service role full access" ON public.credit_usage_logs
     FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
 
 -- Create function to log credit usage
 CREATE OR REPLACE FUNCTION log_credit_usage(
-    p_user_id UUID,
+    p_user_id TEXT,
     p_resource_type VARCHAR(100),
     p_credits_used INTEGER,
     p_resource_id UUID DEFAULT NULL,
@@ -89,7 +89,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create function to get user usage statistics
 CREATE OR REPLACE FUNCTION get_user_usage_stats(
-    p_user_id UUID,
+    p_user_id TEXT,
     p_days INTEGER DEFAULT 30
 )
 RETURNS TABLE (
@@ -113,7 +113,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create function to get credit usage history
 CREATE OR REPLACE FUNCTION get_credit_usage_history(
-    p_user_id UUID,
+    p_user_id TEXT,
     p_limit INTEGER DEFAULT 50
 )
 RETURNS TABLE (
