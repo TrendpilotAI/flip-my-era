@@ -7,8 +7,24 @@ vi.mock('@/modules/shared/hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() })
 }));
 
-vi.mock('@/modules/auth/contexts/ClerkAuthContext', () => ({
-  useClerkAuth: () => ({ getToken: vi.fn(async () => null) })
+vi.mock('@/modules/auth/contexts', () => ({
+  useClerkAuth: () => ({
+    isAuthenticated: true,
+    user: { id: '123', email: 'test@example.com' },
+    isLoading: false,
+    signIn: vi.fn().mockResolvedValue({ error: null }),
+    signUp: vi.fn().mockResolvedValue({ error: null }),
+    signOut: vi.fn().mockResolvedValue({ error: null }),
+    signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
+    refreshUser: vi.fn().mockResolvedValue(undefined),
+    fetchCreditBalance: vi.fn().mockResolvedValue(100),
+    getToken: vi.fn().mockResolvedValue('mock-token'),
+    isNewUser: false,
+    setIsNewUser: vi.fn(),
+    SignInButton: vi.fn(),
+    SignUpButton: vi.fn(),
+    UserButton: vi.fn()
+  })
 }));
 
 function makeSseResponse(events: Array<Record<string, any>>): Response {
