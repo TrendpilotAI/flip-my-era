@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useStoryGeneration } from '../useStoryGeneration';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
@@ -71,8 +71,13 @@ describe('useStoryGeneration', () => {
     mockGetStarSign.mockReturnValue('Aries');
   });
 
-  it('should initialize with default values', () => {
+  it('should initialize with default values', async () => {
     const { result } = renderHook(() => useStoryGeneration());
+
+    // Wait for initialization to complete
+    await waitFor(() => {
+      expect(result.current.isInitialized).toBe(true);
+    });
 
     expect(result.current.name).toBe('');
     expect(result.current.date).toBeUndefined();
@@ -82,7 +87,6 @@ describe('useStoryGeneration', () => {
     expect(result.current.gender).toBe('same');
     expect(result.current.location).toBe('');
     expect(result.current.isAuthenticated).toBe(true);
-    expect(result.current.isInitialized).toBe(false);
   });
 
   it('should load saved preferences on initialization', async () => {
@@ -238,18 +242,28 @@ describe('useStoryGeneration', () => {
   });
 
   it('should handle story selection', async () => {
+    mockGenerateWithGroq.mockResolvedValue('Current story');
+    
+    const { result } = renderHook(() => useStoryGeneration());
+
+    // First generate a story to have current content
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    // Wait for story to be generated
+    await waitFor(() => {
+      expect(result.current.result).toBe('Current story');
+    });
+
+    const currentStoryId = result.current.storyId;
+
+    // Now select a different story
     const mockStory = {
       id: 'story-123',
       storyId: 'story-123',
       initial_story: 'Selected story content'
     };
-
-    const { result } = renderHook(() => useStoryGeneration());
-
-    await act(async () => {
-      result.current.setResult('Current story');
-      result.current.setStoryId('current-123');
-    });
 
     await act(async () => {
       result.current.handleStorySelect(mockStory);
@@ -257,30 +271,52 @@ describe('useStoryGeneration', () => {
 
     expect(result.current.previousStory).toEqual({
       content: 'Current story',
-      id: 'current-123'
+      id: currentStoryId
     });
     expect(result.current.result).toBe('Selected story content');
     expect(result.current.storyId).toBe('story-123');
   });
 
   it('should handle undo functionality', async () => {
+    mockGenerateWithGroq.mockResolvedValue('First story');
+    
     const { result } = renderHook(() => useStoryGeneration());
 
+    // Generate first story
     await act(async () => {
-      result.current.setResult('Current story');
-      result.current.setStoryId('current-123');
-      result.current.setPreviousStory({
-        content: 'Previous story',
-        id: 'previous-123'
-      });
+      await result.current.handleSubmit();
     });
 
+    await waitFor(() => {
+      expect(result.current.result).toBe('First story');
+    });
+
+    const firstStoryId = result.current.storyId;
+
+    // Select a different story (this should save the first as previous)
+    const secondStory = {
+      id: 'story-456',
+      storyId: 'story-456',
+      initial_story: 'Second story'
+    };
+
+    await act(async () => {
+      result.current.handleStorySelect(secondStory);
+    });
+
+    expect(result.current.result).toBe('Second story');
+    expect(result.current.previousStory).toEqual({
+      content: 'First story',
+      id: firstStoryId
+    });
+
+    // Now undo to restore the first story
     await act(async () => {
       result.current.handleUndo();
     });
 
-    expect(result.current.result).toBe('Previous story');
-    expect(result.current.storyId).toBe('previous-123');
+    expect(result.current.result).toBe('First story');
+    expect(result.current.storyId).toBe(firstStoryId);
     expect(result.current.previousStory).toBeNull();
     expect(mockToast).toHaveBeenCalledWith({
       title: 'Story restored',

@@ -2,21 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { StoryForm } from '../StoryForm';
 import { useClerkAuth } from '@/modules/auth/contexts';
+import React from 'react';
+
+// Mock Clerk components
+const MockSignInButton = ({ children, mode }: { children: React.ReactNode; mode?: string }) => (
+  <button data-testid="sign-in-button" data-mode={mode}>
+    {children}
+  </button>
+);
+
+vi.mock('@clerk/clerk-react', () => ({
+  SignInButton: MockSignInButton
+}));
 
 // Mock the auth context
 vi.mock('@/modules/auth/contexts', () => ({
   useClerkAuth: vi.fn(),
 }));
 const mockUseClerkAuth = useClerkAuth as ReturnType<typeof vi.fn>;
-
-// Mock Clerk components
-vi.mock('@clerk/clerk-react', () => ({
-  SignInButton: ({ children, mode }: { children: React.ReactNode; mode?: string }) => (
-    <button data-testid="sign-in-button" data-mode={mode}>
-      {children}
-    </button>
-  )
-}));
 
 describe('StoryForm', () => {
   const defaultProps = {
@@ -62,7 +65,7 @@ describe('StoryForm', () => {
       getToken: vi.fn().mockResolvedValue('mock-token'),
       isNewUser: false,
       setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
+      SignInButton: MockSignInButton,
       SignUpButton: vi.fn(),
       UserButton: vi.fn()
     });
@@ -74,7 +77,7 @@ describe('StoryForm', () => {
     expect(screen.getByText('Discover Your Alternate Timeline')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter your character name')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter the story location (e.g., Paris, New York, Tokyo)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Your Birthdate')).toBeInTheDocument();
+    expect(screen.getByText('Your Birthdate')).toBeInTheDocument();
     expect(screen.getByText('Gender in Your Story')).toBeInTheDocument();
     expect(screen.getByText('Keep Same')).toBeInTheDocument();
     expect(screen.getByText('Flip It!')).toBeInTheDocument();
@@ -94,14 +97,16 @@ describe('StoryForm', () => {
       isAuthenticated: false,
       user: null,
       isLoading: false,
-      signIn: vi.fn(),
-      signUp: vi.fn(),
-      signOut: vi.fn(),
-      signInWithGoogle: vi.fn(),
-      refreshUser: vi.fn(),
+      signIn: vi.fn().mockResolvedValue({ error: null }),
+      signUp: vi.fn().mockResolvedValue({ error: null }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
+      refreshUser: vi.fn().mockResolvedValue(undefined),
+      fetchCreditBalance: vi.fn().mockResolvedValue(0),
+      getToken: vi.fn().mockResolvedValue(null),
       isNewUser: false,
       setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
+      SignInButton: MockSignInButton,
       SignUpButton: vi.fn(),
       UserButton: vi.fn()
     });
@@ -134,9 +139,9 @@ describe('StoryForm', () => {
 
   it('should update date when date input changes', () => {
     const setDate = vi.fn();
-    render(<StoryForm {...defaultProps} setDate={setDate} />);
+    const { container } = render(<StoryForm {...defaultProps} setDate={setDate} />);
 
-    const dateInput = screen.getByLabelText('Your Birthdate');
+    const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement;
     fireEvent.change(dateInput, { target: { value: '1990-01-01' } });
 
     expect(setDate).toHaveBeenCalledWith(new Date('1990-01-01'));
@@ -144,9 +149,9 @@ describe('StoryForm', () => {
 
   it('should handle date input with invalid date', () => {
     const setDate = vi.fn();
-    render(<StoryForm {...defaultProps} setDate={setDate} />);
+    const { container } = render(<StoryForm {...defaultProps} setDate={setDate} />);
 
-    const dateInput = screen.getByLabelText('Your Birthdate');
+    const dateInput = container.querySelector('input[type="date"]') as HTMLInputElement;
     fireEvent.change(dateInput, { target: { value: 'invalid-date' } });
 
     expect(setDate).toHaveBeenCalledWith(undefined);
@@ -217,19 +222,19 @@ describe('StoryForm', () => {
   });
 
   it('should have correct max date for date input', () => {
-    render(<StoryForm {...defaultProps} />);
+    const { container } = render(<StoryForm {...defaultProps} />);
 
-    const dateInput = screen.getByLabelText('Your Birthdate');
+    const dateInput = container.querySelector('input[type="date"]');
     const today = new Date().toISOString().split('T')[0];
     expect(dateInput).toHaveAttribute('max', today);
   });
 
   it('should have correct input types', () => {
-    render(<StoryForm {...defaultProps} />);
+    const { container } = render(<StoryForm {...defaultProps} />);
 
     const nameInput = screen.getByPlaceholderText('Enter your character name');
     const locationInput = screen.getByPlaceholderText('Enter the story location (e.g., Paris, New York, Tokyo)');
-    const dateInput = screen.getByLabelText('Your Birthdate');
+    const dateInput = container.querySelector('input[type="date"]');
 
     expect(nameInput).toHaveAttribute('type', 'text');
     expect(locationInput).toHaveAttribute('type', 'text');
@@ -237,11 +242,11 @@ describe('StoryForm', () => {
   });
 
   it('should have correct accessibility attributes', () => {
-    render(<StoryForm {...defaultProps} />);
+    const { container } = render(<StoryForm {...defaultProps} />);
 
     const nameInput = screen.getByPlaceholderText('Enter your character name');
     const locationInput = screen.getByPlaceholderText('Enter the story location (e.g., Paris, New York, Tokyo)');
-    const dateInput = screen.getByLabelText('Your Birthdate');
+    const dateInput = container.querySelector('input[type="date"]');
 
     expect(nameInput).toHaveAttribute('placeholder', 'Enter your character name');
     expect(locationInput).toHaveAttribute('placeholder', 'Enter the story location (e.g., Paris, New York, Tokyo)');
