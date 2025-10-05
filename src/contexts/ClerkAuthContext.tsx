@@ -39,6 +39,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const syncUserProfile = async () => {
       if (clerkUser) {
+        let existingProfile: Record<string, unknown> | null = null;
         try {
           // Get Clerk session token for Supabase
           const clerkToken = await getToken({ template: 'supabase' });
@@ -63,7 +64,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
           }
 
           // Check if user profile exists in Supabase
-          const { data: existingProfile, error: fetchError } = await supabase
+          const { data: fetchedProfile, error: fetchError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', data.user.id)
@@ -72,6 +73,8 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
           if (fetchError && fetchError.code !== 'PGRST116') {
             throw fetchError;
           }
+
+          existingProfile = fetchedProfile;
 
           if (!existingProfile) {
             // Profile doesn't exist, create it
@@ -124,15 +127,28 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } catch (error) {
           console.error("Error syncing user profile:", error);
-          // Fall back to Clerk data on any error
-          setUserProfile({
-            id: clerkUser.id,
-            email: clerkUser.primaryEmailAddress?.emailAddress || "",
-            name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
-            avatar_url: clerkUser.imageUrl,
-            subscription_status: "free",
-            created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
-          });
+          // If we have existing profile data, use it instead of falling back to Clerk
+          // This prevents showing unperisted data when updates fail
+          if (existingProfile) {
+            setUserProfile({
+              id: existingProfile.id as string,
+              email: existingProfile.email as string,
+              name: existingProfile.name as string,
+              avatar_url: existingProfile.avatar_url as string,
+              subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
+              created_at: existingProfile.created_at as string,
+            });
+          } else {
+            // Only fall back to Clerk data if we have no Supabase profile at all
+            setUserProfile({
+              id: clerkUser.id,
+              email: clerkUser.primaryEmailAddress?.emailAddress || "",
+              name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
+              avatar_url: clerkUser.imageUrl,
+              subscription_status: "free",
+              created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
+            });
+          }
         }
       } else {
         setUserProfile(null);
