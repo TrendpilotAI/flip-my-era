@@ -1,7 +1,7 @@
 -- Create credit transactions table
 CREATE TABLE IF NOT EXISTS public.credit_transactions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     transaction_type VARCHAR(50) NOT NULL CHECK (transaction_type IN ('purchase', 'usage', 'refund', 'bonus')),
     credits INTEGER NOT NULL CHECK (credits > 0),
     amount_cents INTEGER,

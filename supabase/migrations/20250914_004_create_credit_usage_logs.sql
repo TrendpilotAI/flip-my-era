@@ -1,7 +1,7 @@
 -- Create credit usage logs table
 CREATE TABLE IF NOT EXISTS public.credit_usage_logs (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     resource_type VARCHAR(100) NOT NULL,
     resource_id UUID,
     credits_used INTEGER NOT NULL CHECK (credits_used > 0),
