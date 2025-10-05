@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode, useState } from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -167,7 +167,13 @@ export function withErrorBoundary<P extends object>(
 
 // Hook to trigger error boundary (for testing or manual error triggering)
 export function useErrorHandler() {
-  return (error: Error) => {
+  const [error, setError] = useState<Error | null>(null);
+  
+  if (error) {
     throw error;
+  }
+  
+  return (errorToThrow: Error) => {
+    setError(errorToThrow);
   };
 }

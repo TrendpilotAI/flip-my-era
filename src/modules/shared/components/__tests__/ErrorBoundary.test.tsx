@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary, withErrorBoundary, useErrorHandler } from '../ErrorBoundary';
 import React from 'react';
@@ -25,16 +25,22 @@ const ComponentWithErrorHandler = () => {
 describe('ErrorBoundary', () => {
   let originalEnv: string | undefined;
   let consoleErrorSpy: any;
+  let originalErrorHandler: any;
 
   beforeEach(() => {
     originalEnv = process.env.NODE_ENV;
     // Suppress console.error for cleaner test output
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Suppress React error boundary warnings in tests
+    originalErrorHandler = window.onerror;
+    window.onerror = () => true; // Suppress unhandled errors in tests
   });
 
   afterEach(() => {
     process.env.NODE_ENV = originalEnv;
     consoleErrorSpy.mockRestore();
+    window.onerror = originalErrorHandler;
   });
 
   describe('Normal Operation', () => {
@@ -135,21 +141,32 @@ describe('ErrorBoundary', () => {
 
   describe('Error Recovery Actions', () => {
     it('should reset error state when Try Again is clicked', () => {
+      let shouldThrow = true;
+      const TestComponent = () => {
+        if (shouldThrow) {
+          throw new Error('Test error');
+        }
+        return <div>No error</div>;
+      };
+
       const { rerender } = render(
         <ErrorBoundary>
-          <ThrowError shouldThrow={true} />
+          <TestComponent />
         </ErrorBoundary>
       );
 
       expect(screen.getByText(/Oops! Something went wrong/i)).toBeInTheDocument();
 
-      // Click Try Again button
+      // Fix the error condition before clicking Try Again
+      shouldThrow = false;
+      
+      // Click Try Again button - this will reset and re-render with shouldThrow=false
       fireEvent.click(screen.getByText('Try Again'));
 
-      // Rerender with non-throwing component
+      // Force a rerender to ensure the component updates
       rerender(
         <ErrorBoundary>
-          <ThrowError shouldThrow={false} />
+          <TestComponent />
         </ErrorBoundary>
       );
 
