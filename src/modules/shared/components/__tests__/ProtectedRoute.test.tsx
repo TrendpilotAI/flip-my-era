@@ -1,404 +1,291 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '../ProtectedRoute';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { ClerkAuthProvider } from '@/modules/auth/contexts/ClerkAuthContext';
+import { mockClerkUser } from '@/test/mocks/clerk';
 
-// Mock the auth context
-vi.mock('@/modules/auth/contexts', () => ({
-  useClerkAuth: vi.fn(),
-}));
-const mockUseClerkAuth = useClerkAuth as ReturnType<typeof vi.fn>;
+// Mock the useClerkAuth hook
+const mockUseClerkAuth = vi.fn();
+vi.mock('@/modules/auth/contexts/ClerkAuthContext', async () => {
+  const actual = await vi.importActual('@/modules/auth/contexts/ClerkAuthContext');
+  return {
+    ...actual,
+    useClerkAuth: () => mockUseClerkAuth(),
+    ClerkAuthProvider: ({ children }: any) => children,
+  };
+});
 
-// Mock react-router-dom
+// Mock Navigate component to track redirects
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    Navigate: ({ to, state }: { to: string; state?: any }) => (
-      <div data-testid="navigate" data-to={to} data-state={JSON.stringify(state)}>
-        Redirecting to {to}
-      </div>
-    ),
-    useLocation: () => ({ pathname: '/dashboard' })
+    Navigate: ({ to, state }: any) => {
+      mockNavigate(to, state);
+      return null;
+    },
   };
 });
-
-const TestComponent = () => <div>Protected Content</div>;
 
 describe('ProtectedRoute', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should show loading state when authentication is loading', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: true,
-      user: null,
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(0),
-      getToken: vi.fn().mockResolvedValue(null),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
+  describe('Loading State', () => {
+    it('should show loading spinner when authentication is being checked', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: true,
+        isAuthenticated: false,
+        user: null,
+      });
+
+      render(
+        <MemoryRouter>
+          <ProtectedRoute>
+            <div>Protected Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Loading...')).toBeInTheDocument();
+      expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
     });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute>
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
   });
 
-  it('should redirect to auth when not authenticated', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(0),
-      getToken: vi.fn().mockResolvedValue(null),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
+  describe('Authentication Check', () => {
+    it('should render children when user is authenticated', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+        user: {
+          ...mockClerkUser,
+          subscription_status: 'free',
+        },
+      });
+
+      render(
+        <MemoryRouter>
+          <ProtectedRoute>
+            <div>Protected Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Protected Content')).toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
 
-    render(
-      <BrowserRouter>
-        <ProtectedRoute>
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
+    it('should redirect to /auth when user is not authenticated', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: false,
+        user: null,
+      });
 
-    expect(screen.getByTestId('navigate')).toBeInTheDocument();
-    expect(screen.getByTestId('navigate')).toHaveAttribute('data-to', '/auth');
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+      render(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <ProtectedRoute>
+            <div>Protected Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/auth',
+        expect.objectContaining({
+          from: expect.objectContaining({
+            pathname: '/dashboard',
+          }),
+        })
+      );
+    });
   });
 
-  it('should render children when authenticated', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { id: '123', email: 'test@example.com' },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
+  describe('Subscription Level Check', () => {
+    it('should render content when user has required subscription level', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+        user: {
+          ...mockClerkUser,
+          subscription_status: 'premium',
+        },
+      });
+
+      render(
+        <MemoryRouter>
+          <ProtectedRoute requiredSubscription="premium">
+            <div>Premium Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Premium Content')).toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
 
-    render(
-      <BrowserRouter>
-        <ProtectedRoute>
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
+    it('should render content when user has higher subscription than required', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+        user: {
+          ...mockClerkUser,
+          subscription_status: 'premium',
+        },
+      });
 
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
-    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('navigate')).not.toBeInTheDocument();
+      render(
+        <MemoryRouter>
+          <ProtectedRoute requiredSubscription="basic">
+            <div>Basic Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Basic Content')).toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('should redirect to /upgrade when user has insufficient subscription', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+        user: {
+          ...mockClerkUser,
+          subscription_status: 'free',
+        },
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/premium-features']}>
+          <ProtectedRoute requiredSubscription="premium">
+            <div>Premium Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.queryByText('Premium Content')).not.toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/upgrade',
+        expect.objectContaining({
+          from: expect.objectContaining({
+            pathname: '/premium-features',
+          }),
+        })
+      );
+    });
+
+    it('should handle missing subscription_status as free tier', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+        user: {
+          ...mockClerkUser,
+          subscription_status: undefined,
+        },
+      });
+
+      render(
+        <MemoryRouter>
+          <ProtectedRoute requiredSubscription="basic">
+            <div>Basic Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.queryByText('Basic Content')).not.toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/upgrade',
+        expect.any(Object)
+      );
+    });
   });
 
-  it('should allow access for free subscription when no requirement', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { 
-        id: '123', 
-        email: 'test@example.com',
-        subscription_status: 'free'
-      },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
+  describe('Subscription Level Hierarchy', () => {
+    const testCases = [
+      { userLevel: 'free', requiredLevel: 'free', shouldRender: true },
+      { userLevel: 'free', requiredLevel: 'basic', shouldRender: false },
+      { userLevel: 'free', requiredLevel: 'premium', shouldRender: false },
+      { userLevel: 'basic', requiredLevel: 'free', shouldRender: true },
+      { userLevel: 'basic', requiredLevel: 'basic', shouldRender: true },
+      { userLevel: 'basic', requiredLevel: 'premium', shouldRender: false },
+      { userLevel: 'premium', requiredLevel: 'free', shouldRender: true },
+      { userLevel: 'premium', requiredLevel: 'basic', shouldRender: true },
+      { userLevel: 'premium', requiredLevel: 'premium', shouldRender: true },
+    ];
+
+    testCases.forEach(({ userLevel, requiredLevel, shouldRender }) => {
+      it(`should ${shouldRender ? 'render' : 'redirect'} when user has ${userLevel} and ${requiredLevel} is required`, () => {
+        mockUseClerkAuth.mockReturnValue({
+          isLoading: false,
+          isAuthenticated: true,
+          user: {
+            ...mockClerkUser,
+            subscription_status: userLevel as any,
+          },
+        });
+
+        render(
+          <MemoryRouter>
+            <ProtectedRoute requiredSubscription={requiredLevel as any}>
+              <div>Protected Content</div>
+            </ProtectedRoute>
+          </MemoryRouter>
+        );
+
+        if (shouldRender) {
+          expect(screen.getByText('Protected Content')).toBeInTheDocument();
+          expect(mockNavigate).not.toHaveBeenCalled();
+        } else {
+          expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+          expect(mockNavigate).toHaveBeenCalledWith('/upgrade', expect.any(Object));
+        }
+      });
     });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute>
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
   });
 
-  it('should allow access for basic subscription when basic required', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { 
-        id: '123', 
-        email: 'test@example.com',
-        subscription_status: 'basic'
-      },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
+  describe('Edge Cases', () => {
+    it('should handle null user gracefully', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+        user: null,
+      });
+
+      render(
+        <MemoryRouter>
+          <ProtectedRoute>
+            <div>Protected Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText('Protected Content')).toBeInTheDocument();
     });
 
-    render(
-      <BrowserRouter>
-        <ProtectedRoute requiredSubscription="basic">
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
+    it('should render children when no subscription requirement is specified', () => {
+      mockUseClerkAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+        user: {
+          ...mockClerkUser,
+          subscription_status: 'free',
+        },
+      });
 
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
-  });
+      render(
+        <MemoryRouter>
+          <ProtectedRoute>
+            <div>Any Authenticated User Content</div>
+          </ProtectedRoute>
+        </MemoryRouter>
+      );
 
-  it('should allow access for premium subscription when basic required', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { 
-        id: '123', 
-        email: 'test@example.com',
-        subscription_status: 'premium'
-      },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
+      expect(screen.getByText('Any Authenticated User Content')).toBeInTheDocument();
     });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute requiredSubscription="basic">
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
-  });
-
-  it('should redirect to upgrade when subscription level is insufficient', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { 
-        id: '123', 
-        email: 'test@example.com',
-        subscription_status: 'free'
-      },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
-    });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute requiredSubscription="premium">
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByTestId('navigate')).toBeInTheDocument();
-    expect(screen.getByTestId('navigate')).toHaveAttribute('data-to', '/upgrade');
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-  });
-
-  it('should redirect to upgrade when subscription level is basic but premium required', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { 
-        id: '123', 
-        email: 'test@example.com',
-        subscription_status: 'basic'
-      },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
-    });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute requiredSubscription="premium">
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByTestId('navigate')).toBeInTheDocument();
-    expect(screen.getByTestId('navigate')).toHaveAttribute('data-to', '/upgrade');
-    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-  });
-
-  it('should handle undefined subscription status as free', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { 
-        id: '123', 
-        email: 'test@example.com'
-        // subscription_status is undefined
-      },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
-    });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute requiredSubscription="premium">
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByTestId('navigate')).toBeInTheDocument();
-    expect(screen.getByTestId('navigate')).toHaveAttribute('data-to', '/upgrade');
-  });
-
-  it('should preserve location state when redirecting', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(0),
-      getToken: vi.fn().mockResolvedValue(null),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
-    });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute>
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    const navigateElement = screen.getByTestId('navigate');
-    const state = JSON.parse(navigateElement.getAttribute('data-state') || '{}');
-    expect(state.from).toEqual({ pathname: '/dashboard' });
-  });
-
-  it('should render multiple children correctly', () => {
-    mockUseClerkAuth.mockReturnValue({
-      isAuthenticated: true,
-      isLoading: false,
-      user: { id: '123', email: 'test@example.com' },
-      signIn: vi.fn().mockResolvedValue({ error: null }),
-      signUp: vi.fn().mockResolvedValue({ error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
-      refreshUser: vi.fn().mockResolvedValue(undefined),
-      fetchCreditBalance: vi.fn().mockResolvedValue(100),
-      getToken: vi.fn().mockResolvedValue('mock-token'),
-      isNewUser: false,
-      setIsNewUser: vi.fn(),
-      SignInButton: vi.fn(),
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
-    });
-
-    render(
-      <BrowserRouter>
-        <ProtectedRoute>
-          <div>Child 1</div>
-          <div>Child 2</div>
-          <TestComponent />
-        </ProtectedRoute>
-      </BrowserRouter>
-    );
-
-    expect(screen.getByText('Child 1')).toBeInTheDocument();
-    expect(screen.getByText('Child 2')).toBeInTheDocument();
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
   });
 });

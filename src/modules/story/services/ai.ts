@@ -488,4 +488,7 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
     console.error('Failed to generate image:', error);
     throw new Error('Image generation failed. Please try again later.');
   }
-} 
+}
+
+// Alias for backwards compatibility with tests
+export const generateAlternativeName = generateName; 

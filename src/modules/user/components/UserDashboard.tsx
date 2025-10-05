@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { UserBooks } from '@/modules/ebook/components/UserBooks';
+import { withErrorBoundary } from '@/modules/shared/components/ErrorBoundary';
 
 interface Story {
   id: string;
@@ -411,4 +412,8 @@ const UserDashboard = () => {
   );
 };
 
-export default UserDashboard; 
+export default withErrorBoundary(UserDashboard, {
+  onError: (error, errorInfo) => {
+    console.error('UserDashboard error:', error, errorInfo);
+  }
+}); 

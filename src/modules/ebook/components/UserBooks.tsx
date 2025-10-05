@@ -30,7 +30,7 @@ interface MemoryBook {
   id: string;
   title: string;
   description: string;
-  chapters: any[] | string | object; // Can be array, JSON string, or object
+  chapters: Array<{ title: string; content: string; imageUrl?: string }> | string | Record<string, unknown>; // Can be array, JSON string, or object
   chapter_count: number;
   word_count: number;
   status: string;
@@ -155,14 +155,15 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
     }
   };
 
-  const parseChapters = (chapters: any[] | string | object): any[] => {
+  const parseChapters = (chapters: Array<{ title: string; content: string; imageUrl?: string }> | string | Record<string, unknown>): Array<{ title: string; content: string; imageUrl?: string }> => {
     try {
       if (typeof chapters === 'string') {
         return JSON.parse(chapters);
       } else if (Array.isArray(chapters)) {
         return chapters;
       } else if (chapters && typeof chapters === 'object') {
-        return (chapters as any).chapters || Object.values(chapters);
+        const chapterObj = chapters as Record<string, unknown>;
+        return (chapterObj.chapters as Array<{ title: string; content: string; imageUrl?: string }>) || Object.values(chapters) as Array<{ title: string; content: string; imageUrl?: string }>;
       }
       return [];
     } catch (error) {

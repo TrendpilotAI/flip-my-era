@@ -10,7 +10,8 @@ import { Label } from '@/modules/shared/components/ui/label';
 import type { PersonalityTypeKey } from '@/modules/story/types/personality';
 import { supabase } from '@/core/integrations/supabase/client';
 import { useEffect, useState } from "react";
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { withErrorBoundary } from '@/modules/shared/components/ErrorBoundary';
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -31,7 +32,7 @@ interface StoryFormProps {
   setLocation: (location: string) => void;
 }
 
-export const StoryForm = ({
+const StoryFormComponent = ({
   name,
   setName,
   date,
@@ -173,3 +174,9 @@ export const StoryForm = ({
     </div>
   );
 };
+
+export const StoryForm = withErrorBoundary(StoryFormComponent, {
+  onError: (error, errorInfo) => {
+    console.error('StoryForm error:', error, errorInfo);
+  }
+});

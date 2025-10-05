@@ -1,98 +1,80 @@
 import { vi } from 'vitest';
 
+// Mock Clerk user object
 export const mockClerkUser = {
-  id: 'user_mock_123',
-  fullName: 'Mocked User',
+  id: 'user_test123',
   primaryEmailAddress: {
-    emailAddress: 'mocked.user@example.com',
+    emailAddress: 'test@example.com',
   },
-  imageUrl: 'https://example.com/avatar.png',
-  profileImageUrl: 'https://example.com/avatar.png',
-  firstName: 'Mocked',
+  fullName: 'Test User',
+  firstName: 'Test',
   lastName: 'User',
-  publicMetadata: {},
-  privateMetadata: {},
-  unsafeMetadata: {},
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  subscription_status: 'free' as const,
+  imageUrl: 'https://example.com/avatar.jpg',
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
 };
 
+// Mock Clerk auth object
 export const mockClerkAuth = {
-  userId: mockClerkUser.id,
-  sessionId: 'sess_mock_123',
-  actor: null,
-  orgId: null,
-  orgRole: null,
-  orgSlug: null,
-  isLoaded: true,
-  isSignedIn: true,
-  signOut: vi.fn().mockResolvedValue(undefined),
-  signIn: vi.fn().mockResolvedValue(undefined),
+  userId: 'user_test123',
+  sessionId: 'session_test123',
   getToken: vi.fn().mockResolvedValue('mock-jwt-token'),
-  setActive: vi.fn().mockResolvedValue(undefined),
-  getSessionToken: vi.fn().mockResolvedValue('mock-session-token'),
+  signOut: vi.fn().mockResolvedValue(undefined),
 };
 
+// Mock useUser hook
 export const mockUseUser = {
+  user: mockClerkUser,
   isLoaded: true,
   isSignedIn: true,
-  user: mockClerkUser,
 };
 
-export const mockUseAuth = mockClerkAuth;
-
-type ClerkState = {
-  user: typeof mockUseUser;
-  auth: typeof mockUseAuth;
+// Mock useAuth hook
+export const mockUseAuth = {
+  ...mockClerkAuth,
+  isLoaded: true,
+  isSignedIn: true,
 };
 
-const defaultState: ClerkState = {
-  user: { ...mockUseUser },
-  auth: { ...mockUseAuth },
+// Create mock Clerk provider
+export const createMockClerkProvider = (overrides = {}) => {
+  return {
+    user: { ...mockClerkUser, ...overrides.user },
+    auth: { ...mockClerkAuth, ...overrides.auth },
+    isLoaded: overrides.isLoaded ?? true,
+    isSignedIn: overrides.isSignedIn ?? true,
+  };
 };
 
-const currentState: ClerkState = {
-  user: { ...mockUseUser },
-  auth: { ...mockUseAuth },
-};
+// Mock Clerk components
+export const MockSignInButton = ({ children, ...props }: any) => (
+  <button data-testid="sign-in-button" {...props}>
+    {children || 'Sign In'}
+  </button>
+);
 
-export const createMockButton = (testId: string, label: string) =>
-  vi.fn(() => ({ testId, label }));
+export const MockSignUpButton = ({ children, ...props }: any) => (
+  <button data-testid="sign-up-button" {...props}>
+    {children || 'Sign Up'}
+  </button>
+);
 
-export const MockSignInButton = createMockButton('mock-sign-in', 'Sign In');
-export const MockSignUpButton = createMockButton('mock-sign-up', 'Sign Up');
-export const MockUserButton = vi.fn(() => ({ testId: 'mock-user-button', label: 'User' }));
+export const MockUserButton = (props: any) => (
+  <button data-testid="user-button" {...props}>
+    User Menu
+  </button>
+);
 
-export const setClerkMockState = (overrides: Partial<ClerkState>) => {
-  if (overrides.user) {
-    currentState.user = { ...currentState.user, ...overrides.user };
-  }
-  if (overrides.auth) {
-    currentState.auth = { ...currentState.auth, ...overrides.auth };
-  }
-};
-
-export const resetClerkMocks = () => {
-  currentState.user = { ...defaultState.user };
-  currentState.auth = { ...defaultState.auth };
-  mockClerkAuth.signOut.mockClear();
-  mockClerkAuth.signIn.mockClear();
-  mockClerkAuth.getToken.mockClear().mockResolvedValue('mock-jwt-token');
-  mockClerkAuth.setActive.mockClear();
-  mockClerkAuth.getSessionToken.mockClear();
-  MockSignInButton.mockClear();
-  MockSignUpButton.mockClear();
-  MockUserButton.mockClear();
-};
-
-export const setupClerkModuleMocks = () => {
-  vi.doMock('@clerk/clerk-react', () => ({
-    useUser: () => currentState.user,
-    useAuth: () => currentState.auth,
+// Setup Clerk mocks for tests
+export const setupClerkMocks = () => {
+  vi.mock('@clerk/clerk-react', () => ({
+    useUser: () => mockUseUser,
+    useAuth: () => mockUseAuth,
     SignInButton: MockSignInButton,
     SignUpButton: MockSignUpButton,
     UserButton: MockUserButton,
+    ClerkProvider: ({ children }: any) => children,
+    SignedIn: ({ children }: any) => (mockUseAuth.isSignedIn ? children : null),
+    SignedOut: ({ children }: any) => (!mockUseAuth.isSignedIn ? children : null),
   }));
 };
-
