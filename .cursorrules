@@ -73,4 +73,65 @@ src/
 - The app uses Clerk for authentication, not a custom auth system
 - All authentication-related imports should use ClerkAuthContext
 - The project has both frontend (React) and backend (Supabase functions) code
-- Environment variables should be configured for Clerk and Supabase 
+- Environment variables should be configured for Clerk and Supabase
+
+## Testing Guidelines
+
+### Test Setup and Configuration
+- Test framework: Vitest with @testing-library/react
+- Global test setup in `src/test/setup.ts` mocks common dependencies
+- Test files should be colocated with source files in `__tests__/` directories
+
+### Key Testing Patterns
+
+1. **Unmocking Modules for Unit Tests**
+   - When testing your own modules, use `vi.unmock()` at the top of the test file
+   - Global setup mocks many modules; unmock them to test real implementations
+   - Example: `vi.unmock('@/modules/shared/utils/groq')` before importing
+
+2. **Mock Complete Interfaces**
+   - Always include ALL properties when mocking context values
+   - AuthContextType requires: user, isLoading, isAuthenticated, signIn, signUp, signOut, signInWithGoogle, refreshUser, fetchCreditBalance, getToken, isNewUser, setIsNewUser, SignInButton, SignUpButton, UserButton
+   - Missing properties cause "Cannot read properties of undefined" errors
+
+3. **Mock Module Paths**
+   - Import from `@/modules/auth/contexts` (not `@/modules/auth/contexts/ClerkAuthContext`)
+   - Use `vi.mock('@/modules/auth/contexts', () => ({ useClerkAuth: vi.fn() }))`
+   - Cast mocked functions: `const mockUseClerkAuth = useClerkAuth as ReturnType<typeof vi.fn>`
+
+4. **Response Type Casting**
+   - When mocking fetch responses, cast to Response type
+   - Example: `const mockResponse = { ok: true, json: vi.fn() } as unknown as Response`
+
+5. **Personality Types Structure**
+   - PersonalityType interface requires: `title`, `description`, and `traits` array
+   - Tests must provide all three properties
+
+6. **Timing Tolerance**
+   - Add tolerance for async/timing-based tests to prevent flakiness
+   - Exponential backoff with jitter needs ~5-10% tolerance
+   - Use `.toBeLessThanOrEqual()` with buffer for timing assertions
+
+7. **Test Isolation**
+   - Use `beforeEach` to reset mocks: `vi.clearAllMocks()`
+   - Return proper mock values (Promises for async functions)
+   - Example: `signOut: vi.fn().mockResolvedValue({ error: null })`
+
+### Common Test Issues and Solutions
+
+- **"Cannot read properties of undefined (reading 'mockReturnValue')"**
+  - Solution: Mock the module correctly with `vi.mock()` returning an object with the function
+
+- **"No [export] is defined on the mock"**
+  - Solution: Add `vi.unmock()` before importing to test real implementation
+
+- **"You must provide a Promise to expect() when using .rejects"**
+  - Solution: Function is returning undefined; check mock setup or unmock the module
+
+- **Flaky timing tests**
+  - Solution: Increase tolerance by 5-10% to account for system variance
+
+### Test Coverage Status (as of Oct 5, 2025)
+- Current: 143 passed, 26 failed (85% pass rate)
+- Target: ≥60% coverage
+- See COVERAGE_PROGRESS.md for detailed status
