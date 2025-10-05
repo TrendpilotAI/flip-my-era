@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { Loader2 } from "lucide-react";
 
 interface AdminRouteProps {

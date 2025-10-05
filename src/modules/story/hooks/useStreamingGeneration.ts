@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { TaylorSwiftTheme, StoryFormat } from "@/modules/story/utils/storyPrompts";
 import { extractImagePromptFromStream, ImagePrompt } from "@/modules/story/utils/imagePromptExtraction";
 import { handleStreamingGenerationError, GenerationErrorContext, normalizeError } from '@/modules/shared/utils/errorHandlingUtils';

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { updateSubscription } from "@/modules/story/utils/storyPersistence";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";

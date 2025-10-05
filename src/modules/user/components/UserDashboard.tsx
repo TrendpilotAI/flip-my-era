@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { supabase } from '@/core/integrations/supabase/client';
 import { Button } from '@/modules/shared/components/ui/button';

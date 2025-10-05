@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { ClerkAuthProvider, useClerkAuth } from '../ClerkAuthContext';
+import { ClerkAuthProvider, useClerkAuth } from '@/modules/auth/contexts';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { supabase } from '@/core/integrations/supabase/client';
 

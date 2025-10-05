@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { StoryForm } from '../StoryForm';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 
 // Mock the auth context
 vi.mock('@/modules/auth/contexts/ClerkAuthContext');

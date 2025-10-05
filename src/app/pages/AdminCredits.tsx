@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/modules/shared/components/ui/textarea';
 import { Label } from '@/modules/shared/components/ui/label';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { supabase } from '@/core/integrations/supabase/client';
 import AdminNav from '@/modules/shared/components/AdminNav';
 import { 

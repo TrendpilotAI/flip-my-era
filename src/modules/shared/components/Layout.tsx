@@ -4,7 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { BookOpen, LogOut, Settings, User, Crown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Footer } from './Footer';
 

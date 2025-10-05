@@ -9,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from '@/core/integrations/supabase/client';
 import { useState } from "react";
 import { EbookGenerator } from "@/modules/ebook/components/EbookGenerator";
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { DownloadShareModal } from '@/modules/shared/components/DownloadShareModal';
 
 interface StoryResultProps {

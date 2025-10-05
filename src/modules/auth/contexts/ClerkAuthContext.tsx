@@ -1,46 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { useEffect, useState, ReactNode, useCallback } from "react";
 import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/core/integrations/supabase/client";
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  name?: string;
-  avatar_url?: string;
-  subscription_status?: "free" | "basic" | "premium";
-  created_at?: string;
-  credits?: number;
-}
-
-// Define the Supabase profile type
-interface ProfileType {
-  id: string;
-  email: string;
-  name: string;
-  avatar_url: string;
-  subscription_status: "free" | "basic" | "premium";
-  created_at: string;
-}
-
-interface AuthContextType {
-  user: AuthUser | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
-  refreshUser: () => Promise<void>;
-  fetchCreditBalance: () => Promise<number>;
-  getToken: () => Promise<string | null>;
-  isNewUser: boolean;
-  setIsNewUser: (value: boolean) => void;
-  SignInButton: typeof SignInButton;
-  SignUpButton: typeof SignUpButton;
-  UserButton: typeof UserButton;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, type AuthUser, type AuthContextType, type ProfileType } from './AuthContext';
 
 export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const { user: clerkUser, isLoaded } = useUser();
@@ -278,7 +239,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error refreshing user profile:", error);
       }
     }
-  }, [clerkUser, creditBalance]);
+  }, [clerkUser, creditBalance, getToken]);
 
   const handleSignIn = async (email: string, password: string) => {
     // This will be handled by Clerk's SignInButton component
@@ -337,12 +298,4 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useClerkAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useClerkAuth must be used within a ClerkAuthProvider');
-  }
-  return context;
 };

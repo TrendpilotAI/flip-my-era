@@ -8,7 +8,7 @@ import { personalityTypes } from '@/modules/story/types/personality';
 import { detectGender, transformName } from '@/modules/user/utils/genderUtils';
 import { getRandomViralTropes, getRandomSceneSettings, generateStoryPrompt } from '@/modules/story/utils/storyPrompts';
 import { saveStory, getLocalStory, getUserPreferences } from '@/modules/story/utils/storyPersistence';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 
 type GenderType = "same" | "flip" | "neutral";
 

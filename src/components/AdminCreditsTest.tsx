@@ -3,7 +3,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Input } from '@/modules/shared/components/ui/input';
 import { Label } from '@/modules/shared/components/ui/label';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { supabase } from '@/core/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 

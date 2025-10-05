@@ -6,7 +6,7 @@ import { StoryResult } from "@/modules/story/components/StoryResult";
 import { useApiCheck } from '@/modules/shared/hooks/useApiCheck';
 import { useStoryGeneration } from '@/modules/story/hooks/useStoryGeneration';
 import { personalityTypes } from '@/modules/story/types/personality';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { Button } from "@/modules/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";

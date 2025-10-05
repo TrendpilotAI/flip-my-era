@@ -174,8 +174,6 @@ export const StreamingChapterView = ({
               speed={25}
               className="space-y-4 leading-relaxed text-gray-800"
               onComplete={() => setStreamingComplete(true)}
-              highlightDialogue={true}
-              useTaylorSwiftThemes={useTaylorSwiftThemes}
             />
           ) : (
             <div className="space-y-4 leading-relaxed text-gray-800">

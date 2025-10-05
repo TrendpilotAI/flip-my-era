@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import {
   Dialog,
   DialogContent,

@@ -6,7 +6,6 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Do not hard-crash the app in production if envs are missing; log clearly instead.
 if (!supabaseUrl || !supabaseAnonKey) {
-  // eslint-disable-next-line no-console
   console.error(
     'Missing Supabase environment variables: VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. ' +
     'The app will load, but Supabase features will not function until these are set.'
@@ -16,7 +15,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Singleton pattern to avoid multiple client instances
 let supabaseInstance: ReturnType<typeof createClient> | undefined;
 
-function createStubClient(): any {
+function createStubClient(): ReturnType<typeof createClient> {
   const notConfigured = () => {
     throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
   };
@@ -27,12 +26,12 @@ function createStubClient(): any {
     },
     from: () => ({ select: notConfigured, insert: notConfigured, update: notConfigured, delete: notConfigured }),
     functions: { invoke: async () => ({ data: null, error: new Error('Supabase not configured') }) },
-  };
+  } as unknown as ReturnType<typeof createClient>;
 }
 
 // Create Supabase client with Clerk integration
 export const supabase = (() => {
-  if (supabaseInstance) return supabaseInstance as any;
+  if (supabaseInstance) return supabaseInstance;
 
   // Only create a real client when envs are present to avoid runtime URL errors
   if (supabaseUrl && supabaseAnonKey) {

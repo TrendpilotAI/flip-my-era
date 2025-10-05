@@ -1,5 +1,5 @@
 import { Button } from '@/modules/shared/components/ui/button';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from '@/modules/shared/hooks/use-toast';

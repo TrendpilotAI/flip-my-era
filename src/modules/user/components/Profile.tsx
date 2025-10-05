@@ -8,7 +8,7 @@ import { Textarea } from '@/modules/shared/components/ui/textarea';
 import { Loader2, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from '@/modules/shared/components/ui/avatar';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 
 type Profile = {
   id: string;

@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { generateWithGroq } from '../groq';
 
 // Mock fetch
-global.fetch = vi.fn();
+type MockFetch = ReturnType<typeof vi.fn>;
+global.fetch = vi.fn() as unknown as typeof fetch;
 
 describe('groq', () => {
   beforeEach(() => {
@@ -28,7 +29,7 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       const result = await generateWithGroq('Test prompt');
 
@@ -67,7 +68,7 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow('INVALID_API_KEY');
     });
@@ -81,7 +82,7 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow('RATE_LIMIT_EXCEEDED');
     });
@@ -95,7 +96,7 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow('API_ERROR: Internal server error');
     });
@@ -107,13 +108,13 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({})
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow('API_ERROR: Unknown error');
     });
 
     it('should handle network errors', async () => {
-      (global.fetch as any).mockRejectedValue(new Error('Network error'));
+      (global.fetch as MockFetch).mockRejectedValue(new Error('Network error'));
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow('Network error');
     });
@@ -126,11 +127,11 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await generateWithGroq('Test prompt');
 
-      const callArgs = (global.fetch as any).mock.calls[0];
+      const callArgs = (global.fetch as MockFetch).mock.calls[0];
       const requestBody = JSON.parse(callArgs[1].body);
 
       expect(requestBody).toEqual({
@@ -160,7 +161,7 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow();
     });
@@ -173,7 +174,7 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow();
     });
@@ -189,7 +190,7 @@ describe('groq', () => {
         })
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       try {
         await generateWithGroq('Test prompt');
@@ -209,7 +210,7 @@ describe('groq', () => {
         json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
       };
 
-      (global.fetch as any).mockResolvedValue(mockResponse);
+      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
       await expect(generateWithGroq('Test prompt')).rejects.toThrow('Invalid JSON');
     });

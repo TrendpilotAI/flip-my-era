@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from '@/modules/shared/components/ui/button';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useNavigate } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { ArrowLeft, CheckCircle } from "lucide-react";
 
 const Settings = () => {

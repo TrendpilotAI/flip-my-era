@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useStoryGeneration } from '../useStoryGeneration';
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { generateWithGroq } from '@/modules/shared/utils/groq';
 import { saveStory, getLocalStory, getUserPreferences } from '@/modules/story/utils/storyPersistence';
