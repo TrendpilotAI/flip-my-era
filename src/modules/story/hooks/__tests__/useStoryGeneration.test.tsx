@@ -9,7 +9,9 @@ import { detectGender, transformName } from '@/modules/user/utils/genderUtils';
 import { getStarSign } from '@/modules/user/utils/starSigns';
 
 // Mock dependencies
-vi.mock('@/modules/auth/contexts/ClerkAuthContext');
+vi.mock('@/modules/auth/contexts', () => ({
+  useClerkAuth: vi.fn(),
+}));
 vi.mock('@/modules/shared/hooks/use-toast');
 vi.mock('@/modules/shared/utils/groq');
 vi.mock('@/modules/story/utils/storyPersistence');
@@ -19,7 +21,7 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn()
 }));
 
-const mockUseClerkAuth = vi.mocked(useClerkAuth);
+const mockUseClerkAuth = useClerkAuth as ReturnType<typeof vi.fn>;
 const mockUseToast = vi.mocked(useToast);
 const mockGenerateWithGroq = vi.mocked(generateWithGroq);
 const mockSaveStory = vi.mocked(saveStory);
@@ -40,11 +42,13 @@ describe('useStoryGeneration', () => {
       isAuthenticated: true,
       user: { id: '123', email: 'test@example.com' },
       isLoading: false,
-      signIn: vi.fn(),
-      signUp: vi.fn(),
-      signOut: vi.fn(),
-      signInWithGoogle: vi.fn(),
-      refreshUser: vi.fn(),
+      signIn: vi.fn().mockResolvedValue({ error: null }),
+      signUp: vi.fn().mockResolvedValue({ error: null }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
+      refreshUser: vi.fn().mockResolvedValue(undefined),
+      fetchCreditBalance: vi.fn().mockResolvedValue(100),
+      getToken: vi.fn().mockResolvedValue('mock-token'),
       isNewUser: false,
       setIsNewUser: vi.fn(),
       SignInButton: vi.fn(),

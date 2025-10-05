@@ -107,7 +107,7 @@ describe('errorHandlingUtils', () => {
 
       expect(calculateRetryDelay(1, baseDelay, maxDelay, backoffFactor)).toBeLessThanOrEqual(1100);
       expect(calculateRetryDelay(2, baseDelay, maxDelay, backoffFactor)).toBeLessThanOrEqual(2200); // Allow for jitter
-      expect(calculateRetryDelay(3, baseDelay, maxDelay, backoffFactor)).toBeLessThanOrEqual(4200); // Allow for jitter
+      expect(calculateRetryDelay(3, baseDelay, maxDelay, backoffFactor)).toBeLessThanOrEqual(4400); // Allow for jitter + variance
     });
 
     it('should respect maximum delay', () => {

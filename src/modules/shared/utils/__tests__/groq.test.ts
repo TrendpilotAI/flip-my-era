@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+// Unmock groq module to test the real implementation
+vi.unmock('@/modules/shared/utils/groq');
+
 import { generateWithGroq } from '../groq';
 
 // Mock fetch
@@ -27,7 +31,7 @@ describe('groq', () => {
             }
           }]
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -66,7 +70,7 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({
           error: { message: 'Invalid API key' }
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -80,7 +84,7 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({
           error: { message: 'Rate limit exceeded' }
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -94,7 +98,7 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({
           error: { message: 'Internal server error' }
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -106,7 +110,7 @@ describe('groq', () => {
         ok: false,
         status: 500,
         json: vi.fn().mockResolvedValue({})
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -125,7 +129,7 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({
           choices: [{ message: { content: 'Generated story' } }]
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -159,7 +163,7 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({
           choices: []
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -172,7 +176,7 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({
           choices: [{}] // Missing message property
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -188,7 +192,7 @@ describe('groq', () => {
         json: vi.fn().mockResolvedValue({
           error: { message: 'Server error' }
         })
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 
@@ -208,7 +212,7 @@ describe('groq', () => {
         ok: false,
         status: 500,
         json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
-      };
+      } as unknown as Response;
 
       (global.fetch as MockFetch).mockResolvedValue(mockResponse);
 

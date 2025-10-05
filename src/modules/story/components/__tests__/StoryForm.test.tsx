@@ -4,8 +4,10 @@ import { StoryForm } from '../StoryForm';
 import { useClerkAuth } from '@/modules/auth/contexts';
 
 // Mock the auth context
-vi.mock('@/modules/auth/contexts/ClerkAuthContext');
-const mockUseClerkAuth = vi.mocked(useClerkAuth);
+vi.mock('@/modules/auth/contexts', () => ({
+  useClerkAuth: vi.fn(),
+}));
+const mockUseClerkAuth = useClerkAuth as ReturnType<typeof vi.fn>;
 
 // Mock Clerk components
 vi.mock('@clerk/clerk-react', () => ({
@@ -26,8 +28,16 @@ describe('StoryForm', () => {
     handleSubmit: vi.fn(),
     handleStorySelect: vi.fn(),
     personalityTypes: {
-      dreamer: { name: 'Dreamer', description: 'A dreamy personality' },
-      adventurer: { name: 'Adventurer', description: 'An adventurous personality' }
+      dreamer: { 
+        title: 'Dreamer', 
+        description: 'A dreamy personality',
+        traits: ['Imaginative', 'Creative', 'Thoughtful']
+      },
+      adventurer: { 
+        title: 'Adventurer', 
+        description: 'An adventurous personality',
+        traits: ['Bold', 'Energetic', 'Brave']
+      }
     },
     personalityType: 'dreamer' as const,
     setPersonalityType: vi.fn(),
@@ -43,11 +53,13 @@ describe('StoryForm', () => {
       isAuthenticated: true,
       user: { id: '123', email: 'test@example.com' },
       isLoading: false,
-      signIn: vi.fn(),
-      signUp: vi.fn(),
-      signOut: vi.fn(),
-      signInWithGoogle: vi.fn(),
-      refreshUser: vi.fn(),
+      signIn: vi.fn().mockResolvedValue({ error: null }),
+      signUp: vi.fn().mockResolvedValue({ error: null }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+      signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
+      refreshUser: vi.fn().mockResolvedValue(undefined),
+      fetchCreditBalance: vi.fn().mockResolvedValue(100),
+      getToken: vi.fn().mockResolvedValue('mock-token'),
       isNewUser: false,
       setIsNewUser: vi.fn(),
       SignInButton: vi.fn(),

@@ -98,12 +98,16 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             });
           } else {
             // Profile exists, update it with latest Clerk data
+            const updatedEmail = clerkUser.primaryEmailAddress?.emailAddress || "";
+            const updatedName = clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0];
+            const updatedAvatarUrl = clerkUser.imageUrl;
+
             const { error: updateError } = await supabase
               .from('profiles')
               .update({
-                email: clerkUser.primaryEmailAddress?.emailAddress || "",
-                name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
-                avatar_url: clerkUser.imageUrl,
+                email: updatedEmail,
+                name: updatedName,
+                avatar_url: updatedAvatarUrl,
               })
               .eq('id', data.user.id);
 
@@ -111,9 +115,9 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
             setUserProfile({
               id: existingProfile.id as string,
-              email: existingProfile.email as string,
-              name: existingProfile.name as string,
-              avatar_url: existingProfile.avatar_url as string,
+              email: updatedEmail,
+              name: updatedName,
+              avatar_url: updatedAvatarUrl,
               subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
               created_at: existingProfile.created_at as string,
             });

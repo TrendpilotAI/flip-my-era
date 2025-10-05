@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RunwareService, RUNWARE_MODELS, RUNWARE_SCHEDULERS, getModelArchitecture, filterParamsForModel } from '../runware';
+
+// Unmock runware module to test the real implementation
+vi.unmock('@/modules/shared/utils/runware');
+
+import { RunwareService, RUNWARE_MODELS, RUNWARE_SCHEDULERS, getModelArchitecture, filterParamsForModel, createEbookIllustrationPrompt, enhancePromptWithGroq } from '../runware';
 
 // Mock WebSocket
 class MockWebSocket {

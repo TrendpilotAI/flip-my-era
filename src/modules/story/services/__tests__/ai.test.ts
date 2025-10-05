@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
+
+// Unmock AI service to test the real implementation
+vi.unmock('@/modules/story/services/ai');
+
 vi.mock('@/modules/shared/utils/apiWithRetry', () => ({
   apiRequestWithRetry: (config: any) => (axios as any)(config),
 }));
+
 import { generateStory, generateChapters, generateTaylorSwiftChapters, generateName } from '../ai';
 
 vi.mock('axios');

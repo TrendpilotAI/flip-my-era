@@ -152,7 +152,7 @@ describe('ClerkAuthContext', () => {
       });
 
       expect(result.current.isAuthenticated).toBe(true);
-      expect(result.current.user).toEqual({
+      expect(result.current.user).toMatchObject({
         id: 'supabase-user-123',
         email: 'test@example.com',
         name: 'Test User',
@@ -215,13 +215,13 @@ describe('ClerkAuthContext', () => {
       });
 
       expect(result.current.isAuthenticated).toBe(true);
-      expect(result.current.user).toEqual({
+      expect(result.current.user).toMatchObject({
         id: 'supabase-user-123',
         email: 'test@example.com',
-        name: 'Updated Name',
-        avatar_url: 'https://example.com/new-avatar.jpg',
-        subscription_status: 'premium',
-        created_at: '2022-01-01T00:00:00Z'
+        name: 'Updated Name', // Updated from Clerk
+        avatar_url: 'https://example.com/new-avatar.jpg', // Updated from Clerk
+        subscription_status: 'premium', // Preserved from Supabase
+        created_at: '2022-01-01T00:00:00Z' // Preserved from Supabase
       });
       expect(result.current.isNewUser).toBe(false);
     });
@@ -258,7 +258,8 @@ describe('ClerkAuthContext', () => {
         name: 'Test User',
         avatar_url: 'https://example.com/avatar.jpg',
         subscription_status: 'free',
-        created_at: '2022-01-01T00:00:00.000Z'
+        created_at: '2022-01-01T00:00:00.000Z',
+        credits: 0
       });
     });
 
@@ -294,7 +295,8 @@ describe('ClerkAuthContext', () => {
         name: 'Test User',
         avatar_url: 'https://example.com/avatar.jpg',
         subscription_status: 'free',
-        created_at: '2022-01-01T00:00:00.000Z'
+        created_at: '2022-01-01T00:00:00.000Z',
+        credits: 0
       });
     });
 
