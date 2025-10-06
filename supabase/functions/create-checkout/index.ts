@@ -5,6 +5,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 // Helper logging function for enhanced debugging
@@ -15,12 +17,13 @@ const logStep = (step: string, details?: any) => {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
+  // Use service role for server-side lookups (profiles email)
+  const supabaseServiceClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
   try {
@@ -31,14 +34,35 @@ serve(async (req) => {
     logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new Error("No authorization header provided");
+    }
     logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    // Decode Clerk token to extract user id (sub)
+    let clerkUserId: string | null = null;
+    try {
+      const parts = token.split(".");
+      if (parts.length >= 2) {
+        const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+        const payload = JSON.parse(atob(padded));
+        clerkUserId = payload?.sub ?? payload?.user_id ?? payload?.uid ?? null;
+      }
+    } catch (_e) {
+      // ignore; will fail below
+    }
+    if (!clerkUserId) throw new Error("Invalid token: could not extract user id");
+
+    // Lookup user email from profiles table using service role
+    const { data: profile, error: profileErr } = await supabaseServiceClient
+      .from("profiles")
+      .select("email")
+      .eq("id", clerkUserId)
+      .single();
+    if (profileErr || !profile?.email) throw new Error("User profile not found or missing email");
+    const user = { id: clerkUserId, email: profile.email as string } as const;
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Get the plan or stripePriceId from request body
@@ -49,6 +73,8 @@ serve(async (req) => {
     let checkoutMode: "subscription" | "payment";
     let successUrl: string;
     let cancelUrl: string;
+
+    const origin = req.headers.get("origin") || "http://localhost:8080";
 
     // Define price IDs for subscription plans
     const subscriptionPriceIds: Record<string, string> = {
@@ -91,8 +117,6 @@ serve(async (req) => {
       customerId = customers.data[0].id;
       logStep("Existing customer found", { customerId });
     }
-
-    const origin = req.headers.get("origin") || "http://localhost:8080";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

@@ -84,7 +84,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   currentBalance,
 }) => {
   const [loading, setLoading] = useState<string | null>(null);
-  const { user } = useClerkAuth();
+  const { user, getToken } = useClerkAuth();
   const { toast } = useToast();
 
   const handlePurchase = async (tier: PricingTier) => {
@@ -102,7 +102,9 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       });
 
       // Call Stripe checkout function for one-time credit purchases
+      const token = await getToken();
       const { data, error } = await supabase.functions.invoke('create-checkout', {
+        headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' },
         body: {
           plan: tier.id,
           productType: 'credits',

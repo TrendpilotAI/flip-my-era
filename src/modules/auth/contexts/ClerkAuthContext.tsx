@@ -34,7 +34,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
       const { data, error } = await supabase.functions.invoke('credits', {
         method: 'GET',
-        headers: { Authorization: `Bearer ${clerkToken}` },
+        headers: { Authorization: `Bearer ${clerkToken}`, 'Content-Type': 'application/json' },
       });
       
       if (error) {
@@ -70,13 +70,24 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("Credit balance fetched:", balance);
       setCreditBalance(balance);
-      
-      // Update the user profile with the credit balance
+
+      // Update the user profile state with the credit balance
       if (userProfile) {
         setUserProfile({
           ...userProfile,
-          credits: balance
+          credits: balance,
         });
+      }
+
+      // Persist the credit balance onto profiles.credits for dashboard queries
+      try {
+        const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
+        await supabaseWithAuth
+          .from('profiles')
+          .update({ credits: balance })
+          .eq('id', clerkUser.id);
+      } catch (e) {
+        console.warn('Unable to persist credits to profiles table:', e);
       }
       
       return balance;
@@ -189,9 +200,12 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     if (isLoaded) {
-      syncUserProfile();
+      syncUserProfile().finally(() => {
+        // After syncing profile, fetch and persist credit balance
+        fetchCreditBalance().catch(() => {});
+      });
     }
-  }, [clerkUser, isLoaded, getToken, creditBalance]);
+  }, [clerkUser, isLoaded, getToken, creditBalance, fetchCreditBalance]);
 
   // Use Supabase profile data if available, otherwise fall back to Clerk data
   const user: AuthUser | null = userProfile || (clerkUser ? {
@@ -275,6 +289,16 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const isLoading = !isLoaded;
   const isAuthenticated = !!user;
 
+  // Wrap getToken to match the expected interface
+  const getTokenWrapper = async (): Promise<string | null> => {
+    try {
+      return await getToken({ template: 'supabase' });
+    } catch (error) {
+      console.error("Error getting token:", error);
+      return null;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -285,7 +309,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: handleSignInWithGoogle,
     refreshUser,
     fetchCreditBalance,
-    getToken,
+    getToken: getTokenWrapper,
     isNewUser,
     setIsNewUser,
     SignInButton,

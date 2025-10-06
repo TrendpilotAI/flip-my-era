@@ -1,7 +1,6 @@
 export function getEnvVar(key: string): string | undefined {
-  const viteEnv = (import.meta as any)?.env ?? {};
-  const nodeEnv = (process as any)?.env ?? {};
-  return (viteEnv as any)[key] ?? (nodeEnv as any)[key];
+  // In Vite, environment variables are accessed via import.meta.env
+  return (import.meta.env as any)[key];
 }
 
 export function getGroqApiKey(): string | undefined {

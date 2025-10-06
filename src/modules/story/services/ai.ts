@@ -156,8 +156,8 @@ export async function generateChapters(story: string, numChapters: number = 3): 
           { role: 'system', content: getEnchantedQuillPrompt() },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
-        max_tokens: 4096,
+        temperature: 1.0,
+        max_tokens: 64,
         response_format: { type: "json_object" }
       }
     });

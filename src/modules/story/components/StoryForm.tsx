@@ -10,7 +10,7 @@ import { Label } from '@/modules/shared/components/ui/label';
 import type { PersonalityTypeKey } from '@/modules/story/types/personality';
 import { supabase } from '@/core/integrations/supabase/client';
 import { useEffect, useState } from "react";
-import { useClerkAuth } from '@/modules/auth/contexts/ClerkAuthContext';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { withErrorBoundary } from '@/modules/shared/components/ErrorBoundary';
 
 type GenderType = "same" | "flip" | "neutral";

@@ -92,7 +92,8 @@ export const CreditBalance: React.FC<{
         method: 'GET',
         headers: token ? {
           Authorization: `Bearer ${token}`,
-        } : {},
+          'Content-Type': 'application/json',
+        } : { 'Content-Type': 'application/json' },
       });
 
       if (error) {
