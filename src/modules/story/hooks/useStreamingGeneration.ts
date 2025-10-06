@@ -34,6 +34,13 @@ interface StreamingGenerationOptions {
   selectedTheme?: TaylorSwiftTheme;
   selectedFormat?: StoryFormat;
   numChapters?: number;
+  storyline?: {
+    logline: string;
+    threeActStructure: any;
+    chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
+    themes: string[];
+    wordCountTotal: number;
+  };
   onChapterComplete?: (chapter: Chapter) => void;
   onComplete?: (chapters: Chapter[]) => void;
   onError?: (error: string) => void;
@@ -205,7 +212,8 @@ export const useStreamingGeneration = () => {
           useTaylorSwiftThemes,
           selectedTheme,
           selectedFormat,
-          numChapters
+          numChapters,
+          storyline: options.storyline
         }),
         signal: controller.signal
       });

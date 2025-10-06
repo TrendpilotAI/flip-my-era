@@ -10,6 +10,7 @@ import Auth from "@/modules/auth/components/Auth";
 import AuthCallback from "@/modules/auth/components/AuthCallback";
 import ResetPassword from "@/modules/auth/components/ResetPassword";
 import NotFound from "@/app/pages/NotFound";
+import ImageReview from "@/app/pages/ImageReview";
 
 // Lazy-loaded components
 const Settings = lazy(() => import("@/modules/user/components/Settings"));
@@ -38,6 +39,7 @@ function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/image-review" element={<ImageReview />} />
             
             {/* Protected routes - New unified dashboard */}
             <Route

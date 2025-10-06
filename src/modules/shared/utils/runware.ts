@@ -196,6 +196,9 @@ export const RUNWARE_MODELS = {
   FLUX_1_DEV: "runware:101@1", // FLUX.1 [dev]
   FLUX_1_SCHNELL: "runware:102@1", // FLUX.1 [schnell]
   
+  // Seedream Models
+  SEEDREAM_4: "bytedance:5@0", // Seedream 4 - Advanced image generation
+  
   // SDXL Models
   SDXL_BASE: "runware:1@1", // Stable Diffusion XL Base 1.0
   SDXL_TURBO: "runware:4@1", // SDXL Turbo
@@ -851,4 +854,206 @@ Return ONLY the enhanced prompt, no explanations.
     
     return illustrations;
   }
+
+  /**
+   * Generate multiple images with one request
+   * Collects all results from RUNWARE's multiple responses
+   */
+  async generateMultipleImages(params: GenerateImageParams & { numberResults: number }): Promise<GeneratedImage[]> {
+    if (!this.apiKey) {
+      throw new Error('RUNWARE API key not provided');
+    }
+
+    await this.ensureConnected();
+
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error('WebSocket connection not ready');
+    }
+
+    const taskUUID = crypto.randomUUID();
+    const numberResults = params.numberResults;
+    const filteredParams = { ...params };
+
+    return new Promise((resolve, reject) => {
+      const collectedResults: GeneratedImage[] = [];
+      let receivedCount = 0;
+
+      const architecture = getModelArchitecture(params.model || RUNWARE_MODELS.SEEDREAM_4);
+      
+      const request: RunwareImageInferenceRequest = {
+        taskType: "imageInference",
+        taskUUID,
+        positivePrompt: filteredParams.positivePrompt!,
+        negativePrompt: filteredParams.negativePrompt,
+        model: params.model || RUNWARE_MODELS.SEEDREAM_4,
+        width: filteredParams.width || 1536,
+        height: filteredParams.height || 2048,
+        numberResults: numberResults,
+        outputFormat: filteredParams.outputFormat || "WEBP",
+        outputType: filteredParams.outputType || "URL",
+        steps: filteredParams.steps || 25,
+        CFGScale: filteredParams.CFGScale,
+        strength: filteredParams.strength,
+        seed: filteredParams.seed || undefined,
+        checkNSFW: filteredParams.checkNSFW,
+        includeCost: filteredParams.includeCost,
+      };
+
+      // Remove undefined values
+      Object.keys(request).forEach(key => {
+        const requestKey = key as keyof RunwareImageInferenceRequest;
+        if (request[requestKey] === undefined) {
+          delete request[requestKey];
+        }
+      });
+
+      // Set up callback to collect multiple responses
+      this.messageCallbacks.set(taskUUID, (data: RunwareImageInferenceResponse) => {
+        if ('error' in data) {
+          reject(new Error('Image generation failed'));
+          return;
+        }
+
+        const result: GeneratedImage = {
+          imageUUID: data.imageUUID,
+          taskUUID: data.taskUUID,
+          imageURL: data.imageURL,
+          imageBase64Data: data.imageBase64Data,
+          imageDataURI: data.imageDataURI,
+          positivePrompt: params.positivePrompt,
+          seed: data.seed,
+          NSFWContent: data.NSFWContent,
+          cost: data.cost,
+        };
+
+        collectedResults.push(result);
+        receivedCount++;
+
+        console.log(`Received image ${receivedCount}/${numberResults}`);
+
+        // When all results received, resolve with array
+        if (receivedCount >= numberResults) {
+          this.messageCallbacks.delete(taskUUID);
+          resolve(collectedResults);
+        }
+      });
+
+      this.ws!.send(JSON.stringify([request]));
+
+      // Timeout after 2 minutes
+      setTimeout(() => {
+        if (receivedCount < numberResults) {
+          this.messageCallbacks.delete(taskUUID);
+          if (collectedResults.length > 0) {
+            console.warn(`Only received ${collectedResults.length}/${numberResults} images, returning partial results`);
+            resolve(collectedResults);
+          } else {
+            reject(new Error('Image generation timeout'));
+          }
+        }
+      }, 120000);
+    });
+  }
+
+  /**
+   * Generate ERA representative image using Seedream 4 model (2K quality, 3:4)
+   * Generates 5 variations and returns all images
+   */
+  async generateEraImage(params: {
+    eraName: string;
+    description: string;
+    title: string;
+    aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
+    numberResults?: number;
+  }): Promise<GeneratedImage[]> {
+    if (!this.apiKey) {
+      throw new Error('RUNWARE API key not provided');
+    }
+
+    // 2K resolution for 3:4 aspect ratio
+    let width = 1536;  // 2K width for 3:4
+    let height = 2048; // 2K height for 3:4
+    
+    if (params.aspectRatio === '16:9') {
+      width = 2048;
+      height = 1152;
+    } else if (params.aspectRatio === '1:1') {
+      width = 2048;
+      height = 2048;
+    } else if (params.aspectRatio === '4:3') {
+      width = 2048;
+      height = 1536;
+    }
+
+    // Seedream doesn't support negative prompts, so include instruction in positive prompt
+    const enhancedPrompt = `${params.description}. Always include the title "${params.title}" in elegant typography. Do not include the words "GenZ Hook" anywhere in the image.`;
+
+    return await this.generateMultipleImages({
+      positivePrompt: enhancedPrompt,
+      model: RUNWARE_MODELS.SEEDREAM_4,
+      width,
+      height,
+      numberResults: params.numberResults || 5,
+      outputFormat: "WEBP",
+      outputType: "URL",
+      steps: 25,
+      checkNSFW: true,
+      includeCost: true,
+    });
+  }
+
+  /**
+   * Generate story prompt image using Seedream 4 model (2K quality, 3:4)
+   * Generates 5 variations and returns all images
+   */
+  async generateStoryPromptImage(params: {
+    title: string;
+    vibeCheck: string;
+    swiftieSignal: string;
+    eraType: string;
+    aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
+    numberResults?: number;
+  }): Promise<GeneratedImage[]> {
+    if (!this.apiKey) {
+      throw new Error('RUNWARE API key not provided');
+    }
+
+    // Extract only visual/atmospheric elements from vibeCheck
+    const visualElements = params.vibeCheck.split(',').slice(0, 3).join(',');
+    
+    // Seedream doesn't support negative prompts, so include instruction in positive prompt
+    const positivePrompt = `${visualElements}, inspired by ${params.eraType} era aesthetic, emotional atmospheric scene, cinematic vertical portrait, photorealistic, artistic illustration. Always include the title "${params.title}" and the phrase "${params.swiftieSignal}" in elegant typography. Do not include the words "GenZ Hook" anywhere in the image.`;
+
+    // 2K resolution for 3:4 aspect ratio
+    let width = 1536;
+    let height = 2048;
+    
+    if (params.aspectRatio === '16:9') {
+      width = 2048;
+      height = 1152;
+    } else if (params.aspectRatio === '1:1') {
+      width = 2048;
+      height = 2048;
+    } else if (params.aspectRatio === '4:3') {
+      width = 2048;
+      height = 1536;
+    }
+
+    return await this.generateMultipleImages({
+      positivePrompt,
+      model: RUNWARE_MODELS.SEEDREAM_4,
+      width,
+      height,
+      numberResults: params.numberResults || 5,
+      outputFormat: "WEBP",
+      outputType: "URL",
+      steps: 25,
+      checkNSFW: true,
+      includeCost: true,
+    });
+  }
 }
+
+// Create singleton instance
+const apiKey = import.meta.env.VITE_RUNWARE_API_KEY || '';
+export const runwareService = new RunwareService(apiKey);

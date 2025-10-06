@@ -44,9 +44,17 @@ interface Chapter {
 interface EbookGeneratorProps {
   originalStory: string;
   storyId: string;
+  storyline?: {
+    logline: string;
+    threeActStructure: any;
+    chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
+    themes: string[];
+    wordCountTotal: number;
+  };
+  storyFormat?: 'preview' | 'short-story' | 'novella';
 }
 
-export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) => {
+export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat }: EbookGeneratorProps) => {
   const { toast } = useToast();
   const { isSignedIn, getToken } = useAuth();
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -210,7 +218,8 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
       useTaylorSwiftThemes,
       selectedTheme,
       selectedFormat,
-      numChapters: storyFormats[selectedFormat].chapters,
+      numChapters: storyFormat === 'preview' ? 1 : storyFormat === 'short-story' ? 5 : storyline?.chapters.length || storyFormats[selectedFormat].chapters,
+      storyline: storyline,
       onChapterComplete: (chapter) => {
         // Chapter completed callback
         console.log('Chapter completed:', chapter.title);

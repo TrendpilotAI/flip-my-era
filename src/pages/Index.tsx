@@ -1,58 +1,42 @@
-import { SparkleEffect } from "@/modules/shared/components/SparkleEffect";
-import { BackgroundImages } from "@/modules/shared/components/BackgroundImages";
-import { PageHeader } from "@/modules/shared/components/PageHeader";
-import { StoryForm } from "@/modules/story/components/StoryForm";
-import { StoryResult } from "@/modules/story/components/StoryResult";
+import { useRef } from 'react';
 import { useApiCheck } from '@/modules/shared/hooks/useApiCheck';
-import { useStoryGeneration } from '@/modules/story/hooks/useStoryGeneration';
-import { personalityTypes } from '@/modules/story/types/personality';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { Button } from "@/modules/shared/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
+import { HeroGallery } from "@/modules/shared/components/HeroGallery";
+import { StoryWizard } from "@/modules/story/components/StoryWizard";
+import { StoryWizardProvider } from "@/modules/story/contexts/StoryWizardContext";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
 
 const Index = () => {
   useApiCheck();
   const { isAuthenticated } = useClerkAuth();
-  const {
-    name,
-    setName,
-    date,
-    setDate,
-    loading,
-    result,
-    personalityType,
-    setPersonalityType,
-    gender,
-    setGender,
-    storyId,
-    previousStory,
-    location,
-    setLocation,
-    handleStorySelect,
-    handleSubmit,
-    handleUndo
-  } = useStoryGeneration();
+  const wizardRef = useRef<HTMLDivElement>(null);
+
+  const scrollToWizard = () => {
+    wizardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-[#E5DEFF] via-[#FFDEE2] to-[#D3E4FD] py-12 px-4 relative overflow-hidden">
-      <SparkleEffect />
-      <BackgroundImages />
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-purple-950 dark:to-gray-900">
+      {/* Hero Section with Photo Gallery */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/50 dark:to-gray-900/50 pointer-events-none" />
+        <HeroGallery animationDelay={0.3} onGetStarted={scrollToWizard} />
+      </div>
 
-      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
-        <PageHeader />
-
-        {/* Call-to-action for non-authenticated users */}
-        {!isAuthenticated && (
-          <Card className="bg-white/90 backdrop-blur-lg border border-[#E5DEFF]/50 shadow-xl">
+      {/* Call-to-action for non-authenticated users */}
+      {!isAuthenticated && (
+        <div className="max-w-4xl mx-auto px-4 mb-12">
+          <Card className="bg-white/90 backdrop-blur-lg border border-purple-100 dark:border-purple-900 shadow-xl">
             <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-900">
+              <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-900 dark:text-white">
                 <Sparkles className="h-6 w-6 text-purple-500" />
                 Unlock Your Full Potential
                 <Sparkles className="h-6 w-6 text-purple-500" />
               </CardTitle>
-              <CardDescription className="text-lg text-gray-600">
+              <CardDescription className="text-lg text-gray-600 dark:text-gray-400">
                 Sign up to save your stories, access your personal dashboard, and unlock premium features
               </CardDescription>
             </CardHeader>
@@ -83,34 +67,14 @@ const Index = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        </div>
+      )}
 
-        <StoryForm
-          name={name}
-          setName={setName}
-          date={date}
-          setDate={setDate}
-          loading={loading}
-          handleSubmit={handleSubmit}
-          handleStorySelect={handleStorySelect}
-          personalityTypes={personalityTypes}
-          personalityType={personalityType}
-          setPersonalityType={setPersonalityType}
-          gender={gender}
-          setGender={setGender}
-          location={location}
-          setLocation={setLocation}
-        />
-
-        {result && (
-          <StoryResult
-            result={result}
-            storyId={storyId}
-            onRegenerateClick={handleSubmit}
-            onUndoClick={handleUndo}
-            hasPreviousStory={!!previousStory}
-          />
-        )}
+      {/* Story Wizard Section */}
+      <div ref={wizardRef} className="scroll-mt-8">
+        <StoryWizardProvider>
+          <StoryWizard />
+        </StoryWizardProvider>
       </div>
     </div>
   );

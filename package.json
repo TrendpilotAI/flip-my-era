@@ -13,7 +13,8 @@
     "clean": "rm -rf dist node_modules",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "generate:images": "bun run scripts/generate-era-images.ts"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.32.2",

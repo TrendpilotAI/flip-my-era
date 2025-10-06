@@ -52,6 +52,13 @@ interface StreamChapterRequest {
   selectedTheme?: string;
   selectedFormat?: string;
   numChapters?: number;
+  storyline?: {
+    logline: string;
+    threeActStructure: any;
+    chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
+    themes: string[];
+    wordCountTotal: number;
+  };
 }
 
 interface ChapterProgress {
@@ -132,7 +139,8 @@ async function generateSingleChapter(
   totalChapters: number,
   useTaylorSwiftThemes: boolean,
   selectedTheme?: string,
-  selectedFormat?: string
+  selectedFormat?: string,
+  storyline?: StreamChapterRequest['storyline']
 ): Promise<{ title: string; content: string }> {
   const format = selectedFormat || 'short-story';
   const theme = selectedTheme || 'coming-of-age';
@@ -153,10 +161,49 @@ async function generateSingleChapter(
     
     const themeDescription = themeDescriptions[theme as keyof typeof themeDescriptions] || themeDescriptions['coming-of-age'];
     
+    // Build storyline context if provided
+    let storylineContext = '';
+    if (storyline) {
+      const chapterInfo = storyline.chapters.find(ch => ch.number === chapterNumber);
+      storylineContext = `
+      
+      STORYLINE STRUCTURE:
+      Logline: ${storyline.logline}
+      
+      Overall Themes: ${storyline.themes.join(', ')}
+      
+      ${chapterInfo ? `
+      CHAPTER ${chapterNumber} GUIDANCE:
+      Title Suggestion: ${chapterInfo.title}
+      Summary: ${chapterInfo.summary}
+      Target Word Count: ${chapterInfo.wordCountTarget}
+      ` : ''}
+      
+      THREE-ACT STRUCTURE:
+      ${chapterNumber <= Math.ceil(totalChapters * 0.25) ? `
+      Act 1 - Setup:
+      - ${storyline.threeActStructure.act1.setup}
+      - ${storyline.threeActStructure.act1.incitingIncident}
+      - ${storyline.threeActStructure.act1.firstPlotPoint}
+      ` : chapterNumber <= Math.ceil(totalChapters * 0.75) ? `
+      Act 2 - Confrontation:
+      - ${storyline.threeActStructure.act2.risingAction}
+      - ${storyline.threeActStructure.act2.midpoint}
+      - ${storyline.threeActStructure.act2.darkNightOfTheSoul}
+      ` : `
+      Act 3 - Resolution:
+      - ${storyline.threeActStructure.act3.climax}
+      - ${storyline.threeActStructure.act3.resolution}
+      - ${storyline.threeActStructure.act3.closingImage}
+      `}
+      `;
+    }
+    
     prompt = `
       Create Chapter ${chapterNumber} of ${totalChapters} for a Taylor Swift-inspired young adult ${format === 'novella' ? 'novella' : 'short story'} based on this story:
       
       ${originalStory}
+      ${storylineContext}
       
       SPECIFICATIONS:
       - Theme: ${themeDescription}
@@ -167,7 +214,7 @@ async function generateSingleChapter(
       - Emotional storytelling reminiscent of Taylor Swift's lyrical style
       
       Provide:
-      - A compelling chapter title that reflects the emotional journey
+      - A compelling chapter title that reflects the emotional journey${storyline ? ' (consider the suggested title but feel free to improve it)' : ''}
       - Rich content with authentic dialogue and relatable teenage experiences
       - Character development and emotional depth
       - Age-appropriate themes and situations
@@ -374,7 +421,8 @@ serve(async (req: Request) => {
       useTaylorSwiftThemes, 
       selectedTheme = 'coming-of-age', 
       selectedFormat = 'short-story',
-      numChapters 
+      numChapters,
+      storyline
     }: StreamChapterRequest = await req.json();
 
     const chapterCount = numChapters || storyFormats[selectedFormat as keyof typeof storyFormats]?.chapters || 3;
@@ -481,7 +529,8 @@ serve(async (req: Request) => {
               chapterCount, 
               useTaylorSwiftThemes, 
               selectedTheme, 
-              selectedFormat
+              selectedFormat,
+              storyline
             );
 
             chapters.push(chapter);
