@@ -21,6 +21,7 @@ import { generateChapters, generateTaylorSwiftChapters, generateEbookIllustratio
 import { samcartClient } from '@/core/integrations/samcart/client';
 import { CreditBalance } from "@/modules/user/components/CreditBalance";
 import { CreditPurchaseModal } from "@/modules/user/components/CreditPurchaseModal";
+import { CreditWallModal } from "./CreditWallModal";
 import { useAuth } from "@clerk/clerk-react";
 import { Alert, AlertDescription } from '@/modules/shared/components/ui/alert';
 import { useStreamingGeneration } from "@/modules/story/hooks/useStreamingGeneration";
@@ -74,6 +75,10 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
   
   // Book reading state
   const [showBookReader, setShowBookReader] = useState(false);
+  
+  // Credit wall state (freemium model)
+  const [showCreditWall, setShowCreditWall] = useState(false);
+  const [isContentUnlocked, setIsContentUnlocked] = useState(false);
 
   // Lock background scroll when BookReader is open
   useEffect(() => {
@@ -213,6 +218,10 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
       onComplete: async (generatedChapters) => {
         // All chapters completed
         setChapters(generatedChapters);
+        
+        // Show credit wall modal for freemium monetization
+        setShowCreditWall(true);
+        setIsContentUnlocked(false); // Reset unlock status for new generation
         
         // Show celebration
         setShowCelebration(true);
@@ -584,6 +593,52 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
     });
   };
 
+  // Helper functions for Credit Wall Modal
+  const getPreviewContent = () => {
+    if (chapters.length === 0) return '';
+    const firstChapter = chapters[0];
+    const words = firstChapter.content.split(' ');
+    const previewWords = words.slice(0, 100);
+    return previewWords.join(' ') + (words.length > 100 ? '...' : '');
+  };
+
+  const getTotalWords = () => {
+    return chapters.reduce((total, chapter) => {
+      return total + chapter.content.split(' ').length;
+    }, 0);
+  };
+
+  const getStoryTitle = () => {
+    return chapters.length > 0 ? chapters[0].title : 'Your Story';
+  };
+
+  const handleUnlockContent = () => {
+    setIsContentUnlocked(true);
+    setShowCreditWall(false);
+    toast({
+      title: "Content Unlocked!",
+      description: "Enjoy your complete story!",
+    });
+  };
+
+  const handleCreditBalanceRefresh = async () => {
+    // Refresh credit balance after purchase
+    try {
+      const token = await getToken({ template: 'supabase' });
+      const { data } = await supabase.functions.invoke('credits', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (data?.data?.balance) {
+        setCreditBalance(data.data.balance.balance || 0);
+      }
+    } catch (error) {
+      console.error('Error refreshing credit balance:', error);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Credit Balance Widget */}
@@ -926,6 +981,19 @@ export const EbookGenerator = ({ originalStory, storyId }: EbookGeneratorProps) 
         onClose={() => setShowCreditModal(false)}
         onSuccess={handleCreditPurchaseSuccess}
         currentBalance={creditBalance}
+      />
+
+      {/* Credit Wall Modal - Freemium Monetization */}
+      <CreditWallModal
+        isOpen={showCreditWall}
+        onClose={() => setShowCreditWall(false)}
+        onUnlock={handleUnlockContent}
+        currentBalance={creditBalance}
+        storyTitle={getStoryTitle()}
+        previewContent={getPreviewContent()}
+        totalChapters={chapters.length}
+        totalWords={getTotalWords()}
+        onBalanceRefresh={handleCreditBalanceRefresh}
       />
 
       {/* Completion Celebration */}
