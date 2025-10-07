@@ -9,6 +9,7 @@ import { Label } from '@/modules/shared/components/ui/label';
 import { Input } from '@/modules/shared/components/ui/input';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Loader2, CheckCircle, Shield, CreditCard } from "lucide-react";
+import { STRIPE_PRODUCTS } from '@/config/stripe-products';
 
  
 
@@ -22,28 +23,29 @@ interface PlanOption {
   stripePriceId: string;  
 }
 
+// Use centralized Stripe product configuration
 const planOptions: PlanOption[] = [
   {
     id: "starter",
-    name: "Swiftie Starter",
-    price: 12.99,
-    description: "Perfect for Taylor Swift fans",
-    features: [
+    name: STRIPE_PRODUCTS.subscriptions.starter.name || "Swiftie Starter",
+    price: STRIPE_PRODUCTS.subscriptions.starter.price,
+    description: STRIPE_PRODUCTS.subscriptions.starter.description || "Perfect for Taylor Swift fans",
+    features: STRIPE_PRODUCTS.subscriptions.starter.features || [
       "30 credits per month",
       "Taylor Swift era templates",
       "High-quality illustrations",
       "Character portraits",
       "Priority support"
     ],
-    stripeProductId: "prod_T6BhtW05ZjAkHC",
-    stripePriceId: "price_1S9zK15U03MNTw3qAO5JnplW"
+    stripeProductId: STRIPE_PRODUCTS.subscriptions.starter.productId,
+    stripePriceId: STRIPE_PRODUCTS.subscriptions.starter.priceId
   },
   {
     id: "deluxe",
-    name: "Swiftie Deluxe",
-    price: 25.00,
-    description: "For content creators",
-    features: [
+    name: STRIPE_PRODUCTS.subscriptions.deluxe.name || "Swiftie Deluxe",
+    price: STRIPE_PRODUCTS.subscriptions.deluxe.price,
+    description: STRIPE_PRODUCTS.subscriptions.deluxe.description || "For content creators",
+    features: STRIPE_PRODUCTS.subscriptions.deluxe.features || [
       "75 credits per month",
       "Everything in Starter",
       "Cinematic spreads",
@@ -52,15 +54,15 @@ const planOptions: PlanOption[] = [
       "Commercial licensing",
       "30% off extra credits"
     ],
-    stripeProductId: "prod_T6BhX2nQGqxdmm",
-    stripePriceId: "price_1S9zK25U03MNTw3qdDnUn7hk"
+    stripeProductId: STRIPE_PRODUCTS.subscriptions.deluxe.productId,
+    stripePriceId: STRIPE_PRODUCTS.subscriptions.deluxe.priceId
   },
   {
     id: "vip",
-    name: "Opus VIP",
-    price: 49.99,
-    description: "For professional creators",
-    features: [
+    name: STRIPE_PRODUCTS.subscriptions.vip.name || "Opus VIP",
+    price: STRIPE_PRODUCTS.subscriptions.vip.price,
+    description: STRIPE_PRODUCTS.subscriptions.vip.description || "For professional creators",
+    features: STRIPE_PRODUCTS.subscriptions.vip.features || [
       "150 credits per month",
       "Everything in Deluxe",
       "AI audio narration",
@@ -69,8 +71,8 @@ const planOptions: PlanOption[] = [
       "Sell on Kindle, Gumroad, etc.",
       "Custom creator features"
     ],
-    stripeProductId: "prod_T6Bhc1NIFJgcuW",
-    stripePriceId: "price_1S9zK25U03MNTw3qoCHo9KzE"
+    stripeProductId: STRIPE_PRODUCTS.subscriptions.vip.productId,
+    stripePriceId: STRIPE_PRODUCTS.subscriptions.vip.priceId
   }
 ];
 

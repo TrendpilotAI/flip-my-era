@@ -30,7 +30,23 @@ export class StripeClient {
 
   async initialize(): Promise<Stripe | null> {
     if (!this.stripe) {
-      this.stripe = await stripePromise;
+      const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+      
+      if (!publishableKey) {
+        console.error('Stripe publishable key is not configured');
+        throw new Error('Stripe is not properly configured. Please contact support.');
+      }
+      
+      if (!publishableKey.startsWith('pk_')) {
+        console.error('Invalid Stripe publishable key format');
+        throw new Error('Invalid Stripe configuration. Please contact support.');
+      }
+      
+      this.stripe = await loadStripe(publishableKey);
+      
+      if (!this.stripe) {
+        throw new Error('Failed to load Stripe. Please check your internet connection.');
+      }
     }
     return this.stripe;
   }

@@ -17,6 +17,7 @@ import { Badge } from '@/modules/shared/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
+import { STRIPE_PRODUCTS } from '@/config/stripe-products';
 
 interface CreditPurchaseModalProps {
   isOpen: boolean;
@@ -40,40 +41,41 @@ export interface PricingTier {
   stripePriceId: string;
 }
 
+// Convert centralized config to pricing tiers format
 export const pricingTiers: PricingTier[] = [
   {
     id: 'starter-pack',
-    name: '$25 Credit Pack',
-    credits: 25,
-    price: 25.00,
-    description: 'Perfect for a story project',
+    name: STRIPE_PRODUCTS.credits.starter.name!,
+    credits: STRIPE_PRODUCTS.credits.starter.credits,
+    price: STRIPE_PRODUCTS.credits.starter.price,
+    description: STRIPE_PRODUCTS.credits.starter.description!,
     features: ['25 Credits', 'Never expires', 'Use anytime', '$1.00 per credit'],
     type: 'credits',
-    stripeProductId: 'prod_T6Bh9entCOJCNA',
-    stripePriceId: 'price_1S9zK25U03MNTw3qMH90DnC1',
+    stripeProductId: STRIPE_PRODUCTS.credits.starter.productId,
+    stripePriceId: STRIPE_PRODUCTS.credits.starter.priceId,
   },
   {
     id: 'creator-pack',
-    name: '$50 Credit Pack',
-    credits: 55,
-    price: 50.00,
-    description: 'Best value for creators',
+    name: STRIPE_PRODUCTS.credits.creator.name!,
+    credits: STRIPE_PRODUCTS.credits.creator.credits,
+    price: STRIPE_PRODUCTS.credits.creator.price,
+    description: STRIPE_PRODUCTS.credits.creator.description!,
     features: ['55 Credits (10% bonus!)', 'Never expires', 'Most popular choice', '$0.91 per credit'],
     popular: true,
     type: 'credits',
-    stripeProductId: 'prod_T6BhQaa0OH644p',
-    stripePriceId: 'price_1S9zK25U03MNTw3qFkq00yiu',
+    stripeProductId: STRIPE_PRODUCTS.credits.creator.productId,
+    stripePriceId: STRIPE_PRODUCTS.credits.creator.priceId,
   },
   {
     id: 'studio-pack',
-    name: '$100 Credit Pack',
-    credits: 120,
-    price: 100.00,
-    description: 'Maximum value pack',
+    name: STRIPE_PRODUCTS.credits.studio.name!,
+    credits: STRIPE_PRODUCTS.credits.studio.credits,
+    price: STRIPE_PRODUCTS.credits.studio.price,
+    description: STRIPE_PRODUCTS.credits.studio.description!,
     features: ['120 Credits (20% bonus!)', 'Never expires', 'Best long-term value', '$0.83 per credit'],
     type: 'credits',
-    stripeProductId: 'prod_T6BhrpyA6MJQzK',
-    stripePriceId: 'price_1S9zK35U03MNTw3qpmqEDL80',
+    stripeProductId: STRIPE_PRODUCTS.credits.studio.productId,
+    stripePriceId: STRIPE_PRODUCTS.credits.studio.priceId,
   },
 ];
 

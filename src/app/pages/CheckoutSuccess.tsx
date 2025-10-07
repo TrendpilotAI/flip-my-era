@@ -18,49 +18,92 @@ const CheckoutSuccess = () => {
   useEffect(() => {
     const processPayment = async () => {
       try {
-        // Get the plan from URL query params
         const params = new URLSearchParams(location.search);
-        const plan = params.get("plan");
+        const sessionId = params.get("session_id"); // Stripe session ID
+        const type = params.get("type"); // credits or subscription
+        const amount = params.get("amount"); // number of credits
+        const plan = params.get("plan"); // subscription plan name
         
-        // Map plan to subscription level
-        let subscriptionLevel: "free" | "basic" | "premium" = "free";
-        let planDisplayName = "Free Plan";
-        
-        if (plan === "basic") {
-          subscriptionLevel = "basic";
-          planDisplayName = "Basic Plan";
-        } else if (plan === "premium" || plan === "family") {
-          subscriptionLevel = "premium";
-          planDisplayName = plan === "premium" ? "Premium Plan" : "Family Plan";
-        }
-        
-        setPlanName(planDisplayName);
-        
-        // In a real implementation, you would verify the payment with SamCart
-        // before updating the user's subscription status
-        
-        // Update user subscription in database
-        if (user) {
-          await updateSubscription(user.id, subscriptionLevel);
-          await refreshUser(); // Refresh user data to get updated subscription
+        if (sessionId) {
+          // Stripe payment - verify session with backend (optional)
+          // Note: Credits are already allocated via webhook
+          if (user) {
+            await refreshUser();
+          }
           
-          toast({
-            title: "Subscription Activated",
-            description: `Your ${planDisplayName} has been successfully activated.`,
-          });
+          if (type === 'credits') {
+            setPlanName(`${amount} Credits`);
+            toast({
+              title: "Credits Added!",
+              description: `${amount} credits have been added to your account.`,
+            });
+          } else {
+            setPlanName(plan || 'Subscription');
+            toast({
+              title: "Subscription Activated!",
+              description: `Your ${plan} subscription is now active.`,
+            });
+          }
+        } else {
+          // Direct success URL without session (for Stripe redirect)
+          if (type === 'credits' && amount) {
+            setPlanName(`${amount} Credits`);
+            if (user) {
+              await refreshUser();
+            }
+            toast({
+              title: "Purchase Complete!",
+              description: `Your credits will be added to your account shortly.`,
+            });
+          } else if (type === 'subscription' && plan) {
+            setPlanName(plan);
+            if (user) {
+              await refreshUser();
+            }
+            toast({
+              title: "Subscription Active!",
+              description: `Your ${plan} subscription is being activated.`,
+            });
+          } else {
+            // Legacy SamCart flow
+            const legacyPlan = params.get("plan");
+            if (legacyPlan) {
+              let subscriptionLevel: "free" | "basic" | "premium" = "free";
+              let planDisplayName = "Free Plan";
+              
+              if (legacyPlan === "basic" || legacyPlan === "starter") {
+                subscriptionLevel = "basic";
+                planDisplayName = "Basic Plan";
+              } else if (legacyPlan === "premium" || legacyPlan === "deluxe" || legacyPlan === "vip") {
+                subscriptionLevel = "premium";
+                planDisplayName = legacyPlan === "vip" ? "VIP Plan" : "Premium Plan";
+              }
+              
+              setPlanName(planDisplayName);
+              
+              if (user) {
+                await updateSubscription(user.id, subscriptionLevel);
+                await refreshUser();
+              }
+              
+              toast({
+                title: "Subscription Activated",
+                description: `Your ${planDisplayName} has been successfully activated.`,
+              });
+            }
+          }
         }
       } catch (error) {
         console.error("Error processing payment:", error);
         toast({
-          title: "Error Activating Subscription",
-          description: "There was a problem activating your subscription. Please contact support.",
-          variant: "destructive",
+          title: "Processing",
+          description: "Your payment is being processed. Please wait a moment.",
         });
       } finally {
         setIsProcessing(false);
       }
     };
-
+    
     processPayment();
   }, [location.search, user, refreshUser, toast]);
 

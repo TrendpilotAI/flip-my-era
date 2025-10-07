@@ -7,6 +7,7 @@ import { useToast } from '@/modules/shared/hooks/use-toast';
 import { stripeClient } from '@/core/integrations/stripe/client';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { Coins, Crown, Check, Star, Zap } from 'lucide-react';
+import { STRIPE_PRODUCTS } from '@/config/stripe-products';
 
 interface PricingTier {
   id: string;
@@ -22,40 +23,40 @@ interface PricingTier {
   popular?: boolean;
 }
 
-// NOTE: Update these Stripe Price IDs with your actual Stripe product price IDs
+// Use centralized Stripe product configuration
 const pricingTiers: PricingTier[] = [
   {
-    id: 'single',
-    name: 'Single Credit',
-    credits: 1,
-    price: 2.99,
-    description: 'Perfect for trying out our service',
-    features: ['1 E-book Generation', 'Full Quality Output', 'Instant Download'],
+    id: 'starter',
+    name: STRIPE_PRODUCTS.credits.starter.name || '$25 Credit Pack',
+    credits: STRIPE_PRODUCTS.credits.starter.credits,
+    price: STRIPE_PRODUCTS.credits.starter.price,
+    description: STRIPE_PRODUCTS.credits.starter.description || 'Perfect for a story project',
+    features: ['25 Credits', 'Never expires', 'Use anytime', '$1.00 per credit'],
     type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_1_CREDIT || 'price_1credit',
+    stripePriceId: STRIPE_PRODUCTS.credits.starter.priceId,
   },
   {
-    id: 'bundle-3',
-    name: '3-Credit Bundle',
-    credits: 3,
-    price: 7.99,
-    originalPrice: 8.97,
-    description: 'Save 11% with this bundle',
-    features: ['3 E-book Generations', 'Full Quality Output', 'Instant Downloads', 'Best Value for Casual Users'],
+    id: 'creator',
+    name: STRIPE_PRODUCTS.credits.creator.name || '$50 Credit Pack',
+    credits: STRIPE_PRODUCTS.credits.creator.credits,
+    price: STRIPE_PRODUCTS.credits.creator.price,
+    originalPrice: 54.95,
+    description: STRIPE_PRODUCTS.credits.creator.description || 'Best value for creators',
+    features: ['55 Credits (10% bonus)', 'Never expires', 'Best for regular creators', '$0.91 per credit'],
     type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_3_CREDITS || 'price_3credits',
-  },
-  {
-    id: 'bundle-5',
-    name: '5-Credit Bundle',
-    credits: 5,
-    price: 12.99,
-    originalPrice: 14.95,
-    description: 'Save 13% with this bundle',
-    features: ['5 E-book Generations', 'Full Quality Output', 'Instant Downloads', 'Best Value for Power Users'],
-    type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_5_CREDITS || 'price_5credits',
+    stripePriceId: STRIPE_PRODUCTS.credits.creator.priceId,
     popular: true,
+  },
+  {
+    id: 'studio',
+    name: STRIPE_PRODUCTS.credits.studio.name || '$100 Credit Pack',
+    credits: STRIPE_PRODUCTS.credits.studio.credits,
+    price: STRIPE_PRODUCTS.credits.studio.price,
+    originalPrice: 119.95,
+    description: STRIPE_PRODUCTS.credits.studio.description || 'Maximum value pack',
+    features: ['120 Credits (20% bonus)', 'Never expires', 'Best long-term value', '$0.83 per credit'],
+    type: 'credits',
+    stripePriceId: STRIPE_PRODUCTS.credits.studio.priceId,
   },
 ];
 
