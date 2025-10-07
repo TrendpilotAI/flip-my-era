@@ -1,0 +1,10 @@
+{
+  "downloadedAt": "2025-10-07T00:13:40.801Z",
+  "totalImages": 245,
+  "sections": {
+    "heroGallery": 7,
+    "eras": 7,
+    "prompts": 35
+  },
+  "outputDirectory": "/Users/nathanstevenson/FlipMyEra/flip-my-era/public/images/generated"
+}
