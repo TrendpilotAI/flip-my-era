@@ -88,13 +88,13 @@ export const EraSelector: React.FC<EraSelectorProps> = ({ onEraSelect, className
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
-              {/* Gradient Overlay */}
-              <div 
-                className={cn(
-                  "absolute inset-0 bg-gradient-to-br opacity-60 group-hover:opacity-40 transition-opacity duration-300",
-                  era.colorScheme.gradient
-                )}
-              />
+            {/* Gradient Overlay */}
+            <div 
+              className={cn(
+                "absolute inset-0 bg-gradient-to-br opacity-50 group-hover:opacity-30 transition-opacity duration-300",
+                era.colorScheme.gradient
+              )}
+            />
             </div>
 
             {/* Content */}

@@ -69,11 +69,18 @@ export const HeroGallery = ({
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    // Load hero gallery images
-    fetch('/src/modules/story/data/generatedImages.json')
-      .then(res => res.json())
+    // Load hero gallery images from the local generated images
+    import('@/modules/story/data/generatedImagesLocal.json')
       .then(data => {
-        setGeneratedImages(data.heroGallery || {});
+        const heroImages: Record<string, string> = {};
+        if (data.heroGallery && Array.isArray(data.heroGallery)) {
+          data.heroGallery.forEach((item: any) => {
+            // Fix the path: remove /public prefix since public files are served from root
+            const correctedPath = item.bestImage.url.replace('/public', '');
+            heroImages[item.id] = correctedPath;
+          });
+        }
+        setGeneratedImages(heroImages);
       })
       .catch(err => {
         console.log('Hero gallery images not yet generated, using placeholders');

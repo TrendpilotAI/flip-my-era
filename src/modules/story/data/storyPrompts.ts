@@ -4,6 +4,7 @@
  */
 
 import { EraType } from '../types/eras';
+import promptImages from './promptImages.json';
 
 export interface StoryPrompt {
   id: string;
@@ -13,8 +14,13 @@ export interface StoryPrompt {
   vibeCheck: string;
   genZHook: string;
   swiftieSignal: string;
-  imageUrl: string; // Will be populated from Runway generation
+  imageUrl: string; // Populated from AI-generated images
 }
+
+// Helper function to get image URL for a prompt
+const getPromptImageUrl = (promptId: string): string => {
+  return (promptImages as Record<string, string>)[promptId] || '';
+};
 
 // SHOWGIRL ERA PROMPTS
 export const SHOWGIRL_PROMPTS: StoryPrompt[] = [
@@ -26,7 +32,7 @@ export const SHOWGIRL_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Portofino orange glitter, crystal tears, vulnerability behind the glamour',
     genZHook: 'That feeling when your public win hides your private breakdown',
     swiftieSignal: 'Behind every curtain\'s a version of you they\'ll never see',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('showgirl-1')
   },
   {
     id: 'showgirl-2',
@@ -36,7 +42,7 @@ export const SHOWGIRL_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Shakespeare meets showbiz, life imitating art, choosing to swim',
     genZHook: 'When art triggers your trauma so you rewrite the whole damn play',
     swiftieSignal: 'What if Ophelia had someone to pull her from the stream?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('showgirl-2')
   },
   {
     id: 'showgirl-3',
@@ -46,7 +52,7 @@ export const SHOWGIRL_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Industry betrayal, sisterhood over competition, orange doors opening',
     genZHook: 'That mentor who gave you \'father figure\' energy turns out to be toxic af',
     swiftieSignal: 'Trading Cartier for someone I can actually trust',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('showgirl-3')
   },
   {
     id: 'showgirl-4',
@@ -56,7 +62,7 @@ export const SHOWGIRL_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Art Deco mirrors, mint green calm before the storm, authentic sparkle',
     genZHook: 'That moment when you stop performing for them and start living for you',
     swiftieSignal: 'The spotlight\'s waiting and this time you\'re in control',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('showgirl-4')
   },
   {
     id: 'showgirl-5',
@@ -66,7 +72,7 @@ export const SHOWGIRL_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Vintage glamour meets modern love, generational healing, choosing differently',
     genZHook: 'Your grandma\'s vintage fits are fire but her relationship advice? Trauma',
     swiftieSignal: 'What if we rewrote the ending to an old Hollywood story?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('showgirl-5')
   }
 ];
 
@@ -80,7 +86,7 @@ export const FOLKLORE_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Muted earth tones, misty mornings, handwritten history',
     genZHook: 'That thrift store find that comes with a whole mystery',
     swiftieSignal: 'When you put on someone else\'s cardigan, you inherit their story',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('folklore-1')
   },
   {
     id: 'folklore-2',
@@ -90,7 +96,7 @@ export const FOLKLORE_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Rebellious ancestors, small-town secrets, reclaiming narratives',
     genZHook: 'Finding out your \'crazy\' aunt was actually just living her truth',
     swiftieSignal: 'What if the mad woman was just magnificently herself?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('folklore-2')
   },
   {
     id: 'folklore-3',
@@ -100,7 +106,7 @@ export const FOLKLORE_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Golden hour magic, serendipity, intergenerational echoes',
     genZHook: 'When the universe is literally pushing you toward someone',
     swiftieSignal: 'One single thread of gold tied me to you',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('folklore-3')
   },
   {
     id: 'folklore-4',
@@ -110,7 +116,7 @@ export const FOLKLORE_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Autumn leaves, repeated patterns, choosing different paths',
     genZHook: 'Reading your mom\'s teen angst and realizing generational trauma is REAL',
     swiftieSignal: 'Now I know I\'m never gonna love again, the way I loved you (but healthier)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('folklore-4')
   },
   {
     id: 'folklore-5',
@@ -120,7 +126,7 @@ export const FOLKLORE_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Cozy cabins, gentle wisdom, nature as therapist',
     genZHook: 'When your mental health glow-up involves sourdough and not social media',
     swiftieSignal: 'Sometimes the quiet is the loudest thing you\'ll ever hear',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('folklore-5')
   }
 ];
 
@@ -134,7 +140,7 @@ export const ERA_1989_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Neon lights, rooftop ambitions, city skyline courage',
     genZHook: 'Main character energy in a city of 8 million other main characters',
     swiftieSignal: 'The players gonna play but I\'m just gonna shake shake shake',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('1989-1')
   },
   {
     id: '1989-2',
@@ -144,7 +150,7 @@ export const ERA_1989_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Polaroid aesthetics, entrepreneurial hustle, authentic style',
     genZHook: 'When your sustainable side hustle accidentally becomes your main gig',
     swiftieSignal: 'You got that James Dean daydream look in your eye (and a business plan)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('1989-2')
   },
   {
     id: '1989-3',
@@ -154,7 +160,7 @@ export const ERA_1989_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Reinvention energy, squad goals, reputation reclamation',
     genZHook: 'When you\'re trying to rebrand yourself but your past has receipts',
     swiftieSignal: 'Got a blank space baby, and I\'ll write my own story',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('1989-3')
   },
   {
     id: '1989-4',
@@ -164,7 +170,7 @@ export const ERA_1989_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'City lights vs. forest fires, loyalty vs. growth, impossible choices',
     genZHook: 'That friend who texts \'come home we need you\' right when you\'re finally thriving',
     swiftieSignal: 'The rest of the world was in black and white, but we were in screaming color',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('1989-4')
   },
   {
     id: '1989-5',
@@ -174,7 +180,7 @@ export const ERA_1989_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Digital cleanse, authentic connections, rediscovery',
     genZHook: 'Finding out your IRL personality is actually more interesting than your feed',
     swiftieSignal: 'Ten months clean, I forgot what I looked like when no one was watching',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('1989-5')
   }
 ];
 
@@ -188,7 +194,7 @@ export const RED_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Autumn heartache, creative catharsis, public vulnerability',
     genZHook: 'When your healing era becomes content and your ex becomes a cautionary tale',
     swiftieSignal: 'Time won\'t fly, it\'s like I\'m paralyzed by it (so I\'m podcasting through it)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('red-1')
   },
   {
     id: 'red-2',
@@ -198,7 +204,7 @@ export const RED_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Intense emotions, beautiful mistakes, hard-won wisdom',
     genZHook: 'That toxic situationship everyone warned you about but you had to learn yourself',
     swiftieSignal: 'Loving him was like driving a new Maserati down a dead-end street',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('red-2')
   },
   {
     id: 'red-3',
@@ -208,7 +214,7 @@ export const RED_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Complicated feelings, survivor\'s guilt, supporting each other',
     genZHook: 'When you\'re \'living the dream\' but drowning in imposter syndrome',
     swiftieSignal: 'Now I\'ll go sit on the floor wearing your clothes (and figure out what happiness means)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('red-3')
   },
   {
     id: 'red-4',
@@ -218,7 +224,7 @@ export const RED_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Tentative hope, autumn healing, scared but trying',
     genZHook: 'When your trust issues have trust issues but you\'re tired of being numb',
     swiftieSignal: 'You throw your head back laughing and I think I\'m ready to feel again',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('red-4')
   },
   {
     id: 'red-5',
@@ -228,7 +234,7 @@ export const RED_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Disappointment alchemy, emotional wisdom, choosing better',
     genZHook: 'That moment when you stop accepting the bare minimum from people',
     swiftieSignal: 'What do you do when the one who means the most to you is the one who didn\'t show?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('red-5')
   }
 ];
 
@@ -242,7 +248,7 @@ export const REPUTATION_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Dark lipstick, strategic planning, righteous anger',
     genZHook: 'When they try to cancel you so you cancel the whole system',
     swiftieSignal: 'I see how this is gonna go: touch me and you\'ll never be alone',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('reputation-1')
   },
   {
     id: 'reputation-2',
@@ -252,7 +258,7 @@ export const REPUTATION_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Justice seeking, solidarity, calculated revelation',
     genZHook: 'When being the \'difficult\' one means being the brave one',
     swiftieSignal: 'For you, I would cross the line (and burn down the whole system)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('reputation-2')
   },
   {
     id: 'reputation-3',
@@ -262,7 +268,7 @@ export const REPUTATION_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Phoenix rising, reputation reclamation, zero f*cks',
     genZHook: 'That moment when you realize \'difficult\' just means you stopped letting them use you',
     swiftieSignal: 'I\'m sorry, the old me can\'t come to the phone right now. Why? She\'s dead.',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('reputation-3')
   },
   {
     id: 'reputation-4',
@@ -272,7 +278,7 @@ export const REPUTATION_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Defiant joy, protective love, middle fingers up',
     genZHook: 'When they\'re all talking but you\'re too busy being happy',
     swiftieSignal: 'My castle crumbled overnight but I\'m building it back with somebody better',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('reputation-4')
   },
   {
     id: 'reputation-5',
@@ -282,7 +288,7 @@ export const REPUTATION_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Strategic resistance, adrenaline ethics, chosen family',
     genZHook: 'When doing the right thing means being the target',
     swiftieSignal: 'We were jet set, Bonnie and Clyde (but make it social justice)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('reputation-5')
   }
 ];
 
@@ -296,7 +302,7 @@ export const LOVER_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Rainbow everything, fierce allyship, joyful rebellion',
     genZHook: 'When your ally shows up harder than some people in the community',
     swiftieSignal: 'Why are you mad when you could be GLAAD?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('lover-1')
   },
   {
     id: 'lover-2',
@@ -306,7 +312,7 @@ export const LOVER_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Pastel joy, inclusive celebration, multiple love languages',
     genZHook: 'That friend group that\'s basically a polycule of platonic soulmates',
     swiftieSignal: 'Can I go where you go? Can we always be this close?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('lover-2')
   },
   {
     id: 'lover-3',
@@ -316,7 +322,7 @@ export const LOVER_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Confident power, gender role rebellion, unapologetic ambition',
     genZHook: 'When you realize \'intimidating\' is a compliment not an insult',
     swiftieSignal: 'If I was a man, I\'d be the man (but I\'m already the man as I am)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('lover-3')
   },
   {
     id: 'lover-4',
@@ -326,7 +332,7 @@ export const LOVER_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Golden hour hope, gentle healing, sustainable happiness',
     genZHook: 'When your mental health glow-up is quiet but revolutionary',
     swiftieSignal: 'I once believed love would be burning red, but it\'s golden',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('lover-4')
   },
   {
     id: 'lover-5',
@@ -336,7 +342,7 @@ export const LOVER_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Authentic over aesthetic, real love wins, choosing substance',
     genZHook: 'When you unfollow the highlight reel and follow your heart',
     swiftieSignal: 'I like shiny things but I\'d marry you with paper rings',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('lover-5')
   }
 ];
 
@@ -350,7 +356,7 @@ export const MIDNIGHTS_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Late-night vulnerability, millennial anxiety, gentle self-compassion',
     genZHook: 'That 3 AM overthinking session that\'s basically unpaid therapy',
     swiftieSignal: 'It\'s me, hi, I\'m the problem, it\'s me (but also capitalism and unrealistic expectations)',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('midnights-1')
   },
   {
     id: 'midnights-2',
@@ -360,7 +366,7 @@ export const MIDNIGHTS_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Purple uncertainty, pressure resistance, present moment magic',
     genZHook: 'When everyone wants your 10-year plan and you\'re like \'I have soup for dinner\'',
     swiftieSignal: 'All they keep asking me is if I\'m gonna marry them, I\'m just trying to graduate first',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('midnights-2')
   },
   {
     id: 'midnights-3',
@@ -370,7 +376,7 @@ export const MIDNIGHTS_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Diverging paths, bittersweet growth, honoring change',
     genZHook: 'When you and your person want different futures and nobody\'s the villain',
     swiftieSignal: 'He wanted a bride, I was making my own name',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('midnights-3')
   },
   {
     id: 'midnights-4',
@@ -380,7 +386,7 @@ export const MIDNIGHTS_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Moonlit courage, transformative questions, brave vulnerability',
     genZHook: 'That question that\'s been living rent-free in your brain at 2 AM',
     swiftieSignal: 'Did you leave me hanging every single day, or was it all just in my mind?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('midnights-4')
   },
   {
     id: 'midnights-5',
@@ -390,7 +396,7 @@ export const MIDNIGHTS_PROMPTS: StoryPrompt[] = [
     vibeCheck: 'Control vs. surrender, perfectionism breakdown, liberating mess',
     genZHook: 'When your perfectly curated life implodes and it\'s weirdly... better?',
     swiftieSignal: 'What if I told you none of it was accidental?',
-    imageUrl: ''
+    imageUrl: getPromptImageUrl('midnights-5')
   }
 ];
 

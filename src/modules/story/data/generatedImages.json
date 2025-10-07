@@ -1,10 +1,26 @@
 {
-  "heroGallery": {},
-  "eras": {},
+  "heroGallery": {
+    "hero-1": "/images/generated/hero-gallery/hero-1-v3-6c4aa24d-fe1e-4750-98e4-d6dbc0e67879.webp",
+    "hero-2": "/images/generated/hero-gallery/hero-2-v3-98185720-11ee-47e3-8385-bc799eb41ad0.webp",
+    "hero-3": "/images/generated/hero-gallery/hero-3-v3-41af3b85-54ca-48a4-ad1e-48f6b8e25a75.webp",
+    "hero-4": "/images/generated/hero-gallery/hero-4-v3-9e9d5bc5-e481-4eba-99eb-fe9d3ad18d13.webp",
+    "hero-5": "/images/generated/hero-gallery/hero-5-v3-51f93f3c-6ec8-47f6-a3c3-2ec2df062bf9.webp",
+    "hero-6": "/images/generated/hero-gallery/hero-6-v3-46f5bcb2-8b5b-442c-956d-d62d9eca4b74.webp",
+    "hero-7": "/images/generated/hero-gallery/hero-7-v3-fa9597a1-be36-46b6-af30-e8a9569d5b4c.webp"
+  },
+  "eras": {
+    "showgirl": "/images/generated/eras/showgirl-v3-3f6545ab-6621-43e0-a9e1-f7d17aa08bee.webp",
+    "folklore-evermore": "/images/generated/eras/folklore-evermore-v3-d28d4580-6237-4bbf-a3d3-be5a401d5ea3.webp",
+    "1989": "/images/generated/eras/1989-v3-a5160f33-6cbf-48f0-ae4a-b3c9ef46e3d3.webp",
+    "red": "/images/generated/eras/red-v3-f5df20b0-bb30-4502-ba4e-87b2c85a31f2.webp",
+    "reputation": "/images/generated/eras/reputation-v3-62690259-f59d-47f2-9af3-bcbf6a716c00.webp",
+    "lover": "/images/generated/eras/lover-v3-54034b62-9697-4043-bd34-c6522c573716.webp",
+    "midnights": "/images/generated/eras/midnights-v3-54a177ad-73fa-4011-97e9-cef3dc6dbcb0.webp"
+  },
   "prompts": {},
-  "generated_at": "2025-10-07T00:14:05.286Z",
+  "generated_at": "2025-10-07T02:30:00.000Z",
   "model": "RUNWARE Seedream 4 (bytedance:5@0)",
   "aspect_ratio": "3:4",
   "resolution": "2K (1536×2048)",
-  "selection": "AI-selected best from 5 variations"
+  "selection": "AI-selected best from 5 variations (v3)"
 }
