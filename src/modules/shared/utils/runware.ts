@@ -232,18 +232,33 @@ export const MODEL_CAPABILITIES = {
     supportsCheckNSFW: false,
     supportsStrength: false,
     supportsNegativePrompt: false,
+    supportsSteps: true,
+    defaultSteps: 4,
+    supportsScheduler: false,
   },
   SDXL: {
     supportsCFGScale: true,
     supportsCheckNSFW: true,
     supportsStrength: true,
     supportsNegativePrompt: true,
+    supportsSteps: true,
+    supportsScheduler: true,
   },
   SD15: {
     supportsCFGScale: true,
     supportsCheckNSFW: true,
     supportsStrength: true,
     supportsNegativePrompt: true,
+    supportsSteps: true,
+    supportsScheduler: true,
+  },
+  SEEDREAM: {
+    supportsCFGScale: false,
+    supportsCheckNSFW: false,
+    supportsStrength: false,
+    supportsNegativePrompt: false,
+    supportsSteps: false,
+    supportsScheduler: false,
   },
 } as const;
 
@@ -255,6 +270,8 @@ export function getModelArchitecture(modelId: string): keyof typeof MODEL_CAPABI
     return 'FLUX';
   } else if (modelId.includes('sdxl') || modelId === RUNWARE_MODELS.SDXL_BASE || modelId === RUNWARE_MODELS.SDXL_TURBO) {
     return 'SDXL';
+  } else if (modelId === RUNWARE_MODELS.SEEDREAM_4) {
+    return 'SEEDREAM';
   } else {
     return 'SD15';
   }
@@ -281,6 +298,9 @@ export function filterParamsForModel(params: Partial<GenerateImageParams>): Part
   }
   if (!capabilities.supportsNegativePrompt) {
     delete filteredParams.negativePrompt;
+  }
+  if (!capabilities.supportsSteps) {
+    delete filteredParams.steps;
   }
   
   return filteredParams;
@@ -410,11 +430,15 @@ export class RunwareService {
   private ws: WebSocket | null = null;
   private apiKey: string | null = null;
   private connectionSessionUUID: string | null = null;
-  private messageCallbacks: Map<string, (data: RunwareImageInferenceResponse | RunwareAuthenticationResponse) => void> = new Map();
+  private messageCallbacks: Map<string, {
+    callback: (data: RunwareImageInferenceResponse | RunwareAuthenticationResponse) => void;
+    autoRemove: boolean;
+  }> = new Map();
   private isAuthenticated: boolean = false;
   private connectionPromise: Promise<void> | null = null;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 3;
+  private reconnectLock: Promise<void> | null = null;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
@@ -422,7 +446,7 @@ export class RunwareService {
       console.warn('RUNWARE service not configured. Image generation will fall back to other services.');
       return;
     }
-    this.connectionPromise = this.connect();
+    void this.connectWithLock();
   }
 
   /**
@@ -437,14 +461,17 @@ export class RunwareService {
    */
   async isConnected(): Promise<boolean> {
     if (!this.apiKey) return false;
-    
+
     try {
-      await this.connectionPromise;
-      return this.isAuthenticated && this.ws?.readyState === WebSocket.OPEN;
+      if (this.connectionPromise) {
+        await this.connectionPromise;
+      }
     } catch (error) {
       console.error('RUNWARE connection check failed:', error);
       return false;
     }
+
+    return this.isAuthenticated && this.ws?.readyState === WebSocket.OPEN;
   }
 
   private connect(): Promise<void> {
@@ -458,6 +485,7 @@ export class RunwareService {
         this.ws = new WebSocket('wss://ws-api.runware.ai/v1');
         
         this.ws.onopen = async () => {
+          this.reconnectAttempts = 0;
           console.log("RUNWARE WebSocket connected, waiting for ready state...");
           await this.waitForReadyState();
           console.log("RUNWARE WebSocket ready, authenticating...");
@@ -489,10 +517,12 @@ export class RunwareService {
                   this.connectionSessionUUID = (item as RunwareAuthenticationResponse).connectionSessionUUID;
                   this.isAuthenticated = true;
                 } else if (item.taskType === "imageInference") {
-                  const callback = this.messageCallbacks.get(item.taskUUID);
-                  if (callback) {
-                    callback(item as RunwareImageInferenceResponse);
-                    this.messageCallbacks.delete(item.taskUUID);
+                  const callbackEntry = this.messageCallbacks.get(item.taskUUID);
+                  if (callbackEntry) {
+                    callbackEntry.callback(item as RunwareImageInferenceResponse);
+                    if (callbackEntry.autoRemove) {
+                      this.messageCallbacks.delete(item.taskUUID);
+                    }
                   }
                 }
               });
@@ -513,9 +543,10 @@ export class RunwareService {
           if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
             console.log(`RUNWARE attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-            setTimeout(() => {
-              this.connectionPromise = this.connect();
-            }, 1000 * this.reconnectAttempts); // Exponential backoff
+          const delay = 1000 * this.reconnectAttempts;
+          setTimeout(() => {
+            void this.connectWithLock();
+          }, delay);
           } else {
             console.error("RUNWARE max reconnection attempts reached");
           }
@@ -553,25 +584,43 @@ export class RunwareService {
     });
   }
 
+  private connectWithLock(): Promise<void> {
+    if (this.reconnectLock) {
+      return this.reconnectLock;
+    }
+
+    this.reconnectLock = (async () => {
+      try {
+        this.connectionPromise = this.connect();
+        await this.connectionPromise;
+      } finally {
+        this.reconnectLock = null;
+      }
+    })();
+
+    return this.reconnectLock;
+  }
+
   private authenticate(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
         reject(new Error("RUNWARE WebSocket not ready for authentication"));
         return;
       }
-      
+
       console.log("Sending RUNWARE authentication message");
       const authMessage: RunwareAuthenticationRequest[] = [{
         taskType: "authentication",
         apiKey: this.apiKey!,
         ...(this.connectionSessionUUID && { connectionSessionUUID: this.connectionSessionUUID }),
       }];
-      
+
       const authCallback = (event: MessageEvent) => {
         try {
           const response: RunwareApiResponse = JSON.parse(event.data);
           if (response.data?.[0]?.taskType === "authentication") {
             this.ws?.removeEventListener("message", authCallback);
+            clearTimeout(timeoutId);
             resolve();
           }
         } catch (error) {
@@ -579,10 +628,28 @@ export class RunwareService {
           reject(error);
         }
       };
-      
+
       this.ws.addEventListener("message", authCallback);
       this.ws.send(JSON.stringify(authMessage));
+      
+      const timeoutId = setTimeout(() => {
+        this.ws?.removeEventListener("message", authCallback);
+        reject(new Error('RUNWARE authentication timeout'));
+      }, 10000);
     });
+  }
+
+  private async ensureConnected(): Promise<void> {
+    if (!this.apiKey) {
+      throw new Error('RUNWARE API key not provided');
+    }
+
+    await this.connectWithLock();
+
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isAuthenticated) {
+      console.log('RUNWARE connection not ready, reconnecting...');
+      await this.connectWithLock();
+    }
   }
 
   /**
@@ -593,13 +660,7 @@ export class RunwareService {
       throw new Error('RUNWARE API key not provided');
     }
 
-    await this.connectionPromise;
-
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isAuthenticated) {
-      console.log("RUNWARE connection not ready, reconnecting...");
-      this.connectionPromise = this.connect();
-      await this.connectionPromise;
-    }
+    await this.ensureConnected();
 
     const taskUUID = crypto.randomUUID();
     
@@ -620,9 +681,9 @@ export class RunwareService {
         numberResults: filteredParams.numberResults || 1,
         outputFormat: filteredParams.outputFormat || "WEBP",
         outputType: filteredParams.outputType || "URL",
-        steps: filteredParams.steps || 4,
-        CFGScale: filteredParams.CFGScale || (architecture !== 'FLUX' ? 1 : undefined),
-        strength: filteredParams.strength || (architecture !== 'FLUX' ? 0.8 : undefined),
+        steps: filteredParams.steps || (MODEL_CAPABILITIES[architecture].supportsSteps ? 4 : undefined),
+        CFGScale: filteredParams.CFGScale || (MODEL_CAPABILITIES[architecture].supportsCFGScale ? 7 : undefined),
+        strength: filteredParams.strength || (MODEL_CAPABILITIES[architecture].supportsStrength ? 0.8 : undefined),
         seed: filteredParams.seed || undefined,
         promptWeighting: filteredParams.promptWeighting,
         checkNSFW: filteredParams.checkNSFW,
@@ -632,7 +693,7 @@ export class RunwareService {
       };
 
       // Only include scheduler if not FLUX
-      if (architecture !== 'FLUX') {
+      if (MODEL_CAPABILITIES[architecture].supportsScheduler) {
         request.scheduler = filteredParams.scheduler || RUNWARE_SCHEDULERS.FLOW_MATCH_EULER_DISCRETE;
       }
 
@@ -648,10 +709,14 @@ export class RunwareService {
 
       console.log("Sending RUNWARE image generation message:", message);
 
-      this.messageCallbacks.set(taskUUID, (data: RunwareImageInferenceResponse) => {
-        if ('error' in data) {
-          reject(new Error('Image generation failed'));
-        } else {
+      this.messageCallbacks.set(taskUUID, {
+        callback: (data: RunwareImageInferenceResponse) => {
+          if ('error' in data) {
+            this.messageCallbacks.delete(taskUUID);
+            reject(new Error('Image generation failed'));
+            return;
+          }
+
           const result: GeneratedImage = {
             imageUUID: data.imageUUID,
             taskUUID: data.taskUUID,
@@ -664,7 +729,8 @@ export class RunwareService {
             cost: data.cost,
           };
           resolve(result);
-        }
+        },
+        autoRemove: true,
       });
 
       this.ws!.send(JSON.stringify(message));
@@ -871,33 +937,44 @@ Return ONLY the enhanced prompt, no explanations.
     }
 
     const taskUUID = crypto.randomUUID();
-    const numberResults = params.numberResults;
-    const filteredParams = { ...params };
+    const filteredParams = filterParamsForModel(params);
+    const numberResults = filteredParams.numberResults ?? params.numberResults;
 
     return new Promise((resolve, reject) => {
+      if (!numberResults || numberResults < 1) {
+        reject(new Error('numberResults must be at least 1'));
+        return;
+      }
+
       const collectedResults: GeneratedImage[] = [];
       let receivedCount = 0;
+      let hasSettled = false;
 
-      const architecture = getModelArchitecture(params.model || RUNWARE_MODELS.SEEDREAM_4);
+      const modelId = filteredParams.model || RUNWARE_MODELS.SEEDREAM_4;
+      const architecture = getModelArchitecture(modelId);
       
       const request: RunwareImageInferenceRequest = {
         taskType: "imageInference",
         taskUUID,
         positivePrompt: filteredParams.positivePrompt!,
         negativePrompt: filteredParams.negativePrompt,
-        model: params.model || RUNWARE_MODELS.SEEDREAM_4,
+        model: modelId,
         width: filteredParams.width || 1536,
         height: filteredParams.height || 2048,
         numberResults: numberResults,
         outputFormat: filteredParams.outputFormat || "WEBP",
         outputType: filteredParams.outputType || "URL",
-        steps: filteredParams.steps || 25,
+        steps: filteredParams.steps,
         CFGScale: filteredParams.CFGScale,
         strength: filteredParams.strength,
         seed: filteredParams.seed || undefined,
         checkNSFW: filteredParams.checkNSFW,
         includeCost: filteredParams.includeCost,
       };
+
+      if (MODEL_CAPABILITIES[architecture].supportsScheduler) {
+        request.scheduler = filteredParams.scheduler || RUNWARE_SCHEDULERS.FLOW_MATCH_EULER_DISCRETE;
+      }
 
       // Remove undefined values
       Object.keys(request).forEach(key => {
@@ -908,41 +985,67 @@ Return ONLY the enhanced prompt, no explanations.
       });
 
       // Set up callback to collect multiple responses
-      this.messageCallbacks.set(taskUUID, (data: RunwareImageInferenceResponse) => {
-        if ('error' in data) {
-          reject(new Error('Image generation failed'));
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      this.messageCallbacks.set(taskUUID, {
+        callback: (data: RunwareImageInferenceResponse) => {
+          if (hasSettled) {
+            return;
+          }
+
+          if ('error' in data) {
+            hasSettled = true;
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+            this.messageCallbacks.delete(taskUUID);
+            reject(new Error('Image generation failed'));
+            return;
+          }
+
+          if (receivedCount === 0 && (!data.imageURL && !data.imageBase64Data && !data.imageDataURI)) {
+            console.warn('RUNWARE returned empty payload, ignoring and waiting for next response');
+            return;
+          }
+
+          const result: GeneratedImage = {
+            imageUUID: data.imageUUID,
+            taskUUID: data.taskUUID,
+            imageURL: data.imageURL,
+            imageBase64Data: data.imageBase64Data,
+            imageDataURI: data.imageDataURI,
+            positivePrompt: params.positivePrompt,
+            seed: data.seed,
+            NSFWContent: data.NSFWContent,
+            cost: data.cost,
+          };
+
+          collectedResults.push(result);
+          receivedCount++;
+
+          console.log(`Received image ${receivedCount}/${numberResults}`);
+
+          // When all results received, resolve with array
+          if (receivedCount >= numberResults) {
+            hasSettled = true;
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+            }
+            this.messageCallbacks.delete(taskUUID);
+            resolve(collectedResults);
+          }
+        },
+        autoRemove: false,
+      });
+
+      // Timeout after 2 minutes
+      timeoutId = setTimeout(() => {
+        if (hasSettled) {
           return;
         }
 
-        const result: GeneratedImage = {
-          imageUUID: data.imageUUID,
-          taskUUID: data.taskUUID,
-          imageURL: data.imageURL,
-          imageBase64Data: data.imageBase64Data,
-          imageDataURI: data.imageDataURI,
-          positivePrompt: params.positivePrompt,
-          seed: data.seed,
-          NSFWContent: data.NSFWContent,
-          cost: data.cost,
-        };
-
-        collectedResults.push(result);
-        receivedCount++;
-
-        console.log(`Received image ${receivedCount}/${numberResults}`);
-
-        // When all results received, resolve with array
-        if (receivedCount >= numberResults) {
-          this.messageCallbacks.delete(taskUUID);
-          resolve(collectedResults);
-        }
-      });
-
-      this.ws!.send(JSON.stringify([request]));
-
-      // Timeout after 2 minutes
-      setTimeout(() => {
         if (receivedCount < numberResults) {
+          hasSettled = true;
           this.messageCallbacks.delete(taskUUID);
           if (collectedResults.length > 0) {
             console.warn(`Only received ${collectedResults.length}/${numberResults} images, returning partial results`);
@@ -952,6 +1055,8 @@ Return ONLY the enhanced prompt, no explanations.
           }
         }
       }, 120000);
+
+      this.ws!.send(JSON.stringify([request]));
     });
   }
 
@@ -988,18 +1093,16 @@ Return ONLY the enhanced prompt, no explanations.
     // Seedream doesn't support negative prompts, so include instruction in positive prompt
     const enhancedPrompt = `${params.description}. Always include the title "${params.title}" in elegant typography. Do not include the words "GenZ Hook" anywhere in the image.`;
 
-    return await this.generateMultipleImages({
-      positivePrompt: enhancedPrompt,
-      model: RUNWARE_MODELS.SEEDREAM_4,
-      width,
-      height,
-      numberResults: params.numberResults || 5,
-      outputFormat: "WEBP",
-      outputType: "URL",
-      steps: 25,
-      checkNSFW: true,
-      includeCost: true,
-    });
+      return await this.generateMultipleImages({
+        positivePrompt: enhancedPrompt,
+        model: RUNWARE_MODELS.SEEDREAM_4,
+        width,
+        height,
+        numberResults: params.numberResults || 5,
+        outputFormat: "WEBP",
+        outputType: "URL",
+        includeCost: true,
+      });
   }
 
   /**
@@ -1039,18 +1142,16 @@ Return ONLY the enhanced prompt, no explanations.
       height = 1536;
     }
 
-    return await this.generateMultipleImages({
-      positivePrompt,
-      model: RUNWARE_MODELS.SEEDREAM_4,
-      width,
-      height,
-      numberResults: params.numberResults || 5,
-      outputFormat: "WEBP",
-      outputType: "URL",
-      steps: 25,
-      checkNSFW: true,
-      includeCost: true,
-    });
+      return await this.generateMultipleImages({
+        positivePrompt,
+        model: RUNWARE_MODELS.SEEDREAM_4,
+        width,
+        height,
+        numberResults: params.numberResults || 5,
+        outputFormat: "WEBP",
+        outputType: "URL",
+        includeCost: true,
+      });
   }
 }
 

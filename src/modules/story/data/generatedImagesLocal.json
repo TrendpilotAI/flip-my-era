@@ -5,21 +5,21 @@
       "title": "Showgirl Era",
       "variations": [
         {
-          "url": "/images/generated/hero-gallery/hero-1-v1-7d2621f2-3614-4e38-9233-7a8c4b789f99.webp",
+          "url": "/public/images/generated/hero-gallery/hero-1-v1-7d2621f2-3614-4e38-9233-7a8c4b789f99.webp",
           "seed": 1799069556,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/7d2621f2-3614-4e38-9233-7a8c4b789f99.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-1-v2-f63a7f8d-1061-410d-b272-e54473d7d165.webp",
+          "url": "/public/images/generated/hero-gallery/hero-1-v2-f63a7f8d-1061-410d-b272-e54473d7d165.webp",
           "seed": 1799069560,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f63a7f8d-1061-410d-b272-e54473d7d165.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-1-v3-6c4aa24d-fe1e-4750-98e4-d6dbc0e67879.webp",
+          "url": "/public/images/generated/hero-gallery/hero-1-v3-6c4aa24d-fe1e-4750-98e4-d6dbc0e67879.webp",
           "seed": 1799069557,
           "cost": 0.03,
           "score": 9,
@@ -27,14 +27,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/6c4aa24d-fe1e-4750-98e4-d6dbc0e67879.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-1-v4-2b828f4f-878e-414b-8210-50db7d58fb92.webp",
+          "url": "/public/images/generated/hero-gallery/hero-1-v4-2b828f4f-878e-414b-8210-50db7d58fb92.webp",
           "seed": 1799069558,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/2b828f4f-878e-414b-8210-50db7d58fb92.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-1-v5-5877c05d-8c8e-4369-aa2d-df3b4ea7fd9e.webp",
+          "url": "/public/images/generated/hero-gallery/hero-1-v5-5877c05d-8c8e-4369-aa2d-df3b4ea7fd9e.webp",
           "seed": 1799069559,
           "cost": 0.03,
           "score": 7,
@@ -43,7 +43,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/hero-gallery/hero-1-v3-6c4aa24d-fe1e-4750-98e4-d6dbc0e67879.webp",
+        "url": "/public/images/generated/hero-gallery/hero-1-v3-6c4aa24d-fe1e-4750-98e4-d6dbc0e67879.webp",
         "seed": 1799069557,
         "cost": 0.03,
         "score": 9,
@@ -56,21 +56,21 @@
       "title": "Folklore Era",
       "variations": [
         {
-          "url": "/images/generated/hero-gallery/hero-2-v1-3f1f4f64-941a-4ca4-970c-e056b33047f5.webp",
+          "url": "/public/images/generated/hero-gallery/hero-2-v1-3f1f4f64-941a-4ca4-970c-e056b33047f5.webp",
           "seed": 338940615,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/3f1f4f64-941a-4ca4-970c-e056b33047f5.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-2-v2-1b3b723c-f9e5-455e-bae9-1bd186ac2d59.webp",
+          "url": "/public/images/generated/hero-gallery/hero-2-v2-1b3b723c-f9e5-455e-bae9-1bd186ac2d59.webp",
           "seed": 338940614,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1b3b723c-f9e5-455e-bae9-1bd186ac2d59.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-2-v3-98185720-11ee-47e3-8385-bc799eb41ad0.webp",
+          "url": "/public/images/generated/hero-gallery/hero-2-v3-98185720-11ee-47e3-8385-bc799eb41ad0.webp",
           "seed": 338940618,
           "cost": 0.03,
           "score": 5,
@@ -78,14 +78,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/98185720-11ee-47e3-8385-bc799eb41ad0.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-2-v4-51243f90-c68c-47fd-9d31-43fb9fc4b85b.webp",
+          "url": "/public/images/generated/hero-gallery/hero-2-v4-51243f90-c68c-47fd-9d31-43fb9fc4b85b.webp",
           "seed": 338940617,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/51243f90-c68c-47fd-9d31-43fb9fc4b85b.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-2-v5-2142e524-dcc6-4112-9089-51115a599487.webp",
+          "url": "/public/images/generated/hero-gallery/hero-2-v5-2142e524-dcc6-4112-9089-51115a599487.webp",
           "seed": 338940616,
           "cost": 0.03,
           "score": 5,
@@ -94,7 +94,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/hero-gallery/hero-2-v3-98185720-11ee-47e3-8385-bc799eb41ad0.webp",
+        "url": "/public/images/generated/hero-gallery/hero-2-v3-98185720-11ee-47e3-8385-bc799eb41ad0.webp",
         "seed": 338940618,
         "cost": 0.03,
         "score": 5,
@@ -107,21 +107,21 @@
       "title": "1989 Era",
       "variations": [
         {
-          "url": "/images/generated/hero-gallery/hero-3-v1-5c4c4dfa-ff2f-4791-9e10-378ecc3f15de.webp",
+          "url": "/public/images/generated/hero-gallery/hero-3-v1-5c4c4dfa-ff2f-4791-9e10-378ecc3f15de.webp",
           "seed": 1520058334,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/5c4c4dfa-ff2f-4791-9e10-378ecc3f15de.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-3-v2-f0cfea82-c2f1-457e-ab4d-e46f4828511b.webp",
+          "url": "/public/images/generated/hero-gallery/hero-3-v2-f0cfea82-c2f1-457e-ab4d-e46f4828511b.webp",
           "seed": 1520058335,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f0cfea82-c2f1-457e-ab4d-e46f4828511b.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-3-v3-c3773506-1b38-4fd8-a25d-eee6604139eb.webp",
+          "url": "/public/images/generated/hero-gallery/hero-3-v3-c3773506-1b38-4fd8-a25d-eee6604139eb.webp",
           "seed": 1520058338,
           "cost": 0.03,
           "score": 9,
@@ -129,14 +129,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c3773506-1b38-4fd8-a25d-eee6604139eb.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-3-v4-1773f75e-27f3-464d-9fd5-ab3caab7aaf4.webp",
+          "url": "/public/images/generated/hero-gallery/hero-3-v4-1773f75e-27f3-464d-9fd5-ab3caab7aaf4.webp",
           "seed": 1520058337,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1773f75e-27f3-464d-9fd5-ab3caab7aaf4.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-3-v5-abac60f4-00ea-4689-9385-6eeb216728c3.webp",
+          "url": "/public/images/generated/hero-gallery/hero-3-v5-abac60f4-00ea-4689-9385-6eeb216728c3.webp",
           "seed": 1520058336,
           "cost": 0.03,
           "score": 6,
@@ -145,7 +145,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/hero-gallery/hero-3-v3-c3773506-1b38-4fd8-a25d-eee6604139eb.webp",
+        "url": "/public/images/generated/hero-gallery/hero-3-v3-c3773506-1b38-4fd8-a25d-eee6604139eb.webp",
         "seed": 1520058338,
         "cost": 0.03,
         "score": 9,
@@ -158,21 +158,21 @@
       "title": "Red Era",
       "variations": [
         {
-          "url": "/images/generated/hero-gallery/hero-4-v1-ffab7b50-9a4d-4d6f-abe8-43742bca78c1.webp",
+          "url": "/public/images/generated/hero-gallery/hero-4-v1-ffab7b50-9a4d-4d6f-abe8-43742bca78c1.webp",
           "seed": 1731840521,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ffab7b50-9a4d-4d6f-abe8-43742bca78c1.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-4-v2-8aa34d82-cbe6-4119-ac6f-d96d09195431.webp",
+          "url": "/public/images/generated/hero-gallery/hero-4-v2-8aa34d82-cbe6-4119-ac6f-d96d09195431.webp",
           "seed": 1731840522,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8aa34d82-cbe6-4119-ac6f-d96d09195431.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-4-v3-8492bfa3-b200-4aed-8c31-38ff2a9b5b60.webp",
+          "url": "/public/images/generated/hero-gallery/hero-4-v3-8492bfa3-b200-4aed-8c31-38ff2a9b5b60.webp",
           "seed": 1731840524,
           "cost": 0.03,
           "score": 9,
@@ -180,14 +180,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8492bfa3-b200-4aed-8c31-38ff2a9b5b60.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-4-v4-2a7bd9ca-4f1f-420e-a4a8-9c85a8846eaf.webp",
+          "url": "/public/images/generated/hero-gallery/hero-4-v4-2a7bd9ca-4f1f-420e-a4a8-9c85a8846eaf.webp",
           "seed": 1731840523,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/2a7bd9ca-4f1f-420e-a4a8-9c85a8846eaf.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-4-v5-92190bbb-c36d-40ec-9ef7-aa70f29b255a.webp",
+          "url": "/public/images/generated/hero-gallery/hero-4-v5-92190bbb-c36d-40ec-9ef7-aa70f29b255a.webp",
           "seed": 1731840525,
           "cost": 0.03,
           "score": 5,
@@ -196,7 +196,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/hero-gallery/hero-4-v3-8492bfa3-b200-4aed-8c31-38ff2a9b5b60.webp",
+        "url": "/public/images/generated/hero-gallery/hero-4-v3-8492bfa3-b200-4aed-8c31-38ff2a9b5b60.webp",
         "seed": 1731840524,
         "cost": 0.03,
         "score": 9,
@@ -209,21 +209,21 @@
       "title": "Reputation Era",
       "variations": [
         {
-          "url": "/images/generated/hero-gallery/hero-5-v1-f92756e4-b2f2-4dd2-99ac-030a205cfee2.webp",
+          "url": "/public/images/generated/hero-gallery/hero-5-v1-f92756e4-b2f2-4dd2-99ac-030a205cfee2.webp",
           "seed": 886957914,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f92756e4-b2f2-4dd2-99ac-030a205cfee2.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-5-v2-4a9f5677-f718-4a1b-a075-1a00cbe48c3a.webp",
+          "url": "/public/images/generated/hero-gallery/hero-5-v2-4a9f5677-f718-4a1b-a075-1a00cbe48c3a.webp",
           "seed": 886957912,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4a9f5677-f718-4a1b-a075-1a00cbe48c3a.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-5-v3-230147bc-7e14-4b11-96ae-ff38782e9487.webp",
+          "url": "/public/images/generated/hero-gallery/hero-5-v3-230147bc-7e14-4b11-96ae-ff38782e9487.webp",
           "seed": 886957915,
           "cost": 0.03,
           "score": 5,
@@ -231,14 +231,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/230147bc-7e14-4b11-96ae-ff38782e9487.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-5-v4-78e516db-9ba3-458e-b96b-ca5fa5038c3c.webp",
+          "url": "/public/images/generated/hero-gallery/hero-5-v4-78e516db-9ba3-458e-b96b-ca5fa5038c3c.webp",
           "seed": 886957916,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/78e516db-9ba3-458e-b96b-ca5fa5038c3c.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-5-v5-5ca883c8-6081-45f4-b4b0-10add0927c5e.webp",
+          "url": "/public/images/generated/hero-gallery/hero-5-v5-5ca883c8-6081-45f4-b4b0-10add0927c5e.webp",
           "seed": 886957913,
           "cost": 0.03,
           "score": 5,
@@ -247,7 +247,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/hero-gallery/hero-5-v3-230147bc-7e14-4b11-96ae-ff38782e9487.webp",
+        "url": "/public/images/generated/hero-gallery/hero-5-v3-230147bc-7e14-4b11-96ae-ff38782e9487.webp",
         "seed": 886957915,
         "cost": 0.03,
         "score": 5,
@@ -260,21 +260,21 @@
       "title": "Lover Era",
       "variations": [
         {
-          "url": "/images/generated/hero-gallery/hero-6-v1-6510766b-de35-4ab1-a2be-c4b5c1a5d4cb.webp",
+          "url": "/public/images/generated/hero-gallery/hero-6-v1-6510766b-de35-4ab1-a2be-c4b5c1a5d4cb.webp",
           "seed": 890949083,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/6510766b-de35-4ab1-a2be-c4b5c1a5d4cb.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-6-v2-bcea4977-e058-4b15-903d-ac52e182b09c.webp",
+          "url": "/public/images/generated/hero-gallery/hero-6-v2-bcea4977-e058-4b15-903d-ac52e182b09c.webp",
           "seed": 890949082,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/bcea4977-e058-4b15-903d-ac52e182b09c.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-6-v3-055ca7ad-0afd-465e-9ea0-dd38969f71ae.webp",
+          "url": "/public/images/generated/hero-gallery/hero-6-v3-055ca7ad-0afd-465e-9ea0-dd38969f71ae.webp",
           "seed": 890949084,
           "cost": 0.03,
           "score": 9,
@@ -282,14 +282,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/055ca7ad-0afd-465e-9ea0-dd38969f71ae.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-6-v4-4dd4cf20-821b-44ae-a1e2-1c63837da7b2.webp",
+          "url": "/public/images/generated/hero-gallery/hero-6-v4-4dd4cf20-821b-44ae-a1e2-1c63837da7b2.webp",
           "seed": 890949081,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4dd4cf20-821b-44ae-a1e2-1c63837da7b2.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-6-v5-24e86893-c6eb-43d6-96a3-0ff10f7227fb.webp",
+          "url": "/public/images/generated/hero-gallery/hero-6-v5-24e86893-c6eb-43d6-96a3-0ff10f7227fb.webp",
           "seed": 890949085,
           "cost": 0.03,
           "score": 8,
@@ -298,7 +298,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/hero-gallery/hero-6-v3-055ca7ad-0afd-465e-9ea0-dd38969f71ae.webp",
+        "url": "/public/images/generated/hero-gallery/hero-6-v3-055ca7ad-0afd-465e-9ea0-dd38969f71ae.webp",
         "seed": 890949084,
         "cost": 0.03,
         "score": 9,
@@ -311,21 +311,21 @@
       "title": "Midnights Era",
       "variations": [
         {
-          "url": "/images/generated/hero-gallery/hero-7-v1-cd6056cb-5f96-4560-a2ac-62e2c43346be.webp",
+          "url": "/public/images/generated/hero-gallery/hero-7-v1-cd6056cb-5f96-4560-a2ac-62e2c43346be.webp",
           "seed": 366291301,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/cd6056cb-5f96-4560-a2ac-62e2c43346be.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-7-v2-8a65bc80-2dde-451b-b572-00e78dd7acb6.webp",
+          "url": "/public/images/generated/hero-gallery/hero-7-v2-8a65bc80-2dde-451b-b572-00e78dd7acb6.webp",
           "seed": 366291300,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8a65bc80-2dde-451b-b572-00e78dd7acb6.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-7-v3-6109cd44-0068-45f1-8cc3-186c1f7fee0d.webp",
+          "url": "/public/images/generated/hero-gallery/hero-7-v3-6109cd44-0068-45f1-8cc3-186c1f7fee0d.webp",
           "seed": 366291299,
           "cost": 0.03,
           "score": 9,
@@ -333,14 +333,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/6109cd44-0068-45f1-8cc3-186c1f7fee0d.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-7-v4-a349d08c-696c-452f-9bef-dcfd120c430c.webp",
+          "url": "/public/images/generated/hero-gallery/hero-7-v4-a349d08c-696c-452f-9bef-dcfd120c430c.webp",
           "seed": 366291302,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/a349d08c-696c-452f-9bef-dcfd120c430c.webp"
         },
         {
-          "url": "/images/generated/hero-gallery/hero-7-v5-64916101-49c5-4dd9-9805-e59d22e5df2b.webp",
+          "url": "/public/images/generated/hero-gallery/hero-7-v5-64916101-49c5-4dd9-9805-e59d22e5df2b.webp",
           "seed": 366291298,
           "cost": 0.03,
           "score": 5,
@@ -349,7 +349,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/hero-gallery/hero-7-v3-6109cd44-0068-45f1-8cc3-186c1f7fee0d.webp",
+        "url": "/public/images/generated/hero-gallery/hero-7-v3-6109cd44-0068-45f1-8cc3-186c1f7fee0d.webp",
         "seed": 366291299,
         "cost": 0.03,
         "score": 9,
@@ -364,14 +364,14 @@
       "title": "1989",
       "variations": [
         {
-          "url": "/images/generated/eras/1989-v1-82e923e2-17db-47b1-8873-2126ce38ed6a.webp",
+          "url": "/public/images/generated/eras/1989-v1-82e923e2-17db-47b1-8873-2126ce38ed6a.webp",
           "seed": 490286711,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/82e923e2-17db-47b1-8873-2126ce38ed6a.webp"
         },
         {
-          "url": "/images/generated/eras/1989-v2-12bb75d0-53b3-4135-84c4-55b1542b9bed.webp",
+          "url": "/public/images/generated/eras/1989-v2-12bb75d0-53b3-4135-84c4-55b1542b9bed.webp",
           "seed": 490286710,
           "cost": 0.03,
           "score": 9,
@@ -379,21 +379,21 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/12bb75d0-53b3-4135-84c4-55b1542b9bed.webp"
         },
         {
-          "url": "/images/generated/eras/1989-v3-a5160f33-6cbf-48f0-ae4a-b3c9ef46e3d3.webp",
+          "url": "/public/images/generated/eras/1989-v3-a5160f33-6cbf-48f0-ae4a-b3c9ef46e3d3.webp",
           "seed": 490286712,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/a5160f33-6cbf-48f0-ae4a-b3c9ef46e3d3.webp"
         },
         {
-          "url": "/images/generated/eras/1989-v4-dd63e02e-5b07-4cb5-b739-773810da3c6a.webp",
+          "url": "/public/images/generated/eras/1989-v4-dd63e02e-5b07-4cb5-b739-773810da3c6a.webp",
           "seed": 490286709,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/dd63e02e-5b07-4cb5-b739-773810da3c6a.webp"
         },
         {
-          "url": "/images/generated/eras/1989-v5-fa7e0b07-586c-4286-abb7-a263042f2a64.webp",
+          "url": "/public/images/generated/eras/1989-v5-fa7e0b07-586c-4286-abb7-a263042f2a64.webp",
           "seed": 490286713,
           "cost": 0.03,
           "score": 8,
@@ -402,7 +402,7 @@
       ],
       "bestImageIndex": 1,
       "bestImage": {
-        "url": "/images/generated/eras/1989-v2-12bb75d0-53b3-4135-84c4-55b1542b9bed.webp",
+        "url": "/public/images/generated/eras/1989-v2-12bb75d0-53b3-4135-84c4-55b1542b9bed.webp",
         "seed": 490286710,
         "cost": 0.03,
         "score": 9,
@@ -415,21 +415,21 @@
       "title": "The Life of a Showgirl",
       "variations": [
         {
-          "url": "/images/generated/eras/showgirl-v1-151107a6-abea-49ad-9c66-7fa28ccba584.webp",
+          "url": "/public/images/generated/eras/showgirl-v1-151107a6-abea-49ad-9c66-7fa28ccba584.webp",
           "seed": 1141774266,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/151107a6-abea-49ad-9c66-7fa28ccba584.webp"
         },
         {
-          "url": "/images/generated/eras/showgirl-v2-f38a617a-ce1c-41b0-a6a1-815fe5fb4b08.webp",
+          "url": "/public/images/generated/eras/showgirl-v2-f38a617a-ce1c-41b0-a6a1-815fe5fb4b08.webp",
           "seed": 1141774267,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f38a617a-ce1c-41b0-a6a1-815fe5fb4b08.webp"
         },
         {
-          "url": "/images/generated/eras/showgirl-v3-3f6545ab-6621-43e0-a9e1-f7d17aa08bee.webp",
+          "url": "/public/images/generated/eras/showgirl-v3-3f6545ab-6621-43e0-a9e1-f7d17aa08bee.webp",
           "seed": 1141774268,
           "cost": 0.03,
           "score": 9,
@@ -437,14 +437,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/3f6545ab-6621-43e0-a9e1-f7d17aa08bee.webp"
         },
         {
-          "url": "/images/generated/eras/showgirl-v4-ac6c008c-8821-410c-941a-44bd75fb3ff0.webp",
+          "url": "/public/images/generated/eras/showgirl-v4-ac6c008c-8821-410c-941a-44bd75fb3ff0.webp",
           "seed": 1141774265,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ac6c008c-8821-410c-941a-44bd75fb3ff0.webp"
         },
         {
-          "url": "/images/generated/eras/showgirl-v5-c52db8e5-9b12-4567-8341-c7d6ea56e9f7.webp",
+          "url": "/public/images/generated/eras/showgirl-v5-c52db8e5-9b12-4567-8341-c7d6ea56e9f7.webp",
           "seed": 1141774269,
           "cost": 0.03,
           "score": 7,
@@ -453,7 +453,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/eras/showgirl-v3-3f6545ab-6621-43e0-a9e1-f7d17aa08bee.webp",
+        "url": "/public/images/generated/eras/showgirl-v3-3f6545ab-6621-43e0-a9e1-f7d17aa08bee.webp",
         "seed": 1141774268,
         "cost": 0.03,
         "score": 9,
@@ -466,14 +466,14 @@
       "title": "Folklore/Evermore",
       "variations": [
         {
-          "url": "/images/generated/eras/folklore-evermore-v1-11ed79cb-ac1a-48a6-84af-1714e73d06fc.webp",
+          "url": "/public/images/generated/eras/folklore-evermore-v1-11ed79cb-ac1a-48a6-84af-1714e73d06fc.webp",
           "seed": 1974951558,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/11ed79cb-ac1a-48a6-84af-1714e73d06fc.webp"
         },
         {
-          "url": "/images/generated/eras/folklore-evermore-v2-de622cc5-74b0-4d4c-8dd8-63c20539c8ec.webp",
+          "url": "/public/images/generated/eras/folklore-evermore-v2-de622cc5-74b0-4d4c-8dd8-63c20539c8ec.webp",
           "seed": 1974951554,
           "cost": 0.03,
           "score": 9,
@@ -481,21 +481,21 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/de622cc5-74b0-4d4c-8dd8-63c20539c8ec.webp"
         },
         {
-          "url": "/images/generated/eras/folklore-evermore-v3-d28d4580-6237-4bbf-a3d3-be5a401d5ea3.webp",
+          "url": "/public/images/generated/eras/folklore-evermore-v3-d28d4580-6237-4bbf-a3d3-be5a401d5ea3.webp",
           "seed": 1974951557,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d28d4580-6237-4bbf-a3d3-be5a401d5ea3.webp"
         },
         {
-          "url": "/images/generated/eras/folklore-evermore-v4-a507bffa-1669-456f-bf60-471eca36fc04.webp",
+          "url": "/public/images/generated/eras/folklore-evermore-v4-a507bffa-1669-456f-bf60-471eca36fc04.webp",
           "seed": 1974951555,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/a507bffa-1669-456f-bf60-471eca36fc04.webp"
         },
         {
-          "url": "/images/generated/eras/folklore-evermore-v5-c78f52fb-2a23-4a9e-ac13-162ac33a6ffa.webp",
+          "url": "/public/images/generated/eras/folklore-evermore-v5-c78f52fb-2a23-4a9e-ac13-162ac33a6ffa.webp",
           "seed": 1974951556,
           "cost": 0.03,
           "score": 8,
@@ -504,7 +504,7 @@
       ],
       "bestImageIndex": 1,
       "bestImage": {
-        "url": "/images/generated/eras/folklore-evermore-v2-de622cc5-74b0-4d4c-8dd8-63c20539c8ec.webp",
+        "url": "/public/images/generated/eras/folklore-evermore-v2-de622cc5-74b0-4d4c-8dd8-63c20539c8ec.webp",
         "seed": 1974951554,
         "cost": 0.03,
         "score": 9,
@@ -517,14 +517,14 @@
       "title": "Red",
       "variations": [
         {
-          "url": "/images/generated/eras/red-v1-1c9dc376-fa47-43ba-ad73-57ceb5dd9af2.webp",
+          "url": "/public/images/generated/eras/red-v1-1c9dc376-fa47-43ba-ad73-57ceb5dd9af2.webp",
           "seed": 1642681892,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1c9dc376-fa47-43ba-ad73-57ceb5dd9af2.webp"
         },
         {
-          "url": "/images/generated/eras/red-v2-dbeb595d-6568-4e67-8907-4ef0c1a75000.webp",
+          "url": "/public/images/generated/eras/red-v2-dbeb595d-6568-4e67-8907-4ef0c1a75000.webp",
           "seed": 1642681895,
           "cost": 0.03,
           "score": 9,
@@ -532,21 +532,21 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/dbeb595d-6568-4e67-8907-4ef0c1a75000.webp"
         },
         {
-          "url": "/images/generated/eras/red-v3-f5df20b0-bb30-4502-ba4e-87b2c85a31f2.webp",
+          "url": "/public/images/generated/eras/red-v3-f5df20b0-bb30-4502-ba4e-87b2c85a31f2.webp",
           "seed": 1642681894,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f5df20b0-bb30-4502-ba4e-87b2c85a31f2.webp"
         },
         {
-          "url": "/images/generated/eras/red-v4-578bb18b-6384-4c6e-85d8-996471f1992b.webp",
+          "url": "/public/images/generated/eras/red-v4-578bb18b-6384-4c6e-85d8-996471f1992b.webp",
           "seed": 1642681891,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/578bb18b-6384-4c6e-85d8-996471f1992b.webp"
         },
         {
-          "url": "/images/generated/eras/red-v5-e9e3785c-42de-4a56-a325-9a6cbe7918c2.webp",
+          "url": "/public/images/generated/eras/red-v5-e9e3785c-42de-4a56-a325-9a6cbe7918c2.webp",
           "seed": 1642681893,
           "cost": 0.03,
           "score": 6,
@@ -555,7 +555,7 @@
       ],
       "bestImageIndex": 1,
       "bestImage": {
-        "url": "/images/generated/eras/red-v2-dbeb595d-6568-4e67-8907-4ef0c1a75000.webp",
+        "url": "/public/images/generated/eras/red-v2-dbeb595d-6568-4e67-8907-4ef0c1a75000.webp",
         "seed": 1642681895,
         "cost": 0.03,
         "score": 9,
@@ -568,7 +568,7 @@
       "title": "Reputation",
       "variations": [
         {
-          "url": "/images/generated/eras/reputation-v1-e991da1c-c055-4c93-bf1a-9674b22e3508.webp",
+          "url": "/public/images/generated/eras/reputation-v1-e991da1c-c055-4c93-bf1a-9674b22e3508.webp",
           "seed": 1939218568,
           "cost": 0.03,
           "score": null,
@@ -576,28 +576,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e991da1c-c055-4c93-bf1a-9674b22e3508.webp"
         },
         {
-          "url": "/images/generated/eras/reputation-v2-9422d130-599a-4a24-b617-b2c52fc6af9a.webp",
+          "url": "/public/images/generated/eras/reputation-v2-9422d130-599a-4a24-b617-b2c52fc6af9a.webp",
           "seed": 1939218565,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/9422d130-599a-4a24-b617-b2c52fc6af9a.webp"
         },
         {
-          "url": "/images/generated/eras/reputation-v3-62690259-f59d-47f2-9af3-bcbf6a716c00.webp",
+          "url": "/public/images/generated/eras/reputation-v3-62690259-f59d-47f2-9af3-bcbf6a716c00.webp",
           "seed": 1939218567,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/62690259-f59d-47f2-9af3-bcbf6a716c00.webp"
         },
         {
-          "url": "/images/generated/eras/reputation-v4-428c2dc2-14f7-41dd-8b89-1becfaeacefb.webp",
+          "url": "/public/images/generated/eras/reputation-v4-428c2dc2-14f7-41dd-8b89-1becfaeacefb.webp",
           "seed": 1939218569,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/428c2dc2-14f7-41dd-8b89-1becfaeacefb.webp"
         },
         {
-          "url": "/images/generated/eras/reputation-v5-048d6f51-3e0f-4594-862e-c8177bb6a7ee.webp",
+          "url": "/public/images/generated/eras/reputation-v5-048d6f51-3e0f-4594-862e-c8177bb6a7ee.webp",
           "seed": 1939218566,
           "cost": 0.03,
           "score": null,
@@ -606,7 +606,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/eras/reputation-v1-e991da1c-c055-4c93-bf1a-9674b22e3508.webp",
+        "url": "/public/images/generated/eras/reputation-v1-e991da1c-c055-4c93-bf1a-9674b22e3508.webp",
         "seed": 1939218568,
         "cost": 0.03,
         "score": null,
@@ -619,7 +619,7 @@
       "title": "Lover",
       "variations": [
         {
-          "url": "/images/generated/eras/lover-v1-8a1f5ccf-610c-433e-8ca4-f83817d34831.webp",
+          "url": "/public/images/generated/eras/lover-v1-8a1f5ccf-610c-433e-8ca4-f83817d34831.webp",
           "seed": 755758155,
           "cost": 0.03,
           "score": null,
@@ -627,28 +627,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8a1f5ccf-610c-433e-8ca4-f83817d34831.webp"
         },
         {
-          "url": "/images/generated/eras/lover-v2-0b133e1b-3e99-45c5-a7b0-d54afd157bbf.webp",
+          "url": "/public/images/generated/eras/lover-v2-0b133e1b-3e99-45c5-a7b0-d54afd157bbf.webp",
           "seed": 755758157,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0b133e1b-3e99-45c5-a7b0-d54afd157bbf.webp"
         },
         {
-          "url": "/images/generated/eras/lover-v3-54034b62-9697-4043-bd34-c6522c573716.webp",
+          "url": "/public/images/generated/eras/lover-v3-54034b62-9697-4043-bd34-c6522c573716.webp",
           "seed": 755758159,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/54034b62-9697-4043-bd34-c6522c573716.webp"
         },
         {
-          "url": "/images/generated/eras/lover-v4-77adec2e-c341-4bb7-aaa4-8fcc21528faf.webp",
+          "url": "/public/images/generated/eras/lover-v4-77adec2e-c341-4bb7-aaa4-8fcc21528faf.webp",
           "seed": 755758158,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/77adec2e-c341-4bb7-aaa4-8fcc21528faf.webp"
         },
         {
-          "url": "/images/generated/eras/lover-v5-b1f50bdb-e55e-4a39-a7b1-11ef668f319c.webp",
+          "url": "/public/images/generated/eras/lover-v5-b1f50bdb-e55e-4a39-a7b1-11ef668f319c.webp",
           "seed": 755758156,
           "cost": 0.03,
           "score": null,
@@ -657,7 +657,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/eras/lover-v1-8a1f5ccf-610c-433e-8ca4-f83817d34831.webp",
+        "url": "/public/images/generated/eras/lover-v1-8a1f5ccf-610c-433e-8ca4-f83817d34831.webp",
         "seed": 755758155,
         "cost": 0.03,
         "score": null,
@@ -670,21 +670,21 @@
       "title": "Midnights",
       "variations": [
         {
-          "url": "/images/generated/eras/midnights-v1-2bc91eaa-b5eb-42c2-8078-d5e05e9e773e.webp",
+          "url": "/public/images/generated/eras/midnights-v1-2bc91eaa-b5eb-42c2-8078-d5e05e9e773e.webp",
           "seed": 1042526603,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/2bc91eaa-b5eb-42c2-8078-d5e05e9e773e.webp"
         },
         {
-          "url": "/images/generated/eras/midnights-v2-e3dd8a2b-ec9f-4da0-bed6-9ed899591072.webp",
+          "url": "/public/images/generated/eras/midnights-v2-e3dd8a2b-ec9f-4da0-bed6-9ed899591072.webp",
           "seed": 1042526599,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e3dd8a2b-ec9f-4da0-bed6-9ed899591072.webp"
         },
         {
-          "url": "/images/generated/eras/midnights-v3-54a177ad-73fa-4011-97e9-cef3dc6dbcb0.webp",
+          "url": "/public/images/generated/eras/midnights-v3-54a177ad-73fa-4011-97e9-cef3dc6dbcb0.webp",
           "seed": 1042526600,
           "cost": 0.03,
           "score": 9,
@@ -692,14 +692,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/54a177ad-73fa-4011-97e9-cef3dc6dbcb0.webp"
         },
         {
-          "url": "/images/generated/eras/midnights-v4-c131de8c-5da3-40aa-a19e-933ada9c7f7c.webp",
+          "url": "/public/images/generated/eras/midnights-v4-c131de8c-5da3-40aa-a19e-933ada9c7f7c.webp",
           "seed": 1042526602,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c131de8c-5da3-40aa-a19e-933ada9c7f7c.webp"
         },
         {
-          "url": "/images/generated/eras/midnights-v5-e7984e4b-9464-498a-b1d8-bc007a1bbdcc.webp",
+          "url": "/public/images/generated/eras/midnights-v5-e7984e4b-9464-498a-b1d8-bc007a1bbdcc.webp",
           "seed": 1042526601,
           "cost": 0.03,
           "score": 6,
@@ -708,7 +708,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/eras/midnights-v3-54a177ad-73fa-4011-97e9-cef3dc6dbcb0.webp",
+        "url": "/public/images/generated/eras/midnights-v3-54a177ad-73fa-4011-97e9-cef3dc6dbcb0.webp",
         "seed": 1042526600,
         "cost": 0.03,
         "score": 9,
@@ -723,21 +723,21 @@
       "title": "The Bathtub Confession",
       "variations": [
         {
-          "url": "/images/generated/prompts/showgirl-1-v1-4909793e-2ba0-40a8-bc53-876bb5d1e412.webp",
+          "url": "/public/images/generated/prompts/showgirl-1-v1-4909793e-2ba0-40a8-bc53-876bb5d1e412.webp",
           "seed": 4160373,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4909793e-2ba0-40a8-bc53-876bb5d1e412.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-1-v2-c637323a-9ba5-4338-8d44-624c42482433.webp",
+          "url": "/public/images/generated/prompts/showgirl-1-v2-c637323a-9ba5-4338-8d44-624c42482433.webp",
           "seed": 4160375,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c637323a-9ba5-4338-8d44-624c42482433.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-1-v3-7fdca469-93ea-4155-bcae-00706039dfc5.webp",
+          "url": "/public/images/generated/prompts/showgirl-1-v3-7fdca469-93ea-4155-bcae-00706039dfc5.webp",
           "seed": 4160371,
           "cost": 0.03,
           "score": 9,
@@ -745,14 +745,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/7fdca469-93ea-4155-bcae-00706039dfc5.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-1-v4-c36c8368-f1ba-48cd-98f3-b2110eba8afa.webp",
+          "url": "/public/images/generated/prompts/showgirl-1-v4-c36c8368-f1ba-48cd-98f3-b2110eba8afa.webp",
           "seed": 4160372,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c36c8368-f1ba-48cd-98f3-b2110eba8afa.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-1-v5-6f5f461e-a7a6-4197-8a32-067608b12a35.webp",
+          "url": "/public/images/generated/prompts/showgirl-1-v5-6f5f461e-a7a6-4197-8a32-067608b12a35.webp",
           "seed": 4160374,
           "cost": 0.03,
           "score": 7,
@@ -761,7 +761,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/showgirl-1-v3-7fdca469-93ea-4155-bcae-00706039dfc5.webp",
+        "url": "/public/images/generated/prompts/showgirl-1-v3-7fdca469-93ea-4155-bcae-00706039dfc5.webp",
         "seed": 4160371,
         "cost": 0.03,
         "score": 9,
@@ -774,21 +774,21 @@
       "title": "Ophelia Gets a Rewrite",
       "variations": [
         {
-          "url": "/images/generated/prompts/showgirl-2-v1-d9654799-372f-4f6d-8ea7-7d93742695cb.webp",
+          "url": "/public/images/generated/prompts/showgirl-2-v1-d9654799-372f-4f6d-8ea7-7d93742695cb.webp",
           "seed": 1082791296,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d9654799-372f-4f6d-8ea7-7d93742695cb.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-2-v2-110c4765-b8e5-4d1b-8bf9-48b80241e9b8.webp",
+          "url": "/public/images/generated/prompts/showgirl-2-v2-110c4765-b8e5-4d1b-8bf9-48b80241e9b8.webp",
           "seed": 1082791293,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/110c4765-b8e5-4d1b-8bf9-48b80241e9b8.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-2-v3-0279e0ab-2fca-47d6-aeca-8eeae22f2100.webp",
+          "url": "/public/images/generated/prompts/showgirl-2-v3-0279e0ab-2fca-47d6-aeca-8eeae22f2100.webp",
           "seed": 1082791294,
           "cost": 0.03,
           "score": 9,
@@ -796,14 +796,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0279e0ab-2fca-47d6-aeca-8eeae22f2100.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-2-v4-a3efeffe-f543-4ecf-b639-a31ea893e063.webp",
+          "url": "/public/images/generated/prompts/showgirl-2-v4-a3efeffe-f543-4ecf-b639-a31ea893e063.webp",
           "seed": 1082791295,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/a3efeffe-f543-4ecf-b639-a31ea893e063.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-2-v5-27c910fe-774f-47b0-906b-f4491029b150.webp",
+          "url": "/public/images/generated/prompts/showgirl-2-v5-27c910fe-774f-47b0-906b-f4491029b150.webp",
           "seed": 1082791297,
           "cost": 0.03,
           "score": 6,
@@ -812,7 +812,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/showgirl-2-v3-0279e0ab-2fca-47d6-aeca-8eeae22f2100.webp",
+        "url": "/public/images/generated/prompts/showgirl-2-v3-0279e0ab-2fca-47d6-aeca-8eeae22f2100.webp",
         "seed": 1082791294,
         "cost": 0.03,
         "score": 9,
@@ -825,21 +825,21 @@
       "title": "False Lashes & Real Feelings",
       "variations": [
         {
-          "url": "/images/generated/prompts/showgirl-3-v1-af74d63d-d00a-4f83-b7ed-56164d9e2df2.webp",
+          "url": "/public/images/generated/prompts/showgirl-3-v1-af74d63d-d00a-4f83-b7ed-56164d9e2df2.webp",
           "seed": 662780263,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/af74d63d-d00a-4f83-b7ed-56164d9e2df2.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-3-v2-0e6b359f-80bf-4cd4-9d5b-f7da0842d41f.webp",
+          "url": "/public/images/generated/prompts/showgirl-3-v2-0e6b359f-80bf-4cd4-9d5b-f7da0842d41f.webp",
           "seed": 662780262,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0e6b359f-80bf-4cd4-9d5b-f7da0842d41f.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-3-v3-adb206da-f97e-4ebe-9a56-e5e2ca7194f2.webp",
+          "url": "/public/images/generated/prompts/showgirl-3-v3-adb206da-f97e-4ebe-9a56-e5e2ca7194f2.webp",
           "seed": 662780261,
           "cost": 0.03,
           "score": 9,
@@ -847,14 +847,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/adb206da-f97e-4ebe-9a56-e5e2ca7194f2.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-3-v4-bd0c8a7f-7692-4ac9-a57e-278034031706.webp",
+          "url": "/public/images/generated/prompts/showgirl-3-v4-bd0c8a7f-7692-4ac9-a57e-278034031706.webp",
           "seed": 662780259,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/bd0c8a7f-7692-4ac9-a57e-278034031706.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-3-v5-1656134d-2e26-4c80-9fa0-0ae121fc22b5.webp",
+          "url": "/public/images/generated/prompts/showgirl-3-v5-1656134d-2e26-4c80-9fa0-0ae121fc22b5.webp",
           "seed": 662780260,
           "cost": 0.03,
           "score": 8,
@@ -863,7 +863,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/showgirl-3-v3-adb206da-f97e-4ebe-9a56-e5e2ca7194f2.webp",
+        "url": "/public/images/generated/prompts/showgirl-3-v3-adb206da-f97e-4ebe-9a56-e5e2ca7194f2.webp",
         "seed": 662780261,
         "cost": 0.03,
         "score": 9,
@@ -876,21 +876,21 @@
       "title": "The Show Must Go On (But Make It Your Show)",
       "variations": [
         {
-          "url": "/images/generated/prompts/showgirl-4-v1-0e826a52-deaa-4a7b-8463-20c67d92409a.webp",
+          "url": "/public/images/generated/prompts/showgirl-4-v1-0e826a52-deaa-4a7b-8463-20c67d92409a.webp",
           "seed": 1678993358,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0e826a52-deaa-4a7b-8463-20c67d92409a.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-4-v2-6103651e-a528-4dff-83d5-49ecfe40e238.webp",
+          "url": "/public/images/generated/prompts/showgirl-4-v2-6103651e-a528-4dff-83d5-49ecfe40e238.webp",
           "seed": 1678993355,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/6103651e-a528-4dff-83d5-49ecfe40e238.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-4-v3-71581a07-f04c-45e3-8cbe-92aae10ba140.webp",
+          "url": "/public/images/generated/prompts/showgirl-4-v3-71581a07-f04c-45e3-8cbe-92aae10ba140.webp",
           "seed": 1678993356,
           "cost": 0.03,
           "score": 9,
@@ -898,14 +898,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/71581a07-f04c-45e3-8cbe-92aae10ba140.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-4-v4-fc559153-10d8-4c47-9fc5-914d17eed2ba.webp",
+          "url": "/public/images/generated/prompts/showgirl-4-v4-fc559153-10d8-4c47-9fc5-914d17eed2ba.webp",
           "seed": 1678993357,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/fc559153-10d8-4c47-9fc5-914d17eed2ba.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-4-v5-676b100d-0e08-453e-848b-485efcf86cd9.webp",
+          "url": "/public/images/generated/prompts/showgirl-4-v5-676b100d-0e08-453e-848b-485efcf86cd9.webp",
           "seed": 1678993359,
           "cost": 0.03,
           "score": 5,
@@ -914,7 +914,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/showgirl-4-v3-71581a07-f04c-45e3-8cbe-92aae10ba140.webp",
+        "url": "/public/images/generated/prompts/showgirl-4-v3-71581a07-f04c-45e3-8cbe-92aae10ba140.webp",
         "seed": 1678993356,
         "cost": 0.03,
         "score": 9,
@@ -927,21 +927,21 @@
       "title": "Portofino Orange Dreams",
       "variations": [
         {
-          "url": "/images/generated/prompts/showgirl-5-v1-cf636d34-0297-4360-ae1f-d7d72c89f5a6.webp",
+          "url": "/public/images/generated/prompts/showgirl-5-v1-cf636d34-0297-4360-ae1f-d7d72c89f5a6.webp",
           "seed": 2074624428,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/cf636d34-0297-4360-ae1f-d7d72c89f5a6.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-5-v2-01a31195-f2d1-4763-83e0-0740905b7ddc.webp",
+          "url": "/public/images/generated/prompts/showgirl-5-v2-01a31195-f2d1-4763-83e0-0740905b7ddc.webp",
           "seed": 2074624430,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/01a31195-f2d1-4763-83e0-0740905b7ddc.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-5-v3-1a07c7b0-e59a-4f93-8e50-4e4018bf3e4c.webp",
+          "url": "/public/images/generated/prompts/showgirl-5-v3-1a07c7b0-e59a-4f93-8e50-4e4018bf3e4c.webp",
           "seed": 2074624431,
           "cost": 0.03,
           "score": 9,
@@ -949,14 +949,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1a07c7b0-e59a-4f93-8e50-4e4018bf3e4c.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-5-v4-c00fef80-7893-44c7-9568-a76e101a8608.webp",
+          "url": "/public/images/generated/prompts/showgirl-5-v4-c00fef80-7893-44c7-9568-a76e101a8608.webp",
           "seed": 2074624432,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c00fef80-7893-44c7-9568-a76e101a8608.webp"
         },
         {
-          "url": "/images/generated/prompts/showgirl-5-v5-2256076f-d340-4b23-8530-a83caed23459.webp",
+          "url": "/public/images/generated/prompts/showgirl-5-v5-2256076f-d340-4b23-8530-a83caed23459.webp",
           "seed": 2074624429,
           "cost": 0.03,
           "score": 7,
@@ -965,7 +965,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/showgirl-5-v3-1a07c7b0-e59a-4f93-8e50-4e4018bf3e4c.webp",
+        "url": "/public/images/generated/prompts/showgirl-5-v3-1a07c7b0-e59a-4f93-8e50-4e4018bf3e4c.webp",
         "seed": 2074624431,
         "cost": 0.03,
         "score": 9,
@@ -978,21 +978,21 @@
       "title": "The Cardigan & The Creek",
       "variations": [
         {
-          "url": "/images/generated/prompts/folklore-1-v1-258f6fa6-dfca-4135-826f-645a5bf33f08.webp",
+          "url": "/public/images/generated/prompts/folklore-1-v1-258f6fa6-dfca-4135-826f-645a5bf33f08.webp",
           "seed": 1094659386,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/258f6fa6-dfca-4135-826f-645a5bf33f08.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-1-v2-8cdc33fd-9c1a-4bc1-aa97-43b8aec38f6a.webp",
+          "url": "/public/images/generated/prompts/folklore-1-v2-8cdc33fd-9c1a-4bc1-aa97-43b8aec38f6a.webp",
           "seed": 1094659385,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8cdc33fd-9c1a-4bc1-aa97-43b8aec38f6a.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-1-v3-b0c63150-c1e5-4c52-83e4-b915f5cb344b.webp",
+          "url": "/public/images/generated/prompts/folklore-1-v3-b0c63150-c1e5-4c52-83e4-b915f5cb344b.webp",
           "seed": 1094659387,
           "cost": 0.03,
           "score": 5,
@@ -1000,14 +1000,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/b0c63150-c1e5-4c52-83e4-b915f5cb344b.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-1-v4-14e77773-7f16-461c-baa4-8c6adf99abf4.webp",
+          "url": "/public/images/generated/prompts/folklore-1-v4-14e77773-7f16-461c-baa4-8c6adf99abf4.webp",
           "seed": 1094659388,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/14e77773-7f16-461c-baa4-8c6adf99abf4.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-1-v5-b769234b-14a6-4e02-807c-98eba2f90a66.webp",
+          "url": "/public/images/generated/prompts/folklore-1-v5-b769234b-14a6-4e02-807c-98eba2f90a66.webp",
           "seed": 1094659389,
           "cost": 0.03,
           "score": 5,
@@ -1016,7 +1016,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/folklore-1-v3-b0c63150-c1e5-4c52-83e4-b915f5cb344b.webp",
+        "url": "/public/images/generated/prompts/folklore-1-v3-b0c63150-c1e5-4c52-83e4-b915f5cb344b.webp",
         "seed": 1094659387,
         "cost": 0.03,
         "score": 5,
@@ -1029,21 +1029,21 @@
       "title": "The Last Great American Dynasty (Yours)",
       "variations": [
         {
-          "url": "/images/generated/prompts/folklore-2-v1-ea9046ad-5183-47ef-b60e-93f6d1a008c3.webp",
+          "url": "/public/images/generated/prompts/folklore-2-v1-ea9046ad-5183-47ef-b60e-93f6d1a008c3.webp",
           "seed": 139993911,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ea9046ad-5183-47ef-b60e-93f6d1a008c3.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-2-v2-8af3f685-fc99-410f-b6ac-75ef5720c374.webp",
+          "url": "/public/images/generated/prompts/folklore-2-v2-8af3f685-fc99-410f-b6ac-75ef5720c374.webp",
           "seed": 139993910,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8af3f685-fc99-410f-b6ac-75ef5720c374.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-2-v3-78fd56b6-09c8-4e76-bb27-c1c708c1bbd5.webp",
+          "url": "/public/images/generated/prompts/folklore-2-v3-78fd56b6-09c8-4e76-bb27-c1c708c1bbd5.webp",
           "seed": 139993914,
           "cost": 0.03,
           "score": 9,
@@ -1051,14 +1051,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/78fd56b6-09c8-4e76-bb27-c1c708c1bbd5.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-2-v4-edf32954-d483-4ea2-9869-36c5a43ab3b5.webp",
+          "url": "/public/images/generated/prompts/folklore-2-v4-edf32954-d483-4ea2-9869-36c5a43ab3b5.webp",
           "seed": 139993913,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/edf32954-d483-4ea2-9869-36c5a43ab3b5.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-2-v5-c81d1efe-3338-4f5d-917d-dd712a1ba434.webp",
+          "url": "/public/images/generated/prompts/folklore-2-v5-c81d1efe-3338-4f5d-917d-dd712a1ba434.webp",
           "seed": 139993912,
           "cost": 0.03,
           "score": 7,
@@ -1067,7 +1067,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/folklore-2-v3-78fd56b6-09c8-4e76-bb27-c1c708c1bbd5.webp",
+        "url": "/public/images/generated/prompts/folklore-2-v3-78fd56b6-09c8-4e76-bb27-c1c708c1bbd5.webp",
         "seed": 139993914,
         "cost": 0.03,
         "score": 9,
@@ -1080,7 +1080,7 @@
       "title": "Invisible String Theory",
       "variations": [
         {
-          "url": "/images/generated/prompts/folklore-3-v1-8d5cab3b-ad8d-4c5b-8728-86766e1776d0.webp",
+          "url": "/public/images/generated/prompts/folklore-3-v1-8d5cab3b-ad8d-4c5b-8728-86766e1776d0.webp",
           "seed": 1968913247,
           "cost": 0.03,
           "score": null,
@@ -1088,28 +1088,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8d5cab3b-ad8d-4c5b-8728-86766e1776d0.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-3-v2-b758abe7-b8be-4dbe-b11b-f9a35f18db29.webp",
+          "url": "/public/images/generated/prompts/folklore-3-v2-b758abe7-b8be-4dbe-b11b-f9a35f18db29.webp",
           "seed": 1968913251,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/b758abe7-b8be-4dbe-b11b-f9a35f18db29.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-3-v3-9c1f7196-01e9-4e3d-98d3-c3fec75d890f.webp",
+          "url": "/public/images/generated/prompts/folklore-3-v3-9c1f7196-01e9-4e3d-98d3-c3fec75d890f.webp",
           "seed": 1968913250,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/9c1f7196-01e9-4e3d-98d3-c3fec75d890f.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-3-v4-3086bacc-f26a-41b9-bbe6-67a02b3f8852.webp",
+          "url": "/public/images/generated/prompts/folklore-3-v4-3086bacc-f26a-41b9-bbe6-67a02b3f8852.webp",
           "seed": 1968913248,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/3086bacc-f26a-41b9-bbe6-67a02b3f8852.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-3-v5-070969b7-6af9-456d-9bd7-71ed51cadaa3.webp",
+          "url": "/public/images/generated/prompts/folklore-3-v5-070969b7-6af9-456d-9bd7-71ed51cadaa3.webp",
           "seed": 1968913249,
           "cost": 0.03,
           "score": null,
@@ -1118,7 +1118,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/folklore-3-v1-8d5cab3b-ad8d-4c5b-8728-86766e1776d0.webp",
+        "url": "/public/images/generated/prompts/folklore-3-v1-8d5cab3b-ad8d-4c5b-8728-86766e1776d0.webp",
         "seed": 1968913247,
         "cost": 0.03,
         "score": null,
@@ -1131,21 +1131,21 @@
       "title": "The Manuscript (Found)",
       "variations": [
         {
-          "url": "/images/generated/prompts/folklore-4-v1-5a93577a-e0e7-4908-8f6b-2dfb79b47e11.webp",
+          "url": "/public/images/generated/prompts/folklore-4-v1-5a93577a-e0e7-4908-8f6b-2dfb79b47e11.webp",
           "seed": 705772783,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/5a93577a-e0e7-4908-8f6b-2dfb79b47e11.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-4-v2-2ae2323b-516e-4098-b877-0c0df0a38fbc.webp",
+          "url": "/public/images/generated/prompts/folklore-4-v2-2ae2323b-516e-4098-b877-0c0df0a38fbc.webp",
           "seed": 705772782,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/2ae2323b-516e-4098-b877-0c0df0a38fbc.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-4-v3-f71e6015-c0d8-4ac6-8e51-1ade39973728.webp",
+          "url": "/public/images/generated/prompts/folklore-4-v3-f71e6015-c0d8-4ac6-8e51-1ade39973728.webp",
           "seed": 705772785,
           "cost": 0.03,
           "score": 5,
@@ -1153,14 +1153,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f71e6015-c0d8-4ac6-8e51-1ade39973728.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-4-v4-ea613b1d-1669-4a92-b814-224bae764398.webp",
+          "url": "/public/images/generated/prompts/folklore-4-v4-ea613b1d-1669-4a92-b814-224bae764398.webp",
           "seed": 705772784,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ea613b1d-1669-4a92-b814-224bae764398.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-4-v5-f04bd08a-34fc-4b76-96fe-3b001ef24f54.webp",
+          "url": "/public/images/generated/prompts/folklore-4-v5-f04bd08a-34fc-4b76-96fe-3b001ef24f54.webp",
           "seed": 705772786,
           "cost": 0.03,
           "score": 5,
@@ -1169,7 +1169,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/folklore-4-v3-f71e6015-c0d8-4ac6-8e51-1ade39973728.webp",
+        "url": "/public/images/generated/prompts/folklore-4-v3-f71e6015-c0d8-4ac6-8e51-1ade39973728.webp",
         "seed": 705772785,
         "cost": 0.03,
         "score": 5,
@@ -1182,21 +1182,21 @@
       "title": "Champagne Problems, Herbal Tea Solutions",
       "variations": [
         {
-          "url": "/images/generated/prompts/folklore-5-v1-1649e21f-0712-43c0-aa4e-623a13992836.webp",
+          "url": "/public/images/generated/prompts/folklore-5-v1-1649e21f-0712-43c0-aa4e-623a13992836.webp",
           "seed": 643515611,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1649e21f-0712-43c0-aa4e-623a13992836.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-5-v2-05a5f95e-02ba-46b8-9180-855b646824f4.webp",
+          "url": "/public/images/generated/prompts/folklore-5-v2-05a5f95e-02ba-46b8-9180-855b646824f4.webp",
           "seed": 643515608,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/05a5f95e-02ba-46b8-9180-855b646824f4.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-5-v3-e9bcc85f-9711-44c6-b699-ed8f4d4749c7.webp",
+          "url": "/public/images/generated/prompts/folklore-5-v3-e9bcc85f-9711-44c6-b699-ed8f4d4749c7.webp",
           "seed": 643515612,
           "cost": 0.03,
           "score": 9,
@@ -1204,14 +1204,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e9bcc85f-9711-44c6-b699-ed8f4d4749c7.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-5-v4-895b4da2-6f84-4a91-96fe-c6773e239e20.webp",
+          "url": "/public/images/generated/prompts/folklore-5-v4-895b4da2-6f84-4a91-96fe-c6773e239e20.webp",
           "seed": 643515609,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/895b4da2-6f84-4a91-96fe-c6773e239e20.webp"
         },
         {
-          "url": "/images/generated/prompts/folklore-5-v5-dcac7997-5917-4967-934c-ceaa3ef9b6e2.webp",
+          "url": "/public/images/generated/prompts/folklore-5-v5-dcac7997-5917-4967-934c-ceaa3ef9b6e2.webp",
           "seed": 643515610,
           "cost": 0.03,
           "score": 7,
@@ -1220,7 +1220,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/folklore-5-v3-e9bcc85f-9711-44c6-b699-ed8f4d4749c7.webp",
+        "url": "/public/images/generated/prompts/folklore-5-v3-e9bcc85f-9711-44c6-b699-ed8f4d4749c7.webp",
         "seed": 643515612,
         "cost": 0.03,
         "score": 9,
@@ -1233,21 +1233,21 @@
       "title": "Welcome to New York (But Make It Yours)",
       "variations": [
         {
-          "url": "/images/generated/prompts/1989-1-v1-2b41d3bc-f338-4490-8c42-78a7ac124a01.webp",
+          "url": "/public/images/generated/prompts/1989-1-v1-2b41d3bc-f338-4490-8c42-78a7ac124a01.webp",
           "seed": 1717653046,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/2b41d3bc-f338-4490-8c42-78a7ac124a01.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-1-v2-b0563449-c6c0-41f3-a136-6a5cd4c172e2.webp",
+          "url": "/public/images/generated/prompts/1989-1-v2-b0563449-c6c0-41f3-a136-6a5cd4c172e2.webp",
           "seed": 1717653042,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/b0563449-c6c0-41f3-a136-6a5cd4c172e2.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-1-v3-27c6e13f-b06c-4c63-876f-be49be180fb4.webp",
+          "url": "/public/images/generated/prompts/1989-1-v3-27c6e13f-b06c-4c63-876f-be49be180fb4.webp",
           "seed": 1717653045,
           "cost": 0.03,
           "score": 9,
@@ -1255,14 +1255,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/27c6e13f-b06c-4c63-876f-be49be180fb4.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-1-v4-95e621af-f282-4e37-8dae-6255182308e2.webp",
+          "url": "/public/images/generated/prompts/1989-1-v4-95e621af-f282-4e37-8dae-6255182308e2.webp",
           "seed": 1717653044,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/95e621af-f282-4e37-8dae-6255182308e2.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-1-v5-8ae48a1f-e7e3-4a7c-be71-00ba73dfcc67.webp",
+          "url": "/public/images/generated/prompts/1989-1-v5-8ae48a1f-e7e3-4a7c-be71-00ba73dfcc67.webp",
           "seed": 1717653043,
           "cost": 0.03,
           "score": 6,
@@ -1271,7 +1271,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/1989-1-v3-27c6e13f-b06c-4c63-876f-be49be180fb4.webp",
+        "url": "/public/images/generated/prompts/1989-1-v3-27c6e13f-b06c-4c63-876f-be49be180fb4.webp",
         "seed": 1717653045,
         "cost": 0.03,
         "score": 9,
@@ -1284,7 +1284,7 @@
       "title": "Style (But Make It Sustainable)",
       "variations": [
         {
-          "url": "/images/generated/prompts/1989-2-v1-9530e7fa-4061-4f12-9f6d-59a7581d093a.webp",
+          "url": "/public/images/generated/prompts/1989-2-v1-9530e7fa-4061-4f12-9f6d-59a7581d093a.webp",
           "seed": 458517016,
           "cost": 0.03,
           "score": 9,
@@ -1292,28 +1292,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/9530e7fa-4061-4f12-9f6d-59a7581d093a.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-2-v2-d8806f87-143a-492f-905a-603a5af8a09d.webp",
+          "url": "/public/images/generated/prompts/1989-2-v2-d8806f87-143a-492f-905a-603a5af8a09d.webp",
           "seed": 458517015,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d8806f87-143a-492f-905a-603a5af8a09d.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-2-v3-72e2e598-08ae-468e-bf30-c57bd3ababfb.webp",
+          "url": "/public/images/generated/prompts/1989-2-v3-72e2e598-08ae-468e-bf30-c57bd3ababfb.webp",
           "seed": 458517014,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/72e2e598-08ae-468e-bf30-c57bd3ababfb.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-2-v4-e57f28dc-4139-4f88-a0af-e316d7660868.webp",
+          "url": "/public/images/generated/prompts/1989-2-v4-e57f28dc-4139-4f88-a0af-e316d7660868.webp",
           "seed": 458517012,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e57f28dc-4139-4f88-a0af-e316d7660868.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-2-v5-8b7ecbd0-8ef9-4ff3-b574-2fb6067676a5.webp",
+          "url": "/public/images/generated/prompts/1989-2-v5-8b7ecbd0-8ef9-4ff3-b574-2fb6067676a5.webp",
           "seed": 458517013,
           "cost": 0.03,
           "score": 8,
@@ -1322,7 +1322,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/1989-2-v1-9530e7fa-4061-4f12-9f6d-59a7581d093a.webp",
+        "url": "/public/images/generated/prompts/1989-2-v1-9530e7fa-4061-4f12-9f6d-59a7581d093a.webp",
         "seed": 458517016,
         "cost": 0.03,
         "score": 9,
@@ -1335,35 +1335,35 @@
       "title": "Blank Space (Fresh Start Edition)",
       "variations": [
         {
-          "url": "/images/generated/prompts/1989-3-v1-eb2943be-658c-4f1d-8103-c182186db59d.webp",
+          "url": "/public/images/generated/prompts/1989-3-v1-eb2943be-658c-4f1d-8103-c182186db59d.webp",
           "seed": 1057913494,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/eb2943be-658c-4f1d-8103-c182186db59d.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-3-v2-ddb6323a-f2e3-479a-9f9b-c97ba3c09cd8.webp",
+          "url": "/public/images/generated/prompts/1989-3-v2-ddb6323a-f2e3-479a-9f9b-c97ba3c09cd8.webp",
           "seed": 1057913490,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ddb6323a-f2e3-479a-9f9b-c97ba3c09cd8.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-3-v3-0ce70814-7117-4b2e-8794-2420ee82ccdb.webp",
+          "url": "/public/images/generated/prompts/1989-3-v3-0ce70814-7117-4b2e-8794-2420ee82ccdb.webp",
           "seed": 1057913492,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0ce70814-7117-4b2e-8794-2420ee82ccdb.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-3-v4-d7bd531f-f9e7-4b8c-a9d9-579b1006b22c.webp",
+          "url": "/public/images/generated/prompts/1989-3-v4-d7bd531f-f9e7-4b8c-a9d9-579b1006b22c.webp",
           "seed": 1057913493,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d7bd531f-f9e7-4b8c-a9d9-579b1006b22c.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-3-v5-af2195a8-579a-497f-a1c7-2a69c1046f93.webp",
+          "url": "/public/images/generated/prompts/1989-3-v5-af2195a8-579a-497f-a1c7-2a69c1046f93.webp",
           "seed": 1057913491,
           "cost": 0.03,
           "score": null,
@@ -1372,7 +1372,7 @@
       ],
       "bestImageIndex": -1,
       "bestImage": {
-        "url": "/images/generated/prompts/1989-3-v1-eb2943be-658c-4f1d-8103-c182186db59d.webp",
+        "url": "/public/images/generated/prompts/1989-3-v1-eb2943be-658c-4f1d-8103-c182186db59d.webp",
         "seed": 1057913494,
         "cost": 0.03,
         "score": null,
@@ -1384,21 +1384,21 @@
       "title": "Out of the Woods (And Into the City)",
       "variations": [
         {
-          "url": "/images/generated/prompts/1989-4-v1-6a9af144-d870-4148-bb7a-c9318b21e452.webp",
+          "url": "/public/images/generated/prompts/1989-4-v1-6a9af144-d870-4148-bb7a-c9318b21e452.webp",
           "seed": 984663905,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/6a9af144-d870-4148-bb7a-c9318b21e452.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-4-v2-82a19e69-36f4-4d0e-bb45-8499128c042a.webp",
+          "url": "/public/images/generated/prompts/1989-4-v2-82a19e69-36f4-4d0e-bb45-8499128c042a.webp",
           "seed": 984663902,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/82a19e69-36f4-4d0e-bb45-8499128c042a.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-4-v3-5e0f555c-d1fc-4ead-a6da-e03def00f71e.webp",
+          "url": "/public/images/generated/prompts/1989-4-v3-5e0f555c-d1fc-4ead-a6da-e03def00f71e.webp",
           "seed": 984663904,
           "cost": 0.03,
           "score": 9,
@@ -1406,14 +1406,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/5e0f555c-d1fc-4ead-a6da-e03def00f71e.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-4-v4-07fb3e84-53bb-4e15-a48d-a6f4d1af0d8e.webp",
+          "url": "/public/images/generated/prompts/1989-4-v4-07fb3e84-53bb-4e15-a48d-a6f4d1af0d8e.webp",
           "seed": 984663901,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/07fb3e84-53bb-4e15-a48d-a6f4d1af0d8e.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-4-v5-9a65941e-5a1e-4e64-b6d7-07000892f0ba.webp",
+          "url": "/public/images/generated/prompts/1989-4-v5-9a65941e-5a1e-4e64-b6d7-07000892f0ba.webp",
           "seed": 984663903,
           "cost": 0.03,
           "score": 7,
@@ -1422,7 +1422,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/1989-4-v3-5e0f555c-d1fc-4ead-a6da-e03def00f71e.webp",
+        "url": "/public/images/generated/prompts/1989-4-v3-5e0f555c-d1fc-4ead-a6da-e03def00f71e.webp",
         "seed": 984663904,
         "cost": 0.03,
         "score": 9,
@@ -1435,7 +1435,7 @@
       "title": "Clean (Social Media Detox)",
       "variations": [
         {
-          "url": "/images/generated/prompts/1989-5-v1-d8ab313f-6342-4d0a-8bfd-89f7261104c6.webp",
+          "url": "/public/images/generated/prompts/1989-5-v1-d8ab313f-6342-4d0a-8bfd-89f7261104c6.webp",
           "seed": 617147287,
           "cost": 0.03,
           "score": null,
@@ -1443,28 +1443,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d8ab313f-6342-4d0a-8bfd-89f7261104c6.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-5-v2-f548bcdb-9c17-439f-92a7-2119df79ce7a.webp",
+          "url": "/public/images/generated/prompts/1989-5-v2-f548bcdb-9c17-439f-92a7-2119df79ce7a.webp",
           "seed": 617147291,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f548bcdb-9c17-439f-92a7-2119df79ce7a.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-5-v3-a7989de7-0fff-4a24-b4a0-3a755b1583fc.webp",
+          "url": "/public/images/generated/prompts/1989-5-v3-a7989de7-0fff-4a24-b4a0-3a755b1583fc.webp",
           "seed": 617147289,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/a7989de7-0fff-4a24-b4a0-3a755b1583fc.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-5-v4-4de76b53-8b2d-4198-98f9-d149f2fa7318.webp",
+          "url": "/public/images/generated/prompts/1989-5-v4-4de76b53-8b2d-4198-98f9-d149f2fa7318.webp",
           "seed": 617147290,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4de76b53-8b2d-4198-98f9-d149f2fa7318.webp"
         },
         {
-          "url": "/images/generated/prompts/1989-5-v5-24a22b0b-8ddf-408a-b914-3968aaca49bd.webp",
+          "url": "/public/images/generated/prompts/1989-5-v5-24a22b0b-8ddf-408a-b914-3968aaca49bd.webp",
           "seed": 617147288,
           "cost": 0.03,
           "score": null,
@@ -1473,7 +1473,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/1989-5-v1-d8ab313f-6342-4d0a-8bfd-89f7261104c6.webp",
+        "url": "/public/images/generated/prompts/1989-5-v1-d8ab313f-6342-4d0a-8bfd-89f7261104c6.webp",
         "seed": 617147287,
         "cost": 0.03,
         "score": null,
@@ -1486,28 +1486,28 @@
       "title": "All Too Well (The Podcast Episode)",
       "variations": [
         {
-          "url": "/images/generated/prompts/red-1-v1-10a1a765-e85a-4cea-a18f-cad027dd16b3.webp",
+          "url": "/public/images/generated/prompts/red-1-v1-10a1a765-e85a-4cea-a18f-cad027dd16b3.webp",
           "seed": 778621398,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/10a1a765-e85a-4cea-a18f-cad027dd16b3.webp"
         },
         {
-          "url": "/images/generated/prompts/red-1-v2-35ead12b-e894-4d9c-bf43-5a4fe6b09266.webp",
+          "url": "/public/images/generated/prompts/red-1-v2-35ead12b-e894-4d9c-bf43-5a4fe6b09266.webp",
           "seed": 778621395,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/35ead12b-e894-4d9c-bf43-5a4fe6b09266.webp"
         },
         {
-          "url": "/images/generated/prompts/red-1-v3-c49dad3f-1994-4758-a3b5-7fa208e7060e.webp",
+          "url": "/public/images/generated/prompts/red-1-v3-c49dad3f-1994-4758-a3b5-7fa208e7060e.webp",
           "seed": 778621394,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c49dad3f-1994-4758-a3b5-7fa208e7060e.webp"
         },
         {
-          "url": "/images/generated/prompts/red-1-v4-0f28f6c3-1fc3-40e5-b8fd-e4b7364821c8.webp",
+          "url": "/public/images/generated/prompts/red-1-v4-0f28f6c3-1fc3-40e5-b8fd-e4b7364821c8.webp",
           "seed": 778621396,
           "cost": 0.03,
           "score": 9,
@@ -1515,7 +1515,7 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0f28f6c3-1fc3-40e5-b8fd-e4b7364821c8.webp"
         },
         {
-          "url": "/images/generated/prompts/red-1-v5-adb7c642-80f6-4f51-96cc-c595e417efff.webp",
+          "url": "/public/images/generated/prompts/red-1-v5-adb7c642-80f6-4f51-96cc-c595e417efff.webp",
           "seed": 778621397,
           "cost": 0.03,
           "score": 6,
@@ -1524,7 +1524,7 @@
       ],
       "bestImageIndex": 3,
       "bestImage": {
-        "url": "/images/generated/prompts/red-1-v4-0f28f6c3-1fc3-40e5-b8fd-e4b7364821c8.webp",
+        "url": "/public/images/generated/prompts/red-1-v4-0f28f6c3-1fc3-40e5-b8fd-e4b7364821c8.webp",
         "seed": 778621396,
         "cost": 0.03,
         "score": 9,
@@ -1537,28 +1537,28 @@
       "title": "I Knew You Were Trouble (But I Stayed Anyway)",
       "variations": [
         {
-          "url": "/images/generated/prompts/red-2-v1-b0187075-b3c2-40f9-8042-c04a171b7d5e.webp",
+          "url": "/public/images/generated/prompts/red-2-v1-b0187075-b3c2-40f9-8042-c04a171b7d5e.webp",
           "seed": 584136503,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/b0187075-b3c2-40f9-8042-c04a171b7d5e.webp"
         },
         {
-          "url": "/images/generated/prompts/red-2-v2-0ed5eb07-ca31-41dc-a653-df72dfe3ceff.webp",
+          "url": "/public/images/generated/prompts/red-2-v2-0ed5eb07-ca31-41dc-a653-df72dfe3ceff.webp",
           "seed": 584136500,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0ed5eb07-ca31-41dc-a653-df72dfe3ceff.webp"
         },
         {
-          "url": "/images/generated/prompts/red-2-v3-5287d506-d3e0-4d42-8cfd-e981b373e735.webp",
+          "url": "/public/images/generated/prompts/red-2-v3-5287d506-d3e0-4d42-8cfd-e981b373e735.webp",
           "seed": 584136501,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/5287d506-d3e0-4d42-8cfd-e981b373e735.webp"
         },
         {
-          "url": "/images/generated/prompts/red-2-v4-3557d1d6-f9fa-430a-8306-43f4fd57ee11.webp",
+          "url": "/public/images/generated/prompts/red-2-v4-3557d1d6-f9fa-430a-8306-43f4fd57ee11.webp",
           "seed": 584136504,
           "cost": 0.03,
           "score": 9,
@@ -1566,7 +1566,7 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/3557d1d6-f9fa-430a-8306-43f4fd57ee11.webp"
         },
         {
-          "url": "/images/generated/prompts/red-2-v5-4d28bf89-2881-4f85-9ea4-d19792232a71.webp",
+          "url": "/public/images/generated/prompts/red-2-v5-4d28bf89-2881-4f85-9ea4-d19792232a71.webp",
           "seed": 584136502,
           "cost": 0.03,
           "score": 7,
@@ -1575,7 +1575,7 @@
       ],
       "bestImageIndex": 3,
       "bestImage": {
-        "url": "/images/generated/prompts/red-2-v4-3557d1d6-f9fa-430a-8306-43f4fd57ee11.webp",
+        "url": "/public/images/generated/prompts/red-2-v4-3557d1d6-f9fa-430a-8306-43f4fd57ee11.webp",
         "seed": 584136504,
         "cost": 0.03,
         "score": 9,
@@ -1588,21 +1588,21 @@
       "title": "The Lucky One (Imposter Syndrome Edition)",
       "variations": [
         {
-          "url": "/images/generated/prompts/red-3-v1-4dcb1710-9576-48da-a49a-24849aa1cd1b.webp",
+          "url": "/public/images/generated/prompts/red-3-v1-4dcb1710-9576-48da-a49a-24849aa1cd1b.webp",
           "seed": 1349322032,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4dcb1710-9576-48da-a49a-24849aa1cd1b.webp"
         },
         {
-          "url": "/images/generated/prompts/red-3-v2-d7c6ba62-683b-42d6-b0e0-5787a61072c2.webp",
+          "url": "/public/images/generated/prompts/red-3-v2-d7c6ba62-683b-42d6-b0e0-5787a61072c2.webp",
           "seed": 1349322033,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d7c6ba62-683b-42d6-b0e0-5787a61072c2.webp"
         },
         {
-          "url": "/images/generated/prompts/red-3-v3-cab7ca74-df5f-4ec6-b69c-5204df1a142c.webp",
+          "url": "/public/images/generated/prompts/red-3-v3-cab7ca74-df5f-4ec6-b69c-5204df1a142c.webp",
           "seed": 1349322031,
           "cost": 0.03,
           "score": 9,
@@ -1610,14 +1610,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/cab7ca74-df5f-4ec6-b69c-5204df1a142c.webp"
         },
         {
-          "url": "/images/generated/prompts/red-3-v4-18c0055f-44f8-49bc-84b5-327f6dd39b5d.webp",
+          "url": "/public/images/generated/prompts/red-3-v4-18c0055f-44f8-49bc-84b5-327f6dd39b5d.webp",
           "seed": 1349322030,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/18c0055f-44f8-49bc-84b5-327f6dd39b5d.webp"
         },
         {
-          "url": "/images/generated/prompts/red-3-v5-29894eaf-7f78-436f-a48b-eda21aec0dbd.webp",
+          "url": "/public/images/generated/prompts/red-3-v5-29894eaf-7f78-436f-a48b-eda21aec0dbd.webp",
           "seed": 1349322034,
           "cost": 0.03,
           "score": 6,
@@ -1626,7 +1626,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/red-3-v3-cab7ca74-df5f-4ec6-b69c-5204df1a142c.webp",
+        "url": "/public/images/generated/prompts/red-3-v3-cab7ca74-df5f-4ec6-b69c-5204df1a142c.webp",
         "seed": 1349322031,
         "cost": 0.03,
         "score": 9,
@@ -1639,21 +1639,21 @@
       "title": "Begin Again (After Betrayal)",
       "variations": [
         {
-          "url": "/images/generated/prompts/red-4-v1-4ec7705d-50ed-4481-9fb1-67d8beaf02d2.webp",
+          "url": "/public/images/generated/prompts/red-4-v1-4ec7705d-50ed-4481-9fb1-67d8beaf02d2.webp",
           "seed": 1157219146,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4ec7705d-50ed-4481-9fb1-67d8beaf02d2.webp"
         },
         {
-          "url": "/images/generated/prompts/red-4-v2-9d441b20-a9d8-4fc3-8735-0aa182542f23.webp",
+          "url": "/public/images/generated/prompts/red-4-v2-9d441b20-a9d8-4fc3-8735-0aa182542f23.webp",
           "seed": 1157219143,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/9d441b20-a9d8-4fc3-8735-0aa182542f23.webp"
         },
         {
-          "url": "/images/generated/prompts/red-4-v3-7768d0d4-42bf-42dd-a739-d55328019f8c.webp",
+          "url": "/public/images/generated/prompts/red-4-v3-7768d0d4-42bf-42dd-a739-d55328019f8c.webp",
           "seed": 1157219145,
           "cost": 0.03,
           "score": 9,
@@ -1661,14 +1661,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/7768d0d4-42bf-42dd-a739-d55328019f8c.webp"
         },
         {
-          "url": "/images/generated/prompts/red-4-v4-bc1b2c33-5b10-4dea-bb25-38bbf8602f21.webp",
+          "url": "/public/images/generated/prompts/red-4-v4-bc1b2c33-5b10-4dea-bb25-38bbf8602f21.webp",
           "seed": 1157219144,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/bc1b2c33-5b10-4dea-bb25-38bbf8602f21.webp"
         },
         {
-          "url": "/images/generated/prompts/red-4-v5-9de43ae7-72df-41f4-8314-77466518dbf5.webp",
+          "url": "/public/images/generated/prompts/red-4-v5-9de43ae7-72df-41f4-8314-77466518dbf5.webp",
           "seed": 1157219147,
           "cost": 0.03,
           "score": 6,
@@ -1677,7 +1677,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/red-4-v3-7768d0d4-42bf-42dd-a739-d55328019f8c.webp",
+        "url": "/public/images/generated/prompts/red-4-v3-7768d0d4-42bf-42dd-a739-d55328019f8c.webp",
         "seed": 1157219145,
         "cost": 0.03,
         "score": 9,
@@ -1690,7 +1690,7 @@
       "title": "The Moment I Knew (Everything Changed)",
       "variations": [
         {
-          "url": "/images/generated/prompts/red-5-v1-1e6bdb3f-f517-4954-9e49-cf03d5b3a289.webp",
+          "url": "/public/images/generated/prompts/red-5-v1-1e6bdb3f-f517-4954-9e49-cf03d5b3a289.webp",
           "seed": 1764800213,
           "cost": 0.03,
           "score": null,
@@ -1698,28 +1698,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1e6bdb3f-f517-4954-9e49-cf03d5b3a289.webp"
         },
         {
-          "url": "/images/generated/prompts/red-5-v2-5cc20a2a-4cde-45ec-89f9-1107af613304.webp",
+          "url": "/public/images/generated/prompts/red-5-v2-5cc20a2a-4cde-45ec-89f9-1107af613304.webp",
           "seed": 1764800210,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/5cc20a2a-4cde-45ec-89f9-1107af613304.webp"
         },
         {
-          "url": "/images/generated/prompts/red-5-v3-414577e8-6c64-4fc2-9ba3-54c7415c283e.webp",
+          "url": "/public/images/generated/prompts/red-5-v3-414577e8-6c64-4fc2-9ba3-54c7415c283e.webp",
           "seed": 1764800211,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/414577e8-6c64-4fc2-9ba3-54c7415c283e.webp"
         },
         {
-          "url": "/images/generated/prompts/red-5-v4-54c5639b-57e8-428a-b7d9-d157715e4319.webp",
+          "url": "/public/images/generated/prompts/red-5-v4-54c5639b-57e8-428a-b7d9-d157715e4319.webp",
           "seed": 1764800212,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/54c5639b-57e8-428a-b7d9-d157715e4319.webp"
         },
         {
-          "url": "/images/generated/prompts/red-5-v5-efdc20b0-573d-4372-8fb6-0a24081c8beb.webp",
+          "url": "/public/images/generated/prompts/red-5-v5-efdc20b0-573d-4372-8fb6-0a24081c8beb.webp",
           "seed": 1764800214,
           "cost": 0.03,
           "score": null,
@@ -1728,7 +1728,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/red-5-v1-1e6bdb3f-f517-4954-9e49-cf03d5b3a289.webp",
+        "url": "/public/images/generated/prompts/red-5-v1-1e6bdb3f-f517-4954-9e49-cf03d5b3a289.webp",
         "seed": 1764800213,
         "cost": 0.03,
         "score": null,
@@ -1741,21 +1741,21 @@
       "title": "...Ready For It? (Revenge Era Activated)",
       "variations": [
         {
-          "url": "/images/generated/prompts/reputation-1-v1-91be7e70-9639-4c9f-8f67-8d8cfb88028b.webp",
+          "url": "/public/images/generated/prompts/reputation-1-v1-91be7e70-9639-4c9f-8f67-8d8cfb88028b.webp",
           "seed": 632324279,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/91be7e70-9639-4c9f-8f67-8d8cfb88028b.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-1-v2-91bcef01-d5ef-4035-91eb-fcc4f5cb7af6.webp",
+          "url": "/public/images/generated/prompts/reputation-1-v2-91bcef01-d5ef-4035-91eb-fcc4f5cb7af6.webp",
           "seed": 632324278,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/91bcef01-d5ef-4035-91eb-fcc4f5cb7af6.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-1-v3-82b8c797-46b7-4e29-b603-58dc0cb46560.webp",
+          "url": "/public/images/generated/prompts/reputation-1-v3-82b8c797-46b7-4e29-b603-58dc0cb46560.webp",
           "seed": 632324281,
           "cost": 0.03,
           "score": 9,
@@ -1763,14 +1763,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/82b8c797-46b7-4e29-b603-58dc0cb46560.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-1-v4-d6946e94-4a86-4fe5-a907-a567070923b0.webp",
+          "url": "/public/images/generated/prompts/reputation-1-v4-d6946e94-4a86-4fe5-a907-a567070923b0.webp",
           "seed": 632324277,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d6946e94-4a86-4fe5-a907-a567070923b0.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-1-v5-0b81e2b7-c68e-45cb-81b0-888ab2a9a0f5.webp",
+          "url": "/public/images/generated/prompts/reputation-1-v5-0b81e2b7-c68e-45cb-81b0-888ab2a9a0f5.webp",
           "seed": 632324280,
           "cost": 0.03,
           "score": 5,
@@ -1779,7 +1779,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/reputation-1-v3-82b8c797-46b7-4e29-b603-58dc0cb46560.webp",
+        "url": "/public/images/generated/prompts/reputation-1-v3-82b8c797-46b7-4e29-b603-58dc0cb46560.webp",
         "seed": 632324281,
         "cost": 0.03,
         "score": 9,
@@ -1792,21 +1792,21 @@
       "title": "Don't Blame Me (For Fighting Back)",
       "variations": [
         {
-          "url": "/images/generated/prompts/reputation-2-v1-ad74a14c-72a1-4be9-a113-b97a8e2c12d4.webp",
+          "url": "/public/images/generated/prompts/reputation-2-v1-ad74a14c-72a1-4be9-a113-b97a8e2c12d4.webp",
           "seed": 228115634,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ad74a14c-72a1-4be9-a113-b97a8e2c12d4.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-2-v2-c1d4eb43-02c8-4faf-8426-a681aec63e7e.webp",
+          "url": "/public/images/generated/prompts/reputation-2-v2-c1d4eb43-02c8-4faf-8426-a681aec63e7e.webp",
           "seed": 228115633,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c1d4eb43-02c8-4faf-8426-a681aec63e7e.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-2-v3-0543f16b-3b27-48b4-b556-46bb4e1e1536.webp",
+          "url": "/public/images/generated/prompts/reputation-2-v3-0543f16b-3b27-48b4-b556-46bb4e1e1536.webp",
           "seed": 228115632,
           "cost": 0.03,
           "score": 9,
@@ -1814,14 +1814,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0543f16b-3b27-48b4-b556-46bb4e1e1536.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-2-v4-64dab067-428c-4293-877e-f989fa1420aa.webp",
+          "url": "/public/images/generated/prompts/reputation-2-v4-64dab067-428c-4293-877e-f989fa1420aa.webp",
           "seed": 228115635,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/64dab067-428c-4293-877e-f989fa1420aa.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-2-v5-65fb5a89-f915-4b93-ba34-6396659db226.webp",
+          "url": "/public/images/generated/prompts/reputation-2-v5-65fb5a89-f915-4b93-ba34-6396659db226.webp",
           "seed": 228115636,
           "cost": 0.03,
           "score": 4,
@@ -1830,7 +1830,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/reputation-2-v3-0543f16b-3b27-48b4-b556-46bb4e1e1536.webp",
+        "url": "/public/images/generated/prompts/reputation-2-v3-0543f16b-3b27-48b4-b556-46bb4e1e1536.webp",
         "seed": 228115632,
         "cost": 0.03,
         "score": 9,
@@ -1843,35 +1843,35 @@
       "title": "Look What You Made Me Do (Reclamation)",
       "variations": [
         {
-          "url": "/images/generated/prompts/reputation-3-v1-f91dced9-7972-45bc-b971-f01cec642554.webp",
+          "url": "/public/images/generated/prompts/reputation-3-v1-f91dced9-7972-45bc-b971-f01cec642554.webp",
           "seed": 1172565315,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f91dced9-7972-45bc-b971-f01cec642554.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-3-v2-c87d3e6a-14ec-4c26-bfff-aa4c38dbc98e.webp",
+          "url": "/public/images/generated/prompts/reputation-3-v2-c87d3e6a-14ec-4c26-bfff-aa4c38dbc98e.webp",
           "seed": 1172565314,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/c87d3e6a-14ec-4c26-bfff-aa4c38dbc98e.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-3-v3-f404858e-3227-496a-8233-f532920fd674.webp",
+          "url": "/public/images/generated/prompts/reputation-3-v3-f404858e-3227-496a-8233-f532920fd674.webp",
           "seed": 1172565316,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f404858e-3227-496a-8233-f532920fd674.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-3-v4-e3ea12bf-f31f-43fa-a042-145a198e3a01.webp",
+          "url": "/public/images/generated/prompts/reputation-3-v4-e3ea12bf-f31f-43fa-a042-145a198e3a01.webp",
           "seed": 1172565317,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e3ea12bf-f31f-43fa-a042-145a198e3a01.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-3-v5-8454c317-aaed-4a21-953b-572197c85fbf.webp",
+          "url": "/public/images/generated/prompts/reputation-3-v5-8454c317-aaed-4a21-953b-572197c85fbf.webp",
           "seed": 1172565318,
           "cost": 0.03,
           "score": 9,
@@ -1881,7 +1881,7 @@
       ],
       "bestImageIndex": 4,
       "bestImage": {
-        "url": "/images/generated/prompts/reputation-3-v5-8454c317-aaed-4a21-953b-572197c85fbf.webp",
+        "url": "/public/images/generated/prompts/reputation-3-v5-8454c317-aaed-4a21-953b-572197c85fbf.webp",
         "seed": 1172565318,
         "cost": 0.03,
         "score": 9,
@@ -1894,21 +1894,21 @@
       "title": "Call It What You Want (Despite What They Say)",
       "variations": [
         {
-          "url": "/images/generated/prompts/reputation-4-v1-dfef4ea6-1865-4c0b-9fa9-ec8814bb401d.webp",
+          "url": "/public/images/generated/prompts/reputation-4-v1-dfef4ea6-1865-4c0b-9fa9-ec8814bb401d.webp",
           "seed": 1847352489,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/dfef4ea6-1865-4c0b-9fa9-ec8814bb401d.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-4-v2-a309a76a-28b5-40f8-870e-81409586b135.webp",
+          "url": "/public/images/generated/prompts/reputation-4-v2-a309a76a-28b5-40f8-870e-81409586b135.webp",
           "seed": 1847352490,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/a309a76a-28b5-40f8-870e-81409586b135.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-4-v3-aa7df985-24b9-40d7-abd5-b2c12c35a369.webp",
+          "url": "/public/images/generated/prompts/reputation-4-v3-aa7df985-24b9-40d7-abd5-b2c12c35a369.webp",
           "seed": 1847352488,
           "cost": 0.03,
           "score": 5,
@@ -1916,14 +1916,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/aa7df985-24b9-40d7-abd5-b2c12c35a369.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-4-v4-4608cd8d-0365-4b87-aeb7-7fa356b85852.webp",
+          "url": "/public/images/generated/prompts/reputation-4-v4-4608cd8d-0365-4b87-aeb7-7fa356b85852.webp",
           "seed": 1847352487,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4608cd8d-0365-4b87-aeb7-7fa356b85852.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-4-v5-a6cba36a-6ac4-4859-9fa0-bdb29172f570.webp",
+          "url": "/public/images/generated/prompts/reputation-4-v5-a6cba36a-6ac4-4859-9fa0-bdb29172f570.webp",
           "seed": 1847352491,
           "cost": 0.03,
           "score": 5,
@@ -1932,7 +1932,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/reputation-4-v3-aa7df985-24b9-40d7-abd5-b2c12c35a369.webp",
+        "url": "/public/images/generated/prompts/reputation-4-v3-aa7df985-24b9-40d7-abd5-b2c12c35a369.webp",
         "seed": 1847352488,
         "cost": 0.03,
         "score": 5,
@@ -1945,21 +1945,21 @@
       "title": "Getaway Car (But Make It Activism)",
       "variations": [
         {
-          "url": "/images/generated/prompts/reputation-5-v1-f4498ffc-4bb8-4e41-854d-0e1cddb9936f.webp",
+          "url": "/public/images/generated/prompts/reputation-5-v1-f4498ffc-4bb8-4e41-854d-0e1cddb9936f.webp",
           "seed": 1197284810,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/f4498ffc-4bb8-4e41-854d-0e1cddb9936f.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-5-v2-cd14ea2e-2f90-4212-9a64-5d19930bb1a5.webp",
+          "url": "/public/images/generated/prompts/reputation-5-v2-cd14ea2e-2f90-4212-9a64-5d19930bb1a5.webp",
           "seed": 1197284811,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/cd14ea2e-2f90-4212-9a64-5d19930bb1a5.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-5-v3-ca3dac35-60e8-4083-b86e-69eb58fb381b.webp",
+          "url": "/public/images/generated/prompts/reputation-5-v3-ca3dac35-60e8-4083-b86e-69eb58fb381b.webp",
           "seed": 1197284812,
           "cost": 0.03,
           "score": 9,
@@ -1967,14 +1967,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ca3dac35-60e8-4083-b86e-69eb58fb381b.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-5-v4-e854c12a-ae7f-4bee-a79e-35d58eed96d0.webp",
+          "url": "/public/images/generated/prompts/reputation-5-v4-e854c12a-ae7f-4bee-a79e-35d58eed96d0.webp",
           "seed": 1197284808,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e854c12a-ae7f-4bee-a79e-35d58eed96d0.webp"
         },
         {
-          "url": "/images/generated/prompts/reputation-5-v5-ee9fda92-3afd-4cb8-a61c-f277a903d961.webp",
+          "url": "/public/images/generated/prompts/reputation-5-v5-ee9fda92-3afd-4cb8-a61c-f277a903d961.webp",
           "seed": 1197284809,
           "cost": 0.03,
           "score": 5,
@@ -1983,7 +1983,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/reputation-5-v3-ca3dac35-60e8-4083-b86e-69eb58fb381b.webp",
+        "url": "/public/images/generated/prompts/reputation-5-v3-ca3dac35-60e8-4083-b86e-69eb58fb381b.webp",
         "seed": 1197284812,
         "cost": 0.03,
         "score": 9,
@@ -1996,14 +1996,14 @@
       "title": "You Need to Calm Down (Pride Edition)",
       "variations": [
         {
-          "url": "/images/generated/prompts/lover-1-v1-b9afe035-9b41-45b4-99bb-c8baa417ad11.webp",
+          "url": "/public/images/generated/prompts/lover-1-v1-b9afe035-9b41-45b4-99bb-c8baa417ad11.webp",
           "seed": 1461665656,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/b9afe035-9b41-45b4-99bb-c8baa417ad11.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-1-v2-2b12e658-903d-45e7-bda4-0335295cc023.webp",
+          "url": "/public/images/generated/prompts/lover-1-v2-2b12e658-903d-45e7-bda4-0335295cc023.webp",
           "seed": 1461665657,
           "cost": 0.03,
           "score": 9,
@@ -2011,21 +2011,21 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/2b12e658-903d-45e7-bda4-0335295cc023.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-1-v3-cc163376-65d5-4529-ab7c-5c4367700a77.webp",
+          "url": "/public/images/generated/prompts/lover-1-v3-cc163376-65d5-4529-ab7c-5c4367700a77.webp",
           "seed": 1461665655,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/cc163376-65d5-4529-ab7c-5c4367700a77.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-1-v4-e9ce7b57-cfde-4f50-bded-692fb91ecb57.webp",
+          "url": "/public/images/generated/prompts/lover-1-v4-e9ce7b57-cfde-4f50-bded-692fb91ecb57.webp",
           "seed": 1461665659,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e9ce7b57-cfde-4f50-bded-692fb91ecb57.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-1-v5-eab9cee4-e862-448e-8e3e-bf259d5bcb48.webp",
+          "url": "/public/images/generated/prompts/lover-1-v5-eab9cee4-e862-448e-8e3e-bf259d5bcb48.webp",
           "seed": 1461665658,
           "cost": 0.03,
           "score": 6,
@@ -2034,7 +2034,7 @@
       ],
       "bestImageIndex": 1,
       "bestImage": {
-        "url": "/images/generated/prompts/lover-1-v2-2b12e658-903d-45e7-bda4-0335295cc023.webp",
+        "url": "/public/images/generated/prompts/lover-1-v2-2b12e658-903d-45e7-bda4-0335295cc023.webp",
         "seed": 1461665657,
         "cost": 0.03,
         "score": 9,
@@ -2047,7 +2047,7 @@
       "title": "Lover (In All Its Forms)",
       "variations": [
         {
-          "url": "/images/generated/prompts/lover-2-v1-8c5c95ed-4141-449e-9431-2dfff5d4a42d.webp",
+          "url": "/public/images/generated/prompts/lover-2-v1-8c5c95ed-4141-449e-9431-2dfff5d4a42d.webp",
           "seed": 416847520,
           "cost": 0.03,
           "score": 9,
@@ -2055,28 +2055,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8c5c95ed-4141-449e-9431-2dfff5d4a42d.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-2-v2-90ef2e06-744d-4077-8449-39e2958badcd.webp",
+          "url": "/public/images/generated/prompts/lover-2-v2-90ef2e06-744d-4077-8449-39e2958badcd.webp",
           "seed": 416847516,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/90ef2e06-744d-4077-8449-39e2958badcd.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-2-v3-1b3c066a-8241-4369-b068-947e9666ed95.webp",
+          "url": "/public/images/generated/prompts/lover-2-v3-1b3c066a-8241-4369-b068-947e9666ed95.webp",
           "seed": 416847517,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1b3c066a-8241-4369-b068-947e9666ed95.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-2-v4-972c9c91-6571-4130-9f63-279cafcd8c41.webp",
+          "url": "/public/images/generated/prompts/lover-2-v4-972c9c91-6571-4130-9f63-279cafcd8c41.webp",
           "seed": 416847518,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/972c9c91-6571-4130-9f63-279cafcd8c41.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-2-v5-c74e477c-3473-4c34-a4a7-96ed0e472cc7.webp",
+          "url": "/public/images/generated/prompts/lover-2-v5-c74e477c-3473-4c34-a4a7-96ed0e472cc7.webp",
           "seed": 416847519,
           "cost": 0.03,
           "score": 4,
@@ -2085,7 +2085,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/lover-2-v1-8c5c95ed-4141-449e-9431-2dfff5d4a42d.webp",
+        "url": "/public/images/generated/prompts/lover-2-v1-8c5c95ed-4141-449e-9431-2dfff5d4a42d.webp",
         "seed": 416847520,
         "cost": 0.03,
         "score": 9,
@@ -2098,21 +2098,21 @@
       "title": "The Man (But You're Not Waiting)",
       "variations": [
         {
-          "url": "/images/generated/prompts/lover-3-v1-ce99b60b-e87b-4a9d-9773-62786954f9a3.webp",
+          "url": "/public/images/generated/prompts/lover-3-v1-ce99b60b-e87b-4a9d-9773-62786954f9a3.webp",
           "seed": 2044342247,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/ce99b60b-e87b-4a9d-9773-62786954f9a3.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-3-v2-4ce58124-ad7f-46dc-bfc8-8e8b4ac3317c.webp",
+          "url": "/public/images/generated/prompts/lover-3-v2-4ce58124-ad7f-46dc-bfc8-8e8b4ac3317c.webp",
           "seed": 2044342248,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4ce58124-ad7f-46dc-bfc8-8e8b4ac3317c.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-3-v3-8770b2fc-9946-49b7-be82-faa08c9bbf80.webp",
+          "url": "/public/images/generated/prompts/lover-3-v3-8770b2fc-9946-49b7-be82-faa08c9bbf80.webp",
           "seed": 2044342249,
           "cost": 0.03,
           "score": 9,
@@ -2120,14 +2120,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/8770b2fc-9946-49b7-be82-faa08c9bbf80.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-3-v4-6162a106-f988-4aec-a14d-fcca658c34a2.webp",
+          "url": "/public/images/generated/prompts/lover-3-v4-6162a106-f988-4aec-a14d-fcca658c34a2.webp",
           "seed": 2044342250,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/6162a106-f988-4aec-a14d-fcca658c34a2.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-3-v5-1992e97d-f4d0-48d2-9117-0acef9601546.webp",
+          "url": "/public/images/generated/prompts/lover-3-v5-1992e97d-f4d0-48d2-9117-0acef9601546.webp",
           "seed": 2044342251,
           "cost": 0.03,
           "score": 6,
@@ -2136,7 +2136,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/lover-3-v3-8770b2fc-9946-49b7-be82-faa08c9bbf80.webp",
+        "url": "/public/images/generated/prompts/lover-3-v3-8770b2fc-9946-49b7-be82-faa08c9bbf80.webp",
         "seed": 2044342249,
         "cost": 0.03,
         "score": 9,
@@ -2149,21 +2149,21 @@
       "title": "Daylight (After Depression)",
       "variations": [
         {
-          "url": "/images/generated/prompts/lover-4-v1-e2c56966-d845-4681-b0af-7a51147a5a0c.webp",
+          "url": "/public/images/generated/prompts/lover-4-v1-e2c56966-d845-4681-b0af-7a51147a5a0c.webp",
           "seed": 458960514,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/e2c56966-d845-4681-b0af-7a51147a5a0c.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-4-v2-50517cfc-e496-4c7a-8528-248e1b037135.webp",
+          "url": "/public/images/generated/prompts/lover-4-v2-50517cfc-e496-4c7a-8528-248e1b037135.webp",
           "seed": 458960513,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/50517cfc-e496-4c7a-8528-248e1b037135.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-4-v3-a4c5783f-526b-4bfa-a40d-be1bc9700c6e.webp",
+          "url": "/public/images/generated/prompts/lover-4-v3-a4c5783f-526b-4bfa-a40d-be1bc9700c6e.webp",
           "seed": 458960515,
           "cost": 0.03,
           "score": 9,
@@ -2171,14 +2171,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/a4c5783f-526b-4bfa-a40d-be1bc9700c6e.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-4-v4-5463c4c9-a777-406d-9140-b677550245fa.webp",
+          "url": "/public/images/generated/prompts/lover-4-v4-5463c4c9-a777-406d-9140-b677550245fa.webp",
           "seed": 458960512,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/5463c4c9-a777-406d-9140-b677550245fa.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-4-v5-a7aaa76b-b3f4-4f8a-91e6-3d2a0f9e4905.webp",
+          "url": "/public/images/generated/prompts/lover-4-v5-a7aaa76b-b3f4-4f8a-91e6-3d2a0f9e4905.webp",
           "seed": 458960516,
           "cost": 0.03,
           "score": 6,
@@ -2187,7 +2187,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/lover-4-v3-a4c5783f-526b-4bfa-a40d-be1bc9700c6e.webp",
+        "url": "/public/images/generated/prompts/lover-4-v3-a4c5783f-526b-4bfa-a40d-be1bc9700c6e.webp",
         "seed": 458960515,
         "cost": 0.03,
         "score": 9,
@@ -2200,21 +2200,21 @@
       "title": "Paper Rings (Choosing Authentic Joy)",
       "variations": [
         {
-          "url": "/images/generated/prompts/lover-5-v1-834caa26-3542-4e9b-bc51-347e40cff43e.webp",
+          "url": "/public/images/generated/prompts/lover-5-v1-834caa26-3542-4e9b-bc51-347e40cff43e.webp",
           "seed": 500898635,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/834caa26-3542-4e9b-bc51-347e40cff43e.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-5-v2-2337acee-d131-453f-8972-274c75d5b23b.webp",
+          "url": "/public/images/generated/prompts/lover-5-v2-2337acee-d131-453f-8972-274c75d5b23b.webp",
           "seed": 500898638,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/2337acee-d131-453f-8972-274c75d5b23b.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-5-v3-52acd27c-172a-47ce-95b2-7eb6f20d6e72.webp",
+          "url": "/public/images/generated/prompts/lover-5-v3-52acd27c-172a-47ce-95b2-7eb6f20d6e72.webp",
           "seed": 500898636,
           "cost": 0.03,
           "score": 9,
@@ -2222,14 +2222,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/52acd27c-172a-47ce-95b2-7eb6f20d6e72.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-5-v4-4c35ef64-c08d-49e8-a498-de791a7b469c.webp",
+          "url": "/public/images/generated/prompts/lover-5-v4-4c35ef64-c08d-49e8-a498-de791a7b469c.webp",
           "seed": 500898639,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4c35ef64-c08d-49e8-a498-de791a7b469c.webp"
         },
         {
-          "url": "/images/generated/prompts/lover-5-v5-b36600c7-b494-48cd-a7b2-4abd65050938.webp",
+          "url": "/public/images/generated/prompts/lover-5-v5-b36600c7-b494-48cd-a7b2-4abd65050938.webp",
           "seed": 500898637,
           "cost": 0.03,
           "score": 7,
@@ -2238,7 +2238,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/lover-5-v3-52acd27c-172a-47ce-95b2-7eb6f20d6e72.webp",
+        "url": "/public/images/generated/prompts/lover-5-v3-52acd27c-172a-47ce-95b2-7eb6f20d6e72.webp",
         "seed": 500898636,
         "cost": 0.03,
         "score": 9,
@@ -2251,21 +2251,21 @@
       "title": "Anti-Hero (3AM Thoughts)",
       "variations": [
         {
-          "url": "/images/generated/prompts/midnights-1-v1-6ed07094-72a4-4f29-b602-da33f661dc53.webp",
+          "url": "/public/images/generated/prompts/midnights-1-v1-6ed07094-72a4-4f29-b602-da33f661dc53.webp",
           "seed": 1013852908,
           "cost": 0.03,
           "score": 7,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/6ed07094-72a4-4f29-b602-da33f661dc53.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-1-v2-0a99a79b-75b2-4cee-8b5c-1cb5e887ea11.webp",
+          "url": "/public/images/generated/prompts/midnights-1-v2-0a99a79b-75b2-4cee-8b5c-1cb5e887ea11.webp",
           "seed": 1013852912,
           "cost": 0.03,
           "score": 8,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/0a99a79b-75b2-4cee-8b5c-1cb5e887ea11.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-1-v3-48d510e7-bc6e-4728-aa3b-1ba1675aad93.webp",
+          "url": "/public/images/generated/prompts/midnights-1-v3-48d510e7-bc6e-4728-aa3b-1ba1675aad93.webp",
           "seed": 1013852911,
           "cost": 0.03,
           "score": 9,
@@ -2273,14 +2273,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/48d510e7-bc6e-4728-aa3b-1ba1675aad93.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-1-v4-25be49bd-92c1-42b7-8643-388a1ad6dcc3.webp",
+          "url": "/public/images/generated/prompts/midnights-1-v4-25be49bd-92c1-42b7-8643-388a1ad6dcc3.webp",
           "seed": 1013852909,
           "cost": 0.03,
           "score": 6,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/25be49bd-92c1-42b7-8643-388a1ad6dcc3.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-1-v5-79bda204-f590-40b3-9afe-3240e2dbe00c.webp",
+          "url": "/public/images/generated/prompts/midnights-1-v5-79bda204-f590-40b3-9afe-3240e2dbe00c.webp",
           "seed": 1013852910,
           "cost": 0.03,
           "score": 7,
@@ -2289,7 +2289,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/midnights-1-v3-48d510e7-bc6e-4728-aa3b-1ba1675aad93.webp",
+        "url": "/public/images/generated/prompts/midnights-1-v3-48d510e7-bc6e-4728-aa3b-1ba1675aad93.webp",
         "seed": 1013852911,
         "cost": 0.03,
         "score": 9,
@@ -2302,7 +2302,7 @@
       "title": "Lavender Haze (In This Economy?)",
       "variations": [
         {
-          "url": "/images/generated/prompts/midnights-2-v1-fa964902-22c9-4ad0-941c-b33030fa4060.webp",
+          "url": "/public/images/generated/prompts/midnights-2-v1-fa964902-22c9-4ad0-941c-b33030fa4060.webp",
           "seed": 1338867314,
           "cost": 0.03,
           "score": null,
@@ -2310,28 +2310,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/fa964902-22c9-4ad0-941c-b33030fa4060.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-2-v2-1642d356-aa9f-4db7-b738-833bf7da6b08.webp",
+          "url": "/public/images/generated/prompts/midnights-2-v2-1642d356-aa9f-4db7-b738-833bf7da6b08.webp",
           "seed": 1338867316,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1642d356-aa9f-4db7-b738-833bf7da6b08.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-2-v3-1f5cca92-1528-451e-bf45-25d9d2433c50.webp",
+          "url": "/public/images/generated/prompts/midnights-2-v3-1f5cca92-1528-451e-bf45-25d9d2433c50.webp",
           "seed": 1338867318,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/1f5cca92-1528-451e-bf45-25d9d2433c50.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-2-v4-687032cc-7b4a-4055-a83e-06e2fbc8a8fe.webp",
+          "url": "/public/images/generated/prompts/midnights-2-v4-687032cc-7b4a-4055-a83e-06e2fbc8a8fe.webp",
           "seed": 1338867315,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/687032cc-7b4a-4055-a83e-06e2fbc8a8fe.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-2-v5-69ede081-c939-48df-a42e-64b08d42b87b.webp",
+          "url": "/public/images/generated/prompts/midnights-2-v5-69ede081-c939-48df-a42e-64b08d42b87b.webp",
           "seed": 1338867317,
           "cost": 0.03,
           "score": null,
@@ -2340,7 +2340,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/midnights-2-v1-fa964902-22c9-4ad0-941c-b33030fa4060.webp",
+        "url": "/public/images/generated/prompts/midnights-2-v1-fa964902-22c9-4ad0-941c-b33030fa4060.webp",
         "seed": 1338867314,
         "cost": 0.03,
         "score": null,
@@ -2353,21 +2353,21 @@
       "title": "Midnight Rain (Different Dreams)",
       "variations": [
         {
-          "url": "/images/generated/prompts/midnights-3-v1-67a5611d-5430-418f-b3cf-582f5c812e99.webp",
+          "url": "/public/images/generated/prompts/midnights-3-v1-67a5611d-5430-418f-b3cf-582f5c812e99.webp",
           "seed": 744181037,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/67a5611d-5430-418f-b3cf-582f5c812e99.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-3-v2-dc9541cf-f8b3-4a0b-a4d0-aad47ea63bd8.webp",
+          "url": "/public/images/generated/prompts/midnights-3-v2-dc9541cf-f8b3-4a0b-a4d0-aad47ea63bd8.webp",
           "seed": 744181035,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/dc9541cf-f8b3-4a0b-a4d0-aad47ea63bd8.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-3-v3-4d2d4fa8-2969-47ff-9436-e8857513c65e.webp",
+          "url": "/public/images/generated/prompts/midnights-3-v3-4d2d4fa8-2969-47ff-9436-e8857513c65e.webp",
           "seed": 744181033,
           "cost": 0.03,
           "score": 5,
@@ -2375,14 +2375,14 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/4d2d4fa8-2969-47ff-9436-e8857513c65e.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-3-v4-eeb6078d-ae2a-4ec0-afab-15ac7bee5d90.webp",
+          "url": "/public/images/generated/prompts/midnights-3-v4-eeb6078d-ae2a-4ec0-afab-15ac7bee5d90.webp",
           "seed": 744181036,
           "cost": 0.03,
           "score": 5,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/eeb6078d-ae2a-4ec0-afab-15ac7bee5d90.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-3-v5-f3aca7aa-b6ff-439d-b540-c77e2d474b0a.webp",
+          "url": "/public/images/generated/prompts/midnights-3-v5-f3aca7aa-b6ff-439d-b540-c77e2d474b0a.webp",
           "seed": 744181034,
           "cost": 0.03,
           "score": 5,
@@ -2391,7 +2391,7 @@
       ],
       "bestImageIndex": 2,
       "bestImage": {
-        "url": "/images/generated/prompts/midnights-3-v3-4d2d4fa8-2969-47ff-9436-e8857513c65e.webp",
+        "url": "/public/images/generated/prompts/midnights-3-v3-4d2d4fa8-2969-47ff-9436-e8857513c65e.webp",
         "seed": 744181033,
         "cost": 0.03,
         "score": 5,
@@ -2404,7 +2404,7 @@
       "title": "Question...? (The One You Can't Ask)",
       "variations": [
         {
-          "url": "/images/generated/prompts/midnights-4-v1-d03d0799-ead7-4be2-a3b4-ca7927c799b1.webp",
+          "url": "/public/images/generated/prompts/midnights-4-v1-d03d0799-ead7-4be2-a3b4-ca7927c799b1.webp",
           "seed": 1509536388,
           "cost": 0.03,
           "score": null,
@@ -2412,28 +2412,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/d03d0799-ead7-4be2-a3b4-ca7927c799b1.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-4-v2-78a8c962-d1e0-47da-b058-99ce105ffbdd.webp",
+          "url": "/public/images/generated/prompts/midnights-4-v2-78a8c962-d1e0-47da-b058-99ce105ffbdd.webp",
           "seed": 1509536391,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/78a8c962-d1e0-47da-b058-99ce105ffbdd.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-4-v3-69567386-6b14-47d7-b8bd-154013285330.webp",
+          "url": "/public/images/generated/prompts/midnights-4-v3-69567386-6b14-47d7-b8bd-154013285330.webp",
           "seed": 1509536387,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/69567386-6b14-47d7-b8bd-154013285330.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-4-v4-3871be24-0e80-4396-989c-c87f03cbf00f.webp",
+          "url": "/public/images/generated/prompts/midnights-4-v4-3871be24-0e80-4396-989c-c87f03cbf00f.webp",
           "seed": 1509536390,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/3871be24-0e80-4396-989c-c87f03cbf00f.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-4-v5-02d115ff-5c93-405c-9a9d-dc9e6300fd09.webp",
+          "url": "/public/images/generated/prompts/midnights-4-v5-02d115ff-5c93-405c-9a9d-dc9e6300fd09.webp",
           "seed": 1509536389,
           "cost": 0.03,
           "score": null,
@@ -2442,7 +2442,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/midnights-4-v1-d03d0799-ead7-4be2-a3b4-ca7927c799b1.webp",
+        "url": "/public/images/generated/prompts/midnights-4-v1-d03d0799-ead7-4be2-a3b4-ca7927c799b1.webp",
         "seed": 1509536388,
         "cost": 0.03,
         "score": null,
@@ -2455,7 +2455,7 @@
       "title": "Mastermind (But Make It Anxiety)",
       "variations": [
         {
-          "url": "/images/generated/prompts/midnights-5-v1-490ac66e-4598-4dfe-85e7-a3119244d0e7.webp",
+          "url": "/public/images/generated/prompts/midnights-5-v1-490ac66e-4598-4dfe-85e7-a3119244d0e7.webp",
           "seed": 207944363,
           "cost": 0.03,
           "score": null,
@@ -2463,28 +2463,28 @@
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/490ac66e-4598-4dfe-85e7-a3119244d0e7.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-5-v2-40489153-0c26-4249-a352-255cd2f6e0a4.webp",
+          "url": "/public/images/generated/prompts/midnights-5-v2-40489153-0c26-4249-a352-255cd2f6e0a4.webp",
           "seed": 207944365,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/40489153-0c26-4249-a352-255cd2f6e0a4.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-5-v3-87627d05-0561-41eb-ad09-971501651479.webp",
+          "url": "/public/images/generated/prompts/midnights-5-v3-87627d05-0561-41eb-ad09-971501651479.webp",
           "seed": 207944366,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/87627d05-0561-41eb-ad09-971501651479.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-5-v4-fe6acf0b-0d28-488b-b938-789cc1ce8b7e.webp",
+          "url": "/public/images/generated/prompts/midnights-5-v4-fe6acf0b-0d28-488b-b938-789cc1ce8b7e.webp",
           "seed": 207944362,
           "cost": 0.03,
           "score": null,
           "originalUrl": "https://im.runware.ai/image/ws/2/ii/fe6acf0b-0d28-488b-b938-789cc1ce8b7e.webp"
         },
         {
-          "url": "/images/generated/prompts/midnights-5-v5-1913e59e-d3d8-4708-aec2-830b78788433.webp",
+          "url": "/public/images/generated/prompts/midnights-5-v5-1913e59e-d3d8-4708-aec2-830b78788433.webp",
           "seed": 207944364,
           "cost": 0.03,
           "score": null,
@@ -2493,7 +2493,7 @@
       ],
       "bestImageIndex": 0,
       "bestImage": {
-        "url": "/images/generated/prompts/midnights-5-v1-490ac66e-4598-4dfe-85e7-a3119244d0e7.webp",
+        "url": "/public/images/generated/prompts/midnights-5-v1-490ac66e-4598-4dfe-85e7-a3119244d0e7.webp",
         "seed": 207944363,
         "cost": 0.03,
         "score": null,

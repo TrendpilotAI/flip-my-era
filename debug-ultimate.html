@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Image Manager Ultimate</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #0f0;
+            text-align: center;
+            border-bottom: 2px solid #0f0;
+            padding-bottom: 10px;
+        }
+        
+        .debug-section {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .debug-section h2 {
+            color: #0ff;
+            margin-top: 0;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        
+        .success {
+            background: #003300;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+        }
+        
+        .error {
+            background: #330000;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+        
+        .warning {
+            background: #333300;
+            border: 1px solid #ffff00;
+            color: #ffff00;
+        }
+        
+        .info {
+            background: #003;
+            border: 1px solid #0ff;
+            color: #0ff;
+        }
+        
+        pre {
+            background: #111;
+            padding: 10px;
+            border-radius: 3px;
+            overflow: auto;
+            max-height: 300px;
+            color: #0f0;
+            font-size: 12px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .test-image {
+            background: #222;
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .test-image img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border: 1px solid #0f0;
+        }
+        
+        .test-image.failed img {
+            border-color: #f00;
+        }
+        
+        .test-image .status {
+            margin-top: 10px;
+            font-size: 11px;
+            word-break: break-all;
+        }
+        
+        .log-entry {
+            padding: 5px;
+            margin: 2px 0;
+            font-size: 12px;
+            border-left: 3px solid #0f0;
+            background: #111;
+        }
+        
+        .log-entry.error {
+            border-left-color: #f00;
+            background: #200;
+        }
+        
+        .log-entry.warning {
+            border-left-color: #ff0;
+            background: #220;
+        }
+        
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+        
+        button:hover {
+            background: #0ff;
+        }
+        
+        .progress {
+            background: #222;
+            border: 1px solid #0f0;
+            height: 30px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #0f0, #0ff);
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DEBUG: Image Manager Ultimate</h1>
+        
+        <div class="debug-section">
+            <h2>1. Server & Network Status</h2>
+            <div id="server-status"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>2. JSON File Tests</h2>
+            <div id="json-tests"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>3. Image Path Tests</h2>
+            <div id="image-tests"></div>
+            <div class="test-grid" id="image-grid"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>4. Data Structure Analysis</h2>
+            <pre id="data-structure"></pre>
+        </div>
+        
+        <div class="debug-section">
+            <h2>5. Console Log</h2>
+            <div id="console-log"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>6. Actions</h2>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="testLocalImages()">Test Local Images</button>
+            <button onclick="testRemoteImages()">Test Original URLs</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+            <button onclick="window.location.href='image-manager-ultimate.html'">Open Image Manager</button>
+        </div>
+    </div>
+    
+    <script>
+        let testResults = {
+            server: false,
+            json: false,
+            images: false,
+            data: null
+        };
+        
+        function log(message, type = 'info') {
+            const consoleLog = document.getElementById('console-log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            consoleLog.appendChild(entry);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+            
+            // Also log to browser console
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        async function testServer() {
+            const statusDiv = document.getElementById('server-status');
+            statusDiv.innerHTML = '<div class="status info">Testing server connection...</div>';
+            
+            try {
+                // Test if server is responding
+                const response = await fetch('/');
+                if (response.ok) {
+                    statusDiv.innerHTML = '<div class="status success">✅ Server is running on port 8888</div>';
+                    log('Server test passed', 'info');
+                    testResults.server = true;
+                } else {
+                    statusDiv.innerHTML = `<div class="status warning">⚠️ Server responded with status: ${response.status}</div>`;
+                    log(`Server returned status ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Server connection failed: ${error.message}</div>`;
+                log(`Server test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testJSON() {
+            const testsDiv = document.getElementById('json-tests');
+            testsDiv.innerHTML = '<div class="status info">Testing JSON files...</div>';
+            
+            const files = [
+                'src/modules/story/data/generatedImagesLocal.json',
+                'src/modules/story/data/generatedImagesWithVariations.json'
+            ];
+            
+            let results = [];
+            
+            for (const file of files) {
+                try {
+                    log(`Testing ${file}...`, 'info');
+                    const response = await fetch(file);
+                    
+                    if (!response.ok) {
+                        results.push(`<div class="status error">❌ ${file}: HTTP ${response.status}</div>`);
+                        log(`Failed to fetch ${file}: HTTP ${response.status}`, 'error');
+                        continue;
+                    }
+                    
+                    const text = await response.text();
+                    const data = JSON.parse(text);
+                    
+                    const stats = {
+                        size: text.length,
+                        heroGallery: data.heroGallery ? data.heroGallery.length : 0,
+                        eras: data.eras ? data.eras.length : 0,
+                        prompts: data.prompts ? data.prompts.length : 0
+                    };
+                    
+                    if (stats.heroGallery > 0 || stats.eras > 0 || stats.prompts > 0) {
+                        results.push(`<div class="status success">✅ ${file}: ${stats.size} bytes, ${stats.heroGallery} hero, ${stats.eras} eras, ${stats.prompts} prompts</div>`);
+                        log(`${file} loaded successfully`, 'info');
+                        testResults.json = true;
+                        testResults.data = data;
+                        
+                        // Show data structure
+                        const structureDiv = document.getElementById('data-structure');
+                        structureDiv.textContent = JSON.stringify({
+                            file: file,
+                            structure: {
+                                heroGallery: stats.heroGallery,
+                                eras: stats.eras,
+                                prompts: stats.prompts,
+                                firstHero: data.heroGallery?.[0] ? {
+                                    id: data.heroGallery[0].id,
+                                    variations: data.heroGallery[0].variations?.length || 0,
+                                    bestImage: data.heroGallery[0].bestImage ? 'present' : 'missing'
+                                } : null
+                            }
+                        }, null, 2);
+                        
+                    } else {
+                        results.push(`<div class="status warning">⚠️ ${file}: Empty data (${stats.size} bytes)</div>`);
+                        log(`${file} is empty`, 'warning');
+                    }
+                    
+                } catch (error) {
+                    results.push(`<div class="status error">❌ ${file}: ${error.message}</div>`);
+                    log(`Error processing ${file}: ${error.message}`, 'error');
+                }
+            }
+            
+            testsDiv.innerHTML = results.join('');
+        }
+        
+        async function testImages() {
+            const testsDiv = document.getElementById('image-tests');
+            const gridDiv = document.getElementById('image-grid');
+            
+            if (!testResults.data) {
+                testsDiv.innerHTML = '<div class="status error">❌ No data loaded to test images</div>';
+                return;
+            }
+            
+            testsDiv.innerHTML = '<div class="status info">Testing image loading...</div>';
+            gridDiv.innerHTML = '';
+            
+            let imagesToTest = [];
+            
+            // Get first few images from each section
+            if (testResults.data.heroGallery?.[0]?.variations) {
+                imagesToTest.push(...testResults.data.heroGallery[0].variations.slice(0, 2));
+            }
+            if (testResults.data.eras?.[0]?.variations) {
+                imagesToTest.push(...testResults.data.eras[0].variations.slice(0, 2));
+            }
+            if (testResults.data.prompts?.[0]?.variations) {
+                imagesToTest.push(...testResults.data.prompts[0].variations.slice(0, 2));
+            }
+            
+            let loadedCount = 0;
+            let failedCount = 0;
+            
+            for (const imageData of imagesToTest) {
+                if (!imageData.url) continue;
+                
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-image';
+                
+                const img = document.createElement('img');
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'status info';
+                statusDiv.textContent = 'Loading...';
+                
+                img.onload = () => {
+                    loadedCount++;
+                    testDiv.classList.remove('failed');
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = `✅ Loaded: ${imageData.url.substring(0, 50)}...`;
+                    log(`Image loaded: ${imageData.url}`, 'info');
+                    updateTestStatus();
+                };
+                
+                img.onerror = () => {
+                    failedCount++;
+                    testDiv.classList.add('failed');
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = `❌ Failed: ${imageData.url.substring(0, 50)}...`;
+                    log(`Image failed: ${imageData.url}`, 'error');
+                    updateTestStatus();
+                };
+                
+                img.src = imageData.url;
+                
+                testDiv.appendChild(img);
+                testDiv.appendChild(statusDiv);
+                gridDiv.appendChild(testDiv);
+            }
+            
+            function updateTestStatus() {
+                const total = loadedCount + failedCount;
+                if (total === imagesToTest.length) {
+                    if (failedCount === 0) {
+                        testsDiv.innerHTML = `<div class="status success">✅ All ${loadedCount} test images loaded successfully</div>`;
+                        testResults.images = true;
+                    } else {
+                        testsDiv.innerHTML = `<div class="status warning">⚠️ ${loadedCount} loaded, ${failedCount} failed</div>`;
+                    }
+                }
+            }
+        }
+        
+        async function testLocalImages() {
+            log('Testing local image paths...', 'info');
+            const testPaths = [
+                '/images/generated/hero-gallery/hero-1-v1-7d2621f2-3614-4e38-9233-7a8c4b789f99.webp',
+                '/public/images/generated/hero-gallery/hero-1-v1-7d2621f2-3614-4e38-9233-7a8c4b789f99.webp',
+                'images/generated/hero-gallery/hero-1-v1-7d2621f2-3614-4e38-9233-7a8c4b789f99.webp',
+                './images/generated/hero-gallery/hero-1-v1-7d2621f2-3614-4e38-9233-7a8c4b789f99.webp'
+            ];
+            
+            for (const path of testPaths) {
+                const img = new Image();
+                img.onload = () => log(`✅ Working path: ${path}`, 'info');
+                img.onerror = () => log(`❌ Failed path: ${path}`, 'error');
+                img.src = path;
+            }
+        }
+        
+        async function testRemoteImages() {
+            log('Testing original Runware URLs...', 'info');
+            const testUrl = 'https://im.runware.ai/image/ws/2/ii/7d2621f2-3614-4e38-9233-7a8c4b789f99.webp';
+            const img = new Image();
+            img.onload = () => log(`✅ Remote URL accessible: ${testUrl}`, 'info');
+            img.onerror = () => log(`❌ Remote URL failed: ${testUrl}`, 'error');
+            img.src = testUrl;
+        }
+        
+        async function runAllTests() {
+            log('Starting all tests...', 'info');
+            await testServer();
+            await testJSON();
+            await testImages();
+            
+            // Summary
+            const summary = [];
+            if (testResults.server) summary.push('Server ✅');
+            else summary.push('Server ❌');
+            
+            if (testResults.json) summary.push('JSON ✅');
+            else summary.push('JSON ❌');
+            
+            if (testResults.images) summary.push('Images ✅');
+            else summary.push('Images ❌');
+            
+            log(`Test Summary: ${summary.join(', ')}`, 
+                testResults.server && testResults.json && testResults.images ? 'info' : 'warning');
+        }
+        
+        function clearLogs() {
+            document.getElementById('console-log').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+        
+        // Override console methods to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            log(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            log(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            log(args.join(' '), 'warning');
+        };
+        
+        // Catch uncaught errors
+        window.addEventListener('error', function(e) {
+            log(`Uncaught error: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+        });
+        
+        // Run tests on load
+        window.addEventListener('DOMContentLoaded', runAllTests);
+    </script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Images - Flip My Era</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .stats {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stats span {
+            display: inline-block;
+            margin: 0 20px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .stats strong {
+            color: #764ba2;
+            font-size: 1.2rem;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-size: 1.8rem;
+            color: #444;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title .count {
+            font-size: 1rem;
+            background: #667eea;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 15px;
+        }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .image-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .image-card.best {
+            border: 3px solid #ffd700;
+            position: relative;
+        }
+        
+        .best-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ffd700;
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            z-index: 10;
+        }
+        
+        .image-card img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .image-info {
+            padding: 15px;
+        }
+        
+        .image-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .image-meta {
+            font-size: 0.85rem;
+            color: #666;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .score {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .score-value {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .variations-toggle {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #555;
+            transition: background 0.2s;
+        }
+        
+        .variations-toggle:hover {
+            background: #e0e0e0;
+        }
+        
+        .variations {
+            display: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .variations.show {
+            display: block;
+        }
+        
+        .variation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .variation-thumb {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .variation-thumb:hover {
+            opacity: 0.8;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .modal-close:hover {
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Generated Era Images</h1>
+        <p class="subtitle">AI-Generated Illustrations for Flip My Era</p>
+        
+        <div id="stats" class="stats">
+            <span>Loading image data...</span>
+        </div>
+        
+        <div id="content">
+            <div class="loading">Loading images...</div>
+        </div>
+    </div>
+    
+    <div id="modal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img id="modal-image" src="" alt="">
+    </div>
+    
+    <script>
+        let imageData = null;
+        
+        async function loadImages() {
+            try {
+                const response = await fetch('./src/modules/story/data/generatedImagesWithVariations.json');
+                imageData = await response.json();
+                displayImages();
+            } catch (error) {
+                console.error('Error loading images:', error);
+                document.getElementById('content').innerHTML = '<div class="error">Error loading images: ' + error.message + '</div>';
+            }
+        }
+        
+        function displayImages() {
+            const content = document.getElementById('content');
+            const stats = document.getElementById('stats');
+            
+            // Calculate stats
+            let totalImages = 0;
+            let totalCost = 0;
+            
+            ['heroGallery', 'eras', 'prompts'].forEach(section => {
+                if (imageData[section]) {
+                    imageData[section].forEach(item => {
+                        if (item.variations) {
+                            totalImages += item.variations.length;
+                            item.variations.forEach(v => totalCost += v.cost || 0);
+                        }
+                    });
+                }
+            });
+            
+            stats.innerHTML = `
+                <span><strong>${totalImages}</strong> Total Images Generated</span>
+                <span><strong>$${totalCost.toFixed(2)}</strong> Total Cost</span>
+                <span><strong>${new Date().toLocaleDateString()}</strong> Generated</span>
+            `;
+            
+            // Build sections
+            let html = '';
+            
+            // Hero Gallery Section
+            if (imageData.heroGallery && imageData.heroGallery.length > 0) {
+                html += buildSection('Hero Gallery', imageData.heroGallery);
+            }
+            
+            // Eras Section
+            if (imageData.eras && imageData.eras.length > 0) {
+                html += buildSection('Era Images', imageData.eras);
+            }
+            
+            // Prompts Section
+            if (imageData.prompts && imageData.prompts.length > 0) {
+                html += buildSection('Story Prompts', imageData.prompts);
+            }
+            
+            content.innerHTML = html;
+            
+            // Add event listeners
+            addEventListeners();
+        }
+        
+        function buildSection(title, items) {
+            let html = `
+                <div class="section">
+                    <h2 class="section-title">
+                        ${title}
+                        <span class="count">${items.length}</span>
+                    </h2>
+                    <div class="gallery">
+            `;
+            
+            items.forEach((item, index) => {
+                const bestImage = item.bestImage || (item.variations && item.variations[0]);
+                if (!bestImage) return;
+                
+                const isBest = true; // Always show as best since we're showing selected images
+                
+                html += `
+                    <div class="image-card ${isBest ? 'best' : ''}" data-id="${item.id}">
+                        ${isBest ? '<span class="best-badge">BEST</span>' : ''}
+                        <img src="${bestImage.url}" alt="${item.title || item.id}" onclick="openModal('${bestImage.url}')">
+                        <div class="image-info">
+                            <div class="image-title">${item.title || item.id}</div>
+                            <div class="image-meta">
+                                ${bestImage.score ? `<span class="score">Score: <span class="score-value">${bestImage.score}/10</span></span>` : ''}
+                                ${bestImage.seed ? `<span>Seed: ${bestImage.seed}</span>` : ''}
+                                ${bestImage.cost ? `<span>Cost: $${bestImage.cost.toFixed(3)}</span>` : ''}
+                            </div>
+                            ${item.variations && item.variations.length > 1 ? `
+                                <button class="variations-toggle" onclick="toggleVariations('${item.id}')">
+                                    Show ${item.variations.length} Variations
+                                </button>
+                                <div id="vars-${item.id}" class="variations">
+                                    <div class="variation-grid">
+                                        ${item.variations.map((v, i) => `
+                                            <img class="variation-thumb" 
+                                                 src="${v.url}" 
+                                                 alt="Variation ${i + 1}"
+                                                 onclick="openModal('${v.url}')"
+                                                 title="Score: ${v.score || 'N/A'}, Seed: ${v.seed || 'N/A'}">
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        function toggleVariations(id) {
+            const varsDiv = document.getElementById('vars-' + id);
+            if (varsDiv) {
+                varsDiv.classList.toggle('show');
+                const button = varsDiv.previousElementSibling;
+                if (button) {
+                    button.textContent = varsDiv.classList.contains('show') ? 
+                        'Hide Variations' : 
+                        `Show ${imageData.heroGallery.concat(imageData.eras || [], imageData.prompts || []).find(i => i.id === id)?.variations?.length || 0} Variations`;
+                }
+            }
+        }
+        
+        function openModal(url) {
+            const modal = document.getElementById('modal');
+            const modalImg = document.getElementById('modal-image');
+            modalImg.src = url;
+            modal.classList.add('show');
+        }
+        
+        function addEventListeners() {
+            const modal = document.getElementById('modal');
+            const modalClose = document.querySelector('.modal-close');
+            
+            modalClose.onclick = function() {
+                modal.classList.remove('show');
+            }
+            
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    modal.classList.remove('show');
+                }
+            }
+        }
+        
+        // Load images when page loads
+        loadImages();
+    </script>
+</body>
+</html>
