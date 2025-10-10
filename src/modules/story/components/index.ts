@@ -10,6 +10,7 @@ export { CharacterSelector } from './CharacterSelector';
 export { StoryDetailsForm } from './StoryDetailsForm';
 export { StorylinePreview } from './StorylinePreview';
 export { StoryFormatSelector } from './StoryFormatSelector';
+export { StoryAutoGeneration } from './StoryAutoGeneration';
 
 // Legacy Components (still used in dashboard)
 export { StoryForm } from './StoryForm';

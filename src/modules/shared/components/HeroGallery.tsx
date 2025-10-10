@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, useMotionValue } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/core/lib/utils";
 import { Button } from "@/modules/shared/components/ui/button";
 import { ArrowDown } from "lucide-react";
@@ -33,7 +33,7 @@ export const HeroGallery = ({
   }, [animationDelay]);
 
   const containerVariants = {
-    hidden: { opacity: 1 },
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
@@ -46,21 +46,21 @@ export const HeroGallery = ({
   const photoVariants = {
     hidden: () => ({
       x: 0,
-      y: 0,
-      rotate: 0,
-      scale: 1,
+      y: 80,
+      opacity: 0,
+      scale: 0.9,
     }),
-    visible: (custom: { x: any; y: any; order: number }) => ({
-      x: custom.x,
-      y: custom.y,
-      rotate: 0,
+    visible: (custom: HeroCardPosition) => ({
+      x: custom.offsetX,
+      y: custom.offsetY,
+      opacity: 1,
       scale: 1,
       transition: {
         type: "spring",
         stiffness: 70,
-        damping: 12,
+        damping: 14,
         mass: 1,
-        delay: custom.order * 0.15,
+        delay: custom.order * 0.12,
       },
     }),
   };
@@ -87,84 +87,120 @@ export const HeroGallery = ({
       });
   }, []);
 
-  // Photos with all 7 ERA theme images (from generated images or placeholders)
-  const photos = [
+  interface HeroCardPosition {
+    offsetX: number;
+    offsetY: number;
+    order: number;
+    rotateY: number;
+    rotateZ: number;
+    scale?: number;
+    zIndex: number;
+    width: number;
+    height: number;
+    imageKey: string;
+    alt: string;
+  }
+
+  const heroCards: HeroCardPosition[] = [
     {
-      id: 1,
+      imageKey: 'hero-7',
+      alt: 'Midnights Era',
+      offsetX: -520,
+      offsetY: 46,
+      rotateY: 24,
+      rotateZ: -9,
+      scale: 0.94,
       order: 0,
-      x: "-420px",
-      y: "15px",
-      zIndex: 70,
-      direction: "left" as const,
-      src: generatedImages['hero-1'] || "https://placehold.co/220x220/FF6B35/white?text=Showgirl",
-      alt: "Showgirl Era"
-    },
-    {
-      id: 2,
-      order: 1,
-      x: "-280px",
-      y: "32px",
-      zIndex: 60,
-      direction: "left" as const,
-      src: generatedImages['hero-2'] || "https://placehold.co/220x220/8B7355/white?text=Folklore",
-      alt: "Folklore Era"
-    },
-    {
-      id: 3,
-      order: 2,
-      x: "-140px",
-      y: "8px",
-      zIndex: 50,
-      direction: "left" as const,
-      src: generatedImages['hero-3'] || "https://placehold.co/220x220/87CEEB/white?text=1989",
-      alt: "1989 Era"
-    },
-    {
-      id: 4,
-      order: 3,
-      x: "0px",
-      y: "22px",
       zIndex: 40,
-      direction: "right" as const,
-      src: generatedImages['hero-4'] || "https://placehold.co/220x220/8B0000/white?text=Red",
-      alt: "Red Era"
+      width: 240,
+      height: 340,
     },
     {
-      id: 5,
+      imageKey: 'hero-6',
+      alt: 'Lover Era',
+      offsetX: -360,
+      offsetY: 28,
+      rotateY: 18,
+      rotateZ: -7,
+      scale: 0.96,
+      order: 1,
+      zIndex: 50,
+      width: 248,
+      height: 340,
+    },
+    {
+      imageKey: 'hero-5',
+      alt: 'Reputation Era',
+      offsetX: -210,
+      offsetY: 12,
+      rotateY: 12,
+      rotateZ: -5,
+      scale: 0.98,
+      order: 2,
+      zIndex: 60,
+      width: 255,
+      height: 345,
+    },
+    {
+      imageKey: 'hero-1',
+      alt: 'Showgirl Era',
+      offsetX: 0,
+      offsetY: 0,
+      rotateY: 0,
+      rotateZ: 0,
+      scale: 1.08,
+      order: 3,
+      zIndex: 120,
+      width: 280,
+      height: 360,
+    },
+    {
+      imageKey: 'hero-2',
+      alt: 'Folklore Era',
+      offsetX: 210,
+      offsetY: 12,
+      rotateY: -12,
+      rotateZ: 5,
+      scale: 0.98,
       order: 4,
-      x: "140px",
-      y: "12px",
-      zIndex: 30,
-      direction: "right" as const,
-      src: generatedImages['hero-5'] || "https://placehold.co/220x220/000000/white?text=Reputation",
-      alt: "Reputation Era"
+      zIndex: 60,
+      width: 255,
+      height: 345,
     },
     {
-      id: 6,
+      imageKey: 'hero-3',
+      alt: '1989 Era',
+      offsetX: 360,
+      offsetY: 30,
+      rotateY: -18,
+      rotateZ: 7,
+      scale: 0.96,
       order: 5,
-      x: "280px",
-      y: "28px",
-      zIndex: 20,
-      direction: "right" as const,
-      src: generatedImages['hero-6'] || "https://placehold.co/220x220/FFB6C1/white?text=Lover",
-      alt: "Lover Era"
+      zIndex: 50,
+      width: 248,
+      height: 340,
     },
     {
-      id: 7,
+      imageKey: 'hero-4',
+      alt: 'Red Era',
+      offsetX: 520,
+      offsetY: 48,
+      rotateY: -24,
+      rotateZ: 9,
+      scale: 0.94,
       order: 6,
-      x: "420px",
-      y: "18px",
-      zIndex: 10,
-      direction: "left" as const,
-      src: generatedImages['hero-7'] || "https://placehold.co/220x220/191970/white?text=Midnights",
-      alt: "Midnights Era"
+      zIndex: 40,
+      width: 240,
+      height: 340,
     },
   ];
 
   return (
-    <div className="mt-40 relative">
-      <div className="absolute inset-0 max-md:hidden top-[200px] -z-10 h-[300px] w-full bg-transparent bg-[linear-gradient(to_right,#9333ea_1px,transparent_1px),linear-gradient(to_bottom,#9333ea_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-10 [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]"></div>
-      
+    <div className="relative mt-32">
+      <div className="absolute inset-0 -z-20 bg-gradient-to-b from-[#fde2ff] via-[#f3e8ff] to-[#ede9fe] opacity-90" />
+      <div className="absolute inset-[8%] -z-10 rounded-[56px] bg-[radial-gradient(circle_at_top,#f6d3ff_0%,transparent_65%)] opacity-70 blur-[40px]" />
+      <div className="absolute inset-0 max-md:hidden top-[180px] -z-10 h-[340px] w-full bg-transparent bg-[linear-gradient(to_right,rgba(147,51,234,0.25)_1px,transparent_1px),linear-gradient(to_bottom,rgba(236,72,153,0.2)_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-70 [mask-image:radial-gradient(ellipse_90%_60%_at_50%_-10%,#000_60%,transparent_110%)]" />
+
       <p className="lg:text-md my-2 text-center text-xs font-light uppercase tracking-widest text-purple-600 dark:text-purple-400">
         A Journey Through Taylor Swift's Eras
       </p>
@@ -174,10 +210,10 @@ export const HeroGallery = ({
       </h3>
       
       <p className="text-center text-gray-600 dark:text-gray-400 mt-4 text-lg max-w-2xl mx-auto">
-        Transform your story idea into a beautifully crafted narrative inspired by Taylor Swift's iconic storytelling eras
+        Transform your story idea into a beautifully crafted narrative inspired by Taylor Swift's iconic storytelling eras.
       </p>
 
-      <div className="relative mb-8 h-[350px] w-full items-center justify-center lg:flex">
+      <div className="relative mb-10 h-[460px] w-full items-center justify-center lg:flex">
         <motion.div
           className="relative mx-auto flex w-full max-w-7xl justify-center"
           initial={{ opacity: 0 }}
@@ -190,25 +226,27 @@ export const HeroGallery = ({
             initial="hidden"
             animate={isLoaded ? "visible" : "hidden"}
           >
-            <div className="relative h-[220px] w-[220px]">
-              {[...photos].reverse().map((photo) => (
+            <div className="relative h-[380px] w-[900px]">
+              {[...heroCards].map((card) => (
                 <motion.div
-                  key={photo.id}
-                  className="absolute left-0 top-0"
-                  style={{ zIndex: photo.zIndex }}
-                  variants={photoVariants}
-                  custom={{
-                    x: photo.x,
-                    y: photo.y,
-                    order: photo.order,
+                  key={card.imageKey}
+                  className="absolute left-1/2 top-12 -translate-x-1/2"
+                  style={{
+                    zIndex: card.zIndex,
+                    width: card.width,
+                    height: card.height,
                   }}
+                  variants={photoVariants}
+                  custom={card}
                 >
                   <Photo
-                    width={220}
-                    height={220}
-                    src={photo.src}
-                    alt={photo.alt}
-                    direction={photo.direction}
+                    width={card.width}
+                    height={card.height}
+                    src={generatedImages[card.imageKey] || placeholders[card.imageKey]}
+                    alt={card.alt}
+                    rotateY={card.rotateY}
+                    rotateZ={card.rotateZ}
+                    scale={card.scale}
                   />
                 </motion.div>
               ))}
@@ -221,112 +259,74 @@ export const HeroGallery = ({
         <Button
           size="lg"
           onClick={onGetStarted}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 px-8 py-6 text-lg shadow-lg"
+          className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white hover:from-purple-700 hover:to-pink-600 px-10 py-6 text-lg shadow-lg"
         >
-          Choose Your Era
+          Begin Your Story
           <ArrowDown className="ml-2 h-5 w-5" />
         </Button>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Start your storytelling journey
+          Scroll to start the storytelling journey
         </p>
       </div>
     </div>
   );
 };
 
-function getRandomNumberInRange(min: number, max: number): number {
-  if (min >= max) {
-    throw new Error("Min value should be less than max value");
-  }
-  return Math.random() * (max - min) + min;
-}
-
-type Direction = "left" | "right";
+const placeholders: Record<string, string> = {
+  'hero-1': "https://placehold.co/320x400/FF6B35/white?text=Showgirl",
+  'hero-2': "https://placehold.co/320x400/8B7355/white?text=Folklore",
+  'hero-3': "https://placehold.co/320x400/87CEEB/white?text=1989",
+  'hero-4': "https://placehold.co/320x400/8B0000/white?text=Red",
+  'hero-5': "https://placehold.co/320x400/000000/white?text=Reputation",
+  'hero-6': "https://placehold.co/320x400/FFB6C1/white?text=Lover",
+  'hero-7': "https://placehold.co/320x400/191970/white?text=Midnights",
+};
 
 const Photo = ({
   src,
   alt,
-  className,
-  direction,
   width,
   height,
+  rotateY,
+  rotateZ,
+  scale = 1,
 }: {
   src: string;
   alt: string;
-  className?: string;
-  direction?: Direction;
   width: number;
   height: number;
+  rotateY: number;
+  rotateZ: number;
+  scale?: number;
 }) => {
-  const [rotation, setRotation] = useState<number>(0);
-  const x = useMotionValue(200);
-  const y = useMotionValue(200);
-
-  useEffect(() => {
-    const randomRotation =
-      getRandomNumberInRange(1, 4) * (direction === "left" ? -1 : 1);
-    setRotation(randomRotation);
-  }, [direction]);
-
-  function handleMouse(event: {
-    currentTarget: { getBoundingClientRect: () => any };
-    clientX: number;
-    clientY: number;
-  }) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    x.set(event.clientX - rect.left);
-    y.set(event.clientY - rect.top);
-  }
-
-  const resetMouse = () => {
-    x.set(200);
-    y.set(200);
-  };
-
   return (
     <motion.div
-      drag
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      whileTap={{ scale: 1.2, zIndex: 9999 }}
-      whileHover={{
-        scale: 1.1,
-        rotateZ: 2 * (direction === "left" ? -1 : 1),
-        zIndex: 9999,
-      }}
-      whileDrag={{
-        scale: 1.1,
-        zIndex: 9999,
-      }}
-      initial={{ rotate: 0 }}
-      animate={{ rotate: rotation }}
       style={{
         width,
         height,
-        perspective: 400,
-        transform: `rotate(0deg) rotateX(0deg) rotateY(0deg)`,
-        zIndex: 1,
-        WebkitTouchCallout: "none",
-        WebkitUserSelect: "none",
-        userSelect: "none",
-        touchAction: "none",
+        transformStyle: "preserve-3d",
       }}
-      className={cn(
-        className,
-        "relative mx-auto shrink-0 cursor-grab active:cursor-grabbing"
-      )}
-      onMouseMove={handleMouse}
-      onMouseLeave={resetMouse}
-      draggable={false}
-      tabIndex={0}
+      className="relative mx-auto shrink-0"
+      initial={{ rotateY, rotateZ, scale }}
+      animate={{ rotateY, rotateZ, scale }}
+      transition={{ type: "spring", stiffness: 120, damping: 20 }}
+      whileHover={{
+        rotateY: rotateY * 0.4,
+        rotateZ: rotateZ * 0.4,
+        scale: scale + 0.08,
+        zIndex: 200,
+      }}
     >
-      <div className="relative h-full w-full overflow-hidden rounded-3xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <div className="relative h-full w-full overflow-hidden rounded-[32px] shadow-xl ring-1 ring-white/30 transition-shadow duration-300">
         <img
-          className="rounded-3xl object-cover w-full h-full"
+          className="h-full w-full object-cover"
           src={src}
           alt={alt}
           draggable={false}
           loading="lazy"
         />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/20" />
       </div>
     </motion.div>
   );

@@ -12,6 +12,7 @@ import { getPromptById } from '../data/storyPrompts';
 import { getEraConfig, getCharacterArchetypes } from '../types/eras';
 import { generateStoryline } from '../services/storylineGeneration';
 import { EbookGenerator } from '@/modules/ebook/components/EbookGenerator';
+import { StoryAutoGeneration } from './StoryAutoGeneration';
 
 export const StoryWizard: React.FC = () => {
   const { toast } = useToast();
@@ -182,6 +183,13 @@ export const StoryWizard: React.FC = () => {
             storyFormat={state.selectedFormat || 'short-story'}
           />
         );
+
+      case 'auto-generation':
+        if (!state.storyline) {
+          goToStep('story-details');
+          return null;
+        }
+        return <StoryAutoGeneration />;
 
       default:
         return null;

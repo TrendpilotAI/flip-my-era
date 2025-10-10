@@ -107,35 +107,76 @@ vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
 vi.stubEnv('VITE_RUNWARE_API_KEY', 'test-runware-key');
 vi.stubEnv('VITE_OPENAI_API_KEY', 'test-openai-key');
 
-// Mock Supabase
-vi.mock('@/core/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      getUser: vi.fn(),
-      signOut: vi.fn(),
-      signInWithIdToken: vi.fn(),
-      getSession: vi.fn()
-    },
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn()
-        }))
-      })),
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn()
-        }))
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn()
-      }))
-    }))
-  },
-  getSupabaseSession: vi.fn(),
-  signOutFromSupabase: vi.fn(),
-  createSupabaseClientWithClerkToken: vi.fn()
+const supabaseAuthMock = {
+  getUser: vi.fn(),
+  signOut: vi.fn(),
+  signInWithIdToken: vi.fn(),
+  getSession: vi.fn(),
+};
+
+const supabaseSelectMock = vi.fn(() => ({
+  eq: vi.fn(() => ({
+    single: vi.fn(),
+  })),
+  single: vi.fn(),
 }));
+
+const supabaseInsertMock = vi.fn(() => ({
+  select: vi.fn(() => ({
+    single: vi.fn(),
+  })),
+}));
+
+const supabaseUpdateMock = vi.fn(() => ({
+  eq: vi.fn(),
+}));
+
+const supabaseFromMock = vi.fn(() => ({
+  select: supabaseSelectMock,
+  insert: supabaseInsertMock,
+  update: supabaseUpdateMock,
+  delete: vi.fn(() => ({ eq: vi.fn() })),
+}));
+
+const supabaseClientMock = {
+  auth: supabaseAuthMock,
+  from: supabaseFromMock,
+  functions: {
+    invoke: vi.fn(),
+  },
+  storage: {
+    from: vi.fn(() => ({
+      upload: vi.fn(),
+      download: vi.fn(),
+      remove: vi.fn(),
+      list: vi.fn(),
+      getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://example.com/mock.jpg' } })),
+    })),
+  },
+};
+
+const createSupabaseClientWithClerkTokenMock = vi.fn(() => supabaseClientMock);
+const getSupabaseSessionMock = vi.fn();
+const signOutFromSupabaseMock = vi.fn();
+
+vi.mock('@/core/integrations/supabase/client', () => ({
+  supabase: supabaseClientMock,
+  getSupabaseSession: getSupabaseSessionMock,
+  signOutFromSupabase: signOutFromSupabaseMock,
+  createSupabaseClientWithClerkToken: createSupabaseClientWithClerkTokenMock,
+}));
+
+export const __testSupabaseMocks__ = {
+  supabase: supabaseClientMock,
+  createSupabaseClientWithClerkTokenMock,
+  getSupabaseSessionMock,
+  signOutFromSupabaseMock,
+  supabaseAuthMock,
+  supabaseFromMock,
+  supabaseSelectMock,
+  supabaseInsertMock,
+  supabaseUpdateMock,
+};
 
 // Mock Runware module with constructor-based service and exported constants
 vi.mock('@/modules/shared/utils/runware', () => {

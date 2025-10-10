@@ -9,7 +9,8 @@ export type WizardStep =
   | 'story-details'
   | 'storyline-preview'
   | 'format-selection'
-  | 'generation';
+  | 'generation'
+  | 'auto-generation';
 
 export type StoryFormat = 'preview' | 'short-story' | 'novella';
 
@@ -28,6 +29,8 @@ interface StoryWizardState {
   isCustomPrompt: boolean;
   storyline: Storyline | null;
   selectedFormat: StoryFormat | null;
+  latestGeneratedStory: string | null;
+  latestGeneratedChapters: Storyline['chapters'] | null;
 }
 
 interface StoryWizardContextType {
@@ -51,6 +54,8 @@ interface StoryWizardContextType {
   setCustomPrompt: (prompt: string) => void;
   // Storyline
   setStoryline: (storyline: Storyline) => void;
+  // Generated story content
+  setLatestGeneratedStory: (story: string | null, chapters?: Storyline['chapters'] | null) => void;
   // Format selection
   selectFormat: (format: StoryFormat) => void;
   // Reset
@@ -72,6 +77,8 @@ const initialState: StoryWizardState = {
   isCustomPrompt: false,
   storyline: null,
   selectedFormat: null,
+  latestGeneratedStory: null,
+  latestGeneratedChapters: null,
 };
 
 const StoryWizardContext = createContext<StoryWizardContextType | undefined>(undefined);
@@ -130,7 +137,7 @@ export const StoryWizardProvider: React.FC<StoryWizardProviderProps> = ({ childr
       'format-selection',
       'generation'
     ];
-    const currentIndex = steps.indexOf(state.currentStep);
+    const currentIndex = steps.indexOf(state.currentStep === 'auto-generation' ? 'generation' : state.currentStep);
     if (currentIndex > 0) {
       setCurrentStep(steps[currentIndex - 1]);
     }
@@ -144,11 +151,13 @@ export const StoryWizardProvider: React.FC<StoryWizardProviderProps> = ({ childr
       'story-details',
       'storyline-preview',
       'format-selection',
-      'generation'
+      'generation',
+      'auto-generation'
     ];
-    const currentIndex = steps.indexOf(state.currentStep);
-    if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1]);
+    const currentStepIndex = state.currentStep === 'auto-generation' ? steps.indexOf('generation') : steps.indexOf(state.currentStep);
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex < steps.length) {
+      setCurrentStep(steps[nextIndex]);
     }
   };
 
@@ -211,7 +220,9 @@ export const StoryWizardProvider: React.FC<StoryWizardProviderProps> = ({ childr
     setState(prev => ({
       ...prev,
       storyline,
-      currentStep: 'storyline-preview'
+      currentStep: 'storyline-preview',
+      latestGeneratedStory: null,
+      latestGeneratedChapters: null
     }));
   };
 
@@ -220,7 +231,15 @@ export const StoryWizardProvider: React.FC<StoryWizardProviderProps> = ({ childr
     setState(prev => ({
       ...prev,
       selectedFormat: format,
-      currentStep: 'generation'
+      currentStep: prev.storyline ? 'auto-generation' : 'generation'
+    }));
+  };
+
+  const setLatestGeneratedStory = (story: string | null, chapters: Storyline['chapters'] | null = null) => {
+    setState(prev => ({
+      ...prev,
+      latestGeneratedStory: story,
+      latestGeneratedChapters: chapters
     }));
   };
 
@@ -250,6 +269,7 @@ export const StoryWizardProvider: React.FC<StoryWizardProviderProps> = ({ childr
     setCustomPrompt,
     setStoryline,
     selectFormat,
+    setLatestGeneratedStory,
     resetWizard,
   };
 

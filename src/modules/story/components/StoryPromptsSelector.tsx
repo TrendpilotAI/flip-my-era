@@ -87,7 +87,7 @@ export const StoryPromptsSelector: React.FC<StoryPromptsSelectorProps> = ({
         {promptsWithImages.map((prompt, index) => (
           <motion.div
             key={prompt.id}
-            className="relative overflow-hidden rounded-2xl cursor-pointer group h-[400px]"
+            className="relative overflow-hidden rounded-[28px] cursor-pointer group h-[460px] shadow-lg"
             onClick={() => onPromptSelect(prompt.id)}
             onMouseEnter={() => setHoveredPrompt(prompt.id)}
             onMouseLeave={() => setHoveredPrompt(null)}
@@ -113,15 +113,15 @@ export const StoryPromptsSelector: React.FC<StoryPromptsSelectorProps> = ({
               <img
                 src={prompt.imageUrl}
                 alt={prompt.title}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 loading="lazy"
               />
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20 group-hover:from-black/80 group-hover:via-black/40 transition-all duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/55 to-black/25 group-hover:from-black/85 group-hover:via-black/45 transition-all duration-300" />
             </div>
 
             {/* Content */}
-            <div className="absolute inset-0 flex flex-col justify-end p-5">
+            <div className="absolute inset-0 flex flex-col justify-end p-6">
               <motion.div
                 className="relative z-10"
                 initial={{ opacity: 0.9 }}
@@ -131,11 +131,11 @@ export const StoryPromptsSelector: React.FC<StoryPromptsSelectorProps> = ({
                 }}
                 transition={{ duration: 0.2 }}
               >
-                <h3 className="text-white text-xl font-bold mb-2 drop-shadow-lg line-clamp-2">
+                <h3 className="text-white text-2xl font-semibold mb-3 drop-shadow-lg line-clamp-2">
                   {prompt.title}
                 </h3>
                 
-                <p className="text-white/90 text-sm mb-3 line-clamp-3 drop-shadow-md">
+                <p className="text-white/90 text-sm mb-4 line-clamp-4 drop-shadow-md">
                   {prompt.vibeCheck}
                 </p>
 
@@ -155,7 +155,7 @@ export const StoryPromptsSelector: React.FC<StoryPromptsSelectorProps> = ({
                       transition={{ delay: 0.1 }}
                     >
                       <span className="text-purple-400 text-xs font-semibold mt-0.5">✨</span>
-                      <p className="text-purple-200 text-xs line-clamp-2 flex-1">
+                      <p className="text-purple-200 text-xs line-clamp-3 flex-1">
                         {prompt.swiftieSignal}
                       </p>
                     </motion.div>
@@ -165,7 +165,7 @@ export const StoryPromptsSelector: React.FC<StoryPromptsSelectorProps> = ({
 
               {/* Animated Border */}
               <motion.div
-                className="absolute inset-0 rounded-2xl border-2 border-white/0 group-hover:border-white/40 transition-colors duration-300"
+                className="absolute inset-0 rounded-[28px] border-2 border-white/0 group-hover:border-white/40 transition-colors duration-300"
                 initial={false}
                 animate={{
                   boxShadow: hoveredPrompt === prompt.id 
@@ -179,7 +179,7 @@ export const StoryPromptsSelector: React.FC<StoryPromptsSelectorProps> = ({
 
         {/* Create Your Own Card */}
         <motion.div
-          className="relative overflow-hidden rounded-2xl cursor-pointer group h-[400px] border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 transition-colors duration-300"
+          className="relative overflow-hidden rounded-[28px] cursor-pointer group h-[460px] border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-purple-500 dark:hover:border-purple-400 transition-colors duration-300"
           onClick={onCreateOwn}
           variants={{
             hidden: { y: 50, scale: 0.9, opacity: 0 },

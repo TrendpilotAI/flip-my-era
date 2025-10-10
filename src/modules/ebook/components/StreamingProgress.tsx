@@ -36,6 +36,11 @@ export const StreamingProgress = ({
 }: StreamingProgressProps) => {
   const [sparkles, setSparkles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
 
+  const displayChapter = Math.min(
+    totalChapters || 1,
+    currentChapter === 0 && !isComplete ? 1 : Math.max(currentChapter, 1)
+  );
+
   // Generate floating sparkles for Taylor Swift theme
   useEffect(() => {
     if (useTaylorSwiftThemes && progress > 0) {
@@ -105,7 +110,7 @@ export const StreamingProgress = ({
           <span>
             {isComplete 
               ? "Generation Complete! ✨" 
-              : `Generating Chapter ${currentChapter} of ${totalChapters}`
+              : `Generating Chapter ${displayChapter} of ${totalChapters}`
             }
           </span>
           {getThemeIcon()}
@@ -168,15 +173,16 @@ export const StreamingProgress = ({
         <div className="flex space-x-1 overflow-x-auto py-2">
           {Array.from({ length: totalChapters }, (_, i) => {
             const chapterNum = i + 1;
-            const isCurrentOrComplete = chapterNum <= currentChapter;
-            const isCurrent = chapterNum === currentChapter && !isComplete;
+            const isCompleteChapter = chapterNum < currentChapter;
+            const isCurrent = !isComplete && (currentChapter === 0 ? chapterNum === 1 : chapterNum === currentChapter);
+            const isVisited = isCurrent || isCompleteChapter;
             
             return (
               <div
                 key={chapterNum}
                 className={cn(
                   "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-all duration-300",
-                  isCurrentOrComplete
+                  isVisited
                     ? useTaylorSwiftThemes
                       ? "bg-gradient-to-br from-purple-400 to-pink-400 text-white border-purple-300"
                       : "bg-blue-500 text-white border-blue-400"
@@ -184,7 +190,7 @@ export const StreamingProgress = ({
                   isCurrent && "ring-2 ring-purple-300 ring-opacity-50 animate-pulse"
                 )}
               >
-                {isCurrentOrComplete && chapterNum < currentChapter ? (
+                {isCompleteChapter ? (
                   <CheckCircle className="h-4 w-4" />
                 ) : (
                   chapterNum
