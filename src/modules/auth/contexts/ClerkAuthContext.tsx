@@ -98,7 +98,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return 0;
     }
-  }, [clerkUser, userProfile, getToken]);
+  }, [clerkUser, getToken]);
 
   // Create or update user profile in Supabase when Clerk user changes
   useEffect(() => {
@@ -172,9 +172,9 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
             setUserProfile({
               id: String(existingProfile.id),
-              email: String(existingProfile.email),
-              name: String(existingProfile.name),
-              avatar_url: String(existingProfile.avatar_url),
+              email: clerkUser.primaryEmailAddress?.emailAddress || "",
+              name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
+              avatar_url: clerkUser.imageUrl,
               subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
               created_at: String(existingProfile.created_at),
               credits: creditBalance || 0
@@ -205,7 +205,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
         fetchCreditBalance().catch(() => {});
       });
     }
-  }, [clerkUser, isLoaded, getToken, creditBalance, fetchCreditBalance]);
+  }, [clerkUser, isLoaded, getToken, fetchCreditBalance]);
 
   // Use Supabase profile data if available, otherwise fall back to Clerk data
   const user: AuthUser | null = userProfile || (clerkUser ? {

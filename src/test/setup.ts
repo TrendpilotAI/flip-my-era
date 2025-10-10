@@ -142,7 +142,10 @@ const supabaseClientMock = {
   auth: supabaseAuthMock,
   from: supabaseFromMock,
   functions: {
-    invoke: vi.fn(),
+    invoke: vi.fn().mockResolvedValue({
+      data: { balance: 100 },
+      error: null
+    }),
   },
   storage: {
     from: vi.fn(() => ({
@@ -204,11 +207,14 @@ vi.mock('@/modules/shared/utils/groq', () => ({
 
 // Mock AI Services
 vi.mock('@/modules/story/services/ai', () => ({
+  generateStory: vi.fn(),
   generateChapters: vi.fn(),
   generateImage: vi.fn(),
   generateEbookIllustration: vi.fn(),
   generateTaylorSwiftChapters: vi.fn(),
-  generateTaylorSwiftIllustration: vi.fn()
+  generateTaylorSwiftIllustration: vi.fn(),
+  generateAlternativeName: vi.fn(),
+  isRunwareAvailable: vi.fn()
 }));
 
 // Mock story persistence
