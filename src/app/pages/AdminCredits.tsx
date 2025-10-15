@@ -259,13 +259,13 @@ const AdminCredits = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, []); // fetchUsers is stable, no deps needed
 
   useEffect(() => {
     if (selectedUser) {
       fetchUserTransactions(selectedUser.id);
     }
-  }, [selectedUser]);
+  }, [selectedUser]); // fetchUserTransactions is stable, no deps needed
 
   const filteredUsers = users.filter(user => 
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||

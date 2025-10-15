@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useStoryWizard } from '../contexts/StoryWizardContext';
+import { useStoryWizard, type WizardStep } from '../contexts/StoryWizardContext';
 import { EraSelector } from './EraSelector';
 import { StoryPromptsSelector } from './StoryPromptsSelector';
 import { CharacterSelector } from './CharacterSelector';
@@ -9,17 +9,22 @@ import { StoryDetailsForm } from './StoryDetailsForm';
 import { StorylinePreview } from './StorylinePreview';
 import { StoryFormatSelector } from './StoryFormatSelector';
 import { getPromptById } from '../data/storyPrompts';
-import { getEraConfig, getCharacterArchetypes } from '../types/eras';
+import { getCharacterArchetypes } from '../types/eras';
 import { generateStoryline } from '../services/storylineGeneration';
 import { EbookGenerator } from '@/modules/ebook/components/EbookGenerator';
 import { StoryAutoGeneration } from './StoryAutoGeneration';
+import { AuthDialog } from '@/modules/shared/components/AuthDialog';
+import { useClerkAuth } from '@/modules/auth/contexts';
 
 export const StoryWizard: React.FC = () => {
   const { toast } = useToast();
   const { state, selectEra, selectPrompt, selectCustomPrompt, selectArchetype, setCharacterName, setGender, setLocation, setCustomPrompt, setStoryline, selectFormat, goToStep } = useStoryWizard();
+  const { isAuthenticated, refreshUser, fetchCreditBalance } = useClerkAuth();
   
   const [isGeneratingStoryline, setIsGeneratingStoryline] = useState(false);
   const [isRegeneratingStoryline, setIsRegeneratingStoryline] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [pendingStep, setPendingStep] = useState<WizardStep | null>(null);
 
   // Handle storyline generation
   const handleGenerateStoryline = async () => {
@@ -85,6 +90,29 @@ export const StoryWizard: React.FC = () => {
   const handleFormatSelect = (format: typeof state.selectedFormat) => {
     selectFormat(format);
   };
+
+  const handleProtectedNavigation = (targetStep: WizardStep) => {
+    if (!isAuthenticated) {
+      setPendingStep(targetStep);
+      setShowAuthPrompt(true);
+      return;
+    }
+    goToStep(targetStep);
+  };
+
+  const handleAuthSuccess = useCallback(async () => {
+    try {
+      await refreshUser();
+      await fetchCreditBalance();
+    } catch (error) {
+      console.error('Post-auth sync failed:', error);
+    }
+
+    if (pendingStep) {
+      goToStep(pendingStep);
+      setPendingStep(null);
+    }
+  }, [fetchCreditBalance, goToStep, pendingStep, refreshUser]);
 
   // Render the appropriate step
   const renderCurrentStep = () => {
@@ -153,7 +181,7 @@ export const StoryWizard: React.FC = () => {
             onBack={() => goToStep('story-details')}
             onRegenerate={handleRegenerateStoryline}
             onEdit={() => goToStep('story-details')}
-            onContinue={() => goToStep('format-selection')}
+            onContinue={() => handleProtectedNavigation('format-selection')}
             isRegenerating={isRegeneratingStoryline}
           />
         );
@@ -201,6 +229,18 @@ export const StoryWizard: React.FC = () => {
       <AnimatePresence mode="wait">
         {renderCurrentStep()}
       </AnimatePresence>
+
+      <AuthDialog
+        trigger={null}
+        open={showAuthPrompt}
+        onOpenChange={(open) => {
+          setShowAuthPrompt(open);
+          if (!open && !isAuthenticated) {
+            setPendingStep(null);
+          }
+        }}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };

@@ -32,37 +32,39 @@ const MediaItem = ({ item, className, onClick }: { item: MediaItemType, classNam
             });
         }, options);
 
-        if (videoRef.current) {
-            observer.observe(videoRef.current); // Start observing the video element
+        const videoElement = videoRef.current;
+        if (videoElement) {
+            observer.observe(videoElement); // Start observing the video element
         }
 
         return () => {
-            if (videoRef.current) {
-                observer.unobserve(videoRef.current); // Clean up observer when component unmounts
+            if (videoElement) {
+                observer.unobserve(videoElement); // Clean up observer when component unmounts
             }
         };
     }, []);
     // Handle video play/pause based on whether the video is in view or not
     useEffect(() => {
         let mounted = true;
+        const videoElement = videoRef.current;
 
         const handleVideoPlay = async () => {
-            if (!videoRef.current || !isInView || !mounted) return; // Don't play if video is not in view or component is unmounted
+            if (!videoElement || !isInView || !mounted) return; // Don't play if video is not in view or component is unmounted
 
             try {
-                if (videoRef.current.readyState >= 3) {
+                if (videoElement.readyState >= 3) {
                     setIsBuffering(false);
-                    await videoRef.current.play(); // Play the video if it's ready
+                    await videoElement.play(); // Play the video if it's ready
                 } else {
                     setIsBuffering(true);
                     await new Promise((resolve) => {
-                        if (videoRef.current) {
-                            videoRef.current.oncanplay = resolve; // Wait until the video can start playing
+                        if (videoElement) {
+                            videoElement.oncanplay = resolve; // Wait until the video can start playing
                         }
                     });
                     if (mounted) {
                         setIsBuffering(false);
-                        await videoRef.current.play();
+                        await videoElement.play();
                     }
                 }
             } catch (error) {
@@ -72,16 +74,16 @@ const MediaItem = ({ item, className, onClick }: { item: MediaItemType, classNam
 
         if (isInView) {
             handleVideoPlay();
-        } else if (videoRef.current) {
-            videoRef.current.pause();
+        } else if (videoElement) {
+            videoElement.pause();
         }
 
         return () => {
             mounted = false;
-            if (videoRef.current) {
-                videoRef.current.pause();
-                videoRef.current.removeAttribute('src');
-                videoRef.current.load();
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.removeAttribute('src');
+                videoElement.load();
             }
         };
     }, [isInView]);

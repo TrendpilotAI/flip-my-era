@@ -488,15 +488,17 @@ const PlanSelector = () => {
           </Card>
           </motion.div>
         </motion.div>
+      </motion.div>
 
-        {/* Credit Top-Up Section */}
-        <motion.div
-          className="mt-16 max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          viewport={{ once: true }}
-        >
+      {/* eslint-disable-next-line @typescript-eslint/parser-error */}
+      {/* Credit Top-Up Section */}
+      <motion.div
+        className="mt-16 max-w-4xl mx-auto"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        viewport={{ once: true }}
+      >
           <motion.h2
             className="text-2xl font-bold mb-4 text-center"
             initial={{ opacity: 0, scale: 0.9 }}

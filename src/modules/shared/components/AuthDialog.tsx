@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useClerkAuth } from '@/modules/auth/contexts';
 import {
   Dialog,
@@ -13,21 +13,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/modules/shared/compo
 import { Sparkles, LogIn, UserPlus, Loader2 } from "lucide-react";
 
 interface AuthDialogProps {
-  trigger?: React.ReactNode;
-  onSuccess?: () => void;
+  trigger?: React.ReactNode | null;
+  onSuccess?: () => void | Promise<void>;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const AuthDialog = ({ trigger, onSuccess }: AuthDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const AuthDialog = ({ trigger, onSuccess, open, onOpenChange }: AuthDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { SignInButton, SignUpButton, isAuthenticated } = useClerkAuth();
 
-  const handleSuccess = () => {
-    setOpen(false);
-    if (onSuccess) {
-      onSuccess();
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : internalOpen;
+
+  const handleOpenChange = useCallback((value: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(value);
     }
-  };
+    if (!value) {
+      setIsLoading(false);
+    }
+    onOpenChange?.(value);
+  }, [isControlled, onOpenChange]);
+
+  const handleSuccess = useCallback(() => {
+    handleOpenChange(false);
+    if (onSuccess) {
+      void onSuccess();
+    }
+  }, [handleOpenChange, onSuccess]);
 
   const defaultTrigger = (
     <Button variant="outline" className="gap-2">
@@ -36,16 +51,35 @@ export const AuthDialog = ({ trigger, onSuccess }: AuthDialogProps) => {
     </Button>
   );
 
+  const shouldRenderTrigger = trigger !== null;
+
   // If user is already authenticated, just render the trigger
   if (isAuthenticated) {
+    if (!shouldRenderTrigger) {
+      return null;
+    }
     return <>{trigger || defaultTrigger}</>;
   }
 
+  useEffect(() => {
+    if (isAuthenticated && dialogOpen) {
+      handleSuccess();
+    }
+  }, [isAuthenticated, dialogOpen, handleSuccess]);
+
+  useEffect(() => {
+    if (!dialogOpen) {
+      setIsLoading(false);
+    }
+  }, [dialogOpen]);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || defaultTrigger}
-      </DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+      {shouldRenderTrigger && (
+        <DialogTrigger asChild>
+          {trigger || defaultTrigger}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-bold text-gray-900">

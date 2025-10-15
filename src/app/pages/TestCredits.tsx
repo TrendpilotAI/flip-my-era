@@ -4,6 +4,12 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 
+interface SupabaseError {
+  message: string;
+  status?: number;
+  details?: unknown;
+}
+
 const TestCreditsPage = () => {
   const { isSignedIn, getToken } = useAuth();
   const [testResults, setTestResults] = useState<string[]>([]);
@@ -54,9 +60,10 @@ const TestCreditsPage = () => {
         });
         
         if (error) {
+          const supabaseError = error as SupabaseError;
           results.push(`❌ Credits function error: ${error.message}`);
-          results.push(`  - Status: ${(error as any).status}`);
-          results.push(`  - Details: ${JSON.stringify((error as any).details)}`);
+          results.push(`  - Status: ${supabaseError.status ?? 'unknown'}`);
+          results.push(`  - Details: ${JSON.stringify(supabaseError.details ?? {})}`);
         } else {
           results.push(`✅ Credits function success:`);
           results.push(`  - Response: ${JSON.stringify(data, null, 2)}`);
