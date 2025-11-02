@@ -25,7 +25,8 @@ serve(async (req) => {
       throw new Error("Missing Stripe configuration");
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    // Use a stable, valid Stripe API version or omit to use library's default
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
     
     // Verify webhook signature
     const signature = req.headers.get("stripe-signature");
