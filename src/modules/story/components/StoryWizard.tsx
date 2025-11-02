@@ -19,7 +19,7 @@ import { useClerkAuth } from '@/modules/auth/contexts';
 export const StoryWizard: React.FC = () => {
   const { toast } = useToast();
   const { state, selectEra, selectPrompt, selectCustomPrompt, selectArchetype, setCharacterName, setGender, setLocation, setCustomPrompt, setStoryline, selectFormat, goToStep } = useStoryWizard();
-  const { isAuthenticated, refreshUser, fetchCreditBalance } = useClerkAuth();
+  const { isAuthenticated, refreshUser, fetchCreditBalance, getToken } = useClerkAuth();
   
   const [isGeneratingStoryline, setIsGeneratingStoryline] = useState(false);
   const [isRegeneratingStoryline, setIsRegeneratingStoryline] = useState(false);
@@ -49,6 +49,9 @@ export const StoryWizard: React.FC = () => {
         promptDescription = prompt?.description || '';
       }
 
+      // Get Clerk token for authentication
+      const clerkToken = await getToken();
+      
       // Generate the storyline
       const storyline = await generateStoryline({
         era: state.selectedEra,
@@ -58,7 +61,7 @@ export const StoryWizard: React.FC = () => {
         location: state.location,
         promptDescription,
         customPrompt: state.isCustomPrompt ? state.customPrompt : undefined
-      });
+      }, clerkToken);
 
       setStoryline(storyline);
 
@@ -81,6 +84,8 @@ export const StoryWizard: React.FC = () => {
 
   // Handle storyline regeneration
   const handleRegenerateStoryline = async () => {
+    // Get Clerk token for authentication
+    const clerkToken = await getToken();
     setIsRegeneratingStoryline(true);
     await handleGenerateStoryline();
     setIsRegeneratingStoryline(false);

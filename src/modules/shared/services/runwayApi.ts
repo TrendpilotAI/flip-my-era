@@ -6,6 +6,9 @@
 import { runwareService, type GeneratedImage } from '@/modules/shared/utils/runware';
 import { generateWithGroq } from '@/modules/shared/utils/groq';
 
+// Note: analyzeAndSelectBestImage now requires a Clerk token
+// This function should be called from a component that has access to useClerkAuth
+
 export interface ImageVariation {
   url: string;
   seed: number;
@@ -24,12 +27,23 @@ export interface ImageGenerationResult {
 
 /**
  * Analyze image variations and select the best one using AI
+ * NOTE: Now requires a Clerk token to call the Edge Function
  */
 async function analyzeAndSelectBestImage(
   variations: ImageVariation[],
   title: string,
-  description: string
+  description: string,
+  clerkToken: string | null
 ): Promise<{ bestIndex: number; reasoning: string; scores: number[] }> {
+  // Fallback if no token available
+  if (!clerkToken) {
+    return {
+      bestIndex: Math.floor(variations.length / 2),
+      reasoning: 'Auto-selected (authentication required)',
+      scores: variations.map(() => 5)
+    };
+  }
+
   try {
     const analysisPrompt = `You are an expert art director analyzing images for a Taylor Swift-inspired storytelling app.
 
@@ -56,7 +70,7 @@ Respond with JSON only:
   "scores": [<score 0-10 for each image>]
 }`;
 
-    const response = await generateWithGroq(analysisPrompt);
+    const response = await generateWithGroq(analysisPrompt, clerkToken);
     
     // Parse JSON response
     const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -82,17 +96,21 @@ Respond with JSON only:
 
 /**
  * Generate multiple image variations and select the best one
+ * NOTE: Now requires a Clerk token for AI analysis
  */
-export async function generateImageWithVariations(params: {
-  id: string;
-  prompt: string;
-  title: string;
-  vibeCheck?: string;
-  swiftieSignal?: string;
-  eraType?: string;
-  aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
-  numberResults?: number;
-}): Promise<ImageGenerationResult> {
+export async function generateImageWithVariations(
+  params: {
+    id: string;
+    prompt: string;
+    title: string;
+    vibeCheck?: string;
+    swiftieSignal?: string;
+    eraType?: string;
+    aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
+    numberResults?: number;
+  },
+  clerkToken?: string | null
+): Promise<ImageGenerationResult> {
   const numVariations = params.numberResults || 5;
 
   if (!runwareService.isConfigured()) {
@@ -144,8 +162,8 @@ export async function generateImageWithVariations(params: {
       cost: r.cost
     }));
 
-    // Analyze and select best image
-    const analysis = await analyzeAndSelectBestImage(variations, params.title, params.prompt);
+    // Analyze and select best image (requires Clerk token)
+    const analysis = await analyzeAndSelectBestImage(variations, params.title, params.prompt, clerkToken || null);
 
     // Add scores to variations
     variations.forEach((v, i) => {

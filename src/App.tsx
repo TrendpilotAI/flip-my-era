@@ -1,10 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import { Layout } from "@/modules/shared/components/Layout";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
 import { AdminRoute } from "@/modules/shared/components/AdminRoute";
 import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
+import { initSentry } from "@/core/integrations/sentry";
 import Index from "@/app/pages/Index";
 import NotFound from "@/app/pages/NotFound";
 import Checkout from "@/app/pages/Checkout";
@@ -22,16 +24,13 @@ import PlanSelector from "@/app/pages/PlanSelector";
 import FAQ from "@/app/pages/FAQ";
 
 function App() {
+  // Initialize error tracking
+  useEffect(() => {
+    initSentry();
+  }, []);
+
   return (
-    <ErrorBoundary
-      onError={(error, errorInfo) => {
-        // Log to error reporting service in production
-        if (process.env.NODE_ENV === 'production') {
-          // Example: logErrorToService(error, errorInfo);
-          console.error('Application error:', error, errorInfo);
-        }
-      }}
-    >
+    <ErrorBoundary>
       <ClerkAuthProvider>
         <Router>
           <Layout>

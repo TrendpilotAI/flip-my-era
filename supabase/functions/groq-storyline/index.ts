@@ -112,16 +112,83 @@ serve(async (req) => {
       systemPrompt,
     } = params;
 
-    // Construct user request
+    // Input validation
+    if (!era || typeof era !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Era is required and must be a string' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!characterName || typeof characterName !== 'string' || characterName.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Character name is required and cannot be empty' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (characterName.length > 50) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Character name must be 50 characters or less' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!location || typeof location !== 'string' || location.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Location is required and cannot be empty' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (location.length > 100) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Location must be 100 characters or less' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!['same', 'flip', 'neutral'].includes(gender)) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Gender must be same, flip, or neutral' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Sanitize inputs
+    const sanitizedCharacterName = characterName.trim().substring(0, 50);
+    const sanitizedLocation = location.trim().substring(0, 100);
+    const sanitizedPromptDescription = promptDescription ? promptDescription.trim().substring(0, 2000) : '';
+    const sanitizedCustomPrompt = customPrompt ? customPrompt.trim().substring(0, 2000) : '';
+
+    // Construct user request with sanitized inputs
     const userRequest = `
 Create a structured storyline following the Master System Prompt framework for the following story:
 
 ## Story Details:
-- **Character Name**: ${characterName}
-- **Character Archetype**: ${characterArchetype}
+- **Character Name**: ${sanitizedCharacterName}
+- **Character Archetype**: ${characterArchetype || 'protagonist'}
 - **Gender Presentation**: ${gender}
-- **Location**: ${location}
-- **Story Prompt**: ${customPrompt || promptDescription}
+- **Location**: ${sanitizedLocation}
+- **Story Prompt**: ${sanitizedCustomPrompt || sanitizedPromptDescription}
 
 ## Required Output Format:
 Please provide a complete storyline structure in the following JSON format:
@@ -161,8 +228,8 @@ Please provide a complete storyline structure in the following JSON format:
 
 Ensure the storyline:
 1. Captures the essence of the ${era} era
-2. Features ${characterName} as the ${characterArchetype}
-3. Is set in ${location}
+2. Features ${sanitizedCharacterName} as the ${characterArchetype || 'protagonist'}
+3. Is set in ${sanitizedLocation}
 4. Follows the three-act structure
 5. Includes 3-6 chapters with appropriate pacing
 6. Incorporates themes relevant to the era and story

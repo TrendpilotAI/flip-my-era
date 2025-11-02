@@ -32,8 +32,17 @@ class Logger {
     
     // In production, send to error tracking service
     if (this.isProduction) {
-      // TODO: Integrate with Sentry or similar
-      // Sentry.captureException(new Error(args.join(' ')));
+      try {
+        const { sentryService } = require('@/core/integrations/sentry');
+        const errorMessage = args.map(arg => 
+          arg instanceof Error ? arg.message : String(arg)
+        ).join(' ');
+        sentryService.captureException(new Error(errorMessage), {
+          args: args.length > 1 ? args.slice(1) : undefined,
+        });
+      } catch {
+        // Sentry not available, ignore
+      }
     }
   }
 

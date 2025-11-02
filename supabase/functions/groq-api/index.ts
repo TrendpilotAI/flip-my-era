@@ -95,9 +95,53 @@ serve(async (req) => {
     const requestData: GroqRequest = await req.json();
     const { prompt, model = 'llama-3.3-70b-versatile', temperature = 0.7, maxTokens = 4096, systemPrompt } = requestData;
 
-    if (!prompt) {
+    // Input validation
+    if (!prompt || typeof prompt !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Prompt is required' }),
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Prompt is required and must be a string' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Sanitize and validate prompt length
+    const sanitizedPrompt = prompt.trim();
+    if (sanitizedPrompt.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Prompt cannot be empty' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (sanitizedPrompt.length > 50000) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Prompt exceeds maximum length of 50,000 characters' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Validate temperature and maxTokens
+    if (temperature < 0 || temperature > 2) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'Temperature must be between 0 and 2' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (maxTokens < 1 || maxTokens > 8192) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'maxTokens must be between 1 and 8192' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -107,10 +151,14 @@ serve(async (req) => {
 
     // Call Groq API
     const messages: GroqChatMessage[] = [];
-    if (systemPrompt) {
-      messages.push({ role: 'system', content: systemPrompt });
+    if (systemPrompt && typeof systemPrompt === 'string') {
+      // Sanitize system prompt
+      const sanitizedSystemPrompt = systemPrompt.trim().substring(0, 10000);
+      if (sanitizedSystemPrompt.length > 0) {
+        messages.push({ role: 'system', content: sanitizedSystemPrompt });
+      }
     }
-    messages.push({ role: 'user', content: prompt });
+    messages.push({ role: 'user', content: sanitizedPrompt });
 
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',

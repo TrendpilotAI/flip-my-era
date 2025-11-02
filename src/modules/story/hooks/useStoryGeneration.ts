@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { generateWithGroq } from '@/modules/shared/utils/groq';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { getStarSign } from '@/modules/user/utils/starSigns';
 import type { PersonalityTypeKey } from '@/modules/story/types/personality';
 import { personalityTypes } from '@/modules/story/types/personality';
@@ -25,7 +26,7 @@ interface SavedStory {
 }
 
 export const useStoryGeneration = () => {
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated, getToken } = useClerkAuth();
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
   const [date, setDate] = useState<Date>();
@@ -135,7 +136,9 @@ export const useStoryGeneration = () => {
         location
       );
 
-      const story = await generateWithGroq(prompt);
+      // Get Clerk token for authentication
+      const clerkToken = await getToken();
+      const story = await generateWithGroq(prompt, clerkToken);
       loadingToast.dismiss();
       
       if (story) {

@@ -717,14 +717,17 @@ export class RunwareService {
   /**
    * Generate an optimized illustration for an ebook chapter using FLUX.1.1 Pro with AI-enhanced prompts
    */
-  async generateEbookIllustration(params: EbookIllustrationParams): Promise<GeneratedImage> {
+  async generateEbookIllustration(
+    params: EbookIllustrationParams,
+    clerkToken?: string | null
+  ): Promise<GeneratedImage> {
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
     }
 
-    // Use Groq to enhance the prompt if enabled
-    const enhancedPrompt = params.useEnhancedPrompts !== false
-      ? await enhancePromptWithGroq(params)
+    // Use Groq to enhance the prompt if enabled and token available
+    const enhancedPrompt = (params.useEnhancedPrompts !== false && clerkToken)
+      ? await enhancePromptWithGroq(params, clerkToken)
       : createEbookIllustrationPrompt(params);
     
     return this.generateImage({
@@ -745,7 +748,10 @@ export class RunwareService {
   /**
    * Generate a Taylor Swift-inspired thematic illustration with mood-appropriate styling
    */
-  async generateTaylorSwiftIllustration(params: TaylorSwiftIllustrationParams): Promise<GeneratedImage> {
+  async generateTaylorSwiftIllustration(
+    params: TaylorSwiftIllustrationParams,
+    clerkToken?: string | null
+  ): Promise<GeneratedImage> {
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
     }
@@ -773,11 +779,10 @@ export class RunwareService {
 
     // Use Groq to enhance the prompt if enabled
     let finalPrompt = taylorSwiftPrompt;
-    if (params.useEnhancedPrompts !== false) {
+    if (params.useEnhancedPrompts !== false && clerkToken) {
       try {
-        finalPrompt = await this.enhanceTaylorSwiftPromptWithGroq(taylorSwiftPrompt, thematicParams);
+        finalPrompt = await this.enhanceTaylorSwiftPromptWithGroq(taylorSwiftPrompt, thematicParams, clerkToken);
       } catch (error) {
-        console.warn('Failed to enhance Taylor Swift prompt with Groq, using base prompt:', error);
         // Fall back to the Taylor Swift prompt if enhancement fails
       }
     }
@@ -798,8 +803,18 @@ export class RunwareService {
 
   /**
    * Enhanced prompt generation specifically for Taylor Swift-themed illustrations
+   * NOTE: This method now requires a Clerk token parameter to call the Edge Function
    */
-  private async enhanceTaylorSwiftPromptWithGroq(basePrompt: string, params: ThematicImageParams): Promise<string> {
+  private async enhanceTaylorSwiftPromptWithGroq(
+    basePrompt: string,
+    params: ThematicImageParams,
+    clerkToken: string | null
+  ): Promise<string> {
+    if (!clerkToken) {
+      // Fallback to base prompt if no token available
+      return basePrompt;
+    }
+
     try {
       const enhancementPrompt = `
 You are an expert AI prompt engineer specializing in creating Taylor Swift-inspired illustrations for young adult literature.
@@ -826,44 +841,19 @@ Focus on creating a vivid, emotionally resonant scene that could be from a Taylo
 Return ONLY the enhanced prompt, no explanations.
 `;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama3-70b-8192',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert AI prompt engineer for Taylor Swift-inspired illustrations. Create detailed, emotionally resonant prompts for young adult literature.'
-            },
-            {
-              role: 'user',
-              content: enhancementPrompt
-            }
-          ],
-          temperature: 0.8,
-          max_tokens: 1000
-        })
+      // Call Groq API via Edge Function
+      const { generateWithGroq } = await import('@/modules/shared/utils/groq');
+      const enhancedPrompt = await generateWithGroq(enhancementPrompt, clerkToken, {
+        model: 'llama3-70b-8192',
+        systemPrompt: 'You are an expert AI prompt engineer for Taylor Swift-inspired illustrations. Create detailed, emotionally resonant prompts for young adult literature.',
+        temperature: 0.8,
+        maxTokens: 1000,
       });
 
-      if (!response.ok) {
-        throw new Error('Groq API request failed');
-      }
-
-      const data = await response.json();
-      const enhancedPrompt = data.choices?.[0]?.message?.content?.trim();
-      
-      if (!enhancedPrompt) {
-        throw new Error('Invalid response from Groq API');
-      }
-
-      return enhancedPrompt;
+      return enhancedPrompt.trim();
     } catch (error) {
-      console.error('Failed to enhance Taylor Swift prompt with Groq:', error);
-      throw error;
+      // Fallback to base prompt on error
+      return basePrompt;
     }
   }
 
@@ -871,8 +861,9 @@ Return ONLY the enhanced prompt, no explanations.
    * Generate multiple illustrations for a series of chapters with AI-enhanced prompts
    */
   async generateChapterIllustrations(
-    chapters: Array<{ title: string; content: string }>, 
-    style: 'children' | 'fantasy' | 'adventure' | 'educational' = 'children'
+    chapters: Array<{ title: string; content: string }>,
+    style: 'children' | 'fantasy' | 'adventure' | 'educational' = 'children',
+    clerkToken?: string | null
   ): Promise<GeneratedImage[]> {
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
@@ -887,10 +878,9 @@ Return ONLY the enhanced prompt, no explanations.
           chapterContent: chapter.content,
           style,
           mood: 'happy' // Default mood, could be made dynamic based on content
-        });
+        }, clerkToken);
         illustrations.push(illustration);
       } catch (error) {
-        console.error(`Failed to generate illustration for chapter "${chapter.title}":`, error);
         // Continue with next chapter even if one fails
       }
     }

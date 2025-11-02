@@ -117,8 +117,6 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
     try {
 
       const token = await getToken({ template: 'supabase' });
-      console.log('?? EbookGenerator: Token received:', token ? 'YES (length: ' + token.length + ')' : 'NO');
-      console.log('?? EbookGenerator: Token preview:', token ? token.substring(0, 20) + '...' : 'null');
 
       // Calculate total cost using new pricing system
       const costResult = operations.length === 1
@@ -455,6 +453,9 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
       // Generate images for each chapter sequentially using RUNWARE Flux1.1 Pro
       const updatedChapters = [...chapters];
       
+      // Get Clerk token for enhanced prompts if needed
+      const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
+      
       for (let i = 0; i < chapters.length; i++) {
         setCurrentImageIndex(i);
         const chapter = chapters[i];
@@ -469,7 +470,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
               chapterContent: chapter.content,
               theme: selectedTheme,
               useEnhancedPrompts: useEnhancedPrompts
-            });
+            }, token);
           } else {
             // Use standard ebook illustration generation
             imageUrl = await generateEbookIllustration({
@@ -478,7 +479,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
               style: 'children', // Default to children's style
               mood: 'happy', // Default to happy mood
               useEnhancedPrompts: useEnhancedPrompts
-            });
+            }, token);
           }
           
           // Update the chapter with the image URL

@@ -296,7 +296,10 @@ export async function generateName(options: GenerateNameOptions): Promise<string
 /**
  * Generate an optimized illustration for an ebook chapter using RUNWARE Flux1.1 Pro with AI-enhanced prompts
  */
-export async function generateEbookIllustration(options: GenerateEbookIllustrationOptions): Promise<string> {
+export async function generateEbookIllustration(
+  options: GenerateEbookIllustrationOptions,
+  clerkToken?: string | null
+): Promise<string> {
   try {
     const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
     
@@ -305,6 +308,7 @@ export async function generateEbookIllustration(options: GenerateEbookIllustrati
     
     if (runwareAvailable) {
       // Use RUNWARE with Flux1.1 Pro for ebook illustrations
+      // Note: generateEbookIllustration needs to be updated to accept clerkToken if enhanced prompts are used
       const illustration = await runwareService.generateEbookIllustration({
         chapterTitle,
         chapterContent,
@@ -315,29 +319,26 @@ export async function generateEbookIllustration(options: GenerateEbookIllustrati
       
       return illustration.imageURL || '';
     } else {
-      console.warn('RUNWARE not available, falling back to OpenAI');
       throw new Error('RUNWARE not available');
     }
   } catch (error) {
-    console.error('Failed to generate ebook illustration with RUNWARE:', error);
-    
-    // Fallback to OpenAI if RUNWARE fails
+    // Fallback to basic prompt generation
     try {
       const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
       
       let prompt: string;
       
-      if (useEnhancedPrompts) {
-        // Try to use Groq-enhanced prompt
+      if (useEnhancedPrompts && clerkToken) {
+        // Try to use Groq-enhanced prompt via Edge Function
         try {
           prompt = await enhancePromptWithGroq({
             chapterTitle,
             chapterContent,
             style,
             mood
-          });
+          }, clerkToken);
         } catch (enhancementError) {
-          console.warn('Failed to enhance prompt with Groq, using basic prompt:', enhancementError);
+          // Fallback to basic prompt if enhancement fails
           prompt = createEbookIllustrationPrompt({
             chapterTitle,
             chapterContent,
@@ -357,7 +358,6 @@ export async function generateEbookIllustration(options: GenerateEbookIllustrati
       
       return await generateImage({ prompt, useRunware: false });
     } catch (fallbackError) {
-      console.error('Fallback image generation also failed:', fallbackError);
       throw new Error('Ebook illustration generation failed. Please try again later.');
     }
   }
@@ -366,7 +366,10 @@ export async function generateEbookIllustration(options: GenerateEbookIllustrati
 /**
  * Generate a Taylor Swift-inspired thematic illustration with mood-appropriate styling
  */
-export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwiftIllustrationOptions): Promise<string> {
+export async function generateTaylorSwiftIllustration(
+  options: GenerateTaylorSwiftIllustrationOptions,
+  clerkToken?: string | null
+): Promise<string> {
   try {
     const {
       chapterTitle,
@@ -393,12 +396,10 @@ export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwi
         timeOfDay,
         season,
         setting
-      });
+      }, clerkToken);
       
       return illustration.imageURL || '';
     } else {
-      console.warn('RUNWARE not available for Taylor Swift illustrations, falling back to standard generation');
-      
       // Fallback to standard ebook illustration with Taylor Swift styling hints
       const styleMapping: Record<TaylorSwiftTheme, 'children' | 'fantasy' | 'adventure' | 'educational'> = {
         'coming-of-age': 'children',
@@ -420,7 +421,7 @@ export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwi
         style: styleMapping[theme],
         mood: moodMapping[theme],
         useEnhancedPrompts
-      });
+      }, clerkToken);
     }
   } catch (error) {
     console.error('Failed to generate Taylor Swift illustration:', error);
