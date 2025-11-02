@@ -132,30 +132,26 @@ export { trace } from '@opentelemetry/api';
  * });
  * ```
  */
+import { trace } from '@opentelemetry/api';
+...
 export function getTracer(name: string, version?: string) {
   try {
-    const { trace } = require('@opentelemetry/api');
     return trace.getTracer(name, version);
-  } catch (error) {
-    // Return a no-op tracer if OpenTelemetry is not available
-    // This happens if OpenTelemetry failed to initialize or is disabled
+  } catch {
     const noOpSpan = {
       setAttribute: () => {},
       end: () => {},
       setStatus: () => {},
       recordException: () => {},
     };
-    
     return {
       startSpan: (_name: string) => noOpSpan,
       startActiveSpan: (_name: string, _fn: (span: typeof noOpSpan) => void | Promise<void>) => {
         try {
           const result = _fn(noOpSpan);
-          if (result instanceof Promise) {
-            result.catch(() => {});
-          }
-        } catch (e) {
-          // Ignore errors in no-op mode
+          if (result instanceof Promise) result.catch(() => {});
+        } catch {
+          // ignore
         }
       },
     };
