@@ -3,8 +3,11 @@
  * Provides production error monitoring and performance tracking
  */
 
-// Sentry will be initialized here once package is added
-// For now, we'll create a stub implementation
+import * as Sentry from '@sentry/react';
+
+// Note: In Sentry v10, BrowserTracing might be included directly
+// For compatibility, we'll import from @sentry/tracing if available
+import { BrowserTracing } from '@sentry/tracing';
 
 interface SentryConfig {
   dsn: string;
@@ -32,19 +35,24 @@ class SentryService {
       return;
     }
 
-    // TODO: Initialize Sentry SDK once @sentry/react is added
-    // Example:
-    // import * as Sentry from '@sentry/react';
-    // Sentry.init({
-    //   dsn: config.dsn,
-    //   environment: config.environment,
-    //   tracesSampleRate: config.tracesSampleRate || 0.1,
-    //   beforeSend: config.beforeSend,
-    //   integrations: [
-    //     new Sentry.BrowserTracing(),
-    //     new Sentry.Replay(),
-    //   ],
-    // });
+    // Initialize Sentry SDK
+    Sentry.init({
+      dsn: config.dsn,
+      environment: config.environment,
+      tracesSampleRate: config.tracesSampleRate || 0.1,
+      integrations: [
+        new BrowserTracing(),
+      ],
+      beforeSend(event, hint) {
+        // Apply custom beforeSend if provided
+        if (config.beforeSend) {
+          return config.beforeSend(event, hint);
+        }
+        return event;
+      },
+      // Only capture errors in production
+      enabled: config.enabled,
+    });
 
     this.initialized = true;
   }
@@ -57,15 +65,12 @@ class SentryService {
       return;
     }
 
-    // TODO: Implement with Sentry SDK
-    // Sentry.captureException(error, { extra: context });
-    
-    // For now, log to console in development only
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.error('[Sentry] Would capture:', error, context);
-    }
-    // In production, this will be sent to Sentry once SDK is installed
+    Sentry.captureException(error, {
+      extra: context,
+      tags: {
+        component: context?.component as string || 'unknown',
+      },
+    });
   }
 
   /**
@@ -76,15 +81,10 @@ class SentryService {
       return;
     }
 
-    // TODO: Implement with Sentry SDK
-    // Sentry.captureMessage(message, level);
-    
-    // For now, log to console in development only
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.log(`[Sentry ${level}]`, message);
-    }
-    // In production, this will be sent to Sentry once SDK is installed
+    const sentryLevel = level === 'info' ? 'info' : level === 'warning' ? 'warning' : 'error';
+    Sentry.captureMessage(message, {
+      level: sentryLevel as Sentry.SeverityLevel,
+    });
   }
 
   /**
@@ -95,8 +95,7 @@ class SentryService {
       return;
     }
 
-    // TODO: Implement with Sentry SDK
-    // Sentry.setUser(user);
+    Sentry.setUser(user);
   }
 
   /**
@@ -112,8 +111,13 @@ class SentryService {
       return;
     }
 
-    // TODO: Implement with Sentry SDK
-    // Sentry.addBreadcrumb(breadcrumb);
+    const sentryLevel = breadcrumb.level === 'info' ? 'info' : breadcrumb.level === 'warning' ? 'warning' : 'error';
+    Sentry.addBreadcrumb({
+      category: breadcrumb.category,
+      message: breadcrumb.message,
+      level: sentryLevel as Sentry.SeverityLevel,
+      data: breadcrumb.data,
+    });
   }
 
   /**
@@ -130,13 +134,55 @@ class SentryService {
       };
     }
 
-    // TODO: Implement with Sentry SDK
-    // return Sentry.startTransaction({ name, op });
-    
-    return {
-      finish: () => {},
-      setTag: () => {},
-    };
+    // Start a Sentry transaction for performance monitoring
+    // Note: Sentry v7+ uses startSpan, older versions use startTransaction
+    try {
+      // Try modern API first (Sentry v7+)
+      if (typeof (Sentry as any).startSpan === 'function') {
+        const span = (Sentry as any).startSpan({
+          name,
+          op: op as any,
+        }, (s: any) => s);
+        
+        return {
+          finish: () => {
+            if (span && typeof span.end === 'function') {
+              span.end();
+            }
+          },
+          setTag: (key: string, value: string) => {
+            if (span && typeof span.setTag === 'function') {
+              span.setTag(key, value);
+            }
+          },
+        };
+      }
+      
+      // Fallback to transaction API (Sentry v6)
+      const transaction = (Sentry as any).startTransaction({
+        name,
+        op: op as any,
+      });
+      
+      return {
+        finish: () => {
+          if (transaction && typeof transaction.finish === 'function') {
+            transaction.finish();
+          }
+        },
+        setTag: (key: string, value: string) => {
+          if (transaction && typeof transaction.setTag === 'function') {
+            transaction.setTag(key, value);
+          }
+        },
+      };
+    } catch (error) {
+      // If transaction creation fails, return no-op functions
+      return {
+        finish: () => {},
+        setTag: () => {},
+      };
+    }
   }
 }
 
@@ -159,17 +205,22 @@ export function initSentry(): void {
     environment: environment as 'development' | 'staging' | 'production',
     enabled: import.meta.env.PROD, // Only enable in production
     tracesSampleRate: 0.1, // Sample 10% of transactions
-    beforeSend: (event) => {
-      // Filter out sensitive data
-      if (event && typeof event === 'object' && 'request' in event) {
-        const request = event.request as Record<string, unknown>;
-        if (request?.headers) {
-          // Remove authorization headers
-          delete (request.headers as Record<string, unknown>).authorization;
-          delete (request.headers as Record<string, unknown>).Authorization;
+      beforeSend: (event, hint) => {
+        // Filter out sensitive data
+        if (event && typeof event === 'object') {
+          const eventObj = event as Record<string, unknown>;
+          
+          // Remove authorization headers from request
+          if (eventObj.request && typeof eventObj.request === 'object') {
+            const request = eventObj.request as Record<string, unknown>;
+            if (request?.headers && typeof request.headers === 'object') {
+              const headers = request.headers as Record<string, unknown>;
+              delete headers.authorization;
+              delete headers.Authorization;
+            }
+          }
         }
-      }
-      return event;
-    },
+        return event;
+      },
   });
 }
