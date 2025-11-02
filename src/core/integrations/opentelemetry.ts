@@ -123,8 +123,12 @@ export { trace } from '@opentelemetry/api';
  * const tracer = getTracer('my-service');
  * tracer.startActiveSpan('my-operation', (span) => {
  *   // Your code here
+ *   span.end();
+ * });
+ * ```
+ */
 import { trace as otelTrace, Span, Tracer } from '@opentelemetry/api';
-...
+
 export function getTracer(name: string, version?: string): Tracer {
   try {
     return otelTrace.getTracer(name, version);
