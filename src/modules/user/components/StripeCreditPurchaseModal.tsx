@@ -7,6 +7,7 @@ import { useToast } from '@/modules/shared/hooks/use-toast';
 import { stripeClient } from '@/core/integrations/stripe/client';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { Coins, Crown, Check, Star, Zap } from 'lucide-react';
+import { STRIPE_PRODUCTS } from '@/config/stripe-products';
 
 interface PricingTier {
   id: string;
@@ -22,41 +23,40 @@ interface PricingTier {
   popular?: boolean;
 }
 
-// Per-story pricing: $4.99 for short stories, $14.99 for novellas
+// Use centralized Stripe product configuration - Credit-based model
 const pricingTiers: PricingTier[] = [
   {
-    id: 'short-story',
-    name: 'Short Story',
-    credits: null,
-    price: 4.99,
-    description: 'Perfect for quick reads',
-    features: [
-      '3 chapters (~5,000 words)',
-      'Professional illustrations',
-      'Taylor Swift-inspired themes',
-      'Instant download',
-      'PDF & ePub formats'
-    ],
+    id: 'starter',
+    name: STRIPE_PRODUCTS.credits.starter.name || '$25 Credit Pack',
+    credits: STRIPE_PRODUCTS.credits.starter.credits,
+    price: STRIPE_PRODUCTS.credits.starter.price,
+    description: STRIPE_PRODUCTS.credits.starter.description || 'Perfect for a story project',
+    features: ['25 Credits', 'Never expires', 'Use anytime', '$1.00 per credit'],
     type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_SHORT_STORY || 'price_short_story',
+    stripePriceId: STRIPE_PRODUCTS.credits.starter.priceId,
+  },
+  {
+    id: 'creator',
+    name: STRIPE_PRODUCTS.credits.creator.name || '$50 Credit Pack',
+    credits: STRIPE_PRODUCTS.credits.creator.credits,
+    price: STRIPE_PRODUCTS.credits.creator.price,
+    originalPrice: 54.95,
+    description: STRIPE_PRODUCTS.credits.creator.description || 'Best value for creators',
+    features: ['55 Credits (10% bonus)', 'Never expires', 'Best for regular creators', '$0.91 per credit'],
+    type: 'credits',
+    stripePriceId: STRIPE_PRODUCTS.credits.creator.priceId,
     popular: true,
   },
   {
-    id: 'novella',
-    name: 'Novella',
-    credits: null,
-    price: 14.99,
-    description: 'For longer, immersive stories',
-    features: [
-      '8 chapters (~15,000 words)',
-      'Premium illustrations',
-      'Taylor Swift-inspired themes',
-      'Deeper character development',
-      'Instant download',
-      'PDF & ePub formats'
-    ],
+    id: 'studio',
+    name: STRIPE_PRODUCTS.credits.studio.name || '$100 Credit Pack',
+    credits: STRIPE_PRODUCTS.credits.studio.credits,
+    price: STRIPE_PRODUCTS.credits.studio.price,
+    originalPrice: 119.95,
+    description: STRIPE_PRODUCTS.credits.studio.description || 'Maximum value pack',
+    features: ['120 Credits (20% bonus)', 'Never expires', 'Best long-term value', '$0.83 per credit'],
     type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_NOVELLA || 'price_novella',
+    stripePriceId: STRIPE_PRODUCTS.credits.studio.priceId,
   },
 ];
 

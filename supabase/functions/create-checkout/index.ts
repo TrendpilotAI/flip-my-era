@@ -119,6 +119,14 @@ serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
+    // Fetch the price object from Stripe to get metadata
+    const price = await stripe.prices.retrieve(priceId);
+    const credits = parseInt(price.metadata.credits || '0');
+
+    if (credits === 0) {
+      logStep("Warning: credits not found in price metadata", { priceId });
+    }
+    
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -133,9 +141,11 @@ serve(async (req) => {
       cancel_url: cancelUrl,
       metadata: {
         userId: user.id,
+        type: checkoutMode === 'subscription' ? 'subscription' : 'credits',
         plan: plan || 'credits',
-        productType: productType || 'subscription',
+        credits: credits.toString(),
       },
+      customer_update: customerId ? { address: 'auto' } : undefined,
     });
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
