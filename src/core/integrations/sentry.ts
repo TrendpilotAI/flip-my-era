@@ -14,6 +14,7 @@ interface SentryConfig {
   environment: 'development' | 'staging' | 'production';
   enabled: boolean;
   tracesSampleRate?: number;
+  sendDefaultPii?: boolean;
   beforeSend?: (event: unknown) => unknown | null;
 }
 
@@ -40,6 +41,7 @@ class SentryService {
       dsn: config.dsn,
       environment: config.environment,
       tracesSampleRate: config.tracesSampleRate || 0.1,
+      sendDefaultPii: config.sendDefaultPii ?? false, // Default to false for privacy
       integrations: [
         new BrowserTracing(),
       ],
@@ -194,6 +196,7 @@ export const sentryService = new SentryService();
 export function initSentry(): void {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   const environment = import.meta.env.VITE_APP_ENV || 'development';
+  const sendDefaultPii = import.meta.env.VITE_SENTRY_SEND_DEFAULT_PII === 'true';
 
   if (!dsn) {
     // Sentry not configured, skip initialization
@@ -205,6 +208,7 @@ export function initSentry(): void {
     environment: environment as 'development' | 'staging' | 'production',
     enabled: import.meta.env.PROD, // Only enable in production
     tracesSampleRate: 0.1, // Sample 10% of transactions
+    sendDefaultPii, // Enable PII collection if configured
       beforeSend: (event, hint) => {
         // Filter out sensitive data
         if (event && typeof event === 'object') {

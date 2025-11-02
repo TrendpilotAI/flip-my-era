@@ -8,7 +8,6 @@ import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
 import { AdminRoute } from "@/modules/shared/components/AdminRoute";
 import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
-import { initSentry } from "@/core/integrations/sentry";
 import Index from "@/app/pages/Index";
 import NotFound from "@/app/pages/NotFound";
 import Checkout from "@/app/pages/Checkout";
