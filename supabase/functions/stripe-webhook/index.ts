@@ -31,7 +31,14 @@ serve(async (req) => {
     // Verify webhook signature
     const signature = req.headers.get("stripe-signature");
     const body = await req.text();
-    
+
+    if (!signature) {
+      return new Response(JSON.stringify({ error: "Missing Stripe-Signature header" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
