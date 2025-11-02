@@ -420,7 +420,7 @@ export class RunwareService {
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     if (!apiKey) {
-      console.warn('RUNWARE service not configured. Image generation will fall back to other services.');
+      // RUNWARE service not configured - will fall back to other services
       return;
     }
     void this.connectWithLock();
@@ -463,26 +463,20 @@ export class RunwareService {
         
         this.ws.onopen = async () => {
           this.reconnectAttempts = 0;
-          console.log("RUNWARE WebSocket connected, waiting for ready state...");
           await this.waitForReadyState();
-          console.log("RUNWARE WebSocket ready, authenticating...");
           try {
             await this.authenticate();
             resolve();
           } catch (error) {
-            console.error("RUNWARE authentication failed");
             reject(new Error("Authentication failed"));
           }
         };
 
         this.ws.onmessage = (event) => {
-          console.log("RUNWARE received message:", event.data);
-          
           try {
             const response: RunwareApiResponse = JSON.parse(event.data);
             
             if (response.error || response.errors) {
-              console.error("RUNWARE WebSocket error response:", response);
               const errorMessage = response.errorMessage || response.errors?.[0]?.message || "An error occurred";
               throw new Error(errorMessage);
             }
@@ -490,7 +484,6 @@ export class RunwareService {
             if (response.data) {
               response.data.forEach((item) => {
                 if (item.taskType === "authentication") {
-                  console.log("RUNWARE authentication successful");
                   this.connectionSessionUUID = (item as RunwareAuthenticationResponse).connectionSessionUUID;
                   this.isAuthenticated = true;
                 } else if (item.taskType === "imageInference") {
@@ -505,31 +498,25 @@ export class RunwareService {
               });
             }
           } catch (parseError) {
-            console.error("RUNWARE failed to parse response:", parseError);
+            // Failed to parse response - continue silently
           }
         };
 
-        this.ws.onerror = (error) => {
-          console.error("RUNWARE WebSocket connection error");
+        this.ws.onerror = () => {
           reject(new Error("WebSocket connection failed"));
         };
 
         this.ws.onclose = () => {
-          console.log("RUNWARE WebSocket closed");
           this.isAuthenticated = false;
           if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(`RUNWARE attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-          const delay = 1000 * this.reconnectAttempts;
-          setTimeout(() => {
-            void this.connectWithLock();
-          }, delay);
-          } else {
-            console.error("RUNWARE max reconnection attempts reached");
+            const delay = 1000 * this.reconnectAttempts;
+            setTimeout(() => {
+              void this.connectWithLock();
+            }, delay);
           }
         };
       } catch (error) {
-        console.error("Error creating RUNWARE WebSocket:", error);
         reject(error);
       }
     });
@@ -585,7 +572,6 @@ export class RunwareService {
         return;
       }
 
-      console.log("Sending RUNWARE authentication message");
       const authMessage: RunwareAuthenticationRequest[] = [{
         taskType: "authentication",
         apiKey: this.apiKey!,
@@ -601,7 +587,6 @@ export class RunwareService {
             resolve();
           }
         } catch (error) {
-          console.error("RUNWARE authentication response parse error:", error);
           reject(error);
         }
       };
@@ -624,7 +609,6 @@ export class RunwareService {
     await this.connectWithLock();
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isAuthenticated) {
-      console.log('RUNWARE connection not ready, reconnecting...');
       await this.connectWithLock();
     }
   }
@@ -683,8 +667,6 @@ export class RunwareService {
       });
 
       const message = [request];
-
-      console.log("Sending RUNWARE image generation message:", message);
 
       this.messageCallbacks.set(taskUUID, {
         callback: (data: RunwareImageInferenceResponse) => {
@@ -971,7 +953,6 @@ Return ONLY the enhanced prompt, no explanations.
           }
 
           if (receivedCount === 0 && (!data.imageURL && !data.imageBase64Data && !data.imageDataURI)) {
-            console.warn('RUNWARE returned empty payload, ignoring and waiting for next response');
             return;
           }
 
@@ -989,8 +970,6 @@ Return ONLY the enhanced prompt, no explanations.
 
           collectedResults.push(result);
           receivedCount++;
-
-          console.log(`Received image ${receivedCount}/${numberResults}`);
 
           // When all results received, resolve with array
           if (receivedCount >= numberResults) {
@@ -1015,7 +994,6 @@ Return ONLY the enhanced prompt, no explanations.
           hasSettled = true;
           this.messageCallbacks.delete(taskUUID);
           if (collectedResults.length > 0) {
-            console.warn(`Only received ${collectedResults.length}/${numberResults} images, returning partial results`);
             resolve(collectedResults);
           } else {
             reject(new Error('Image generation timeout'));

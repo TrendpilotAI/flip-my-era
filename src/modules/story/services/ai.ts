@@ -92,7 +92,7 @@ export async function isRunwareAvailable(): Promise<boolean> {
   try {
     return await runwareService.isConnected();
   } catch (error) {
-    console.error('RUNWARE availability check failed:', error);
+    // RUNWARE availability check failed - return false
     return false;
   }
 }
@@ -124,7 +124,6 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
     
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('Failed to generate story:', error);
     throw new Error('Story generation failed. Please try again later.');
   }
 }
@@ -167,7 +166,6 @@ export async function generateChapters(story: string, numChapters: number = 3): 
     
     return parsedContent.chapters || [];
   } catch (error) {
-    console.error('Failed to generate chapters:', error);
     throw new Error('Chapter generation failed. Please try again later.');
   }
 }
@@ -245,7 +243,6 @@ export async function generateTaylorSwiftChapters(
     
     return parsedContent.chapters || [];
   } catch (error) {
-    console.error('Failed to generate Taylor Swift chapters:', error);
     throw new Error('Taylor Swift-themed chapter generation failed. Please try again later.');
   }
 }
@@ -288,7 +285,6 @@ export async function generateName(options: GenerateNameOptions): Promise<string
     const generatedName = response.data.choices[0].message.content.trim();
     return generatedName;
   } catch (error) {
-    console.error('Failed to generate name:', error);
     throw new Error('Name generation failed. Please try again later.');
   }
 }
@@ -308,14 +304,13 @@ export async function generateEbookIllustration(
     
     if (runwareAvailable) {
       // Use RUNWARE with Flux1.1 Pro for ebook illustrations
-      // Note: generateEbookIllustration needs to be updated to accept clerkToken if enhanced prompts are used
       const illustration = await runwareService.generateEbookIllustration({
         chapterTitle,
         chapterContent,
         style,
         mood,
         useEnhancedPrompts
-      });
+      }, clerkToken);
       
       return illustration.imageURL || '';
     } else {
@@ -453,10 +448,8 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
           });
           return illustration.imageURL;
         } catch (runwareError) {
-          console.warn('RUNWARE image generation failed, falling back to OpenAI:', runwareError);
+          // Fallback to OpenAI
         }
-      } else {
-        console.warn('RUNWARE not available, using OpenAI');
       }
     }
     
@@ -480,13 +473,10 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
       
       return response.data.data[0].url;
     } catch (openaiError) {
-      console.warn('OpenAI image generation failed, falling back to placeholder:', openaiError);
-      
       // Fallback to a placeholder image if OpenAI fails
       return `https://picsum.photos/seed/${Math.random().toString(36).substring(7)}/1024/1024`;
     }
   } catch (error) {
-    console.error('Failed to generate image:', error);
     throw new Error('Image generation failed. Please try again later.');
   }
 }

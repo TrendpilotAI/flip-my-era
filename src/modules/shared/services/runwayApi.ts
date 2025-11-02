@@ -73,18 +73,18 @@ Respond with JSON only:
     const response = await generateWithGroq(analysisPrompt, clerkToken);
     
     // Parse JSON response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const analysis = JSON.parse(jsonMatch[0]);
-      return {
-        bestIndex: analysis.bestIndex || 0,
-        reasoning: analysis.reasoning || 'Selected by AI analysis',
-        scores: analysis.scores || variations.map(() => 5)
-      };
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const analysis = JSON.parse(jsonMatch[0]);
+        return {
+          bestIndex: analysis.bestIndex || 0,
+          reasoning: analysis.reasoning || 'Selected by AI analysis',
+          scores: analysis.scores || variations.map(() => 5)
+        };
+      }
+    } catch (error) {
+      // Error analyzing images - fallback to default selection
     }
-  } catch (error) {
-    console.error('Error analyzing images:', error);
-  }
 
   // Fallback: select middle image
   return {
@@ -113,9 +113,8 @@ export async function generateImageWithVariations(
 ): Promise<ImageGenerationResult> {
   const numVariations = params.numberResults || 5;
 
-  if (!runwareService.isConfigured()) {
-    console.warn('RUNWARE not configured, using placeholder');
-    return {
+    if (!runwareService.isConfigured()) {
+      return {
       id: params.id,
       title: params.title,
       variations: [{
@@ -181,7 +180,6 @@ export async function generateImageWithVariations(
       bestImage: variations[analysis.bestIndex]
     };
   } catch (error) {
-    console.error('Error generating image variations:', error);
     throw error;
   }
 }
@@ -204,19 +202,16 @@ export async function batchGenerateImagesWithVariations(
 
   for (const item of prompts) {
     try {
-      console.log(`\n📸 Generating 5 variations for: ${item.title}`);
       const result = await generateImageWithVariations({
         ...item,
         numberResults: 5
-      });
+      }, null); // Note: clerkToken should be passed if AI analysis is needed
       results.push(result);
-      console.log(`✅ Generated variations. Best: #${result.bestImageIndex + 1} (Score: ${result.bestImage.score}/10)`);
-      console.log(`   Reasoning: ${result.bestImage.reasoning}`);
       
       // 3-second delay between prompts (each prompt generates 5 images)
       await new Promise(resolve => setTimeout(resolve, 3000));
     } catch (error) {
-      console.error(`❌ Failed for ${item.id}:`, error);
+      // Failed for this item - continue with next
     }
   }
 

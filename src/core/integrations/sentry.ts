@@ -60,10 +60,12 @@ class SentryService {
     // TODO: Implement with Sentry SDK
     // Sentry.captureException(error, { extra: context });
     
-    // For now, log to console (will be replaced by Sentry)
+    // For now, log to console in development only
     if (import.meta.env.DEV) {
-      console.error('Sentry would capture:', error, context);
+      // eslint-disable-next-line no-console
+      console.error('[Sentry] Would capture:', error, context);
     }
+    // In production, this will be sent to Sentry once SDK is installed
   }
 
   /**
@@ -77,10 +79,12 @@ class SentryService {
     // TODO: Implement with Sentry SDK
     // Sentry.captureMessage(message, level);
     
-    // For now, log to console
+    // For now, log to console in development only
     if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
       console.log(`[Sentry ${level}]`, message);
     }
+    // In production, this will be sent to Sentry once SDK is installed
   }
 
   /**

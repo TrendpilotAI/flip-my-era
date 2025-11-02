@@ -66,9 +66,9 @@ export const useStoryGeneration = () => {
           if (savedStory.storyId) setStoryId(savedStory.storyId);
         }
         
-        console.log("Loaded saved preferences and story data");
+        // Data loaded successfully
       } catch (error) {
-        console.error("Error loading saved data:", error);
+        // Error loading saved data - silently fail
       } finally {
         setIsInitialized(true);
       }
@@ -90,7 +90,6 @@ export const useStoryGeneration = () => {
           const newTransformedName = await transformName(name, detectedGender, gender);
           setTransformedName(newTransformedName);
         } catch (error: unknown) {
-          console.error('Error transforming name:', error);
           // Fallback to original name if transformation fails
           setTransformedName(name);
         }
@@ -161,7 +160,6 @@ export const useStoryGeneration = () => {
         });
       }
     } catch (error) {
-      console.error("Error generating story:", error);
       loadingToast.dismiss();
       
       // Handle specific API errors

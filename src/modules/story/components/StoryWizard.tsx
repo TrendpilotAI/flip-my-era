@@ -50,7 +50,7 @@ export const StoryWizard: React.FC = () => {
       }
 
       // Get Clerk token for authentication
-      const clerkToken = await getToken();
+      const clerkToken = await getToken({ template: 'supabase' });
       
       // Generate the storyline
       const storyline = await generateStoryline({
@@ -70,8 +70,6 @@ export const StoryWizard: React.FC = () => {
         description: "Your story structure is ready to review.",
       });
     } catch (error) {
-      console.error('Error generating storyline:', error);
-      
       toast({
         title: "Generation Failed",
         description: error instanceof Error ? error.message : "Failed to generate storyline. Please try again.",
@@ -110,7 +108,7 @@ export const StoryWizard: React.FC = () => {
       await refreshUser();
       await fetchCreditBalance();
     } catch (error) {
-      console.error('Post-auth sync failed:', error);
+      // Post-auth sync failed - silently continue
     }
 
     if (pendingStep) {
