@@ -308,8 +308,17 @@ export function filterParamsForModel(params: Partial<GenerateImageParams>): Part
 
 /**
  * Use Groq AI to enhance and optimize the image generation prompt
+ * NOTE: This function now requires a Clerk token to call the Edge Function
  */
-export async function enhancePromptWithGroq(params: EbookIllustrationParams): Promise<string> {
+export async function enhancePromptWithGroq(
+  params: EbookIllustrationParams,
+  clerkToken: string | null
+): Promise<string> {
+  if (!clerkToken) {
+    // Fallback to basic prompt if no token available
+    return createEbookIllustrationPrompt(params);
+  }
+
   try {
     const { chapterTitle, chapterContent, style = 'children', mood = 'happy' } = params;
     
@@ -341,49 +350,17 @@ export async function enhancePromptWithGroq(params: EbookIllustrationParams): Pr
     Return ONLY the optimized prompt, no explanations or additional text.
     `;
 
-    // Call Groq API to enhance the prompt
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'llama3-70b-8192',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert AI prompt engineer for image generation models. Create detailed, optimized prompts that produce high-quality illustrations.'
-          },
-          {
-            role: 'user',
-            content: enhancementPrompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 800
-      })
+    // Call Groq API via Edge Function
+    const { generateWithGroq } = await import('@/modules/shared/utils/groq');
+    const enhancedPrompt = await generateWithGroq(enhancementPrompt, clerkToken, {
+      model: 'llama3-70b-8192',
+      systemPrompt: 'You are an expert AI prompt engineer for image generation models. Create detailed, optimized prompts that produce high-quality illustrations.',
+      temperature: 0.7,
+      maxTokens: 800,
     });
-
-    if (!response.ok) {
-      // Don't expose detailed API error information
-      console.error('Groq API request failed with status:', response.status);
-      throw new Error('Failed to enhance prompt with AI service');
-    }
-
-    const data = await response.json();
-
-    // Validate response structure
-    if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-      throw new Error('Invalid response format from Groq API');
-    }
-
-    const enhancedPrompt = data.choices[0].message.content.trim();
     
-    return enhancedPrompt;
+    return enhancedPrompt.trim();
   } catch (error) {
-    // Log error without exposing sensitive information
-    console.error('Failed to enhance prompt with AI service');
     // Fallback to the basic prompt if enhancement fails
     return createEbookIllustrationPrompt(params);
   }

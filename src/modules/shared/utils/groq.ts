@@ -1,61 +1,56 @@
-import { getGroqApiKey } from '@/modules/shared/utils/env';
+import { supabase } from '@/core/integrations/supabase/client';
 
-export const generateWithGroq = async (prompt: string) => {
-  const apiKey = getGroqApiKey();
-  
-  if (!apiKey) {
-    throw new Error('GROQ_API_KEY_MISSING');
+export const generateWithGroq = async (
+  prompt: string,
+  clerkToken: string | null,
+  options?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    systemPrompt?: string;
   }
-
-  // Basic validation for API key format
-  if (!apiKey.startsWith('gsk_')) {
-    throw new Error('INVALID_API_KEY_FORMAT');
+) => {
+  if (!clerkToken) {
+    throw new Error('UNAUTHORIZED');
   }
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+    const { data, error } = await supabase.functions.invoke('groq-api', {
+      body: {
+        prompt,
+        model: options?.model || 'openai/gpt-oss-120b',
+        temperature: options?.temperature || 0.7,
+        maxTokens: options?.maxTokens || 4096,
+        systemPrompt: options?.systemPrompt || 'You are a creative writer specializing in humorous alternate reality stories and chapter generation.',
       },
-      body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
-        messages: [
-          {
-            role: "system",
-            content: "You are a creative writer specializing in humorous alternate reality stories and chapter generation."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 4096,
-        top_p: 1,
-        stop: null
-      })
+      headers: {
+        Authorization: `Bearer ${clerkToken}`,
+        'Content-Type': 'application/json',
+      },
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Groq API error:', errorData);
-      
+    if (error) {
       // Handle specific error cases
-      if (response.status === 401) {
-        throw new Error('INVALID_API_KEY');
-      } else if (response.status === 429) {
+      if (error.message?.includes('UNAUTHORIZED') || error.message?.includes('401')) {
+        throw new Error('UNAUTHORIZED');
+      } else if (error.message?.includes('429') || error.message?.includes('rate limit')) {
         throw new Error('RATE_LIMIT_EXCEEDED');
+      } else if (error.message?.includes('GROQ_API_KEY_MISSING')) {
+        throw new Error('GROQ_API_KEY_MISSING');
       } else {
-        throw new Error(`API_ERROR: ${errorData.error?.message || 'Unknown error'}`);
+        throw new Error(error.message || 'API_ERROR');
       }
     }
 
-    const data = await response.json();
-    return data.choices[0].message.content;
+    if (!data || data.error) {
+      throw new Error(data?.message || data?.error || 'Failed to generate with Groq');
+    }
+    
+    return data.content;
   } catch (error) {
-    console.error('Error generating with Groq:', error);
-    throw error;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to generate with Groq');
   }
 };

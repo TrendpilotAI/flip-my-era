@@ -178,7 +178,6 @@ export const useStreamingGeneration = () => {
     try {
       // Get Clerk token for authentication
       const clerkToken = await getToken();
-      console.log('Clerk token retrieved:', clerkToken ? 'Token exists' : 'No token');
       
       // Prepare headers
       const headers: Record<string, string> = {
@@ -188,17 +187,12 @@ export const useStreamingGeneration = () => {
       
       if (clerkToken) {
         headers['Authorization'] = `Bearer ${clerkToken}`;
-        console.log('Making request with authentication');
-      } else {
-        console.log('Making request without authentication (fallback)');
       }
       
       // Send generation request with proper authentication
       // Use production URL directly since Edge Functions are deployed
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const functionUrl = `${supabaseUrl}/functions/v1/stream-chapters`;
-      
-      console.log('Calling function URL:', functionUrl);
       
       // Create a new AbortController for this request
       const controller = new AbortController();
@@ -218,7 +212,6 @@ export const useStreamingGeneration = () => {
         signal: controller.signal
       });
 
-      console.log('Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -271,7 +264,6 @@ export const useStreamingGeneration = () => {
                     if (!cleanLine) return; // Skip empty lines
                     
                     const data = JSON.parse(cleanLine);
-                    console.log('Received streaming data:', data);
                     
                     switch (data.type) {
                       case 'progress':
@@ -322,7 +314,7 @@ export const useStreamingGeneration = () => {
                         onComplete?.(chapters);
                         
                         toast({
-                          title: "Story Generation Complete! ✨",
+                          title: "Story Generation Complete! ?",
                           description: `All ${chapters.length} chapters have been generated successfully.`,
                         });
                         break;
@@ -361,7 +353,6 @@ export const useStreamingGeneration = () => {
                   const cleanLine = line.slice(6).trim();
                   if (cleanLine) {
                     const data = JSON.parse(cleanLine);
-                    console.log('Received final streaming data:', data);
                     
                     // Handle the final data based on its type
                     switch (data.type) {
@@ -401,7 +392,6 @@ export const useStreamingGeneration = () => {
     } catch (error) {
       // Check if the error is due to abort
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Generation aborted by user');
         setState(prev => ({
           ...prev,
           isGenerating: false,

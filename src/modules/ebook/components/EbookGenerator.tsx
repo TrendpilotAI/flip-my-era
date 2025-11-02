@@ -115,13 +115,10 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
     }
 
     try {
-      console.log('🔍 EbookGenerator: Starting credit validation...');
-      console.log('🔍 EbookGenerator: isSignedIn:', isSignedIn);
-      console.log('🔍 EbookGenerator: Operations:', operations);
 
       const token = await getToken({ template: 'supabase' });
-      console.log('🔍 EbookGenerator: Token received:', token ? 'YES (length: ' + token.length + ')' : 'NO');
-      console.log('🔍 EbookGenerator: Token preview:', token ? token.substring(0, 20) + '...' : 'null');
+      console.log('?? EbookGenerator: Token received:', token ? 'YES (length: ' + token.length + ')' : 'NO');
+      console.log('?? EbookGenerator: Token preview:', token ? token.substring(0, 20) + '...' : 'null');
 
       // Calculate total cost using new pricing system
       const costResult = operations.length === 1
@@ -222,7 +219,6 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
       storyline: storyline,
       onChapterComplete: (chapter) => {
         // Chapter completed callback
-        console.log('Chapter completed:', chapter.title);
       },
       onComplete: async (generatedChapters) => {
         // All chapters completed
@@ -250,14 +246,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
             // Create authenticated Supabase client
             const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
             
-            console.log('Attempting to save ebook generation record:', {
-              user_id: userId,
-              story_id: storyId,
-              title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${generatedChapters[0]?.title || 'Untitled'}`,
-              chapter_count: generatedChapters.length,
-              word_count: generatedChapters.reduce((total, ch) => total + ch.content.length, 0)
-            });
-            
+            // Save ebook generation record
             const { data: ebookGeneration, error: ebookError } = await supabaseWithAuth
               .from('ebook_generations')
               .insert({
@@ -279,7 +268,6 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
             if (ebookError) {
               console.error('Error creating ebook generation record:', ebookError);
             } else {
-              console.log('Successfully saved ebook generation record:', ebookGeneration);
               // Save the actual book to ebook_generations table for user access
               const { error: memoryBookError } = await supabaseWithAuth
                 .from('ebook_generations')
@@ -752,7 +740,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg">
                   <p className="text-sm font-medium text-gray-700 mb-1">Taylor Swift Song Inspirations:</p>
                   <p className="text-xs text-gray-600">
-                    {taylorSwiftThemes[selectedTheme].inspirations.join(' • ')}
+                    {taylorSwiftThemes[selectedTheme].inspirations.join(' ? ')}
                   </p>
                 </div>
               </CardContent>

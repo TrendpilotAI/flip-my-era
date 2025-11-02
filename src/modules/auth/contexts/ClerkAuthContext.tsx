@@ -13,24 +13,16 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch credit balance using Supabase client
   const fetchCreditBalance = useCallback(async (): Promise<number> => {
     if (!clerkUser) {
-      console.log("🔍 ClerkAuthContext: No Clerk user available for credit balance fetch");
       return 0;
     }
 
     try {
-      console.log("🔍 ClerkAuthContext: Fetching credit balance for user:", clerkUser.id);
-
       // Get Clerk token for authentication with Supabase template
       const clerkToken = await getToken({ template: 'supabase' });
-      console.log("🔍 ClerkAuthContext: Clerk token received:", clerkToken ? 'YES (length: ' + clerkToken.length + ')' : 'NO');
-      console.log("🔍 ClerkAuthContext: Token preview:", clerkToken ? clerkToken.substring(0, 20) + '...' : 'null');
 
       if (!clerkToken) {
-        console.warn("🔍 ClerkAuthContext: No Clerk token available for credit balance fetch");
         return 0;
       }
-
-      console.log("🔍 ClerkAuthContext: Got Clerk token, invoking credits function...");
 
       const { data, error } = await supabase.functions.invoke('credits', {
         method: 'GET',
@@ -54,8 +46,6 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
         return 0;
       }
       
-      console.log("Credits function response:", data);
-      
       // Handle different response formats
       let balance = 0;
       if (data.success && data.data?.balance) {
@@ -67,8 +57,6 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       } else if (data.balance) {
         balance = data.balance;
       }
-      
-      console.log("Credit balance fetched:", balance);
       setCreditBalance(balance);
 
       // Update the user profile state with the credit balance
@@ -116,7 +104,6 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
           // This requires proper Clerk-Supabase JWT integration
           const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
           
-          console.log("Supabase client created with Clerk token");
 
           // For native integration, we work directly with Clerk user data
           // and use the Clerk user ID for database operations

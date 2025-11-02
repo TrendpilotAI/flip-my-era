@@ -62,16 +62,16 @@ backend = "postgres"
 [functions]
 
 [functions.brevo-email]
-verify_jwt = false
+verify_jwt = true
 
 [functions.migrate-email-templates]
-verify_jwt = false
+verify_jwt = true
 
 [functions.text-to-speech]
-verify_jwt = false
+verify_jwt = true
 
 [functions.tiktok-auth]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-video]
 verify_jwt = true
@@ -86,7 +86,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.stream-chapters]
-verify_jwt = false
+verify_jwt = true
+
+[functions.groq-api]
+verify_jwt = true
+
+[functions.groq-storyline]
+verify_jwt = true
 
 [functions.ebook-generation]
 enabled = true
