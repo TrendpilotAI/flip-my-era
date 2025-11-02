@@ -53,14 +53,9 @@ export function initOpenTelemetry(): void {
     
     const traceExporter = new OTLPTraceExporter({
       url: tracesUrl,
-      headers: {
-        // Sentry may require authentication headers
-        // Add Sentry auth token if available
-        ...(import.meta.env.VITE_SENTRY_AUTH_TOKEN && {
-          Authorization: `Bearer ${import.meta.env.VITE_SENTRY_AUTH_TOKEN}`,
-        }),
-        'Content-Type': 'application/json',
-      },
+      headers: import.meta.env.VITE_SENTRY_AUTH_TOKEN
+        ? { Authorization: `Bearer ${import.meta.env.VITE_SENTRY_AUTH_TOKEN}` }
+        : undefined,
       // Compression is recommended for production
       compression: 'gzip',
     });
@@ -128,36 +123,31 @@ export { trace } from '@opentelemetry/api';
  * const tracer = getTracer('my-service');
  * tracer.startActiveSpan('my-operation', (span) => {
  *   // Your code here
- *   span.end();
- * });
- * ```
- */
-export function getTracer(name: string, version?: string) {
+import { trace as otelTrace, Span, Tracer } from '@opentelemetry/api';
+...
+export function getTracer(name: string, version?: string): Tracer {
   try {
-    const { trace } = require('@opentelemetry/api');
-    return trace.getTracer(name, version);
-  } catch (error) {
-    // Return a no-op tracer if OpenTelemetry is not available
-    // This happens if OpenTelemetry failed to initialize or is disabled
-    const noOpSpan = {
+    return otelTrace.getTracer(name, version);
+  } catch {
+    // No-op tracer fallback
+    const noOpSpan: Partial<Span> = {
       setAttribute: () => {},
       end: () => {},
       setStatus: () => {},
       recordException: () => {},
     };
-    
     return {
-      startSpan: (_name: string) => noOpSpan,
-      startActiveSpan: (_name: string, _fn: (span: typeof noOpSpan) => void | Promise<void>) => {
+      startSpan: () => noOpSpan as Span,
+      startActiveSpan: (_n: string, fn: (span: Span) => void | Promise<void>) => {
         try {
-          const result = _fn(noOpSpan);
-          if (result instanceof Promise) {
-            result.catch(() => {});
+          const result = fn(noOpSpan as Span);
+          if (result && typeof (result as Promise<void>).then === 'function') {
+            (result as Promise<void>).catch(() => {});
           }
-        } catch (e) {
-          // Ignore errors in no-op mode
+        } catch {
+          // ignore
         }
       },
-    };
+    } as unknown as Tracer;
   }
 }
