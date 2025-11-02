@@ -123,32 +123,31 @@ export { trace } from '@opentelemetry/api';
  * const tracer = getTracer('my-service');
  * tracer.startActiveSpan('my-operation', (span) => {
  *   // Your code here
- *   span.end();
- * });
- * ```
- */
-import { trace } from '@opentelemetry/api';
+import { trace as otelTrace, Span, Tracer } from '@opentelemetry/api';
 ...
-export function getTracer(name: string, version?: string) {
+export function getTracer(name: string, version?: string): Tracer {
   try {
-    return trace.getTracer(name, version);
+    return otelTrace.getTracer(name, version);
   } catch {
-    const noOpSpan = {
+    // No-op tracer fallback
+    const noOpSpan: Partial<Span> = {
       setAttribute: () => {},
       end: () => {},
       setStatus: () => {},
       recordException: () => {},
     };
     return {
-      startSpan: (_name: string) => noOpSpan,
-      startActiveSpan: (_name: string, _fn: (span: typeof noOpSpan) => void | Promise<void>) => {
+      startSpan: () => noOpSpan as Span,
+      startActiveSpan: (_n: string, fn: (span: Span) => void | Promise<void>) => {
         try {
-          const result = _fn(noOpSpan);
-          if (result instanceof Promise) result.catch(() => {});
+          const result = fn(noOpSpan as Span);
+          if (result && typeof (result as Promise<void>).then === 'function') {
+            (result as Promise<void>).catch(() => {});
+          }
         } catch {
           // ignore
         }
       },
-    };
+    } as unknown as Tracer;
   }
 }
