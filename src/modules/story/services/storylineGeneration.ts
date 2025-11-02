@@ -5,7 +5,7 @@
 
 import { EraType } from '../types/eras';
 import { getCombinedSystemPrompt } from '../utils/promptLoader';
-import Groq from 'groq-sdk';
+import { supabase } from '@/core/integrations/supabase/client';
 
 export interface Storyline {
   logline: string;
@@ -47,9 +47,9 @@ export interface GenerateStorylineParams {
 }
 
 /**
- * Generate a structured storyline using Groq AI
+ * Generate a structured storyline using Groq AI via Edge Function
  */
-export async function generateStoryline(params: GenerateStorylineParams): Promise<Storyline> {
+export async function generateStoryline(params: GenerateStorylineParams, clerkToken: string | null): Promise<Storyline> {
   const {
     era,
     characterName,
@@ -119,62 +119,56 @@ Ensure the storyline:
 6. Incorporates themes relevant to the era and story
 `;
 
+  if (!clerkToken) {
+    throw new Error('UNAUTHORIZED');
+  }
+
   try {
-    // Initialize Groq client
-    const groq = new Groq({
-      apiKey: import.meta.env.VITE_GROQ_API_KEY,
-      dangerouslyAllowBrowser: true
+    const { data, error } = await supabase.functions.invoke('groq-storyline', {
+      body: {
+        era,
+        characterName,
+        characterArchetype,
+        gender,
+        location,
+        promptDescription,
+        customPrompt,
+        systemPrompt,
+      },
+      headers: {
+        Authorization: `Bearer ${clerkToken}`,
+        'Content-Type': 'application/json',
+      },
     });
 
-    // Call Groq API
-    const completion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt
-        },
-        {
-          role: 'user',
-          content: userRequest
-        }
-      ],
-      model: 'llama-3.3-70b-versatile', // Use the most capable model
-      temperature: 0.7,
-      max_tokens: 4096,
-      top_p: 1,
-      stream: false
-    });
+    if (error) {
+      if (error.message?.includes('UNAUTHORIZED') || error.message?.includes('401')) {
+        throw new Error('UNAUTHORIZED');
+      } else if (error.message?.includes('GROQ_API_KEY_MISSING')) {
+        throw new Error('GROQ_API_KEY_MISSING');
+      } else if (error.message?.includes('INVALID_STORYLINE')) {
+        throw new Error('Invalid storyline structure returned from AI');
+      } else {
+        throw new Error(error.message || 'Failed to generate storyline');
+      }
+    }
 
-    const responseText = completion.choices[0]?.message?.content || '';
+    if (!data || data.error) {
+      throw new Error(data?.message || data?.error || 'Failed to generate storyline');
+    }
     
-    // Extract JSON from response (it might be wrapped in markdown code blocks)
-    let jsonText = responseText;
-    const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      jsonText = jsonMatch[1];
-    }
-
-    // Parse the JSON response
-    const storyline = JSON.parse(jsonText) as Storyline;
-
-    // Validate the structure
-    if (!storyline.logline || !storyline.threeActStructure || !storyline.chapters) {
-      throw new Error('Invalid storyline structure returned from AI');
-    }
-
-    return storyline;
+    return data.storyline;
   } catch (error) {
-    console.error('Error generating storyline:', error);
-    
     if (error instanceof Error) {
       // Handle specific error cases
-      if (error.message.includes('API key')) {
-        throw new Error('GROQ_API_KEY_MISSING');
+      if (error.message === 'GROQ_API_KEY_MISSING') {
+        throw error;
       } else if (error.message.includes('rate limit')) {
         throw new Error('RATE_LIMIT_EXCEEDED');
       } else if (error.message.includes('Invalid storyline structure')) {
         throw error;
       }
+      throw error;
     }
     
     throw new Error('Failed to generate storyline. Please try again.');
@@ -185,7 +179,8 @@ Ensure the storyline:
  * Generate a storyline with streaming support (for future implementation)
  */
 export async function* generateStorylineStreaming(
-  params: GenerateStorylineParams
+  params: GenerateStorylineParams,
+  clerkToken: string | null
 ): AsyncGenerator<{ type: 'progress' | 'complete'; data: Partial<Storyline> | Storyline }> {
   // For now, just use the non-streaming version and yield the complete result
   // Future: Implement actual streaming with partial updates
@@ -195,7 +190,7 @@ export async function* generateStorylineStreaming(
     data: {}
   };
 
-  const storyline = await generateStoryline(params);
+  const storyline = await generateStoryline(params, clerkToken);
 
   yield {
     type: 'complete',

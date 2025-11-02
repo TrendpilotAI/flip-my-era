@@ -23,11 +23,12 @@ interface EnvironmentConfig {
 export const getEnvironmentConfig = (): EnvironmentConfig => {
   const env = import.meta.env.VITE_APP_ENV || 'development'
   
-  // Debug logging for production deployment
-  console.log('[Environment Config] Detected environment:', env);
-  console.log('[Environment Config] VITE_APP_ENV:', import.meta.env.VITE_APP_ENV);
-  console.log('[Environment Config] VITE_SUPABASE_URL (masked):', import.meta.env.VITE_SUPABASE_URL?.substring(0, 20) + '...');
-  console.log('[Environment Config] Is production build:', import.meta.env.PROD);
+  // Environment validation (no logging in production)
+  // Only log in development to avoid exposing config in production
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.log('[Environment Config] Detected environment:', env);
+  }
   
   const baseConfig = {
     api: {

@@ -15,7 +15,6 @@ interface ChapterViewProps {
 }
 
 export const ChapterView = ({ chapter, index, isGeneratingImages }: ChapterViewProps) => {
-  console.log('ChapterView rendering:', { chapter, index, isGeneratingImages });
 
   return (
     <div
