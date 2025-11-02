@@ -188,7 +188,7 @@ export const getUserFriendlyErrorMessage = (error: GenerationError): string => {
 /**
  * Log error with context for monitoring and debugging
  */
-export const logErrorWithContext = (error: GenerationError, additionalContext?: Record<string, any>) => {
+export const logErrorWithContext = (error: GenerationError, additionalContext?: Record<string, unknown>) => {
   const logData = {
     timestamp: new Date().toISOString(),
     error: {

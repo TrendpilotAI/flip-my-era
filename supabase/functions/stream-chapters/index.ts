@@ -1,6 +1,6 @@
-// @ts-ignore -- Deno Edge Function imports
+// @ts-expect-error -- Deno Edge Function imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-// @ts-ignore -- Deno Edge Function imports
+// @ts-expect-error -- Deno Edge Function imports
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -11,7 +11,7 @@ const corsHeaders = {
 };
 
 // Helper: decode JWT payload (no verify, for dev only)
-function decodeJwtPayload(token: string): any {
+function decodeJwtPayload(token: string): unknown {
   try {
     const payload = token.split('.')[1];
     const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
@@ -54,7 +54,7 @@ interface StreamChapterRequest {
   numChapters?: number;
   storyline?: {
     logline: string;
-    threeActStructure: any;
+    threeActStructure: unknown;
     chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
     themes: string[];
     wordCountTotal: number;
@@ -87,7 +87,7 @@ async function apiRequestWithRetry<T>(
     method: string;
     url: string;
     headers: Record<string, string>;
-    data: any;
+    data: unknown;
   },
   maxRetries = 3
 ): Promise<{ data: T }> {
@@ -277,12 +277,14 @@ async function generateSingleChapter(
   let parsedContent;
   try {
     // First, try to clean the response content
-    let cleanedContent = response.data.choices[0].message.content
+    /* eslint-disable no-control-regex */
+    const cleanedContent = response.data.choices[0].message.content
       .replace(/\0/g, '') // Remove null bytes
       .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
       .replace(/[\uFFFE\uFFFF]/g, '') // Remove Unicode BOM and invalid chars
       .replace(/[\uD800-\uDFFF]/g, '') // Remove surrogate pairs
       .trim();
+    /* eslint-enable no-control-regex */
     
     parsedContent = JSON.parse(cleanedContent);
   } catch (parseError) {
@@ -343,6 +345,7 @@ async function generateSingleChapter(
     ? parsedContent.content
     : JSON.stringify(parsedContent.content ?? '');
 
+  /* eslint-disable no-control-regex */
   const cleanTitle = (rawTitle || `Chapter ${chapterNumber}`)
     .replace(/\0/g, '')
     .replace(/[\x00-\x1F\x7F]/g, '')
@@ -356,6 +359,7 @@ async function generateSingleChapter(
     .replace(/[\uFFFE\uFFFF]/g, '')
     .replace(/[\uD800-\uDFFF]/g, '')
     .trim();
+  /* eslint-enable no-control-regex */
   
   return {
     title: cleanTitle,
@@ -388,7 +392,7 @@ serve(async (req: Request) => {
     const token = authHeader.slice(7);
     const jwtPayload = decodeJwtPayload(token);
     
-    if (jwtPayload && jwtPayload.sub && jwtPayload.sub.startsWith('user_')) {
+    if (jwtPayload && typeof jwtPayload === 'object' && jwtPayload !== null && 'sub' in jwtPayload && typeof (jwtPayload as { sub?: unknown }).sub === 'string' && String((jwtPayload as { sub: string }).sub).startsWith('user_')) {
       userId = jwtPayload.sub;
       console.log('Clerk user ID:', userId);
     } else {
@@ -438,6 +442,7 @@ serve(async (req: Request) => {
             const cleanData = { ...data };
             
             // Clean all string fields to ensure they're safe for JSON serialization
+            /* eslint-disable no-control-regex */
             const cleanString = (str: string): string => {
               return str
                 .replace(/\0/g, '') // Remove null bytes
@@ -446,6 +451,7 @@ serve(async (req: Request) => {
                 .replace(/[\uD800-\uDFFF]/g, '') // Remove surrogate pairs
                 .trim(); // Remove leading/trailing whitespace
             };
+            /* eslint-enable no-control-regex */
             
             // Clean all string fields
             if (cleanData.chapterContent) {

@@ -3,9 +3,9 @@
 // Phase 1A: Enhanced E-Book Generation System
 // MODIFIED FOR CLERK INTEGRATION: Properly handles Clerk user IDs as TEXT fields
 
-// @ts-ignore - HTTPS imports are supported in Deno runtime
+// @ts-expect-error -- HTTPS imports are supported in Deno Edge Functions runtime
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-// @ts-ignore - HTTPS imports are supported in Deno runtime
+// @ts-expect-error -- HTTPS imports are supported in Deno Edge Functions runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -124,7 +124,8 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
       last_updated: creditData?.updated_at || new Date().toISOString()
     };
     
-    const formattedTransactions: CreditTransaction[] = (transactions || []).map((tx: any) => ({
+type TxRow = { id: string; amount: number; description: string; created_at: string; samcart_order_id?: string };
+    const formattedTransactions: CreditTransaction[] = (transactions || []).map((tx: TxRow) => ({
       id: tx.id,
       type: tx.amount > 0 ? 'purchase' : 'usage',
       amount: Math.abs(tx.amount),

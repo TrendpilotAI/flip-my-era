@@ -47,11 +47,11 @@ const Profile = () => {
         .single();
 
       if (error) throw error;
-      setProfile(data as any);
-    } catch (error: any) {
+      setProfile(data as Profile);
+    } catch (error: unknown) {
       toast({
         title: "Error fetching profile",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {
@@ -79,10 +79,10 @@ const Profile = () => {
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error updating profile",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {
@@ -143,9 +143,9 @@ const Profile = () => {
               onClick={async () => {
                 try {
                   const { data, error } = await supabase.functions.invoke('stripe-portal', { method: 'POST' });
-                  if (error) throw error as any;
-                  if (data?.url) {
-                    window.location.href = data.url as string;
+                  if (error) throw error as unknown;
+                  if (data && typeof (data as { url?: unknown }).url === 'string') {
+                    window.location.href = (data as { url: string }).url;
                   }
                 } catch (err) {
                   toast({

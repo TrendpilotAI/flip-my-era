@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Type declarations for Deno and external modules
 
 declare namespace Deno {

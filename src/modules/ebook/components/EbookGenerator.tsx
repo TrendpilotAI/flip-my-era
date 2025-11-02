@@ -46,7 +46,7 @@ interface EbookGeneratorProps {
   storyId: string;
   storyline?: {
     logline: string;
-    threeActStructure: any;
+    threeActStructure: unknown;
     chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
     themes: string[];
     wordCountTotal: number;

@@ -4,7 +4,7 @@
 // MODIFIED FOR CLERK INTEGRATION: Properly handles Clerk user IDs as TEXT fields
 
 // Using Deno's built-in HTTP server API
-// @ts-ignore - HTTPS imports are supported in Deno runtime
+// @ts-expect-error -- HTTPS imports are supported in Deno Edge Functions runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Import credit pricing logic (inlined for Edge Function compatibility)
@@ -39,7 +39,7 @@ const CREDIT_PRICING = {
   background_music: { basic: 0.8, advanced: 1.5, ultra: 3 }
 };
 
-function calculateCreditCost(operation: any): number {
+function calculateCreditCost(operation: Operation): number {
   const { type, quality = 'basic', speedPriority = false, commercialLicense = false, quantity = 1 } = operation;
 
   let baseCost = 0;
@@ -265,7 +265,7 @@ const getMockValidationData = (creditsRequired: number = 1): ValidationResponse[
   };
 };
 
-// @ts-ignore - Deno.serve is available in Supabase Edge Functions runtime
+// @ts-expect-error -- Deno.serve is available in Supabase Edge Functions runtime
 Deno.serve(async (req: Request) => {
   // Get dynamic CORS headers based on request
   const dynamicCorsHeaders = getCorsHeaders(req);
@@ -322,7 +322,7 @@ Deno.serve(async (req: Request) => {
       
       // Handle both legacy and new pricing systems
       let totalCreditsRequired = 0;
-      let operations = body.operations || [];
+      const operations = body.operations || [];
 
       if (operations.length > 0) {
         // New operation-based pricing

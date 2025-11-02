@@ -113,7 +113,7 @@ export async function generateImageWithVariations(params: {
   }
 
   try {
-    let results: any[];
+    let results: Array<{ imageURL: string; seed: number; cost?: number }>;
 
     // Determine if this is an ERA or story prompt image
     if (params.vibeCheck && params.swiftieSignal && params.eraType) {

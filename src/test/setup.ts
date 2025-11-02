@@ -166,6 +166,7 @@ vi.mock('@/core/integrations/supabase/client', () => ({
   createSupabaseClientWithClerkToken: createSupabaseClientWithClerkTokenMock,
 }));
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const __testSupabaseMocks__ = {
   supabase: supabaseClientMock,
   createSupabaseClientWithClerkTokenMock,

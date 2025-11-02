@@ -22,8 +22,8 @@ interface StoryFormProps {
   setDate: (date: Date | undefined) => void;
   loading: boolean;
   handleSubmit: () => void;
-  handleStorySelect: (story: any) => void;
-  personalityTypes: any;
+  handleStorySelect: (story: { id: string; title: string; initial_story: string; created_at: string }) => void;
+  personalityTypes: Record<string, unknown>;
   personalityType: PersonalityTypeKey;
   setPersonalityType: (type: PersonalityTypeKey) => void;
   gender: GenderType;

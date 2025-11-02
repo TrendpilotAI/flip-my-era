@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
@@ -12,12 +12,15 @@ export async function apiRequestWithRetry<T>(
 ): Promise<AxiosResponse<T>> {
   try {
     return await axios(config);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Check if it's a rate limit error
-    const isRateLimit = 
-      error.response?.status === 429 || 
-      error.message?.includes('rate limit') ||
-      error.message?.includes('Rate limit');
+    let status: number | undefined;
+    let message = String(error);
+    if (axios.isAxiosError(error)) {
+      status = error.response?.status;
+      message = error.message ?? message;
+    }
+    const isRateLimit = status === 429 || message.includes('rate limit') || message.includes('Rate limit');
     
     // If we have retries left and it's a rate limit error
     if (currentRetry < MAX_RETRIES && isRateLimit) {

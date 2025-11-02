@@ -274,7 +274,7 @@ export async function publishImageToEnvironment(
     
     const results = await imagePublisher.publishImage(
       data,
-      { environment: target, collection: collection as any }
+      { environment: target, collection: collection as PublishTarget['collection'] }
     );
     
     const allSuccess = results.every(r => r.success);

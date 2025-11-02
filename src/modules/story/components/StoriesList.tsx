@@ -35,10 +35,10 @@ export const StoriesList = ({ onStorySelect }: StoriesListProps) => {
 
       if (error) throw error;
       setStories((data || []) as unknown as Story[]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error loading stories",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {

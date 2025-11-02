@@ -488,10 +488,7 @@ const PlanSelector = () => {
           </Card>
           </motion.div>
         </motion.div>
-      </motion.div>
 
-      {/* eslint-disable-next-line @typescript-eslint/parser-error */}
-      {/* Credit Top-Up Section */}
       <motion.div
         className="mt-16 max-w-4xl mx-auto"
         initial={{ opacity: 0, y: 20 }}
@@ -633,7 +630,6 @@ const PlanSelector = () => {
             </Button>
           </motion.div>
         </motion.div>
-      </motion.div>
     </motion.div>
   );
 };

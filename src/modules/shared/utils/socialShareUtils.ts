@@ -92,7 +92,7 @@ export const generatePlatformContent = (
   };
 
   let text = customMessage || '';
-  let hashtags = [...(content.hashtags || [])];
+  const hashtags = [...(content.hashtags || [])];
   
   // Add platform-specific hashtags
   switch (platform) {
@@ -419,16 +419,18 @@ export const shareContent = async (
     let userMessage: string | undefined;
 
     switch (options.platform) {
-      case 'instagram':
+      case 'instagram': {
         const instagramResult = shareToInstagram(content);
         shareMethod = 'copy';
         userMessage = instagramResult;
         break;
-      case 'tiktok':
+      }
+      case 'tiktok': {
         const tiktokResult = shareToTikTok(content);
         shareMethod = 'copy';
         userMessage = tiktokResult;
         break;
+      }
       case 'twitter':
         shareToTwitter(content);
         break;
@@ -438,11 +440,12 @@ export const shareContent = async (
       case 'whatsapp':
         shareToWhatsApp(content);
         break;
-      case 'linkedin':
+      case 'linkedin': {
         const linkedinResult = shareToLinkedIn(content);
         shareMethod = 'copy';
         userMessage = linkedinResult;
         break;
+      }
       case 'pinterest':
         shareToPinterest(content);
         break;

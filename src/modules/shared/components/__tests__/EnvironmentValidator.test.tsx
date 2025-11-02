@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
 import { EnvironmentValidator } from '../EnvironmentValidator';

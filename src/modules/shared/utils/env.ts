@@ -1,6 +1,6 @@
 export function getEnvVar(key: string): string | undefined {
   // In Vite, environment variables are accessed via import.meta.env
-  return (import.meta.env as any)[key];
+  return (import.meta.env as unknown as Record<string, string | undefined>)[key];
 }
 
 export function getGroqApiKey(): string | undefined {

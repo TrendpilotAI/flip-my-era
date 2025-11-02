@@ -22,40 +22,41 @@ interface PricingTier {
   popular?: boolean;
 }
 
-// NOTE: Update these Stripe Price IDs with your actual Stripe product price IDs
+// Per-story pricing: $4.99 for short stories, $14.99 for novellas
 const pricingTiers: PricingTier[] = [
   {
-    id: 'single',
-    name: 'Single Credit',
-    credits: 1,
-    price: 2.99,
-    description: 'Perfect for trying out our service',
-    features: ['1 E-book Generation', 'Full Quality Output', 'Instant Download'],
+    id: 'short-story',
+    name: 'Short Story',
+    credits: null,
+    price: 4.99,
+    description: 'Perfect for quick reads',
+    features: [
+      '3 chapters (~5,000 words)',
+      'Professional illustrations',
+      'Taylor Swift-inspired themes',
+      'Instant download',
+      'PDF & ePub formats'
+    ],
     type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_1_CREDIT || 'price_1credit',
-  },
-  {
-    id: 'bundle-3',
-    name: '3-Credit Bundle',
-    credits: 3,
-    price: 7.99,
-    originalPrice: 8.97,
-    description: 'Save 11% with this bundle',
-    features: ['3 E-book Generations', 'Full Quality Output', 'Instant Downloads', 'Best Value for Casual Users'],
-    type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_3_CREDITS || 'price_3credits',
-  },
-  {
-    id: 'bundle-5',
-    name: '5-Credit Bundle',
-    credits: 5,
-    price: 12.99,
-    originalPrice: 14.95,
-    description: 'Save 13% with this bundle',
-    features: ['5 E-book Generations', 'Full Quality Output', 'Instant Downloads', 'Best Value for Power Users'],
-    type: 'credits',
-    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_5_CREDITS || 'price_5credits',
+    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_SHORT_STORY || 'price_short_story',
     popular: true,
+  },
+  {
+    id: 'novella',
+    name: 'Novella',
+    credits: null,
+    price: 14.99,
+    description: 'For longer, immersive stories',
+    features: [
+      '8 chapters (~15,000 words)',
+      'Premium illustrations',
+      'Taylor Swift-inspired themes',
+      'Deeper character development',
+      'Instant download',
+      'PDF & ePub formats'
+    ],
+    type: 'credits',
+    stripePriceId: import.meta.env.VITE_STRIPE_PRICE_NOVELLA || 'price_novella',
   },
 ];
 
@@ -124,8 +125,8 @@ export const StripeCreditPurchaseModal: React.FC<StripeCreditPurchaseModalProps>
     }).format(price);
   };
 
-  const getCreditText = (credits: number | null) => {
-    if (credits === null) return 'Unlimited';
+  const getCreditText = (credits: number | null, tierName: string) => {
+    if (credits === null) return tierName;
     return credits === 1 ? '1 Credit' : `${credits} Credits`;
   };
 
@@ -143,10 +144,10 @@ export const StripeCreditPurchaseModal: React.FC<StripeCreditPurchaseModalProps>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
-            Purchase Credits & Subscriptions
+            Choose Your Story
           </DialogTitle>
           <DialogDescription className="text-center">
-            Choose the plan that works best for you
+            Create a professionally illustrated ebook in minutes
           </DialogDescription>
         </DialogHeader>
 
@@ -216,7 +217,7 @@ export const StripeCreditPurchaseModal: React.FC<StripeCreditPurchaseModalProps>
                       Processing...
                     </>
                   ) : (
-                    `Purchase ${getCreditText(tier.credits)}`
+                    `Purchase ${getCreditText(tier.credits, tier.name)}`
                   )}
                 </Button>
               </CardContent>
@@ -226,7 +227,7 @@ export const StripeCreditPurchaseModal: React.FC<StripeCreditPurchaseModalProps>
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>All purchases are processed securely through Stripe</p>
-          <p className="mt-1">Current balance: {currentBalance} credits</p>
+          <p className="mt-1">One purchase = one complete illustrated ebook</p>
         </div>
       </DialogContent>
     </Dialog>

@@ -162,7 +162,7 @@ export const DownloadShareModal = ({
 
       const options: ShareOptions = {
         ...shareOptions,
-        platform: platform as any
+        platform: platform as ShareOptions['platform']
       };
 
       const result = await shareContent(sharePayload, options, {
@@ -221,7 +221,7 @@ export const DownloadShareModal = ({
       };
 
       await copyToClipboard(sharePayload, {
-        platform: platform as any,
+        platform: platform as ShareOptions['platform'],
         contentType: content.type
       });
 
@@ -376,7 +376,7 @@ export const DownloadShareModal = ({
                         ))}
                       </ul>
                       <Button 
-                        onClick={() => handleDownload(format.id as any)}
+                        onClick={() => handleDownload(format.id as DownloadOptions['format'])}
                         disabled={isDownloading}
                         className="w-full"
                       >
@@ -433,7 +433,7 @@ export const DownloadShareModal = ({
                     <Select 
                       value={downloadOptions.pageSize} 
                       onValueChange={(value) => 
-                        setDownloadOptions(prev => ({ ...prev, pageSize: value as any }))
+                        setDownloadOptions(prev => ({ ...prev, pageSize: value as DownloadOptions['pageSize'] }))
                       }
                     >
                       <SelectTrigger>

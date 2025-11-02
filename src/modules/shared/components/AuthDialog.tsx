@@ -53,14 +53,7 @@ export const AuthDialog = ({ trigger, onSuccess, open, onOpenChange }: AuthDialo
 
   const shouldRenderTrigger = trigger !== null;
 
-  // If user is already authenticated, just render the trigger
-  if (isAuthenticated) {
-    if (!shouldRenderTrigger) {
-      return null;
-    }
-    return <>{trigger || defaultTrigger}</>;
-  }
-
+  // Effects must run unconditionally to satisfy the Rules of Hooks
   useEffect(() => {
     if (isAuthenticated && dialogOpen) {
       handleSuccess();
@@ -72,6 +65,14 @@ export const AuthDialog = ({ trigger, onSuccess, open, onOpenChange }: AuthDialo
       setIsLoading(false);
     }
   }, [dialogOpen]);
+
+  // If user is already authenticated, just render the trigger
+  if (isAuthenticated) {
+    if (!shouldRenderTrigger) {
+      return null;
+    }
+    return <>{trigger || defaultTrigger}</>;
+  }
 
   return (
     <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>

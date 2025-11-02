@@ -36,10 +36,10 @@ const Stories = () => {
 
       if (error) throw error;
       setStories(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error loading stories",
-        description: error.message,
+        description: error instanceof Error ? error.message : String(error),
         variant: "destructive",
       });
     } finally {

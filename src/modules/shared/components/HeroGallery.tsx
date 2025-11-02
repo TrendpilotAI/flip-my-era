@@ -74,7 +74,8 @@ export const HeroGallery = ({
       .then(data => {
         const heroImages: Record<string, string> = {};
         if (data.heroGallery && Array.isArray(data.heroGallery)) {
-          data.heroGallery.forEach((item: any) => {
+          type HeroDataItem = { id: string; bestImage: { url: string } };
+          (data.heroGallery as HeroDataItem[]).forEach((item) => {
             // Fix the path: remove /public prefix since public files are served from root
             const correctedPath = item.bestImage.url.replace('/public', '');
             heroImages[item.id] = correctedPath;

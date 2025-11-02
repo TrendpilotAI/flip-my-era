@@ -4,7 +4,7 @@
 // MODIFIED FOR CLERK INTEGRATION: Properly handles Clerk user IDs as TEXT fields
 
 // Using Deno's built-in HTTP server API
-// @ts-ignore - HTTPS imports are supported in Deno runtime
+// @ts-expect-error -- HTTPS imports are supported in Deno Edge Functions runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -174,7 +174,7 @@ const getMockValidationData = (creditsRequired: number = 1): ValidationResponse[
   };
 };
 
-// @ts-ignore - Deno.serve is available in Supabase Edge Functions runtime
+// @ts-expect-error -- Deno.serve is available in Supabase Edge Functions runtime
 Deno.serve(async (req: Request) => {
   // Get dynamic CORS headers based on request
   const dynamicCorsHeaders = getCorsHeaders(req);

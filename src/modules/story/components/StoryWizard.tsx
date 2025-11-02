@@ -195,7 +195,7 @@ export const StoryWizard: React.FC = () => {
           />
         );
 
-      case 'generation':
+      case 'generation': {
         if (!state.storyline) {
           goToStep('story-details');
           return null;
@@ -211,6 +211,7 @@ export const StoryWizard: React.FC = () => {
             storyFormat={state.selectedFormat || 'short-story'}
           />
         );
+      }
 
       case 'auto-generation':
         if (!state.storyline) {
