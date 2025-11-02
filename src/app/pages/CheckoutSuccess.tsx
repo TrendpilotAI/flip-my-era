@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts';
-import { updateSubscription } from "@/modules/story/utils/storyPersistence";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
 import { useToast } from '@/modules/shared/hooks/use-toast';
@@ -15,21 +14,39 @@ const CheckoutSuccess = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [planName, setPlanName] = useState("");
 
+  // Helper function to get display name for legacy plans
+  const getLegacyPlanDisplayName = (plan: string): string => {
+    if (plan === "basic" || plan === "starter") {
+      return "Basic Plan";
+    }
+    if (plan === "premium" || plan === "deluxe") {
+      return "Premium Plan";
+    }
+    if (plan === "vip") {
+      return "VIP Plan";
+    }
+    return "Plan";
+  };
+
   useEffect(() => {
     const processPayment = async () => {
       try {
         const params = new URLSearchParams(location.search);
-        const sessionId = params.get("session_id"); // Stripe session ID
-        const type = params.get("type"); // credits or subscription
-        const amount = params.get("amount"); // number of credits
-        const plan = params.get("plan"); // subscription plan name
-        
-        if (sessionId) {
-          // Stripe payment - verify session with backend (optional)
-          // Note: Credits are already allocated via webhook
+        const sessionId = params.get("session_id");
+        const type = params.get("type");
+        const amount = params.get("amount");
+        const plan = params.get("plan");
+
+        // Helper to refresh user data if needed
+        const refreshUserData = async () => {
           if (user) {
             await refreshUser();
           }
+        };
+
+        // Handle Stripe session-based payments
+        if (sessionId) {
+          await refreshUserData();
           
           if (type === 'credits') {
             setPlanName(`${amount} Credits`);
@@ -37,61 +54,52 @@ const CheckoutSuccess = () => {
               title: "Credits Added!",
               description: `${amount} credits have been added to your account.`,
             });
-          } else {
-            setPlanName(plan || 'Subscription');
-            toast({
-              title: "Subscription Activated!",
-              description: `Your ${plan} subscription is now active.`,
-            });
+            return;
           }
-        } else {
-          // Direct success URL without session (for Stripe redirect)
-          if (type === 'credits' && amount) {
-            setPlanName(`${amount} Credits`);
-            if (user) {
-              await refreshUser();
-            }
-            toast({
-              title: "Purchase Complete!",
-              description: `Your credits will be added to your account shortly.`,
-            });
-          } else if (type === 'subscription' && plan) {
-            setPlanName(plan);
-            if (user) {
-              await refreshUser();
-            }
-            toast({
-              title: "Subscription Active!",
-              description: `Your ${plan} subscription is being activated.`,
-            });
-          } else {
-            // Legacy SamCart flow
-            const legacyPlan = params.get("plan");
-            if (legacyPlan) {
-              let subscriptionLevel: "free" | "basic" | "premium" = "free";
-              let planDisplayName = "Free Plan";
-              
-              if (legacyPlan === "basic" || legacyPlan === "starter") {
-                subscriptionLevel = "basic";
-                planDisplayName = "Basic Plan";
-              } else if (legacyPlan === "premium" || legacyPlan === "deluxe" || legacyPlan === "vip") {
-                subscriptionLevel = "premium";
-                planDisplayName = legacyPlan === "vip" ? "VIP Plan" : "Premium Plan";
-              }
-              
-              setPlanName(planDisplayName);
-              
-              if (user) {
-                await updateSubscription(user.id, subscriptionLevel);
-                await refreshUser();
-              }
-              
-              toast({
-                title: "Subscription Activated",
-                description: `Your ${planDisplayName} has been successfully activated.`,
-              });
-            }
-          }
+          
+          // Subscription with session
+          setPlanName(plan || 'Subscription');
+          toast({
+            title: "Subscription Activated!",
+            description: `Your ${plan} subscription is now active.`,
+          });
+          return;
+        }
+
+        // Handle direct Stripe redirects (no session ID)
+        if (type === 'credits' && amount) {
+          setPlanName(`${amount} Credits`);
+          await refreshUserData();
+          toast({
+            title: "Purchase Complete!",
+            description: `Your credits will be added to your account shortly.`,
+          });
+          return;
+        }
+
+        if (type === 'subscription' && plan) {
+          setPlanName(plan);
+          await refreshUserData();
+          toast({
+            title: "Subscription Active!",
+            description: `Your ${plan} subscription is being activated.`,
+          });
+          return;
+        }
+
+        // Legacy SamCart flow
+        // NOTE: The subscription update logic has been removed to prevent a security vulnerability.
+        // A backend verification flow for SamCart purchases is required before re-enabling automatic subscription updates.
+        const legacyPlan = params.get("plan");
+        if (legacyPlan) {
+          const planDisplayName = getLegacyPlanDisplayName(legacyPlan);
+          setPlanName(planDisplayName);
+          await refreshUserData();
+          toast({
+            title: "Purchase Processing",
+            description: `Your ${planDisplayName} purchase is being processed and will be activated shortly.`,
+          });
+          return;
         }
       } catch (error) {
         console.error("Error processing payment:", error);

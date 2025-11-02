@@ -1,11 +1,34 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
+
+// TypeScript interfaces for Stripe objects
+interface StripeCheckoutSession {
+  id: string;
+  customer: string | null;
+  customer_email: string | null;
+  metadata: Record<string, string>;
+  payment_intent: string | null;
+  amount_total: number | null;
+  currency: string | null;
+}
+
+interface StripeSubscription {
+  id: string;
+  customer: string;
+  status: string;
+  metadata: Record<string, string> | null;
+}
+
+interface Profile {
+  id: string;
+  stripe_customer_id: string | null;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -71,7 +94,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Stripe webhook error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -79,56 +103,59 @@ serve(async (req) => {
 });
 
 // Helper function to handle checkout completion
-async function handleCheckoutCompleted(supabase: any, session: any) {
+async function handleCheckoutCompleted(supabase: SupabaseClient, session: StripeCheckoutSession) {
   console.log('Processing checkout.session.completed:', session.id);
   
-  const { customer, customer_email, metadata, payment_intent } = session as {
-    customer: string | null;
-    customer_email: string | null;
-    metadata: Record<string, string>;
-    payment_intent: string | null;
-  };
+  const { customer, customer_email, metadata, payment_intent } = session;
 
   // Try lookup by email first, then fallback to Stripe customer ID
-  let profile = null;
-  let profileError = null;
+  let profile: Profile | null = null;
+  let profileError: Error | null = null;
 
   if (customer_email) {
-    const res = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, stripe_customer_id')
       .eq('email', customer_email)
       .single();
-    profile = res.data;
-    profileError = res.error;
+    profile = data;
+    profileError = error;
   }
 
   if ((!profile || profileError) && customer) {
-    const resByCustomer = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id, stripe_customer_id')
       .eq('stripe_customer_id', customer)
       .single();
-    profile = resByCustomer.data;
-    profileError = resByCustomer.error;
+    profile = data;
+    profileError = error;
   }
 
-  if (!profile || profileError) {
-    console.error('User not found for session:', { customer_email, customer });
-    return;
-  }
-    
   if (profileError || !profile) {
-    console.error('User not found for email:', customer_email);
+    console.error('Error: User not found for checkout session', {
+      sessionId: session.id,
+      customerEmail: customer_email,
+      customerId: customer,
+      error: profileError?.message || 'No matching profile found'
+    });
     return;
   }
   
   // Update Stripe customer ID if not set
   if (!profile.stripe_customer_id && session.customer) {
-    await supabase
+    const { error: updateError } = await supabase
       .from('profiles')
       .update({ stripe_customer_id: session.customer })
       .eq('id', profile.id);
+      
+    if (updateError) {
+      console.error('Error updating Stripe customer ID:', {
+        userId: profile.id,
+        customerId: session.customer,
+        error: updateError.message
+      });
+    }
   }
   
   // Process based on metadata
@@ -156,18 +183,27 @@ async function handleCheckoutCompleted(supabase: any, session: any) {
         });
         
       if (txError) {
-        console.error('Error creating credit transaction:', txError);
+        console.error('Error creating credit transaction:', {
+          userId: profile.id,
+          credits,
+          sessionId: session.id,
+          error: txError.message
+        });
       } else {
-        console.log(`Successfully allocated ${credits} credits to user ${profile.id}`);
+        console.log(`Successfully allocated ${credits} credits to user ${profile.id} (session: ${session.id})`);
       }
+    } else {
+      console.warn('Invalid credits amount in metadata:', { sessionId: session.id, metadata });
     }
   } else if (metadata.type === 'subscription') {
-    console.log('Subscription purchase detected, will be handled by subscription events');
+    console.log('Subscription purchase detected, will be handled by subscription events:', session.id);
+  } else {
+    console.warn('Unknown metadata type in checkout session:', { sessionId: session.id, type: metadata.type });
   }
 }
 
 // Helper function to handle subscription changes
-async function handleSubscriptionChange(supabase: any, subscription: any) {
+async function handleSubscriptionChange(supabase: SupabaseClient, subscription: StripeSubscription) {
   console.log('Processing subscription change:', subscription.id);
   
   const { customer, metadata, status } = subscription;
@@ -180,7 +216,12 @@ async function handleSubscriptionChange(supabase: any, subscription: any) {
     .single();
     
   if (profileError || !profile) {
-    console.error('User not found for Stripe customer:', customer);
+    console.error('Error: User not found for Stripe subscription', {
+      subscriptionId: subscription.id,
+      customerId: customer,
+      status,
+      error: profileError?.message || 'No matching profile found'
+    });
     return;
   }
   
@@ -204,10 +245,16 @@ async function handleSubscriptionChange(supabase: any, subscription: any) {
     });
     
   if (updateError) {
-    console.error('Error updating subscription status:', updateError);
-  } else {
-    console.log(`Updated subscription status for user ${profile.id} to ${subscriptionStatus}`);
+    console.error('Error updating subscription status:', {
+      userId: profile.id,
+      subscriptionId: subscription.id,
+      status: subscriptionStatus,
+      error: updateError.message
+    });
+    return;
   }
+  
+  console.log(`Updated subscription status for user ${profile.id} to ${subscriptionStatus} (subscription: ${subscription.id})`);
   
   // If subscription is newly active, allocate monthly credits
   if (status === 'active' && metadata?.credits) {
@@ -220,7 +267,7 @@ async function handleSubscriptionChange(supabase: any, subscription: any) {
           user_id: profile.id,
           amount: monthlyCredits,
           transaction_type: 'monthly_allocation',
-          description: `Monthly credit allocation - ${metadata.plan} plan`,
+          description: `Monthly credit allocation - ${metadata.plan || 'unknown'} plan`,
           stripe_subscription_id: subscription.id,
           metadata: { 
             subscription_id: subscription.id,
@@ -231,10 +278,20 @@ async function handleSubscriptionChange(supabase: any, subscription: any) {
         });
         
       if (txError) {
-        console.error('Error allocating monthly credits:', txError);
+        console.error('Error allocating monthly credits:', {
+          userId: profile.id,
+          subscriptionId: subscription.id,
+          credits: monthlyCredits,
+          error: txError.message
+        });
       } else {
-        console.log(`Allocated ${monthlyCredits} monthly credits to user ${profile.id}`);
+        console.log(`Allocated ${monthlyCredits} monthly credits to user ${profile.id} (subscription: ${subscription.id})`);
       }
+    } else {
+      console.warn('Invalid credits amount in subscription metadata:', {
+        subscriptionId: subscription.id,
+        metadata
+      });
     }
   }
 }
