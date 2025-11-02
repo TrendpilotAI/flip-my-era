@@ -22,11 +22,13 @@ import ResetPassword from "@/modules/auth/components/ResetPassword";
 import UserDashboard from "@/modules/user/components/UserDashboard";
 import PlanSelector from "@/app/pages/PlanSelector";
 import FAQ from "@/app/pages/FAQ";
+import { performanceMonitor } from "@/core/utils/performance";
 
 function App() {
-  // Initialize error tracking
+  // Initialize error tracking and performance monitoring
   useEffect(() => {
     initSentry();
+    performanceMonitor.init();
   }, []);
 
   return (

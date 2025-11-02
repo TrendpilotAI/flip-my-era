@@ -9,6 +9,17 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
+// Import rate limiting utility
+// @ts-ignore -- Deno import
+import { getRateLimitRecord } from '../_shared/rateLimitStorage.ts';
+
+const RATE_LIMIT = {
+  maxRequests: 10, // More restrictive for storyline generation
+  windowMs: 3600000, // 1 hour
+};
+
+const REQUEST_TIMEOUT_MS = 60000; // 60 seconds (longer for storyline generation)
+
 interface GenerateStorylineRequest {
   era: string;
   characterName: string;
@@ -99,6 +110,30 @@ serve(async (req) => {
       );
     }
 
+    // Rate limiting check for storyline generation
+    const rateLimitKey = `groq-storyline:${user.id}`;
+    const rateLimitRecord = await getRateLimitRecord(rateLimitKey, RATE_LIMIT);
+    if (!rateLimitRecord.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: 'RATE_LIMIT_EXCEEDED',
+          message: 'Too many storyline generation requests. Please try again later.',
+          retryAfter: Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000),
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': String(Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000)),
+            'X-RateLimit-Limit': String(RATE_LIMIT.maxRequests),
+            'X-RateLimit-Remaining': String(rateLimitRecord.remaining),
+            'X-RateLimit-Reset': String(rateLimitRecord.resetAt),
+          },
+        }
+      );
+    }
+
     // Parse request body
     const params: GenerateStorylineRequest = await req.json();
     const {
@@ -173,11 +208,34 @@ serve(async (req) => {
       );
     }
 
-    // Sanitize inputs
-    const sanitizedCharacterName = characterName.trim().substring(0, 50);
-    const sanitizedLocation = location.trim().substring(0, 100);
-    const sanitizedPromptDescription = promptDescription ? promptDescription.trim().substring(0, 2000) : '';
-    const sanitizedCustomPrompt = customPrompt ? customPrompt.trim().substring(0, 2000) : '';
+    // Validate systemPrompt
+    if (!systemPrompt || typeof systemPrompt !== 'string' || systemPrompt.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'BAD_REQUEST', message: 'System prompt is required' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Enhanced sanitization to prevent prompt injection
+    const sanitizeForPrompt = (input: string, maxLength: number): string => {
+      return input
+        .replace(/ignore\s+(previous|above|all)\s+instructions/gi, '')
+        .replace(/system\s*:/gi, '')
+        .replace(/user\s*:/gi, '')
+        .replace(/assistant\s*:/gi, '')
+        .replace(/```/g, '')
+        .trim()
+        .substring(0, maxLength);
+    };
+
+    const sanitizedCharacterName = sanitizeForPrompt(characterName, 50);
+    const sanitizedLocation = sanitizeForPrompt(location, 100);
+    const sanitizedPromptDescription = promptDescription ? sanitizeForPrompt(promptDescription, 2000) : '';
+    const sanitizedCustomPrompt = customPrompt ? sanitizeForPrompt(customPrompt, 2000) : '';
+    const sanitizedSystemPrompt = sanitizeForPrompt(systemPrompt, 10000);
 
     // Construct user request with sanitized inputs
     const userRequest = `
@@ -235,82 +293,105 @@ Ensure the storyline:
 6. Incorporates themes relevant to the era and story
 `;
 
-    // Call Groq API
-    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${groqApiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt,
-          },
-          {
-            role: 'user',
-            content: userRequest,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 4096,
-        stream: false,
-      }),
-    });
+    // Call Groq API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    if (!groqResponse.ok) {
-      const errorData = await groqResponse.json().catch(() => ({}));
-      const errorMessage = errorData.error?.message || 'Groq API request failed';
-      
-      return new Response(
-        JSON.stringify({
-          error: 'GROQ_API_ERROR',
-          message: errorMessage,
-          status: groqResponse.status,
+    try {
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: sanitizedSystemPrompt,
+            },
+            {
+              role: 'user',
+              content: userRequest,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 4096,
+          stream: false,
         }),
-        {
-          status: groqResponse.status >= 500 ? 500 : groqResponse.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+        signal: controller.signal,
+      });
 
-    const data = await groqResponse.json();
-    const responseText = data.choices[0]?.message?.content || '';
+      clearTimeout(timeoutId);
 
-    // Extract JSON from response (it might be wrapped in markdown code blocks)
-    let jsonText = responseText;
-    const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      jsonText = jsonMatch[1];
-    }
-
-    // Parse the JSON response
-    const storyline = JSON.parse(jsonText) as Storyline;
-
-    // Validate the structure
-    if (!storyline.logline || !storyline.threeActStructure || !storyline.chapters) {
-      return new Response(
-        JSON.stringify({
-          error: 'INVALID_STORYLINE',
-          message: 'Invalid storyline structure returned from AI',
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ storyline }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      if (!groqResponse.ok) {
+        const errorData = await groqResponse.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || 'Groq API request failed';
+        
+        return new Response(
+          JSON.stringify({
+            error: 'GROQ_API_ERROR',
+            message: errorMessage,
+            status: groqResponse.status,
+          }),
+          {
+            status: groqResponse.status >= 500 ? 500 : groqResponse.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
-    );
+
+      const data = await groqResponse.json();
+      const responseText = data.choices[0]?.message?.content || '';
+
+      // Extract JSON from response (it might be wrapped in markdown code blocks)
+      let jsonText = responseText;
+      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[1];
+      }
+
+      // Parse the JSON response
+      const storyline = JSON.parse(jsonText) as Storyline;
+
+      // Validate the structure
+      if (!storyline.logline || !storyline.threeActStructure || !storyline.chapters) {
+        return new Response(
+          JSON.stringify({
+            error: 'INVALID_STORYLINE',
+            message: 'Invalid storyline structure returned from AI',
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ storyline }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        return new Response(
+          JSON.stringify({
+            error: 'REQUEST_TIMEOUT',
+            message: 'Storyline generation took too long. Please try again.',
+          }),
+          {
+            status: 408,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      throw error; // Re-throw to outer catch block
+    }
   } catch (error) {
     return new Response(
       JSON.stringify({

@@ -2,7 +2,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import fs from 'fs';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -16,9 +15,6 @@ export default defineConfig(({ mode }) => ({
         rewrite: (path) => path.replace(/^\/api\/functions/, '/functions/v1'),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            // Log the request for debugging
-            console.log(`Proxying request to: ${proxyReq.path}`);
-            
             // Add required Supabase headers
             proxyReq.setHeader('apikey', process.env.VITE_SUPABASE_ANON_KEY || '');
             proxyReq.setHeader('Content-Type', 'application/json');
@@ -30,9 +26,6 @@ export default defineConfig(({ mode }) => ({
           });
           
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            // Log the response for debugging
-            console.log(`Proxy response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
-            
             // Add CORS headers for development
             proxyRes.headers['Access-Control-Allow-Origin'] = '*';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
@@ -40,11 +33,15 @@ export default defineConfig(({ mode }) => ({
           });
           
           proxy.on('error', (err, req, res) => {
-            console.error('Proxy error:', err);
+            // Only log errors in development
+            if (mode === 'development') {
+              // eslint-disable-next-line no-console
+              console.error('Proxy error:', err);
+            }
             res.writeHead(500, {
               'Content-Type': 'application/json',
             });
-            res.end(JSON.stringify({ error: 'Proxy error', details: err.message }));
+            res.end(JSON.stringify({ error: 'Proxy error', details: mode === 'development' ? err.message : 'Internal server error' }));
           });
         }
       },
@@ -54,9 +51,6 @@ export default defineConfig(({ mode }) => ({
         rewrite: (path) => path.replace(/^\/api\/rest/, '/rest/v1'),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            // Log the request for debugging
-            console.log(`Proxying REST request to: ${proxyReq.path}`);
-            
             // Add required Supabase headers
             proxyReq.setHeader('apikey', process.env.VITE_SUPABASE_ANON_KEY || '');
             proxyReq.setHeader('Content-Type', 'application/json');
@@ -68,9 +62,6 @@ export default defineConfig(({ mode }) => ({
           });
           
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            // Log the response for debugging
-            console.log(`Proxy REST response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
-            
             // Add CORS headers for development
             proxyRes.headers['Access-Control-Allow-Origin'] = '*';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
@@ -78,11 +69,15 @@ export default defineConfig(({ mode }) => ({
           });
           
           proxy.on('error', (err, req, res) => {
-            console.error('Proxy REST error:', err);
+            // Only log errors in development
+            if (mode === 'development') {
+              // eslint-disable-next-line no-console
+              console.error('Proxy REST error:', err);
+            }
             res.writeHead(500, {
               'Content-Type': 'application/json',
             });
-            res.end(JSON.stringify({ error: 'Proxy REST error', details: err.message }));
+            res.end(JSON.stringify({ error: 'Proxy REST error', details: mode === 'development' ? err.message : 'Internal server error' }));
           });
         }
       },
@@ -92,9 +87,6 @@ export default defineConfig(({ mode }) => ({
         rewrite: (path) => path.replace(/^\/api\/stream-chapters/, '/functions/v1/stream-chapters'),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            // Log the request for debugging
-            console.log(`Proxying stream-chapters request to: ${proxyReq.path}`);
-            
             // Add required Supabase headers
             proxyReq.setHeader('apikey', process.env.VITE_SUPABASE_ANON_KEY || '');
             proxyReq.setHeader('Content-Type', 'application/json');
@@ -106,9 +98,6 @@ export default defineConfig(({ mode }) => ({
           });
           
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            // Log the response for debugging
-            console.log(`Proxy stream-chapters response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
-            
             // Add CORS headers for development
             proxyRes.headers['Access-Control-Allow-Origin'] = '*';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
@@ -116,11 +105,15 @@ export default defineConfig(({ mode }) => ({
           });
           
           proxy.on('error', (err, req, res) => {
-            console.error('Proxy stream-chapters error:', err);
+            // Only log errors in development
+            if (mode === 'development') {
+              // eslint-disable-next-line no-console
+              console.error('Proxy stream-chapters error:', err);
+            }
             res.writeHead(500, {
               'Content-Type': 'application/json',
             });
-            res.end(JSON.stringify({ error: 'Proxy stream-chapters error', details: err.message }));
+            res.end(JSON.stringify({ error: 'Proxy stream-chapters error', details: mode === 'development' ? err.message : 'Internal server error' }));
           });
         }
       }
@@ -138,4 +131,23 @@ export default defineConfig(({ mode }) => ({
     },
   },
   assetsInclude: ['**/*.md'], // Include markdown files as assets
+  build: {
+    // Code splitting configuration
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor libraries
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
+          'framer-motion': ['framer-motion'],
+          'clerk': ['@clerk/clerk-react'],
+          'supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
+    // Source maps for production debugging (can be disabled for smaller builds)
+    sourcemap: mode === 'development',
+  },
 }));
