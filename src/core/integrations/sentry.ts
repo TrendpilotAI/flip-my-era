@@ -4,10 +4,7 @@
  */
 
 import * as Sentry from '@sentry/react';
-
-// Note: In Sentry v10, BrowserTracing might be included directly
-// For compatibility, we'll import from @sentry/tracing if available
-import { BrowserTracing } from '@sentry/tracing';
+import { browserTracingIntegration } from '@sentry/react';
 
 interface SentryConfig {
   dsn: string;
@@ -15,7 +12,7 @@ interface SentryConfig {
   enabled: boolean;
   tracesSampleRate?: number;
   sendDefaultPii?: boolean;
-  beforeSend?: (event: unknown) => unknown | null;
+  beforeSend?: (event: Sentry.ErrorEvent, hint?: Sentry.EventHint) => Sentry.ErrorEvent | null;
 }
 
 class SentryService {
@@ -43,7 +40,7 @@ class SentryService {
       tracesSampleRate: config.tracesSampleRate || 0.1,
       sendDefaultPii: config.sendDefaultPii ?? false, // Default to false for privacy
       integrations: [
-        new BrowserTracing(),
+        browserTracingIntegration(),
       ],
       beforeSend(event, hint) {
         // Apply custom beforeSend if provided
@@ -137,44 +134,32 @@ class SentryService {
     }
 
     // Start a Sentry transaction for performance monitoring
-    // Note: Sentry v7+ uses startSpan, older versions use startTransaction
+    // Sentry v10 uses startSpan for transactions
     try {
-      // Try modern API first (Sentry v7+)
-      if (typeof (Sentry as any).startSpan === 'function') {
-        const span = (Sentry as any).startSpan({
-          name,
-          op: op as any,
-        }, (s: any) => s);
-        
-        return {
-          finish: () => {
-            if (span && typeof span.end === 'function') {
-              span.end();
-            }
-          },
-          setTag: (key: string, value: string) => {
-            if (span && typeof span.setTag === 'function') {
-              span.setTag(key, value);
-            }
-          },
-        };
-      }
+      // Use Sentry's startSpan API (v10+)
+      // Store span reference to manipulate it
+      let spanRef: Sentry.Span | undefined;
       
-      // Fallback to transaction API (Sentry v6)
-      const transaction = (Sentry as any).startTransaction({
-        name,
-        op: op as any,
-      });
+      Sentry.startSpan(
+        {
+          name,
+          op,
+        },
+        (span) => {
+          spanRef = span;
+          return span;
+        }
+      );
       
       return {
         finish: () => {
-          if (transaction && typeof transaction.finish === 'function') {
-            transaction.finish();
+          if (spanRef && typeof (spanRef as unknown as { end?: () => void }).end === 'function') {
+            (spanRef as unknown as { end: () => void }).end();
           }
         },
         setTag: (key: string, value: string) => {
-          if (transaction && typeof transaction.setTag === 'function') {
-            transaction.setTag(key, value);
+          if (spanRef && typeof (spanRef as unknown as { setTag?: (k: string, v: string) => void }).setTag === 'function') {
+            (spanRef as unknown as { setTag: (k: string, v: string) => void }).setTag(key, value);
           }
         },
       };
@@ -209,22 +194,22 @@ export function initSentry(): void {
     enabled: import.meta.env.PROD, // Only enable in production
     tracesSampleRate: 0.1, // Sample 10% of transactions
     sendDefaultPii, // Enable PII collection if configured
-      beforeSend: (event, hint) => {
-        // Filter out sensitive data
-        if (event && typeof event === 'object') {
-          const eventObj = event as Record<string, unknown>;
-          
-          // Remove authorization headers from request
-          if (eventObj.request && typeof eventObj.request === 'object') {
-            const request = eventObj.request as Record<string, unknown>;
-            if (request?.headers && typeof request.headers === 'object') {
-              const headers = request.headers as Record<string, unknown>;
-              delete headers.authorization;
-              delete headers.Authorization;
-            }
+    beforeSend: (event, hint) => {
+      // Filter out sensitive data
+      if (event && typeof event === 'object') {
+        const eventObj = event as unknown as Record<string, unknown>;
+        
+        // Remove authorization headers from request
+        if (eventObj.request && typeof eventObj.request === 'object') {
+          const request = eventObj.request as Record<string, unknown>;
+          if (request?.headers && typeof request.headers === 'object') {
+            const headers = request.headers as Record<string, unknown>;
+            delete headers.authorization;
+            delete headers.Authorization;
           }
         }
-        return event;
-      },
+      }
+      return event;
+    },
   });
 }
