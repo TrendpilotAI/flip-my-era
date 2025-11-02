@@ -178,8 +178,26 @@ async function handleSubscriptionChange(supabase: any, subscription: any) {
     .select('id')
     .eq('stripe_customer_id', customer)
     .single();
-    
-  if (profileError || !profile) {
+      if (monthlyCredits > 0) {
+        // Check if credits have already been allocated for this subscription to prevent duplicates
+        const { data: existingTx, error: checkError } = await supabase
+          .from('credit_transactions')
+          .select('id')
+          .eq('stripe_subscription_id', subscription.id)
+          .eq('transaction_type', 'monthly_allocation')
+          .limit(1);
+
+        if (checkError) {
+          console.error('Error checking for existing subscription transaction:', checkError);
+          return; // Exit to avoid potential duplicate allocation
+        }
+
+        if (existingTx && existingTx.length > 0) {
+          console.log(`Credits already allocated for subscription ${subscription.id}. Skipping.`);
+          return;
+        }
+
+        const { error: txError } = await supabase
     console.error('User not found for Stripe customer:', customer);
     return;
   }
