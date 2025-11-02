@@ -34,18 +34,19 @@ export class StripeClient {
       
       if (!publishableKey) {
         console.error('Stripe publishable key is not configured');
-        throw new Error('Stripe is not properly configured. Please contact support.');
+        return null;
       }
-      
+
       if (!publishableKey.startsWith('pk_')) {
         console.error('Invalid Stripe publishable key format');
-        throw new Error('Invalid Stripe configuration. Please contact support.');
+        return null;
       }
-      
+
       this.stripe = await loadStripe(publishableKey);
-      
+
       if (!this.stripe) {
-        throw new Error('Failed to load Stripe. Please check your internet connection.');
+        console.error('Failed to load Stripe. Please check your internet connection.');
+        return null;
       }
     }
     return this.stripe;
