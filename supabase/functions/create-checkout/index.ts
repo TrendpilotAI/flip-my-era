@@ -118,20 +118,13 @@ serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
-    // Map price ID to credits
-    const getCreditsForPrice = (priceId: string): number => {
-      const creditMap: Record<string, number> = {
-        'price_1S9zK25U03MNTw3qMH90DnC1': 25,  // $25 pack
-        'price_1S9zK25U03MNTw3qFkq00yiu': 55,  // $50 pack
-        'price_1S9zK35U03MNTw3qpmqEDL80': 120, // $100 pack
-        'price_1S9zK15U03MNTw3qAO5JnplW': 30,  // Starter subscription
-        'price_1S9zK25U03MNTw3qdDnUn7hk': 75,  // Deluxe subscription
-        'price_1S9zK25U03MNTw3qoCHo9KzE': 150, // VIP subscription
-      };
-      return creditMap[priceId] || 0;
-    };
+    // Fetch the price object from Stripe to get metadata
+    const price = await stripe.prices.retrieve(priceId);
+    const credits = parseInt(price.metadata.credits || '0');
 
-    const credits = getCreditsForPrice(priceId);
+    if (credits === 0) {
+      logStep("Warning: credits not found in price metadata", { priceId });
+    }
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
