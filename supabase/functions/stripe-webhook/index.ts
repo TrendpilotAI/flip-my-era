@@ -82,14 +82,41 @@ serve(async (req) => {
 async function handleCheckoutCompleted(supabase: any, session: any) {
   console.log('Processing checkout.session.completed:', session.id);
   
-  const { customer_email, metadata, payment_intent } = session;
-  
-  // Find user by email
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id, stripe_customer_id')
-    .eq('email', customer_email)
-    .single();
+  const { customer, customer_email, metadata, payment_intent } = session as {
+    customer: string | null;
+    customer_email: string | null;
+    metadata: Record<string, string>;
+    payment_intent: string | null;
+  };
+
+  // Try lookup by email first, then fallback to Stripe customer ID
+  let profile = null;
+  let profileError = null;
+
+  if (customer_email) {
+    const res = await supabase
+      .from('profiles')
+      .select('id, stripe_customer_id')
+      .eq('email', customer_email)
+      .single();
+    profile = res.data;
+    profileError = res.error;
+  }
+
+  if ((!profile || profileError) && customer) {
+    const resByCustomer = await supabase
+      .from('profiles')
+      .select('id, stripe_customer_id')
+      .eq('stripe_customer_id', customer)
+      .single();
+    profile = resByCustomer.data;
+    profileError = resByCustomer.error;
+  }
+
+  if (!profile || profileError) {
+    console.error('User not found for session:', { customer_email, customer });
+    return;
+  }
     
   if (profileError || !profile) {
     console.error('User not found for email:', customer_email);
