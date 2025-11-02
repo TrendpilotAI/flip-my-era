@@ -53,14 +53,9 @@ export function initOpenTelemetry(): void {
     
     const traceExporter = new OTLPTraceExporter({
       url: tracesUrl,
-      headers: {
-        // Sentry may require authentication headers
-        // Add Sentry auth token if available
-        ...(import.meta.env.VITE_SENTRY_AUTH_TOKEN && {
-          Authorization: `Bearer ${import.meta.env.VITE_SENTRY_AUTH_TOKEN}`,
-        }),
-        'Content-Type': 'application/json',
-      },
+      headers: import.meta.env.VITE_SENTRY_AUTH_TOKEN
+        ? { Authorization: `Bearer ${import.meta.env.VITE_SENTRY_AUTH_TOKEN}` }
+        : undefined,
       // Compression is recommended for production
       compression: 'gzip',
     });
