@@ -92,7 +92,7 @@ export async function isRunwareAvailable(): Promise<boolean> {
   try {
     return await runwareService.isConnected();
   } catch (error) {
-    console.error('RUNWARE availability check failed:', error);
+    // RUNWARE availability check failed - return false
     return false;
   }
 }
@@ -124,7 +124,6 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
     
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('Failed to generate story:', error);
     throw new Error('Story generation failed. Please try again later.');
   }
 }
@@ -167,7 +166,6 @@ export async function generateChapters(story: string, numChapters: number = 3): 
     
     return parsedContent.chapters || [];
   } catch (error) {
-    console.error('Failed to generate chapters:', error);
     throw new Error('Chapter generation failed. Please try again later.');
   }
 }
@@ -245,7 +243,6 @@ export async function generateTaylorSwiftChapters(
     
     return parsedContent.chapters || [];
   } catch (error) {
-    console.error('Failed to generate Taylor Swift chapters:', error);
     throw new Error('Taylor Swift-themed chapter generation failed. Please try again later.');
   }
 }
@@ -288,7 +285,6 @@ export async function generateName(options: GenerateNameOptions): Promise<string
     const generatedName = response.data.choices[0].message.content.trim();
     return generatedName;
   } catch (error) {
-    console.error('Failed to generate name:', error);
     throw new Error('Name generation failed. Please try again later.');
   }
 }
@@ -296,7 +292,10 @@ export async function generateName(options: GenerateNameOptions): Promise<string
 /**
  * Generate an optimized illustration for an ebook chapter using RUNWARE Flux1.1 Pro with AI-enhanced prompts
  */
-export async function generateEbookIllustration(options: GenerateEbookIllustrationOptions): Promise<string> {
+export async function generateEbookIllustration(
+  options: GenerateEbookIllustrationOptions,
+  clerkToken?: string | null
+): Promise<string> {
   try {
     const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
     
@@ -311,33 +310,30 @@ export async function generateEbookIllustration(options: GenerateEbookIllustrati
         style,
         mood,
         useEnhancedPrompts
-      });
+      }, clerkToken);
       
       return illustration.imageURL || '';
     } else {
-      console.warn('RUNWARE not available, falling back to OpenAI');
       throw new Error('RUNWARE not available');
     }
   } catch (error) {
-    console.error('Failed to generate ebook illustration with RUNWARE:', error);
-    
-    // Fallback to OpenAI if RUNWARE fails
+    // Fallback to basic prompt generation
     try {
       const { chapterTitle, chapterContent, style = 'children', mood = 'happy', useEnhancedPrompts = true } = options;
       
       let prompt: string;
       
-      if (useEnhancedPrompts) {
-        // Try to use Groq-enhanced prompt
+      if (useEnhancedPrompts && clerkToken) {
+        // Try to use Groq-enhanced prompt via Edge Function
         try {
           prompt = await enhancePromptWithGroq({
             chapterTitle,
             chapterContent,
             style,
             mood
-          });
+          }, clerkToken);
         } catch (enhancementError) {
-          console.warn('Failed to enhance prompt with Groq, using basic prompt:', enhancementError);
+          // Fallback to basic prompt if enhancement fails
           prompt = createEbookIllustrationPrompt({
             chapterTitle,
             chapterContent,
@@ -357,7 +353,6 @@ export async function generateEbookIllustration(options: GenerateEbookIllustrati
       
       return await generateImage({ prompt, useRunware: false });
     } catch (fallbackError) {
-      console.error('Fallback image generation also failed:', fallbackError);
       throw new Error('Ebook illustration generation failed. Please try again later.');
     }
   }
@@ -366,7 +361,10 @@ export async function generateEbookIllustration(options: GenerateEbookIllustrati
 /**
  * Generate a Taylor Swift-inspired thematic illustration with mood-appropriate styling
  */
-export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwiftIllustrationOptions): Promise<string> {
+export async function generateTaylorSwiftIllustration(
+  options: GenerateTaylorSwiftIllustrationOptions,
+  clerkToken?: string | null
+): Promise<string> {
   try {
     const {
       chapterTitle,
@@ -393,12 +391,10 @@ export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwi
         timeOfDay,
         season,
         setting
-      });
+      }, clerkToken);
       
       return illustration.imageURL || '';
     } else {
-      console.warn('RUNWARE not available for Taylor Swift illustrations, falling back to standard generation');
-      
       // Fallback to standard ebook illustration with Taylor Swift styling hints
       const styleMapping: Record<TaylorSwiftTheme, 'children' | 'fantasy' | 'adventure' | 'educational'> = {
         'coming-of-age': 'children',
@@ -420,7 +416,7 @@ export async function generateTaylorSwiftIllustration(options: GenerateTaylorSwi
         style: styleMapping[theme],
         mood: moodMapping[theme],
         useEnhancedPrompts
-      });
+      }, clerkToken);
     }
   } catch (error) {
     console.error('Failed to generate Taylor Swift illustration:', error);
@@ -452,10 +448,8 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
           });
           return illustration.imageURL;
         } catch (runwareError) {
-          console.warn('RUNWARE image generation failed, falling back to OpenAI:', runwareError);
+          // Fallback to OpenAI
         }
-      } else {
-        console.warn('RUNWARE not available, using OpenAI');
       }
     }
     
@@ -479,13 +473,10 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
       
       return response.data.data[0].url;
     } catch (openaiError) {
-      console.warn('OpenAI image generation failed, falling back to placeholder:', openaiError);
-      
       // Fallback to a placeholder image if OpenAI fails
       return `https://picsum.photos/seed/${Math.random().toString(36).substring(7)}/1024/1024`;
     }
   } catch (error) {
-    console.error('Failed to generate image:', error);
     throw new Error('Image generation failed. Please try again later.');
   }
 }

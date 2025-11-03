@@ -4,9 +4,10 @@ import { initOpenTelemetry } from "@/core/integrations/opentelemetry";
 import App from './App.tsx'
 import './index.css'
 
-// Initialize OpenTelemetry before React renders
-// This ensures all traces are captured from the start
-initOpenTelemetry();
+// Initialize OpenTelemetry before React renders (browser-only)
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  initOpenTelemetry();
+}
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 if (!PUBLISHABLE_KEY) {

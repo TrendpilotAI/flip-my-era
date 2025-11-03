@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { generateWithGroq } from '@/modules/shared/utils/groq';
+import { useClerkAuth } from '@/modules/auth/contexts';
 import { getStarSign } from '@/modules/user/utils/starSigns';
 import type { PersonalityTypeKey } from '@/modules/story/types/personality';
 import { personalityTypes } from '@/modules/story/types/personality';
@@ -25,7 +26,7 @@ interface SavedStory {
 }
 
 export const useStoryGeneration = () => {
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated, getToken } = useClerkAuth();
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
   const [date, setDate] = useState<Date>();
@@ -65,9 +66,9 @@ export const useStoryGeneration = () => {
           if (savedStory.storyId) setStoryId(savedStory.storyId);
         }
         
-        console.log("Loaded saved preferences and story data");
+        // Data loaded successfully
       } catch (error) {
-        console.error("Error loading saved data:", error);
+        // Error loading saved data - silently fail
       } finally {
         setIsInitialized(true);
       }
@@ -89,7 +90,6 @@ export const useStoryGeneration = () => {
           const newTransformedName = await transformName(name, detectedGender, gender);
           setTransformedName(newTransformedName);
         } catch (error: unknown) {
-          console.error('Error transforming name:', error);
           // Fallback to original name if transformation fails
           setTransformedName(name);
         }
@@ -135,7 +135,9 @@ export const useStoryGeneration = () => {
         location
       );
 
-      const story = await generateWithGroq(prompt);
+      // Get Clerk token for authentication
+      const clerkToken = await getToken();
+      const story = await generateWithGroq(prompt, clerkToken);
       loadingToast.dismiss();
       
       if (story) {
@@ -158,7 +160,6 @@ export const useStoryGeneration = () => {
         });
       }
     } catch (error) {
-      console.error("Error generating story:", error);
       loadingToast.dismiss();
       
       // Handle specific API errors

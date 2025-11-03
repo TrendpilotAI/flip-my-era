@@ -420,7 +420,7 @@ export class RunwareService {
   constructor(apiKey: string) {
     this.apiKey = apiKey;
     if (!apiKey) {
-      console.warn('RUNWARE service not configured. Image generation will fall back to other services.');
+      // RUNWARE service not configured - will fall back to other services
       return;
     }
     void this.connectWithLock();
@@ -463,26 +463,20 @@ export class RunwareService {
         
         this.ws.onopen = async () => {
           this.reconnectAttempts = 0;
-          console.log("RUNWARE WebSocket connected, waiting for ready state...");
           await this.waitForReadyState();
-          console.log("RUNWARE WebSocket ready, authenticating...");
           try {
             await this.authenticate();
             resolve();
           } catch (error) {
-            console.error("RUNWARE authentication failed");
             reject(new Error("Authentication failed"));
           }
         };
 
         this.ws.onmessage = (event) => {
-          console.log("RUNWARE received message:", event.data);
-          
           try {
             const response: RunwareApiResponse = JSON.parse(event.data);
             
             if (response.error || response.errors) {
-              console.error("RUNWARE WebSocket error response:", response);
               const errorMessage = response.errorMessage || response.errors?.[0]?.message || "An error occurred";
               throw new Error(errorMessage);
             }
@@ -490,7 +484,6 @@ export class RunwareService {
             if (response.data) {
               response.data.forEach((item) => {
                 if (item.taskType === "authentication") {
-                  console.log("RUNWARE authentication successful");
                   this.connectionSessionUUID = (item as RunwareAuthenticationResponse).connectionSessionUUID;
                   this.isAuthenticated = true;
                 } else if (item.taskType === "imageInference") {
@@ -505,31 +498,25 @@ export class RunwareService {
               });
             }
           } catch (parseError) {
-            console.error("RUNWARE failed to parse response:", parseError);
+            // Failed to parse response - continue silently
           }
         };
 
-        this.ws.onerror = (error) => {
-          console.error("RUNWARE WebSocket connection error");
+        this.ws.onerror = () => {
           reject(new Error("WebSocket connection failed"));
         };
 
         this.ws.onclose = () => {
-          console.log("RUNWARE WebSocket closed");
           this.isAuthenticated = false;
           if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.reconnectAttempts++;
-            console.log(`RUNWARE attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-          const delay = 1000 * this.reconnectAttempts;
-          setTimeout(() => {
-            void this.connectWithLock();
-          }, delay);
-          } else {
-            console.error("RUNWARE max reconnection attempts reached");
+            const delay = 1000 * this.reconnectAttempts;
+            setTimeout(() => {
+              void this.connectWithLock();
+            }, delay);
           }
         };
       } catch (error) {
-        console.error("Error creating RUNWARE WebSocket:", error);
         reject(error);
       }
     });
@@ -585,7 +572,6 @@ export class RunwareService {
         return;
       }
 
-      console.log("Sending RUNWARE authentication message");
       const authMessage: RunwareAuthenticationRequest[] = [{
         taskType: "authentication",
         apiKey: this.apiKey!,
@@ -601,7 +587,6 @@ export class RunwareService {
             resolve();
           }
         } catch (error) {
-          console.error("RUNWARE authentication response parse error:", error);
           reject(error);
         }
       };
@@ -624,7 +609,6 @@ export class RunwareService {
     await this.connectWithLock();
 
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN || !this.isAuthenticated) {
-      console.log('RUNWARE connection not ready, reconnecting...');
       await this.connectWithLock();
     }
   }
@@ -684,8 +668,6 @@ export class RunwareService {
 
       const message = [request];
 
-      console.log("Sending RUNWARE image generation message:", message);
-
       this.messageCallbacks.set(taskUUID, {
         callback: (data: RunwareImageInferenceResponse) => {
           if ('error' in data) {
@@ -717,14 +699,17 @@ export class RunwareService {
   /**
    * Generate an optimized illustration for an ebook chapter using FLUX.1.1 Pro with AI-enhanced prompts
    */
-  async generateEbookIllustration(params: EbookIllustrationParams): Promise<GeneratedImage> {
+  async generateEbookIllustration(
+    params: EbookIllustrationParams,
+    clerkToken?: string | null
+  ): Promise<GeneratedImage> {
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
     }
 
-    // Use Groq to enhance the prompt if enabled
-    const enhancedPrompt = params.useEnhancedPrompts !== false
-      ? await enhancePromptWithGroq(params)
+    // Use Groq to enhance the prompt if enabled and token available
+    const enhancedPrompt = (params.useEnhancedPrompts !== false && clerkToken)
+      ? await enhancePromptWithGroq(params, clerkToken)
       : createEbookIllustrationPrompt(params);
     
     return this.generateImage({
@@ -745,7 +730,10 @@ export class RunwareService {
   /**
    * Generate a Taylor Swift-inspired thematic illustration with mood-appropriate styling
    */
-  async generateTaylorSwiftIllustration(params: TaylorSwiftIllustrationParams): Promise<GeneratedImage> {
+  async generateTaylorSwiftIllustration(
+    params: TaylorSwiftIllustrationParams,
+    clerkToken?: string | null
+  ): Promise<GeneratedImage> {
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
     }
@@ -773,11 +761,10 @@ export class RunwareService {
 
     // Use Groq to enhance the prompt if enabled
     let finalPrompt = taylorSwiftPrompt;
-    if (params.useEnhancedPrompts !== false) {
+    if (params.useEnhancedPrompts !== false && clerkToken) {
       try {
-        finalPrompt = await this.enhanceTaylorSwiftPromptWithGroq(taylorSwiftPrompt, thematicParams);
+        finalPrompt = await this.enhanceTaylorSwiftPromptWithGroq(taylorSwiftPrompt, thematicParams, clerkToken);
       } catch (error) {
-        console.warn('Failed to enhance Taylor Swift prompt with Groq, using base prompt:', error);
         // Fall back to the Taylor Swift prompt if enhancement fails
       }
     }
@@ -798,8 +785,18 @@ export class RunwareService {
 
   /**
    * Enhanced prompt generation specifically for Taylor Swift-themed illustrations
+   * NOTE: This method now requires a Clerk token parameter to call the Edge Function
    */
-  private async enhanceTaylorSwiftPromptWithGroq(basePrompt: string, params: ThematicImageParams): Promise<string> {
+  private async enhanceTaylorSwiftPromptWithGroq(
+    basePrompt: string,
+    params: ThematicImageParams,
+    clerkToken: string | null
+  ): Promise<string> {
+    if (!clerkToken) {
+      // Fallback to base prompt if no token available
+      return basePrompt;
+    }
+
     try {
       const enhancementPrompt = `
 You are an expert AI prompt engineer specializing in creating Taylor Swift-inspired illustrations for young adult literature.
@@ -826,44 +823,19 @@ Focus on creating a vivid, emotionally resonant scene that could be from a Taylo
 Return ONLY the enhanced prompt, no explanations.
 `;
 
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'llama3-70b-8192',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert AI prompt engineer for Taylor Swift-inspired illustrations. Create detailed, emotionally resonant prompts for young adult literature.'
-            },
-            {
-              role: 'user',
-              content: enhancementPrompt
-            }
-          ],
-          temperature: 0.8,
-          max_tokens: 1000
-        })
+      // Call Groq API via Edge Function
+      const { generateWithGroq } = await import('@/modules/shared/utils/groq');
+      const enhancedPrompt = await generateWithGroq(enhancementPrompt, clerkToken, {
+        model: 'llama3-70b-8192',
+        systemPrompt: 'You are an expert AI prompt engineer for Taylor Swift-inspired illustrations. Create detailed, emotionally resonant prompts for young adult literature.',
+        temperature: 0.8,
+        maxTokens: 1000,
       });
 
-      if (!response.ok) {
-        throw new Error('Groq API request failed');
-      }
-
-      const data = await response.json();
-      const enhancedPrompt = data.choices?.[0]?.message?.content?.trim();
-      
-      if (!enhancedPrompt) {
-        throw new Error('Invalid response from Groq API');
-      }
-
-      return enhancedPrompt;
+      return enhancedPrompt.trim();
     } catch (error) {
-      console.error('Failed to enhance Taylor Swift prompt with Groq:', error);
-      throw error;
+      // Fallback to base prompt on error
+      return basePrompt;
     }
   }
 
@@ -871,8 +843,9 @@ Return ONLY the enhanced prompt, no explanations.
    * Generate multiple illustrations for a series of chapters with AI-enhanced prompts
    */
   async generateChapterIllustrations(
-    chapters: Array<{ title: string; content: string }>, 
-    style: 'children' | 'fantasy' | 'adventure' | 'educational' = 'children'
+    chapters: Array<{ title: string; content: string }>,
+    style: 'children' | 'fantasy' | 'adventure' | 'educational' = 'children',
+    clerkToken?: string | null
   ): Promise<GeneratedImage[]> {
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
@@ -887,10 +860,9 @@ Return ONLY the enhanced prompt, no explanations.
           chapterContent: chapter.content,
           style,
           mood: 'happy' // Default mood, could be made dynamic based on content
-        });
+        }, clerkToken);
         illustrations.push(illustration);
       } catch (error) {
-        console.error(`Failed to generate illustration for chapter "${chapter.title}":`, error);
         // Continue with next chapter even if one fails
       }
     }
@@ -981,7 +953,6 @@ Return ONLY the enhanced prompt, no explanations.
           }
 
           if (receivedCount === 0 && (!data.imageURL && !data.imageBase64Data && !data.imageDataURI)) {
-            console.warn('RUNWARE returned empty payload, ignoring and waiting for next response');
             return;
           }
 
@@ -999,8 +970,6 @@ Return ONLY the enhanced prompt, no explanations.
 
           collectedResults.push(result);
           receivedCount++;
-
-          console.log(`Received image ${receivedCount}/${numberResults}`);
 
           // When all results received, resolve with array
           if (receivedCount >= numberResults) {
@@ -1025,7 +994,6 @@ Return ONLY the enhanced prompt, no explanations.
           hasSettled = true;
           this.messageCallbacks.delete(taskUUID);
           if (collectedResults.length > 0) {
-            console.warn(`Only received ${collectedResults.length}/${numberResults} images, returning partial results`);
             resolve(collectedResults);
           } else {
             reject(new Error('Image generation timeout'));

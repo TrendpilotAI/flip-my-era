@@ -1,4 +1,7 @@
+import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { initSentry } from "@/core/integrations/sentry";
+import { performanceMonitor } from "@/core/utils/performance";
 import { Layout } from "@/modules/shared/components/Layout";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
@@ -22,16 +25,14 @@ import PlanSelector from "@/app/pages/PlanSelector";
 import FAQ from "@/app/pages/FAQ";
 
 function App() {
+  // Initialize error tracking and performance monitoring
+  useEffect(() => {
+    initSentry();
+    performanceMonitor.init();
+  }, []);
+
   return (
-    <ErrorBoundary
-      onError={(error, errorInfo) => {
-        // Log to error reporting service in production
-        if (process.env.NODE_ENV === 'production') {
-          // Example: logErrorToService(error, errorInfo);
-          console.error('Application error:', error, errorInfo);
-        }
-      }}
-    >
+    <ErrorBoundary>
       <ClerkAuthProvider>
         <Router>
           <Layout>

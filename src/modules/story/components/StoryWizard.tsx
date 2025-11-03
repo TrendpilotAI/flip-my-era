@@ -19,7 +19,7 @@ import { useClerkAuth } from '@/modules/auth/contexts';
 export const StoryWizard: React.FC = () => {
   const { toast } = useToast();
   const { state, selectEra, selectPrompt, selectCustomPrompt, selectArchetype, setCharacterName, setGender, setLocation, setCustomPrompt, setStoryline, selectFormat, goToStep } = useStoryWizard();
-  const { isAuthenticated, refreshUser, fetchCreditBalance } = useClerkAuth();
+  const { isAuthenticated, refreshUser, fetchCreditBalance, getToken } = useClerkAuth();
   
   const [isGeneratingStoryline, setIsGeneratingStoryline] = useState(false);
   const [isRegeneratingStoryline, setIsRegeneratingStoryline] = useState(false);
@@ -49,6 +49,9 @@ export const StoryWizard: React.FC = () => {
         promptDescription = prompt?.description || '';
       }
 
+      // Get Clerk token for authentication
+      const clerkToken = await getToken({ template: 'supabase' });
+      
       // Generate the storyline
       const storyline = await generateStoryline({
         era: state.selectedEra,
@@ -58,7 +61,7 @@ export const StoryWizard: React.FC = () => {
         location: state.location,
         promptDescription,
         customPrompt: state.isCustomPrompt ? state.customPrompt : undefined
-      });
+      }, clerkToken);
 
       setStoryline(storyline);
 
@@ -67,8 +70,6 @@ export const StoryWizard: React.FC = () => {
         description: "Your story structure is ready to review.",
       });
     } catch (error) {
-      console.error('Error generating storyline:', error);
-      
       toast({
         title: "Generation Failed",
         description: error instanceof Error ? error.message : "Failed to generate storyline. Please try again.",
@@ -81,6 +82,8 @@ export const StoryWizard: React.FC = () => {
 
   // Handle storyline regeneration
   const handleRegenerateStoryline = async () => {
+    // Get Clerk token for authentication
+    const clerkToken = await getToken();
     setIsRegeneratingStoryline(true);
     await handleGenerateStoryline();
     setIsRegeneratingStoryline(false);
@@ -105,7 +108,7 @@ export const StoryWizard: React.FC = () => {
       await refreshUser();
       await fetchCreditBalance();
     } catch (error) {
-      console.error('Post-auth sync failed:', error);
+      // Post-auth sync failed - silently continue
     }
 
     if (pendingStep) {

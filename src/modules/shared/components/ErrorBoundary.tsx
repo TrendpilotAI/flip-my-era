@@ -34,11 +34,6 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
-
     // Call onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -50,8 +45,22 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo,
     });
 
-    // In production, you might want to log to an error reporting service
-    // Example: logErrorToService(error, errorInfo);
+    // Send to error tracking service
+    try {
+      const { sentryService } = require('@/core/integrations/sentry');
+      sentryService.captureException(error, {
+        contexts: {
+          react: {
+            componentStack: errorInfo.componentStack,
+          },
+        },
+      });
+    } catch {
+      // Sentry not available or not initialized, log to console
+      if (import.meta.env.DEV) {
+        console.error('ErrorBoundary caught an error:', error, errorInfo);
+      }
+    }
   }
 
   handleReset = () => {
@@ -92,7 +101,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Show error details in development */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
+              {import.meta.env.DEV && this.state.error && (
                 <div className="p-4 bg-destructive/10 rounded-lg space-y-2">
                   <p className="text-sm font-semibold text-destructive">
                     Error Details (Development Only):

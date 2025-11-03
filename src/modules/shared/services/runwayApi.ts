@@ -6,6 +6,9 @@
 import { runwareService, type GeneratedImage } from '@/modules/shared/utils/runware';
 import { generateWithGroq } from '@/modules/shared/utils/groq';
 
+// Note: analyzeAndSelectBestImage now requires a Clerk token
+// This function should be called from a component that has access to useClerkAuth
+
 export interface ImageVariation {
   url: string;
   seed: number;
@@ -24,12 +27,23 @@ export interface ImageGenerationResult {
 
 /**
  * Analyze image variations and select the best one using AI
+ * NOTE: Now requires a Clerk token to call the Edge Function
  */
 async function analyzeAndSelectBestImage(
   variations: ImageVariation[],
   title: string,
-  description: string
+  description: string,
+  clerkToken: string | null
 ): Promise<{ bestIndex: number; reasoning: string; scores: number[] }> {
+  // Fallback if no token available
+  if (!clerkToken) {
+    return {
+      bestIndex: Math.floor(variations.length / 2),
+      reasoning: 'Auto-selected (authentication required)',
+      scores: variations.map(() => 5)
+    };
+  }
+
   try {
     const analysisPrompt = `You are an expert art director analyzing images for a Taylor Swift-inspired storytelling app.
 
@@ -56,21 +70,21 @@ Respond with JSON only:
   "scores": [<score 0-10 for each image>]
 }`;
 
-    const response = await generateWithGroq(analysisPrompt);
+    const response = await generateWithGroq(analysisPrompt, clerkToken);
     
     // Parse JSON response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const analysis = JSON.parse(jsonMatch[0]);
-      return {
-        bestIndex: analysis.bestIndex || 0,
-        reasoning: analysis.reasoning || 'Selected by AI analysis',
-        scores: analysis.scores || variations.map(() => 5)
-      };
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const analysis = JSON.parse(jsonMatch[0]);
+        return {
+          bestIndex: analysis.bestIndex || 0,
+          reasoning: analysis.reasoning || 'Selected by AI analysis',
+          scores: analysis.scores || variations.map(() => 5)
+        };
+      }
+    } catch (error) {
+      // Error analyzing images - fallback to default selection
     }
-  } catch (error) {
-    console.error('Error analyzing images:', error);
-  }
 
   // Fallback: select middle image
   return {
@@ -82,22 +96,25 @@ Respond with JSON only:
 
 /**
  * Generate multiple image variations and select the best one
+ * NOTE: Now requires a Clerk token for AI analysis
  */
-export async function generateImageWithVariations(params: {
-  id: string;
-  prompt: string;
-  title: string;
-  vibeCheck?: string;
-  swiftieSignal?: string;
-  eraType?: string;
-  aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
-  numberResults?: number;
-}): Promise<ImageGenerationResult> {
+export async function generateImageWithVariations(
+  params: {
+    id: string;
+    prompt: string;
+    title: string;
+    vibeCheck?: string;
+    swiftieSignal?: string;
+    eraType?: string;
+    aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
+    numberResults?: number;
+  },
+  clerkToken?: string | null
+): Promise<ImageGenerationResult> {
   const numVariations = params.numberResults || 5;
 
-  if (!runwareService.isConfigured()) {
-    console.warn('RUNWARE not configured, using placeholder');
-    return {
+    if (!runwareService.isConfigured()) {
+      return {
       id: params.id,
       title: params.title,
       variations: [{
@@ -144,8 +161,8 @@ export async function generateImageWithVariations(params: {
       cost: r.cost
     }));
 
-    // Analyze and select best image
-    const analysis = await analyzeAndSelectBestImage(variations, params.title, params.prompt);
+    // Analyze and select best image (requires Clerk token)
+    const analysis = await analyzeAndSelectBestImage(variations, params.title, params.prompt, clerkToken || null);
 
     // Add scores to variations
     variations.forEach((v, i) => {
@@ -163,7 +180,6 @@ export async function generateImageWithVariations(params: {
       bestImage: variations[analysis.bestIndex]
     };
   } catch (error) {
-    console.error('Error generating image variations:', error);
     throw error;
   }
 }
@@ -186,19 +202,16 @@ export async function batchGenerateImagesWithVariations(
 
   for (const item of prompts) {
     try {
-      console.log(`\n📸 Generating 5 variations for: ${item.title}`);
       const result = await generateImageWithVariations({
         ...item,
         numberResults: 5
-      });
+      }, null); // Note: clerkToken should be passed if AI analysis is needed
       results.push(result);
-      console.log(`✅ Generated variations. Best: #${result.bestImageIndex + 1} (Score: ${result.bestImage.score}/10)`);
-      console.log(`   Reasoning: ${result.bestImage.reasoning}`);
       
       // 3-second delay between prompts (each prompt generates 5 images)
       await new Promise(resolve => setTimeout(resolve, 3000));
     } catch (error) {
-      console.error(`❌ Failed for ${item.id}:`, error);
+      // Failed for this item - continue with next
     }
   }
 
