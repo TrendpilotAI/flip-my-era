@@ -140,19 +140,21 @@ class PerformanceMonitor {
 
     this.metrics.push(metric);
 
-    // Send to analytics/error tracking in production
+    // Send to analytics/error tracking in production (fire-and-forget)
     if (import.meta.env.PROD) {
-      try {
-        const { sentryService } = require('@/core/integrations/sentry');
-        sentryService.addBreadcrumb({
-          category: 'performance',
-          message: `${name}: ${value}${unit}`,
-          level: 'info',
-          data: metadata,
+      // Use dynamic import asynchronously to avoid blocking
+      import('@/core/integrations/sentry')
+        .then(({ sentryService }) => {
+          sentryService.addBreadcrumb({
+            category: 'performance',
+            message: `${name}: ${value}${unit}`,
+            level: 'info',
+            data: metadata,
+          });
+        })
+        .catch(() => {
+          // Sentry not available, ignore
         });
-      } catch {
-        // Sentry not available
-      }
     }
   }
 
