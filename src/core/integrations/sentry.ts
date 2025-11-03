@@ -134,32 +134,26 @@ class SentryService {
     }
 
     // Start a Sentry transaction for performance monitoring
-    // Sentry v10 uses startSpan for transactions
+    // Sentry v10: Use startInactiveSpan to create a span that doesn't auto-finish
     try {
-      // Use Sentry's startSpan API (v10+)
-      // Store span reference to manipulate it
-      let spanRef: Sentry.Span | undefined;
-      
-      Sentry.startSpan(
-        {
-          name,
-          op,
-        },
-        (span) => {
-          spanRef = span;
-          return span;
-        }
-      );
-      
+      // startInactiveSpan creates a span that doesn't automatically finish
+      // This allows us to manually control when the span ends
+      // The span remains valid until we explicitly call end()
+      const span = Sentry.startInactiveSpan({
+        name,
+        op,
+      });
+
       return {
         finish: () => {
-          if (spanRef && typeof (spanRef as unknown as { end?: () => void }).end === 'function') {
-            (spanRef as unknown as { end: () => void }).end();
+          if (span) {
+            span.end();
           }
         },
         setTag: (key: string, value: string) => {
-          if (spanRef && typeof (spanRef as unknown as { setTag?: (k: string, v: string) => void }).setTag === 'function') {
-            (spanRef as unknown as { setTag: (k: string, v: string) => void }).setTag(key, value);
+          if (span) {
+            // Sentry v10 uses setAttribute for OpenTelemetry compatibility
+            span.setAttribute(key, value);
           }
         },
       };
