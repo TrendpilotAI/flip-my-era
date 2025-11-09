@@ -258,3 +258,8 @@ vi.mock('react-router-dom', async () => {
 if (!(globalThis as any).fetch) {
   (globalThis as any).fetch = vi.fn();
 }
+
+// Mock PostHogProvider to prevent actual PostHog initialization in tests
+vi.mock('posthog-js/react', () => ({
+  PostHogProvider: ({ children }: any) => children,
+}));

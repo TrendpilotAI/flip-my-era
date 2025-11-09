@@ -3,6 +3,7 @@ import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserB
 import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/core/integrations/supabase/client";
 import { AuthContext, type AuthUser, type AuthContextType, type ProfileType } from './AuthContext';
 import { sentryService } from '@/core/integrations/sentry';
+import { posthogService, posthogEvents } from '@/core/integrations/posthog';
 
 export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const { user: clerkUser, isLoaded } = useUser();
@@ -159,6 +160,20 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               level: 'info',
               data: { userId: clerkUserId, isNewUser: true },
             });
+            
+            // Identify user in PostHog
+            posthogService.identify(clerkUserId, {
+              email: newUserProfile.email,
+              name: newUserProfile.name,
+              subscription_status: newUserProfile.subscription_status,
+              credits: newUserProfile.credits || 0,
+              created_at: newUserProfile.created_at,
+            });
+            posthogEvents.userSignedUp({
+              userId: clerkUserId,
+              email: newUserProfile.email,
+              subscription_status: newUserProfile.subscription_status,
+            });
           } else {
             // Profile exists, update it with latest Clerk data
             const { error: updateError } = await supabaseWithAuth
@@ -195,6 +210,20 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               level: 'info',
               data: { userId: updatedUserProfile.id },
             });
+            
+            // Identify user in PostHog
+            posthogService.identify(updatedUserProfile.id, {
+              email: updatedUserProfile.email,
+              name: updatedUserProfile.name,
+              subscription_status: updatedUserProfile.subscription_status,
+              credits: updatedUserProfile.credits || 0,
+              created_at: updatedUserProfile.created_at,
+            });
+            posthogEvents.userSignedIn({
+              userId: updatedUserProfile.id,
+              email: updatedUserProfile.email,
+              subscription_status: updatedUserProfile.subscription_status,
+            });
           }
         } catch (error) {
           console.error("Error syncing user profile:", error);
@@ -219,6 +248,10 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
           message: 'User signed out',
           level: 'info',
         });
+        
+        // Reset PostHog user identification
+        posthogService.reset();
+        posthogEvents.userSignedOut();
       }
     };
 
@@ -306,6 +339,10 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
         message: 'User signed out',
         level: 'info',
       });
+      
+      // Reset PostHog user identification
+      posthogService.reset();
+      posthogEvents.userSignedOut();
       
       return { error: null };
     } catch (error) {

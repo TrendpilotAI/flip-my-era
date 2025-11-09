@@ -7,6 +7,7 @@ import { EraType } from '../types/eras';
 import { getCombinedSystemPrompt } from '../utils/promptLoader';
 import { supabase } from '@/core/integrations/supabase/client';
 import { sentryService } from '@/core/integrations/sentry';
+import { posthogEvents } from '@/core/integrations/posthog';
 
 export interface Storyline {
   logline: string;
@@ -137,6 +138,14 @@ Ensure the storyline:
     level: 'info',
     data: { era, characterName, characterArchetype, location },
   });
+  
+  posthogEvents.storylineGenerationStarted({
+    era,
+    characterName,
+    characterArchetype,
+    location,
+    gender,
+  });
 
   const transaction = sentryService.startTransaction('storyline-generation', 'storyline.generate');
 
@@ -198,6 +207,14 @@ Ensure the storyline:
     });
     transaction.finish();
     
+    posthogEvents.storylineGenerationCompleted({
+      era,
+      characterName,
+      characterArchetype,
+      chapterCount: data.storyline?.chapters?.length || 0,
+      wordCount: data.storyline?.wordCountTotal || 0,
+    });
+    
     return data.storyline;
   } catch (error) {
     transaction.finish();
@@ -221,6 +238,13 @@ Ensure the storyline:
           errorMessage: error.message,
           errorType: error.name,
         },
+      });
+      
+      posthogEvents.storylineGenerationFailed(error.message, {
+        era,
+        characterName,
+        characterArchetype,
+        errorType: error.name,
       });
       
       // Handle specific error cases

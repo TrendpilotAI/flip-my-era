@@ -16,6 +16,7 @@ import { StoryAutoGeneration } from './StoryAutoGeneration';
 import { AuthDialog } from '@/modules/shared/components/AuthDialog';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { sentryService } from '@/core/integrations/sentry';
+import { posthogEvents } from '@/core/integrations/posthog';
 
 export const StoryWizard: React.FC = () => {
   const { toast } = useToast();
@@ -76,12 +77,24 @@ export const StoryWizard: React.FC = () => {
           wordCount: storyline.wordCountTotal,
         },
       });
+      
+      posthogEvents.storylineGenerationCompleted({
+        era: state.selectedEra,
+        chapterCount: storyline.chapters.length,
+        wordCount: storyline.wordCountTotal,
+        characterName: state.characterName,
+        characterArchetype: state.selectedArchetype?.name,
+      });
 
       toast({
         title: "Storyline Generated!",
         description: "Your story structure is ready to review.",
       });
     } catch (error) {
+      posthogEvents.storylineGenerationFailed(
+        error instanceof Error ? error.message : 'Unknown error',
+        { era: state.selectedEra }
+      );
       toast({
         title: "Generation Failed",
         description: error instanceof Error ? error.message : "Failed to generate storyline. Please try again.",
@@ -110,6 +123,7 @@ export const StoryWizard: React.FC = () => {
       level: 'info',
       data: { format, era: state.selectedEra },
     });
+    posthogEvents.formatSelected(format || '', state.selectedEra || '');
   };
 
   const handleProtectedNavigation = (targetStep: WizardStep) => {
@@ -149,6 +163,7 @@ export const StoryWizard: React.FC = () => {
                 level: 'info',
                 data: { era },
               });
+              posthogEvents.eraSelected(era);
             }}
           />
         );
@@ -165,6 +180,7 @@ export const StoryWizard: React.FC = () => {
                 level: 'info',
                 data: { promptId, era: state.selectedEra },
               });
+              posthogEvents.promptSelected(promptId, state.selectedEra || '', false);
             }}
             onBack={() => goToStep('era-selection')}
             onCreateOwn={() => {
@@ -175,6 +191,7 @@ export const StoryWizard: React.FC = () => {
                 level: 'info',
                 data: { era: state.selectedEra },
               });
+              posthogEvents.promptSelected('custom', state.selectedEra || '', true);
             }}
           />
         );
@@ -195,6 +212,7 @@ export const StoryWizard: React.FC = () => {
                   level: 'info',
                   data: { archetypeId, archetypeName: archetype.name, era: state.selectedEra },
                 });
+                posthogEvents.characterSelected(archetypeId, archetype.name, state.selectedEra || '');
               }
             }}
             onBack={() => goToStep('prompt-selection')}

@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { initSentry } from "@/core/integrations/sentry";
 import { performanceMonitor } from "@/core/utils/performance";
+import { posthogEvents } from "@/core/integrations/posthog";
 import { Layout } from "@/modules/shared/components/Layout";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
@@ -21,11 +22,26 @@ import Auth from "@/modules/auth/components/Auth";
 import AuthCallback from "@/modules/auth/components/AuthCallback";
 import ResetPassword from "@/modules/auth/components/ResetPassword";
 import UserDashboard from "@/modules/user/components/UserDashboard";
-import PlanSelector from "@/app/pages/PlanSelector";
 import FAQ from "@/app/pages/FAQ";
+
+// Component to track page views for PostHog
+function PageViewTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Track page view in PostHog
+    posthogEvents.pageViewed(location.pathname, {
+      search: location.search,
+      hash: location.hash,
+    });
+  }, [location]);
+
+  return null;
+}
 
 function App() {
   // Initialize error tracking and performance monitoring
+  // PostHog is initialized in main.tsx before React renders
   useEffect(() => {
     initSentry();
     performanceMonitor.init();
@@ -35,6 +51,7 @@ function App() {
     <ErrorBoundary>
       <ClerkAuthProvider>
         <Router>
+          <PageViewTracker />
           <Layout>
             <Routes>
             {/* Public routes */}

@@ -1,12 +1,15 @@
 import { createRoot } from 'react-dom/client'
 import { ClerkProvider } from "@clerk/clerk-react";
 import { initOpenTelemetry } from "@/core/integrations/opentelemetry";
+import { initPostHog } from "@/core/integrations/posthog";
 import App from './App.tsx'
 import './index.css'
 
 // Initialize OpenTelemetry before React renders (browser-only)
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   initOpenTelemetry();
+  // Initialize PostHog before React renders
+  initPostHog();
 }
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;

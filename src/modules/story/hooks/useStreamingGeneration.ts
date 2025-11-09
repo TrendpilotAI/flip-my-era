@@ -5,6 +5,7 @@ import { TaylorSwiftTheme, StoryFormat } from "@/modules/story/utils/storyPrompt
 import { extractImagePromptFromStream, ImagePrompt } from "@/modules/story/utils/imagePromptExtraction";
 import { handleStreamingGenerationError, GenerationErrorContext, normalizeError } from '@/modules/shared/utils/errorHandlingUtils';
 import { sentryService } from '@/core/integrations/sentry';
+import { posthogEvents } from '@/core/integrations/posthog';
 
 interface Chapter {
   title: string;
@@ -174,6 +175,13 @@ export const useStreamingGeneration = () => {
         hasStoryline: !!options.storyline,
       },
     });
+    
+    posthogEvents.storyGenerationStarted({
+      format: selectedFormat,
+      numChapters: numChapters || 3,
+      hasStoryline: !!options.storyline,
+      era: options.storyline ? undefined : undefined, // Can be added if available
+    });
 
     const transaction = sentryService.startTransaction('story-generation', 'story.generate');
     transaction.setTag('format', selectedFormat || 'unknown');
@@ -327,6 +335,15 @@ export const useStreamingGeneration = () => {
                           },
                         });
                         
+                        posthogEvents.chapterCompleted(
+                          data.currentChapter,
+                          data.totalChapters || numChapters || 3,
+                          {
+                            chapterTitle: data.chapterTitle,
+                            format: selectedFormat,
+                          }
+                        );
+                        
                         onChapterComplete?.(newChapter);
                         
                         toast({
@@ -357,6 +374,11 @@ export const useStreamingGeneration = () => {
                         });
                         transaction.finish();
                         
+                        posthogEvents.storyGenerationCompleted({
+                          totalChapters: chapters.length,
+                          format: selectedFormat,
+                        });
+                        
                         onComplete?.(chapters);
                         
                         toast({
@@ -376,6 +398,11 @@ export const useStreamingGeneration = () => {
                             currentChapter: data.currentChapter,
                             progress: data.progress,
                           },
+                        });
+                        posthogEvents.storyGenerationFailed(data.message || 'Unknown error', {
+                          currentChapter: data.currentChapter,
+                          progress: data.progress,
+                          format: selectedFormat,
                         });
                         throw new Error(data.message || 'Generation failed');
                     }
@@ -475,6 +502,11 @@ export const useStreamingGeneration = () => {
           },
         });
         
+        posthogEvents.storyGenerationAborted({
+          chaptersCompleted,
+          format: selectedFormat,
+        });
+        
         setState(prev => ({
           ...prev,
           isGenerating: false,
@@ -504,6 +536,12 @@ export const useStreamingGeneration = () => {
           format: selectedFormat,
           chaptersCompleted,
         },
+      });
+      
+      posthogEvents.storyGenerationFailed(errorMessage, {
+        format: selectedFormat,
+        chaptersCompleted,
+        numChapters: numChapters || 3,
       });
       
       setState(prev => ({
