@@ -6,6 +6,7 @@
 import { EraType } from '../types/eras';
 import { getCombinedSystemPrompt } from '../utils/promptLoader';
 import { supabase } from '@/core/integrations/supabase/client';
+import { sentryService } from '@/core/integrations/sentry';
 
 export interface Storyline {
   logline: string;
@@ -120,10 +121,29 @@ Ensure the storyline:
 `;
 
   if (!clerkToken) {
+    sentryService.addBreadcrumb({
+      category: 'storyline',
+      message: 'Storyline generation failed - no authentication token',
+      level: 'error',
+      data: { era, characterName },
+    });
     throw new Error('UNAUTHORIZED');
   }
 
+  // Add breadcrumb for storyline generation start
+  sentryService.addBreadcrumb({
+    category: 'storyline',
+    message: 'Storyline generation started',
+    level: 'info',
+    data: { era, characterName, characterArchetype, location },
+  });
+
+  const transaction = sentryService.startTransaction('storyline-generation', 'storyline.generate');
+
   try {
+    transaction.setTag('era', era);
+    transaction.setTag('characterArchetype', characterArchetype);
+    
     const { data, error } = await supabase.functions.invoke('groq-storyline', {
       body: {
         era,
@@ -154,12 +174,55 @@ Ensure the storyline:
     }
 
     if (!data || data.error) {
-      throw new Error(data?.message || data?.error || 'Failed to generate storyline');
+      const errorMessage = data?.message || data?.error || 'Failed to generate storyline';
+      sentryService.addBreadcrumb({
+        category: 'storyline',
+        message: 'Storyline generation failed',
+        level: 'error',
+        data: { era, characterName, error: errorMessage },
+      });
+      transaction.finish();
+      throw new Error(errorMessage);
     }
+    
+    sentryService.addBreadcrumb({
+      category: 'storyline',
+      message: 'Storyline generation completed successfully',
+      level: 'info',
+      data: { 
+        era, 
+        characterName, 
+        chapterCount: data.storyline?.chapters?.length || 0,
+        wordCount: data.storyline?.wordCountTotal || 0,
+      },
+    });
+    transaction.finish();
     
     return data.storyline;
   } catch (error) {
+    transaction.finish();
+    
     if (error instanceof Error) {
+      // Capture error in Sentry
+      sentryService.captureException(error, {
+        component: 'storylineGeneration',
+        era,
+        characterName,
+        characterArchetype,
+      });
+      
+      sentryService.addBreadcrumb({
+        category: 'storyline',
+        message: 'Storyline generation error',
+        level: 'error',
+        data: { 
+          era, 
+          characterName, 
+          errorMessage: error.message,
+          errorType: error.name,
+        },
+      });
+      
       // Handle specific error cases
       if (error.message === 'GROQ_API_KEY_MISSING') {
         throw error;
@@ -171,7 +234,13 @@ Ensure the storyline:
       throw error;
     }
     
-    throw new Error('Failed to generate storyline. Please try again.');
+    const unknownError = new Error('Failed to generate storyline. Please try again.');
+    sentryService.captureException(unknownError, {
+      component: 'storylineGeneration',
+      era,
+      characterName,
+    });
+    throw unknownError;
   }
 }
 

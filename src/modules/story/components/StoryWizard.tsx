@@ -15,6 +15,7 @@ import { EbookGenerator } from '@/modules/ebook/components/EbookGenerator';
 import { StoryAutoGeneration } from './StoryAutoGeneration';
 import { AuthDialog } from '@/modules/shared/components/AuthDialog';
 import { useClerkAuth } from '@/modules/auth/contexts';
+import { sentryService } from '@/core/integrations/sentry';
 
 export const StoryWizard: React.FC = () => {
   const { toast } = useToast();
@@ -65,6 +66,17 @@ export const StoryWizard: React.FC = () => {
 
       setStoryline(storyline);
 
+      sentryService.addBreadcrumb({
+        category: 'wizard',
+        message: 'Storyline generated successfully',
+        level: 'info',
+        data: { 
+          era: state.selectedEra,
+          chapterCount: storyline.chapters.length,
+          wordCount: storyline.wordCountTotal,
+        },
+      });
+
       toast({
         title: "Storyline Generated!",
         description: "Your story structure is ready to review.",
@@ -92,6 +104,12 @@ export const StoryWizard: React.FC = () => {
   // Handle format selection
   const handleFormatSelect = (format: typeof state.selectedFormat) => {
     selectFormat(format);
+    sentryService.addBreadcrumb({
+      category: 'wizard',
+      message: 'Story format selected',
+      level: 'info',
+      data: { format, era: state.selectedEra },
+    });
   };
 
   const handleProtectedNavigation = (targetStep: WizardStep) => {
@@ -123,7 +141,15 @@ export const StoryWizard: React.FC = () => {
       case 'era-selection':
         return (
           <EraSelector
-            onEraSelect={(era) => selectEra(era)}
+            onEraSelect={(era) => {
+              selectEra(era);
+              sentryService.addBreadcrumb({
+                category: 'wizard',
+                message: 'ERA selected',
+                level: 'info',
+                data: { era },
+              });
+            }}
           />
         );
 
@@ -131,9 +157,25 @@ export const StoryWizard: React.FC = () => {
         return (
           <StoryPromptsSelector
             selectedEra={state.selectedEra!}
-            onPromptSelect={(promptId) => selectPrompt(promptId)}
+            onPromptSelect={(promptId) => {
+              selectPrompt(promptId);
+              sentryService.addBreadcrumb({
+                category: 'wizard',
+                message: 'Story prompt selected',
+                level: 'info',
+                data: { promptId, era: state.selectedEra },
+              });
+            }}
             onBack={() => goToStep('era-selection')}
-            onCreateOwn={() => selectCustomPrompt()}
+            onCreateOwn={() => {
+              selectCustomPrompt();
+              sentryService.addBreadcrumb({
+                category: 'wizard',
+                message: 'Custom prompt selected',
+                level: 'info',
+                data: { era: state.selectedEra },
+              });
+            }}
           />
         );
 
@@ -147,10 +189,24 @@ export const StoryWizard: React.FC = () => {
               const archetype = archetypes.find(a => a.id === archetypeId);
               if (archetype) {
                 selectArchetype(archetypeId, archetype);
+                sentryService.addBreadcrumb({
+                  category: 'wizard',
+                  message: 'Character archetype selected',
+                  level: 'info',
+                  data: { archetypeId, archetypeName: archetype.name, era: state.selectedEra },
+                });
               }
             }}
             onBack={() => goToStep('prompt-selection')}
-            onContinue={() => goToStep('story-details')}
+            onContinue={() => {
+              sentryService.addBreadcrumb({
+                category: 'wizard',
+                message: 'Navigated to story details',
+                level: 'info',
+                data: { era: state.selectedEra },
+              });
+              goToStep('story-details');
+            }}
           />
         );
 

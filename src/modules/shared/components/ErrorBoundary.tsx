@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode, useState } from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { sentryService } from '@/core/integrations/sentry';
 
 interface Props {
   children: ReactNode;
@@ -47,12 +48,21 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Send to error tracking service
     try {
-      const { sentryService } = require('@/core/integrations/sentry');
       sentryService.captureException(error, {
+        component: 'ErrorBoundary',
         contexts: {
           react: {
             componentStack: errorInfo.componentStack,
           },
+        },
+      });
+      sentryService.addBreadcrumb({
+        category: 'error-boundary',
+        message: 'React error boundary caught an error',
+        level: 'error',
+        data: {
+          errorMessage: error.message,
+          errorName: error.name,
         },
       });
     } catch {

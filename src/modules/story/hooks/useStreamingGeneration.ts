@@ -4,6 +4,7 @@ import { useClerkAuth } from '@/modules/auth/contexts';
 import { TaylorSwiftTheme, StoryFormat } from "@/modules/story/utils/storyPrompts";
 import { extractImagePromptFromStream, ImagePrompt } from "@/modules/story/utils/imagePromptExtraction";
 import { handleStreamingGenerationError, GenerationErrorContext, normalizeError } from '@/modules/shared/utils/errorHandlingUtils';
+import { sentryService } from '@/core/integrations/sentry';
 
 interface Chapter {
   title: string;
@@ -162,6 +163,25 @@ export const useStreamingGeneration = () => {
       onError
     } = options;
 
+    // Add breadcrumb for generation start
+    sentryService.addBreadcrumb({
+      category: 'story-generation',
+      message: 'Story generation started',
+      level: 'info',
+      data: { 
+        format: selectedFormat,
+        numChapters: numChapters || 3,
+        hasStoryline: !!options.storyline,
+      },
+    });
+
+    const transaction = sentryService.startTransaction('story-generation', 'story.generate');
+    transaction.setTag('format', selectedFormat || 'unknown');
+    transaction.setTag('numChapters', String(numChapters || 3));
+
+    // Track chapters completed for error reporting
+    let chaptersCompleted = 0;
+
     // Reset state
     setState({
       isGenerating: true,
@@ -285,6 +305,7 @@ export const useStreamingGeneration = () => {
                         };
                         
                         chapters.push(newChapter);
+                        chaptersCompleted = chapters.length;
                         
                         setState(prev => ({
                           ...prev,
@@ -292,6 +313,19 @@ export const useStreamingGeneration = () => {
                           currentChapter: data.currentChapter,
                           progress: data.progress || 0
                         }));
+                        
+                        // Add breadcrumb for chapter completion
+                        sentryService.addBreadcrumb({
+                          category: 'story-generation',
+                          message: `Chapter ${data.currentChapter} completed`,
+                          level: 'info',
+                          data: { 
+                            chapterNumber: data.currentChapter,
+                            chapterTitle: data.chapterTitle,
+                            totalChapters: data.totalChapters || numChapters || 3,
+                            progress: data.progress || 0,
+                          },
+                        });
                         
                         onChapterComplete?.(newChapter);
                         
@@ -311,6 +345,18 @@ export const useStreamingGeneration = () => {
                           message: "Generation complete!"
                         }));
                         
+                        // Add breadcrumb for generation completion
+                        sentryService.addBreadcrumb({
+                          category: 'story-generation',
+                          message: 'Story generation completed successfully',
+                          level: 'info',
+                          data: { 
+                            totalChapters: chapters.length,
+                            format: selectedFormat,
+                          },
+                        });
+                        transaction.finish();
+                        
                         onComplete?.(chapters);
                         
                         toast({
@@ -321,6 +367,16 @@ export const useStreamingGeneration = () => {
                         
                       case 'error':
                         console.error('Streaming error received:', data.message);
+                        sentryService.addBreadcrumb({
+                          category: 'story-generation',
+                          message: 'Streaming error received from server',
+                          level: 'error',
+                          data: { 
+                            errorMessage: data.message,
+                            currentChapter: data.currentChapter,
+                            progress: data.progress,
+                          },
+                        });
                         throw new Error(data.message || 'Generation failed');
                     }
                   } catch (parseError) {
@@ -364,10 +420,25 @@ export const useStreamingGeneration = () => {
                           progress: 100,
                           message: "Generation complete!"
                         }));
+                        
+                        sentryService.addBreadcrumb({
+                          category: 'story-generation',
+                          message: 'Story generation completed successfully',
+                          level: 'info',
+                          data: { totalChapters: chapters.length },
+                        });
+                        transaction.finish();
+                        
                         onComplete?.(chapters);
                         break;
                       case 'error':
                         console.error('Final streaming error received:', data.message);
+                        sentryService.addBreadcrumb({
+                          category: 'story-generation',
+                          message: 'Final streaming error received',
+                          level: 'error',
+                          data: { errorMessage: data.message },
+                        });
                         throw new Error(data.message || 'Generation failed');
                     }
                   }
@@ -390,8 +461,20 @@ export const useStreamingGeneration = () => {
       }
 
     } catch (error) {
+      transaction.finish();
+      
       // Check if the error is due to abort
       if (error instanceof Error && error.name === 'AbortError') {
+        sentryService.addBreadcrumb({
+          category: 'story-generation',
+          message: 'Story generation aborted by user',
+          level: 'info',
+          data: { 
+            chaptersCompleted,
+            format: selectedFormat,
+          },
+        });
+        
         setState(prev => ({
           ...prev,
           isGenerating: false,
@@ -403,6 +486,25 @@ export const useStreamingGeneration = () => {
       
       console.error('Streaming generation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Capture error in Sentry
+      sentryService.captureException(error instanceof Error ? error : new Error(errorMessage), {
+        component: 'useStreamingGeneration',
+        format: selectedFormat,
+        numChapters: numChapters || 3,
+        chaptersCompleted,
+      });
+      
+      sentryService.addBreadcrumb({
+        category: 'story-generation',
+        message: 'Story generation failed',
+        level: 'error',
+        data: { 
+          errorMessage,
+          format: selectedFormat,
+          chaptersCompleted,
+        },
+      });
       
       setState(prev => ({
         ...prev,

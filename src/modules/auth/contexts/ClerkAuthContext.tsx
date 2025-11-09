@@ -2,6 +2,7 @@ import { useEffect, useState, ReactNode, useCallback } from "react";
 import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/core/integrations/supabase/client";
 import { AuthContext, type AuthUser, type AuthContextType, type ProfileType } from './AuthContext';
+import { sentryService } from '@/core/integrations/sentry';
 
 export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const { user: clerkUser, isLoaded } = useUser();
@@ -135,7 +136,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             if (insertError) throw insertError;
 
             setIsNewUser(true);
-            setUserProfile({
+            const newUserProfile = {
               id: clerkUserId,
               email: clerkUser.primaryEmailAddress?.emailAddress || "",
               name: clerkUser.fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0],
@@ -143,6 +144,20 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               subscription_status: "free",
               created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
               credits: creditBalance || 0
+            };
+            setUserProfile(newUserProfile);
+            
+            // Set Sentry user context for new user
+            sentryService.setUser({
+              id: clerkUserId,
+              email: newUserProfile.email,
+              username: newUserProfile.name,
+            });
+            sentryService.addBreadcrumb({
+              category: 'auth',
+              message: 'New user profile created',
+              level: 'info',
+              data: { userId: clerkUserId, isNewUser: true },
             });
           } else {
             // Profile exists, update it with latest Clerk data
@@ -157,7 +172,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
             if (updateError) throw updateError;
 
-            setUserProfile({
+            const updatedUserProfile = {
               id: String(existingProfile.id),
               email: String(existingProfile.email),
               name: String(existingProfile.name),
@@ -165,6 +180,20 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
               created_at: String(existingProfile.created_at),
               credits: creditBalance || 0
+            };
+            setUserProfile(updatedUserProfile);
+            
+            // Set Sentry user context for existing user
+            sentryService.setUser({
+              id: updatedUserProfile.id,
+              email: updatedUserProfile.email,
+              username: updatedUserProfile.name,
+            });
+            sentryService.addBreadcrumb({
+              category: 'auth',
+              message: 'User profile synced',
+              level: 'info',
+              data: { userId: updatedUserProfile.id },
             });
           }
         } catch (error) {
@@ -183,6 +212,13 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUserProfile(null);
         setIsNewUser(false);
+        // Clear Sentry user context on sign out
+        sentryService.setUser(null);
+        sentryService.addBreadcrumb({
+          category: 'auth',
+          message: 'User signed out',
+          level: 'info',
+        });
       }
     };
 
@@ -262,8 +298,21 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
       setUserProfile(null);
       setIsNewUser(false);
       setCreditBalance(null);
+      
+      // Clear Sentry user context
+      sentryService.setUser(null);
+      sentryService.addBreadcrumb({
+        category: 'auth',
+        message: 'User signed out',
+        level: 'info',
+      });
+      
       return { error: null };
     } catch (error) {
+      sentryService.captureException(error instanceof Error ? error : new Error('Sign out failed'), {
+        component: 'ClerkAuthContext',
+        action: 'signOut',
+      });
       return { error: error as Error };
     }
   };
