@@ -7,7 +7,7 @@
   # Allowlist public client keys that must appear in the browser bundle
   # to avoid Netlify's secrets scanner failing the build.
   # NOTE: VITE_GROQ_API_KEY is now only used server-side (Edge Functions)
-  SECRETS_SCAN_OMIT_KEYS = "VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_STRIPE_PUBLISHABLE_KEY,VITE_OPENAI_API_KEY,VITE_RUNWARE_API_KEY,VITE_SUPABASE_JWT_SECRET"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_STRIPE_PUBLISHABLE_KEY,VITE_OPENAI_API_KEY,VITE_RUNWARE_API_KEY,VITE_SUPABASE_JWT_SECRET,VITE_POSTHOG_KEY,VITE_PUBLIC_POSTHOG_KEY"
 
 [[headers]]
   for = "/*"
@@ -18,7 +18,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     # Content Security Policy
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev https://api.stripe.com https://checkout.stripe.com; frame-src https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://us.i.posthog.com; frame-src https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com;"
     # HSTS - only enable in production via environment variable
     # Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
