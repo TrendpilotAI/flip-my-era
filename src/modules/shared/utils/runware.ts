@@ -403,9 +403,15 @@ export function createEbookIllustrationPrompt(params: EbookIllustrationParams): 
   return basePrompt.trim();
 }
 
+export interface RunwareServiceOptions {
+  apiKey?: string | null;
+  proxyEndpoint?: string | null;
+}
+
 export class RunwareService {
   private ws: WebSocket | null = null;
   private apiKey: string | null = null;
+  private proxyEndpoint: string | null = null;
   private connectionSessionUUID: string | null = null;
   private messageCallbacks: Map<string, {
     callback: (data: RunwareImageInferenceResponse | RunwareAuthenticationResponse) => void;
@@ -416,27 +422,52 @@ export class RunwareService {
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 3;
   private reconnectLock: Promise<void> | null = null;
+  private readonly useProxy: boolean;
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-    if (!apiKey) {
-      // RUNWARE service not configured - will fall back to other services
-      return;
+  constructor(options?: RunwareServiceOptions | string) {
+    let proxyEndpoint: string | null = null;
+
+    if (typeof options === 'string') {
+      this.apiKey = options || null;
+    } else {
+      this.apiKey = options?.apiKey ?? null;
+      proxyEndpoint = options?.proxyEndpoint ?? null;
     }
-    void this.connectWithLock();
+
+    if (!proxyEndpoint) {
+      if (typeof window !== 'undefined') {
+        proxyEndpoint = '/api/functions/runware-proxy';
+      } else {
+        const globalProcess = typeof globalThis !== 'undefined'
+          ? (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process
+          : undefined;
+        proxyEndpoint = globalProcess?.env?.RUNWARE_PROXY_URL ?? null;
+      }
+    }
+
+    this.proxyEndpoint = proxyEndpoint;
+    this.useProxy = !this.apiKey && !!this.proxyEndpoint;
+
+    if (this.apiKey) {
+      void this.connectWithLock();
+    }
   }
 
   /**
    * Check if the service is properly configured and ready
    */
   isConfigured(): boolean {
-    return !!this.apiKey;
+    return !!this.apiKey || this.useProxy;
   }
 
   /**
    * Check if the service is connected and authenticated
    */
   async isConnected(): Promise<boolean> {
+    if (this.useProxy) {
+      return true;
+    }
+
     if (!this.apiKey) return false;
 
     try {
@@ -602,8 +633,12 @@ export class RunwareService {
   }
 
   private async ensureConnected(): Promise<void> {
-    if (!this.apiKey) {
-      throw new Error('RUNWARE API key not provided');
+    if (this.useProxy) {
+      return;
+    }
+
+    if (!this.isConfigured()) {
+      throw new Error('RUNWARE service not configured');
     }
 
     await this.connectWithLock();
@@ -613,10 +648,123 @@ export class RunwareService {
     }
   }
 
+  private async proxyGenerate(
+    params: GenerateImageParams,
+    clerkToken?: string | null,
+    expectMultiple = false
+  ): Promise<RunwareImageInferenceResponse[]> {
+    if (!this.proxyEndpoint) {
+      throw new Error('RUNWARE proxy endpoint not configured');
+    }
+
+    const filteredParams = filterParamsForModel(params);
+    const modelId = filteredParams.model || params.model || RUNWARE_MODELS.FLUX_1_1_PRO;
+
+    const requestPayload: RunwareImageInferenceRequest = {
+      taskType: 'imageInference',
+      taskUUID: crypto.randomUUID(),
+      positivePrompt: params.positivePrompt,
+      negativePrompt: filteredParams.negativePrompt,
+      model: modelId,
+      numberResults: filteredParams.numberResults || params.numberResults,
+      outputFormat: filteredParams.outputFormat,
+      outputType: filteredParams.outputType,
+      CFGScale: filteredParams.CFGScale,
+      scheduler: filteredParams.scheduler,
+      strength: filteredParams.strength,
+      seed: filteredParams.seed || undefined,
+      height: filteredParams.height,
+      width: filteredParams.width,
+      steps: filteredParams.steps,
+      checkNSFW: filteredParams.checkNSFW,
+      includeCost: filteredParams.includeCost,
+      lora: filteredParams.lora,
+      controlNet: filteredParams.controlNet,
+    };
+
+    // Remove undefined values inherited from optional params
+    Object.keys(requestPayload).forEach((key) => {
+      const typedKey = key as keyof RunwareImageInferenceRequest;
+      if (requestPayload[typedKey] === undefined) {
+        delete requestPayload[typedKey];
+      }
+    });
+
+    const action = expectMultiple || (requestPayload.numberResults && requestPayload.numberResults > 1)
+      ? 'generate-multiple'
+      : 'generate-image';
+
+    const response = await fetch(this.proxyEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(clerkToken ? { Authorization: `Bearer ${clerkToken}` } : {}),
+      },
+      body: JSON.stringify({
+        action,
+        params: {
+          positivePrompt: requestPayload.positivePrompt,
+          negativePrompt: requestPayload.negativePrompt,
+          model: requestPayload.model,
+          numberResults: requestPayload.numberResults,
+          outputFormat: requestPayload.outputFormat,
+          outputType: requestPayload.outputType,
+          CFGScale: requestPayload.CFGScale,
+          scheduler: requestPayload.scheduler,
+          strength: requestPayload.strength,
+          seed: requestPayload.seed,
+          height: requestPayload.height,
+          width: requestPayload.width,
+          steps: requestPayload.steps,
+          checkNSFW: requestPayload.checkNSFW,
+          includeCost: requestPayload.includeCost,
+          lora: requestPayload.lora,
+          controlNet: requestPayload.controlNet,
+        },
+      }),
+    });
+
+    const data = await response.json().catch(() => null) as {
+      success?: boolean;
+      data?: { images?: RunwareImageInferenceResponse[] };
+      error?: string;
+    } | null;
+
+    if (!response.ok || !data) {
+      throw new Error('RUNWARE proxy request failed');
+    }
+
+    if (!data.success || !data.data?.images || data.data.images.length === 0) {
+      throw new Error(data.error || 'RUNWARE proxy returned no results');
+    }
+
+    return data.data.images;
+  }
+
   /**
    * Generate image using Runware API with full parameter support
    */
-  async generateImage(params: GenerateImageParams): Promise<GeneratedImage> {
+  async generateImage(params: GenerateImageParams, clerkToken?: string | null): Promise<GeneratedImage> {
+    if (this.useProxy) {
+      const images = await this.proxyGenerate(params, clerkToken, false);
+      const result = images[0];
+      if (!result) {
+        throw new Error('RUNWARE proxy returned no results');
+      }
+
+      return {
+        imageUUID: result.imageUUID,
+        taskUUID: result.taskUUID,
+        imageURL: result.imageURL,
+        imageBase64Data: result.imageBase64Data,
+        imageDataURI: result.imageDataURI,
+        positivePrompt: params.positivePrompt,
+        seed: result.seed,
+        NSFWContent: result.NSFWContent,
+        cost: result.cost,
+      };
+    }
+
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
     }
@@ -703,8 +851,8 @@ export class RunwareService {
     params: EbookIllustrationParams,
     clerkToken?: string | null
   ): Promise<GeneratedImage> {
-    if (!this.apiKey) {
-      throw new Error('RUNWARE API key not provided');
+    if (!this.isConfigured()) {
+      throw new Error('RUNWARE service not configured');
     }
 
     // Use Groq to enhance the prompt if enabled and token available
@@ -724,7 +872,7 @@ export class RunwareService {
       height: 1024,
       steps: 4,
       includeCost: true,
-    });
+    }, clerkToken);
   }
 
   /**
@@ -780,7 +928,7 @@ export class RunwareService {
       height: 1024,
       steps: 4,
       includeCost: true,
-    });
+    }, clerkToken);
   }
 
   /**
@@ -847,8 +995,8 @@ Return ONLY the enhanced prompt, no explanations.
     style: 'children' | 'fantasy' | 'adventure' | 'educational' = 'children',
     clerkToken?: string | null
   ): Promise<GeneratedImage[]> {
-    if (!this.apiKey) {
-      throw new Error('RUNWARE API key not provided');
+    if (!this.isConfigured()) {
+      throw new Error('RUNWARE service not configured');
     }
 
     const illustrations: GeneratedImage[] = [];
@@ -875,6 +1023,21 @@ Return ONLY the enhanced prompt, no explanations.
    * Collects all results from RUNWARE's multiple responses
    */
   async generateMultipleImages(params: GenerateImageParams & { numberResults: number }): Promise<GeneratedImage[]> {
+    if (this.useProxy) {
+      const images = await this.proxyGenerate(params, undefined, true);
+      return images.map((data) => ({
+        imageUUID: data.imageUUID,
+        taskUUID: data.taskUUID,
+        imageURL: data.imageURL,
+        imageBase64Data: data.imageBase64Data,
+        imageDataURI: data.imageDataURI,
+        positivePrompt: params.positivePrompt,
+        seed: data.seed,
+        NSFWContent: data.NSFWContent,
+        cost: data.cost,
+      }));
+    }
+
     if (!this.apiKey) {
       throw new Error('RUNWARE API key not provided');
     }
@@ -1016,8 +1179,8 @@ Return ONLY the enhanced prompt, no explanations.
     aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
     numberResults?: number;
   }): Promise<GeneratedImage[]> {
-    if (!this.apiKey) {
-      throw new Error('RUNWARE API key not provided');
+    if (!this.isConfigured()) {
+      throw new Error('RUNWARE service not configured');
     }
 
     // 2K resolution for 3:4 aspect ratio
@@ -1062,8 +1225,8 @@ Return ONLY the enhanced prompt, no explanations.
     aspectRatio?: '3:4' | '16:9' | '1:1' | '4:3';
     numberResults?: number;
   }): Promise<GeneratedImage[]> {
-    if (!this.apiKey) {
-      throw new Error('RUNWARE API key not provided');
+    if (!this.isConfigured()) {
+      throw new Error('RUNWARE service not configured');
     }
 
     // Extract only visual/atmospheric elements from vibeCheck
@@ -1101,5 +1264,20 @@ Return ONLY the enhanced prompt, no explanations.
 }
 
 // Create singleton instance
-const apiKey = import.meta.env.VITE_RUNWARE_API_KEY || '';
-export const runwareService = new RunwareService(apiKey);
+const isBrowserEnvironment = typeof window !== 'undefined';
+const globalProcess = typeof globalThis !== 'undefined'
+  ? (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process
+  : undefined;
+
+const directApiKey = !isBrowserEnvironment
+  ? (globalProcess?.env?.RUNWARE_API_KEY ?? null)
+  : null;
+
+const proxyEndpoint = isBrowserEnvironment
+  ? (import.meta.env.VITE_RUNWARE_PROXY_URL ?? '/api/functions/runware-proxy')
+  : (globalProcess?.env?.RUNWARE_PROXY_URL ?? '/api/functions/runware-proxy');
+
+export const runwareService = new RunwareService({
+  apiKey: directApiKey,
+  proxyEndpoint,
+});

@@ -940,6 +940,8 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                   isGeneratingImages={isGeneratingImages && (currentImageIndex === index || currentImageIndex === null)}
                   useTaylorSwiftThemes={useTaylorSwiftThemes}
                   showStreamingText={showStreamingText}
+                  isLocked={!isContentUnlocked}
+                  onRequestUnlock={() => setShowCreditWall(true)}
                 />
               ) : (
                 <ChapterView
@@ -947,6 +949,8 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                   chapter={chapter}
                   index={index}
                   isGeneratingImages={isGeneratingImages && (currentImageIndex === index || currentImageIndex === null)}
+                  isLocked={!isContentUnlocked}
+                  onRequestUnlock={() => setShowCreditWall(true)}
                 />
               )
             ))}
@@ -981,14 +985,16 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                 author: 'FlipMyEra User'
               }}
               showDownloadShare={true}
+              isLocked={!isContentUnlocked}
+              onLockedAction={() => setShowCreditWall(true)}
             />
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-semibold py-4"
               size="lg"
-              onClick={() => {
+              onClick={async () => {
                 try {
                   const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
-                  samcartClient.redirectToCheckout({
+                  await samcartClient.redirectToCheckout({
                     productId,
                     redirectUrl: `${window.location.origin}/checkout/success`,
                     cancelUrl: window.location.href
@@ -1061,6 +1067,8 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
             useTaylorSwiftThemes={useTaylorSwiftThemes}
             onClose={() => setShowBookReader(false)}
             initialChapter={0}
+            isUnlocked={isContentUnlocked}
+            onRequestUnlock={() => setShowCreditWall(true)}
           />
         </div>
       )}

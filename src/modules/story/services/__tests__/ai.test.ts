@@ -9,29 +9,35 @@ import {
   isRunwareAvailable,
 } from '../ai';
 
-// Mock environment variables
-vi.mock('import.meta', () => ({
-  env: {
-    VITE_GROQ_API_KEY: 'test-groq-key',
-    VITE_OPENAI_API_KEY: 'test-openai-key',
-    VITE_RUNWARE_API_KEY: 'test-runware-key',
-  },
-}));
+const defaultGeneratedImage = {
+  imageUUID: 'mock-image-uuid',
+  taskUUID: 'mock-task-uuid',
+  imageURL: 'https://example.com/runware-image.jpg',
+  positivePrompt: 'prompt',
+  seed: 42,
+};
+
+const mockRunwareService = {
+  isConfigured: vi.fn(),
+  isConnected: vi.fn(),
+  generateImage: vi.fn(),
+  generateEbookIllustration: vi.fn(),
+  generateTaylorSwiftIllustration: vi.fn(),
+  generateMultipleImages: vi.fn(),
+};
 
 // Mock the apiRequestWithRetry function
 vi.mock('@/modules/shared/utils/apiWithRetry', () => ({
   apiRequestWithRetry: vi.fn(),
 }));
 
-// Mock the RunwareService
+// Mock the Runware service module
 vi.mock('@/modules/shared/utils/runware', () => ({
-  RunwareService: vi.fn().mockImplementation(() => ({
-    isConfigured: vi.fn().mockReturnValue(true),
-    isConnected: vi.fn().mockResolvedValue(true),
-    generateImage: vi.fn().mockResolvedValue('https://example.com/runware-image.jpg'),
-  })),
+  runwareService: mockRunwareService,
   createEbookIllustrationPrompt: vi.fn().mockReturnValue('ebook prompt'),
   enhancePromptWithGroq: vi.fn().mockResolvedValue('enhanced prompt'),
+  RUNWARE_MODELS: { FLUX_1_1_PRO: 'flux-pro' },
+  RUNWARE_SCHEDULERS: { FLOW_MATCH_EULER_DISCRETE: 'scheduler' },
 }));
 
 // Mock the story prompts
@@ -45,11 +51,17 @@ vi.mock('@/modules/story/utils/enchantedQuillPrompt', () => ({
 }));
 
 import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
-import { RunwareService, enhancePromptWithGroq } from '@/modules/shared/utils/runware';
+import { enhancePromptWithGroq } from '@/modules/shared/utils/runware';
 
 describe('AI Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRunwareService.isConfigured.mockReturnValue(true);
+    mockRunwareService.isConnected.mockResolvedValue(true);
+    mockRunwareService.generateImage.mockResolvedValue(defaultGeneratedImage);
+    mockRunwareService.generateEbookIllustration.mockResolvedValue(defaultGeneratedImage);
+    mockRunwareService.generateTaylorSwiftIllustration.mockResolvedValue(defaultGeneratedImage);
+    mockRunwareService.generateMultipleImages.mockResolvedValue([defaultGeneratedImage]);
   });
 
   afterEach(() => {
@@ -130,13 +142,9 @@ describe('AI Service', () => {
     });
 
     it('should fall back to OpenAI when RUNWARE is not available', async () => {
-      const mockRunwareService = {
-        isConfigured: vi.fn().mockReturnValue(false),
-        isConnected: vi.fn().mockResolvedValue(false),
-        generateImage: vi.fn(),
-      };
-
-      (RunwareService as any).mockImplementation(() => mockRunwareService);
+      mockRunwareService.isConfigured.mockReturnValue(false);
+      mockRunwareService.isConnected.mockResolvedValue(false);
+      mockRunwareService.generateImage.mockResolvedValue(defaultGeneratedImage);
 
       const mockOpenAIResponse = {
         data: {
@@ -153,6 +161,8 @@ describe('AI Service', () => {
 
       expect(result).toBe('https://example.com/openai-image.jpg');
       expect(apiRequestWithRetry).toHaveBeenCalled();
+      mockRunwareService.isConfigured.mockReturnValue(true);
+      mockRunwareService.isConnected.mockResolvedValue(true);
     });
 
     it('should use OpenAI directly when useRunware is false', async () => {

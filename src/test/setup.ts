@@ -104,7 +104,7 @@ global.fetch = vi.fn();
 vi.stubEnv('VITE_GROQ_API_KEY', 'gsk_test123456789');
 vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
 vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
-vi.stubEnv('VITE_RUNWARE_API_KEY', 'test-runware-key');
+vi.stubEnv('VITE_RUNWARE_PROXY_URL', '/api/functions/runware-proxy');
 vi.stubEnv('VITE_OPENAI_API_KEY', 'test-openai-key');
 
 const supabaseAuthMock = {

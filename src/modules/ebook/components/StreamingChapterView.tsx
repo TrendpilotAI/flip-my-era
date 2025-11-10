@@ -9,7 +9,8 @@ import {
   Star,
   Music,
   Eye,
-  EyeOff
+  EyeOff,
+  Lock
 } from "lucide-react";
 import { cn } from '@/core/lib/utils';
 
@@ -31,6 +32,8 @@ interface StreamingChapterViewProps {
   onStreamingComplete?: () => void;
   imageGenerationStatus?: 'pending' | 'generating' | 'complete' | 'error';
   imageGenerationProgress?: number;
+  isLocked?: boolean;
+  onRequestUnlock?: () => void;
 }
 
 export const StreamingChapterView = ({
@@ -41,7 +44,9 @@ export const StreamingChapterView = ({
   showStreamingText = true,
   onStreamingComplete,
   imageGenerationStatus,
-  imageGenerationProgress = 0
+  imageGenerationProgress = 0,
+  isLocked = false,
+  onRequestUnlock,
 }: StreamingChapterViewProps) => {
   const [showFullContent, setShowFullContent] = useState(!showStreamingText);
   const [streamingComplete, setStreamingComplete] = useState(!showStreamingText);
@@ -101,6 +106,9 @@ export const StreamingChapterView = ({
   };
 
   const themeColors = getThemeColors();
+  const locked = isLocked && !chapter.isStreaming;
+  const contentParagraphs = chapter.content.split('\n\n');
+  const visibleContent = locked ? contentParagraphs.slice(0, 1) : contentParagraphs;
 
   return (
     <Card className={cn(
@@ -128,7 +136,7 @@ export const StreamingChapterView = ({
               chapter.title || `Chapter ${index + 1}`
             )}
           </span>
-          {showStreamingText && !chapter.isStreaming && (
+          {showStreamingText && !chapter.isStreaming && !isLocked && (
             <Button
               variant="ghost"
               size="sm"
@@ -168,6 +176,20 @@ export const StreamingChapterView = ({
               {/* Streaming cursor */}
               <span className="inline-block w-2 h-5 bg-purple-500 animate-pulse ml-1"></span>
             </div>
+          ) : locked ? (
+            <div className="space-y-4 leading-relaxed text-gray-800">
+              {visibleContent.map((paragraph, pIndex) => (
+                <p
+                  key={pIndex}
+                  className={cn(
+                    "transition-all duration-300",
+                    paragraph.startsWith('"') && "text-blue-600 italic font-medium"
+                  )}
+                >
+                  {paragraph}
+                </p>
+              ))}
+            </div>
           ) : showStreamingText && !showFullContent ? (
             <StreamingText
               text={chapter.content}
@@ -177,7 +199,7 @@ export const StreamingChapterView = ({
             />
           ) : (
             <div className="space-y-4 leading-relaxed text-gray-800">
-              {chapter.content.split('\n\n').map((paragraph, pIndex) => (
+              {visibleContent.map((paragraph, pIndex) => (
                 <p
                   key={pIndex}
                   className={cn(
@@ -206,7 +228,12 @@ export const StreamingChapterView = ({
 
         {/* Chapter Image */}
         <div className="mt-8">
-          {chapter.imageUrl ? (
+          {locked ? (
+            <div className="w-full h-48 bg-gray-200 rounded-lg flex flex-col items-center justify-center gap-3 text-gray-600">
+              <Lock className="h-6 w-6" />
+              <span className="text-sm">Unlock to reveal premium illustrations.</span>
+            </div>
+          ) : chapter.imageUrl ? (
             <div className="relative group">
               <img
                 src={chapter.imageUrl}
@@ -249,6 +276,25 @@ export const StreamingChapterView = ({
             />
           )}
         </div>
+
+        {locked && (
+          <div className="mt-6 p-5 rounded-lg border border-dashed border-orange-300 bg-orange-50 flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-orange-700">
+              <Lock className="h-5 w-5" />
+              <span className="font-semibold">Unlock the remaining story</span>
+            </div>
+            <p className="text-sm text-orange-600">
+              Unlock to continue reading this chapter, access illustrations, and enable sharing features.
+            </p>
+          <Button
+            variant="secondary"
+            className="self-start bg-orange-500 hover:bg-orange-600 text-white"
+            onClick={() => onRequestUnlock?.()}
+          >
+              Unlock story
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

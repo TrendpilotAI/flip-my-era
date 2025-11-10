@@ -49,10 +49,10 @@ export const EnvironmentValidator = () => {
       description: 'Optional fallback for AI services'
     },
     {
-      name: 'Runware API Key',
-      key: 'VITE_RUNWARE_API_KEY',
+      name: 'Runware Proxy Endpoint',
+      key: 'VITE_RUNWARE_PROXY_URL',
       required: false,
-      description: 'Optional for image generation'
+      description: 'Routes image requests through secured Edge Function'
     }
   ];
 

@@ -1,5 +1,5 @@
 import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
-import { RunwareService, createEbookIllustrationPrompt, enhancePromptWithGroq } from '@/modules/shared/utils/runware';
+import { runwareService, createEbookIllustrationPrompt, enhancePromptWithGroq } from '@/modules/shared/utils/runware';
 import { getGroqApiKey, getOpenAiApiKey } from '@/modules/shared/utils/env';
 import { TaylorSwiftTheme } from '@/modules/story/utils/storyPrompts';
 import { type ImageMood } from '@/modules/story/utils/taylorSwiftImagePrompts';
@@ -78,8 +78,6 @@ interface OpenAIImageResponse {
   data: OpenAIImageData[];
 }
 
-// Initialize RUNWARE service
-const runwareService = new RunwareService(import.meta.env.VITE_RUNWARE_API_KEY || '');
 
 /**
  * Check if RUNWARE is available and properly configured

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { render } from '@/test/test-utils';
 import { ChapterView } from '../ChapterView';
 
@@ -80,5 +81,47 @@ describe('ChapterView', () => {
     expect(screen.getByText('First paragraph.')).toBeInTheDocument();
     expect(screen.getByText('Second paragraph.')).toBeInTheDocument();
     expect(screen.getByText('Third paragraph.')).toBeInTheDocument();
+  });
+
+  it('limits visible content and hides illustration when chapter is locked', () => {
+    const lockedChapter = {
+      ...mockChapter,
+      content: 'Unlocked paragraph.\n\nHidden paragraph.',
+      imageUrl: 'https://example.com/image.jpg',
+    };
+
+    render(
+      <ChapterView
+        chapter={lockedChapter}
+        index={0}
+        isGeneratingImages={false}
+        isLocked
+      />
+    );
+
+    expect(screen.getByText('Unlocked paragraph.')).toBeInTheDocument();
+    expect(screen.queryByText('Hidden paragraph.')).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/image placeholder/i)
+    ).toBeInTheDocument();
+  });
+
+  it('invokes unlock handler when user requests to unlock chapter', async () => {
+    const user = userEvent.setup();
+    const onRequestUnlock = vi.fn();
+
+    render(
+      <ChapterView
+        chapter={mockChapter}
+        index={0}
+        isGeneratingImages={false}
+        isLocked
+        onRequestUnlock={onRequestUnlock}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: /unlock story/i }));
+
+    expect(onRequestUnlock).toHaveBeenCalledTimes(1);
   });
 }); 

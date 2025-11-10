@@ -1,57 +1,74 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@/test/test-utils';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { act, render, screen } from '@/test/test-utils';
 import { EnvironmentValidator } from '../EnvironmentValidator';
 
-const originalEnv = { ...process.env } as any;
+const envValues = new Map<string, string | undefined>();
+
+vi.mock('@/modules/shared/utils/env', () => ({
+  getEnvVar: (key: string) => envValues.get(key),
+}));
 
 describe('EnvironmentValidator', () => {
   beforeEach(() => {
-    process.env = { ...originalEnv } as any;
+    envValues.clear();
   });
 
   it('shows missing alerts when required envs are absent', () => {
-    process.env.VITE_GROQ_API_KEY = '' as any;
-    process.env.VITE_SUPABASE_URL = '' as any;
-    process.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY = '' as any;
-    process.env.VITE_CLERK_PUBLISHABLE_KEY = '' as any;
+    envValues.set('VITE_GROQ_API_KEY', undefined);
+    envValues.set('VITE_SUPABASE_URL', undefined);
+    envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', undefined);
+    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', undefined);
 
     render(<EnvironmentValidator />);
 
     expect(screen.getByText(/Configuration Required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Story generation will not work/)).toBeInTheDocument();
+    expect(screen.getByText(/Story generation will not work/i)).toBeInTheDocument();
   });
 
-  it('flags invalid format for Groq and shows invalid alert', () => {
-    process.env.VITE_GROQ_API_KEY = 'bad' as any;
-    process.env.VITE_SUPABASE_URL = 'https://example.supabase.co' as any;
-    process.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY = 'anon' as any;
-    process.env.VITE_CLERK_PUBLISHABLE_KEY = 'pk_test_abc' as any;
+  it('flags invalid configurations when keys have wrong format', () => {
+    envValues.set('VITE_GROQ_API_KEY', 'invalid');
+    envValues.set('VITE_SUPABASE_URL', 'http://example.com');
+    envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'anon');
+    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'pk_123');
 
     render(<EnvironmentValidator />);
 
     expect(screen.getByText(/Invalid Configuration/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Invalid Format/i).length).toBeGreaterThan(0);
   });
 
-  it('shows configuration complete when all valid', () => {
-    process.env.VITE_GROQ_API_KEY = 'gsk_abc' as any;
-    process.env.VITE_SUPABASE_URL = 'https://example.supabase.co' as any;
-    process.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY = 'anon' as any;
-    process.env.VITE_CLERK_PUBLISHABLE_KEY = 'pk_abc' as any;
+  it('confirms configuration when all values are valid', () => {
+    envValues.set('VITE_GROQ_API_KEY', 'gsk_valid');
+    envValues.set('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
+    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'pk_test_valid');
+    envValues.set('VITE_OPENAI_API_KEY', 'sk_test');
+
+    render(<EnvironmentValidator />);
+
+    expect(screen.getByText(/Configuration Complete/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Configuration Required/i)).not.toBeInTheDocument();
+  });
+
+  it('revalidates configuration when refresh is clicked', async () => {
+    const user = userEvent.setup();
+
+    envValues.set('VITE_GROQ_API_KEY', 'gsk_valid');
+    envValues.set('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
+    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'pk_test_valid');
 
     render(<EnvironmentValidator />);
     expect(screen.getByText(/Configuration Complete/i)).toBeInTheDocument();
-  });
 
-  it('refresh button triggers revalidation', () => {
-    process.env.VITE_GROQ_API_KEY = 'gsk_abc' as any;
-    process.env.VITE_SUPABASE_URL = 'https://example.supabase.co' as any;
-    process.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY = 'anon' as any;
-    process.env.VITE_CLERK_PUBLISHABLE_KEY = 'pk_abc' as any;
+    envValues.set('VITE_GROQ_API_KEY', 'bad');
 
-    render(<EnvironmentValidator />);
-    fireEvent.click(screen.getByRole('button', { name: /refresh/i }));
-    expect(screen.getByText(/Configuration Complete/i)).toBeInTheDocument();
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /refresh/i }));
+    });
+
+    expect(screen.getByText(/Invalid Configuration/i)).toBeInTheDocument();
   });
 });
 

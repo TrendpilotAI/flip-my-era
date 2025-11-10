@@ -1,5 +1,6 @@
 import { useEffect, useState, ReactNode, useCallback } from "react";
 import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
+import type { GetTokenOptions } from "@clerk/types";
 import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/core/integrations/supabase/client";
 import { AuthContext, type AuthUser, type AuthContextType, type ProfileType } from './AuthContext';
 import { sentryService } from '@/core/integrations/sentry';
@@ -362,15 +363,18 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const isLoading = !isLoaded;
   const isAuthenticated = !!user;
 
-  // Wrap getToken to match the expected interface
-  const getTokenWrapper = async (): Promise<string | null> => {
+  // Wrap getToken to match the expected interface and allow template overrides
+  const getTokenWrapper = useCallback(async (options?: GetTokenOptions): Promise<string | null> => {
     try {
+      if (options) {
+        return await getToken(options);
+      }
       return await getToken({ template: 'supabase' });
     } catch (error) {
       console.error("Error getting token:", error);
       return null;
     }
-  };
+  }, [getToken]);
 
   const value: AuthContextType = {
     user,

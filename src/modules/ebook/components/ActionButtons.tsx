@@ -22,6 +22,8 @@ interface ActionButtonsProps {
     imageUrl?: string;
   };
   showDownloadShare?: boolean;
+  isLocked?: boolean;
+  onLockedAction?: () => void;
 }
 
 export const ActionButtons = ({ 
@@ -30,12 +32,31 @@ export const ActionButtons = ({
   onShare, 
   isPublishing = false,
   content,
-  showDownloadShare = true
+  showDownloadShare = true,
+  isLocked = false,
+  onLockedAction,
 }: ActionButtonsProps) => {
   const { toast } = useToast();
   const [showModal, setShowModal] = useState(false);
 
+  const handleLockedAction = () => {
+    if (onLockedAction) {
+      onLockedAction();
+    } else {
+      toast({
+        title: "Unlock required",
+        description: "Use a credit to unlock your story before sharing or downloading.",
+        variant: "default",
+      });
+    }
+  };
+
   const handleSave = () => {
+    if (isLocked) {
+      handleLockedAction();
+      return;
+    }
+
     if (onSave) {
       onSave();
     } else if (content && showDownloadShare) {
@@ -49,6 +70,11 @@ export const ActionButtons = ({
   };
 
   const handlePublish = () => {
+    if (isLocked) {
+      handleLockedAction();
+      return;
+    }
+
     if (onPublish) {
       onPublish();
     } else {
@@ -60,6 +86,11 @@ export const ActionButtons = ({
   };
 
   const handleShare = () => {
+    if (isLocked) {
+      handleLockedAction();
+      return;
+    }
+
     if (onShare) {
       onShare();
     } else if (content && showDownloadShare) {
@@ -77,7 +108,13 @@ export const ActionButtons = ({
       <div className="flex flex-wrap gap-4 mt-8">
         {showDownloadShare && content ? (
           <Button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              if (isLocked) {
+                handleLockedAction();
+                return;
+              }
+              setShowModal(true);
+            }}
             className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
           >
             <Download className="h-5 w-5 mr-2" />

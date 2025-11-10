@@ -22,7 +22,8 @@ import {
   Music,
   Sparkles,
   Home,
-  Menu
+  Menu,
+  Lock
 } from "lucide-react";
 import { cn } from '@/core/lib/utils';
 import { BookPageView } from "./BookPageView";
@@ -74,13 +75,17 @@ interface BookReaderProps {
   useTaylorSwiftThemes?: boolean;
   onClose?: () => void;
   initialChapter?: number;
+  isUnlocked?: boolean;
+  onRequestUnlock?: () => void;
 }
 
 export const BookReader = ({ 
   chapters, 
   useTaylorSwiftThemes = true, 
   onClose,
-  initialChapter = 0
+  initialChapter = 0,
+  isUnlocked = true,
+  onRequestUnlock,
 }: BookReaderProps) => {
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -276,6 +281,7 @@ export const BookReader = ({
 
   const currentChapter = chapters[readingState.currentChapter];
   const progress = ((readingState.currentChapter + 1) / chapters.length) * 100;
+  const isLocked = !isUnlocked;
 
   const themeClasses = useTaylorSwiftThemes ? {
     background: preferences.darkMode 
@@ -292,11 +298,15 @@ export const BookReader = ({
   };
 
   return (
-    <div className={cn(
-      "min-h-screen max-h-screen overflow-y-auto transition-all duration-300",
-      themeClasses.background,
-      preferences.darkMode ? "text-white" : "text-gray-900"
-    )}>
+    <div className="relative min-h-screen max-h-screen">
+      <div
+        className={cn(
+          "min-h-screen max-h-screen overflow-y-auto transition-all duration-300",
+          themeClasses.background,
+          preferences.darkMode ? "text-white" : "text-gray-900",
+          isLocked && "pointer-events-none blur-sm select-none"
+        )}
+      >
       {/* Top Navigation Bar */}
       <div className={cn(
         "sticky top-0 z-40 backdrop-blur-md border-b transition-all duration-300",
@@ -553,6 +563,36 @@ export const BookReader = ({
           author: 'FlipMyEra User'
         }}
       />
+      </div>
+
+      {isLocked && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 px-6 text-center backdrop-blur-md bg-black/60 text-white">
+          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-white/10">
+            <Lock className="h-6 w-6" />
+          </div>
+          <h2 className="text-2xl font-semibold">Unlock your story to continue reading</h2>
+          <p className="max-w-md text-sm text-white/80">
+            You&apos;ve generated an amazing adventure! Use a credit to unlock all chapters, downloads, and sharing features.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              size="lg"
+              className="px-10 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+              onClick={() => onRequestUnlock?.()}
+            >
+              Unlock full story
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="px-10 border-white/40 text-white hover:bg-white/10"
+              onClick={onClose}
+            >
+              Close reader
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

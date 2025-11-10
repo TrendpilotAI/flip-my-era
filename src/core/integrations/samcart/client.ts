@@ -157,21 +157,12 @@ interface SamCartCustomerPortalOptions {
 }
 
 class SamCartClient {
-  private apiKey: string;
-  private merchantId: string;
-  private baseUrl: string;
+  private checkoutEndpoint: string;
   private customerPortalUrl: string;
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_SAMCART_API_KEY || '';
-    this.merchantId = import.meta.env.VITE_SAMCART_MERCHANT_ID || '';
-    this.baseUrl = 'https://checkout.samcart.com/products';
+    this.checkoutEndpoint = import.meta.env.VITE_SAMCART_CHECKOUT_ENDPOINT || '/api/functions/samcart-checkout';
     this.customerPortalUrl = 'https://flipmyera.samcart.com/customer_hub';
-    
-    if (!this.apiKey || !this.merchantId) {
-      // Log warning without exposing sensitive information
-      console.warn('SamCart configuration incomplete. Checkout functionality will be limited.');
-    }
   }
 
   /**
@@ -194,77 +185,46 @@ class SamCartClient {
   /**
    * Generate a SamCart checkout URL with input validation
    */
-  generateCheckoutUrl(options: SamCartCheckoutOptions): string {
+  private async fetchCheckoutUrl(options: SamCartCheckoutOptions): Promise<string> {
     try {
-      const {
-        productId,
-        customerEmail,
-        customerName,
-        couponCode,
-        affiliateId,
-        redirectUrl,
-        cancelUrl,
-        metadata
-      } = options;
+      const payload = {
+        productId: InputValidator.validateProductId(options.productId),
+        customerEmail: options.customerEmail ? InputValidator.validateEmail(options.customerEmail) : undefined,
+        customerName: options.customerName ? InputValidator.sanitizeString(options.customerName, 100) : undefined,
+        couponCode: options.couponCode ? InputValidator.sanitizeString(options.couponCode, 50) : undefined,
+        affiliateId: options.affiliateId ? InputValidator.sanitizeString(options.affiliateId, 50) : undefined,
+        redirectUrl: options.redirectUrl ? InputValidator.validateUrl(options.redirectUrl) : undefined,
+        cancelUrl: options.cancelUrl ? InputValidator.validateUrl(options.cancelUrl) : undefined,
+        metadata: options.metadata ? InputValidator.validateMetadata(options.metadata) : undefined,
+      };
 
-      // Validate and sanitize required productId
-      const validatedProductId = InputValidator.validateProductId(productId);
+      const response = await fetch(this.checkoutEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-      // Base checkout URL with validated product ID
-      let checkoutUrl = `${this.baseUrl}/${encodeURIComponent(validatedProductId)}/checkout`;
-      
-      // Add query parameters with validation
-      const params = new URLSearchParams();
-      
-      if (customerEmail) {
-        const validatedEmail = InputValidator.validateEmail(customerEmail);
-        params.append('email', validatedEmail);
+      const data = await response.json().catch(() => null) as {
+        success?: boolean;
+        data?: { url?: string };
+        error?: string;
+      } | null;
+
+      if (!response.ok || !data?.success || !data.data?.url) {
+        throw new Error(data?.error || 'Checkout proxy failed');
       }
-      
-      if (customerName) {
-        const sanitizedName = InputValidator.sanitizeString(customerName, 100);
-        if (sanitizedName) params.append('name', sanitizedName);
-      }
-      
-      if (couponCode) {
-        const sanitizedCoupon = InputValidator.sanitizeString(couponCode, 50);
-        if (sanitizedCoupon) params.append('coupon', sanitizedCoupon);
-      }
-      
-      if (affiliateId) {
-        const sanitizedAffiliateId = InputValidator.sanitizeString(affiliateId, 50);
-        if (sanitizedAffiliateId) params.append('affiliate_id', sanitizedAffiliateId);
-      }
-      
-      if (redirectUrl && redirectUrl.length > 0) {
-        const validatedRedirectUrl = InputValidator.validateUrl(redirectUrl);
-        params.append('redirect_url', validatedRedirectUrl);
-      }
-      
-      if (cancelUrl && cancelUrl.length > 0) {
-        const validatedCancelUrl = InputValidator.validateUrl(cancelUrl);
-        params.append('cancel_url', validatedCancelUrl);
-      }
-      
-      // Add metadata with validation
-      if (metadata && Object.keys(metadata).length > 0) {
-        const validatedMetadata = InputValidator.validateMetadata(metadata);
-        if (Object.keys(validatedMetadata).length > 0) {
-          params.append('metadata', JSON.stringify(validatedMetadata));
-        }
-      }
-      
-      // Append query parameters if any exist
-      const queryString = params.toString();
-      if (queryString) {
-        checkoutUrl += `?${queryString}`;
-      }
-      
-      return checkoutUrl;
+
+      return data.data.url;
     } catch (error) {
-      this.logError('Failed to generate checkout URL', error, { options });
-      throw new Error('Invalid checkout parameters provided');
+      this.logError('Failed to request checkout URL', error, { options });
+      throw new Error('Unable to create checkout session. Please try again later.');
     }
+  }
+
+  async generateCheckoutUrl(options: SamCartCheckoutOptions): Promise<string> {
+    return this.fetchCheckoutUrl(options);
   }
 
   /**
@@ -307,22 +267,22 @@ class SamCartClient {
   /**
    * Redirect to SamCart checkout with error handling
    */
-  redirectToCheckout(options: SamCartCheckoutOptions): void {
+  async redirectToCheckout(options: SamCartCheckoutOptions): Promise<void> {
     try {
-      const checkoutUrl = this.generateCheckoutUrl(options);
+      const checkoutUrl = await this.fetchCheckoutUrl(options);
       window.location.href = checkoutUrl;
     } catch (error) {
       this.logError('Failed to redirect to checkout', error);
-      throw new Error('Unable to redirect to checkout. Please check your input and try again.');
+      throw new Error(error instanceof Error ? error.message : 'Unable to redirect to checkout.');
     }
   }
 
   /**
    * Open SamCart checkout in a new tab with error handling
    */
-  openCheckoutInNewTab(options: SamCartCheckoutOptions): void {
+  async openCheckoutInNewTab(options: SamCartCheckoutOptions): Promise<void> {
     try {
-      const checkoutUrl = this.generateCheckoutUrl(options);
+      const checkoutUrl = await this.fetchCheckoutUrl(options);
       const newWindow = window.open(checkoutUrl, '_blank');
       if (!newWindow) {
         throw new Error('Popup blocked or failed to open');

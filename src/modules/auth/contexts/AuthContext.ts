@@ -1,5 +1,6 @@
 import { createContext } from 'react';
 import { SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
+import type { GetTokenOptions } from "@clerk/types";
 
 export interface AuthUser {
   id: string;
@@ -31,7 +32,7 @@ export interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   refreshUser: () => Promise<void>;
   fetchCreditBalance: () => Promise<number>;
-  getToken: () => Promise<string | null>;
+  getToken: (options?: GetTokenOptions) => Promise<string | null>;
   isNewUser: boolean;
   setIsNewUser: (value: boolean) => void;
   SignInButton: typeof SignInButton;
