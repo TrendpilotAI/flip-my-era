@@ -3,7 +3,7 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20.17.0"
   # Allowlist public client keys that must appear in the browser bundle
   # to avoid Netlify's secrets scanner failing the build.
   # NOTE: Secret keys (VITE_GROQ_API_KEY, VITE_SUPABASE_SECRET_KEY, etc.) should NOT be exposed to client-side code.
@@ -12,6 +12,19 @@
   SECRETS_SCAN_OMIT_KEYS = "VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_STRIPE_PUBLISHABLE_KEY,VITE_OPENAI_API_KEY,VITE_RUNWARE_API_KEY,VITE_SUPABASE_JWT_SECRET,VITE_POSTHOG_KEY,VITE_PUBLIC_POSTHOG_KEY,VITE_GROQ_API_KEY,VITE_SUPABASE_SECRET_KEY,VITE_CLOUDFLARE_SECRET_KEY,VITE_CLOUDFLARE_SITE_KEY"
   # Build optimization
   NPM_FLAGS = "--prefer-offline --no-audit"
+
+# Sentry Netlify Plugin Configuration
+# ⚠️ IMPORTANT: The @sentry/netlify-build-plugin has been ARCHIVED/DEPRECATED by Netlify.
+# If this plugin is installed in your Netlify UI, it will cause build failures if SENTRY_AUTH_TOKEN is missing.
+#
+# RECOMMENDED ACTION: Remove the Sentry plugin from Netlify UI:
+# 1. Go to Netlify Dashboard → Site Settings → Plugins
+# 2. Find "@sentry/netlify-build-plugin" or "Sentry"
+# 3. Click "Remove" or "Uninstall"
+#
+# Note: Sentry error tracking still works via the Sentry SDK in your code.
+# The plugin only handled release creation, which is optional.
+# For Netlify Functions error tracking, use Sentry's AWS Lambda integration instead.
 
 [[headers]]
   for = "/*"
