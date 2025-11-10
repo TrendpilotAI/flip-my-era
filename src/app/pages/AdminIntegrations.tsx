@@ -43,9 +43,10 @@ const AdminIntegrations = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showKeys, setShowKeys] = useState(false);
   
-  // API Keys (in production, these would be fetched from secure storage)
-  const [groqApiKey, setGroqApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY || '');
-  const [openaiApiKey, setOpenaiApiKey] = useState(import.meta.env.VITE_OPENAI_API_KEY || '');
+  // API Keys - Note: These should be fetched from a secure backend endpoint, not from client-side env vars
+  // Using empty strings to avoid exposing secrets in client bundle
+  const [groqApiKey, setGroqApiKey] = useState('');
+  const [openaiApiKey, setOpenaiApiKey] = useState('');
   
   // Integration status
   const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus>({
