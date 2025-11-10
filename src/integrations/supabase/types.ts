@@ -109,6 +109,199 @@ export type Database = {
           },
         ]
       }
+      ebook_generations: {
+        Row: {
+          id: string
+          user_id: string
+          story_id: string
+          title: string
+          content: Json | string
+          status: string
+          credits_used: number | null
+          paid_with_credits: boolean | null
+          transaction_id: string | null
+          story_type: string | null
+          chapter_count: number | null
+          word_count: number | null
+          total_tokens_used: number | null
+          estimated_cost_usd: number | null
+          story_purchase_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          story_id: string
+          title: string
+          content: Json | string
+          status?: string
+          credits_used?: number | null
+          paid_with_credits?: boolean | null
+          transaction_id?: string | null
+          story_type?: string | null
+          chapter_count?: number | null
+          word_count?: number | null
+          total_tokens_used?: number | null
+          estimated_cost_usd?: number | null
+          story_purchase_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          story_id?: string
+          title?: string
+          content?: Json | string
+          status?: string
+          credits_used?: number | null
+          paid_with_credits?: boolean | null
+          transaction_id?: string | null
+          story_type?: string | null
+          chapter_count?: number | null
+          word_count?: number | null
+          total_tokens_used?: number | null
+          estimated_cost_usd?: number | null
+          story_purchase_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ebook_generations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_books: {
+        Row: {
+          id: string
+          user_id: string
+          original_story_id: string | null
+          ebook_generation_id: string | null
+          title: string
+          description: string | null
+          subtitle: string | null
+          author_name: string | null
+          chapters: Json
+          table_of_contents: Json | null
+          cover_image_url: string | null
+          back_cover_text: string | null
+          generation_settings: Json | null
+          style_preferences: Json | null
+          image_style: string | null
+          mood: string | null
+          target_age_group: string | null
+          page_count: number | null
+          chapter_count: number | null
+          word_count: number | null
+          image_count: number | null
+          status: string
+          generation_started_at: string | null
+          generation_completed_at: string | null
+          published_at: string | null
+          pdf_url: string | null
+          epub_url: string | null
+          mobi_url: string | null
+          images: Json | null
+          view_count: number | null
+          download_count: number | null
+          share_count: number | null
+          rating_average: number | null
+          rating_count: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          original_story_id?: string | null
+          ebook_generation_id?: string | null
+          title: string
+          description?: string | null
+          subtitle?: string | null
+          author_name?: string | null
+          chapters: Json
+          table_of_contents?: Json | null
+          cover_image_url?: string | null
+          back_cover_text?: string | null
+          generation_settings?: Json | null
+          style_preferences?: Json | null
+          image_style?: string | null
+          mood?: string | null
+          target_age_group?: string | null
+          page_count?: number | null
+          chapter_count?: number | null
+          word_count?: number | null
+          image_count?: number | null
+          status?: string
+          generation_started_at?: string | null
+          generation_completed_at?: string | null
+          published_at?: string | null
+          pdf_url?: string | null
+          epub_url?: string | null
+          mobi_url?: string | null
+          images?: Json | null
+          view_count?: number | null
+          download_count?: number | null
+          share_count?: number | null
+          rating_average?: number | null
+          rating_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          original_story_id?: string | null
+          ebook_generation_id?: string | null
+          title?: string
+          description?: string | null
+          subtitle?: string | null
+          author_name?: string | null
+          chapters?: Json
+          table_of_contents?: Json | null
+          cover_image_url?: string | null
+          back_cover_text?: string | null
+          generation_settings?: Json | null
+          style_preferences?: Json | null
+          image_style?: string | null
+          mood?: string | null
+          target_age_group?: string | null
+          page_count?: number | null
+          chapter_count?: number | null
+          word_count?: number | null
+          image_count?: number | null
+          status?: string
+          generation_started_at?: string | null
+          generation_completed_at?: string | null
+          published_at?: string | null
+          pdf_url?: string | null
+          epub_url?: string | null
+          mobi_url?: string | null
+          images?: Json | null
+          view_count?: number | null
+          download_count?: number | null
+          share_count?: number | null
+          rating_average?: number | null
+          rating_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_books_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chapters: {
         Row: {
           chapter_number: number

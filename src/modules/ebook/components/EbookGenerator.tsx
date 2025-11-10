@@ -33,6 +33,7 @@ import {
 } from "@/modules/story/utils/storyPrompts";
 import { downloadEbook } from '@/modules/shared/utils/downloadUtils';
 import { Pencil } from 'lucide-react';
+import type { Json } from '@/integrations/supabase/types';
 
 interface Chapter {
   title: string;
@@ -46,7 +47,13 @@ interface EbookGeneratorProps {
   storyId: string;
   storyline?: {
     logline: string;
-    threeActStructure: any;
+    threeActStructure: {
+      setup?: string;
+      risingAction?: string;
+      climax?: string;
+      resolution?: string;
+      [key: string]: unknown;
+    };
     chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
     themes: string[];
     wordCountTotal: number;
@@ -265,17 +272,17 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
 
             if (ebookError) {
               console.error('Error creating ebook generation record:', ebookError);
-            } else {
-              // Save the actual book to ebook_generations table for user access
+            } else if (ebookGeneration) {
+              // Save the actual book to memory_books table for user access
               const { error: memoryBookError } = await supabaseWithAuth
-                .from('ebook_generations')
+                .from('memory_books')
                 .insert({
                   user_id: userId,
                   original_story_id: storyId,
                   ebook_generation_id: ebookGeneration.id,
                   title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${generatedChapters[0]?.title || 'Untitled'}`,
                   description: `A ${storyFormats[selectedFormat].name.toLowerCase()}${useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : ''} generated from your story.`,
-                  chapters: generatedChapters,
+                  chapters: generatedChapters as unknown as Json,
                   chapter_count: generatedChapters.length,
                   word_count: generatedChapters.reduce((total, ch) => total + ch.content.length, 0),
                   generation_settings: {
@@ -364,7 +371,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                   
                   if (!userId) {
                     console.error('No user ID available for database operation');
-                    return;
+                    throw new Error('No user ID available for database operation');
                   }
                   
                   // Create authenticated Supabase client
@@ -376,7 +383,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                       user_id: userId,
                       story_id: storyId,
                       title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
-                      content: JSON.stringify(formattedChapters),
+                      content: JSON.stringify(formattedChapters) as Json,
                       status: 'completed',
                       credits_used: creditValidation.bypassCredits ? 0 : 1,
                       paid_with_credits: !creditValidation.bypassCredits,
@@ -390,17 +397,17 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
 
                   if (ebookError) {
                     console.error('Error creating ebook generation record:', ebookError);
-                  } else {
-                    // Save the actual book to ebook_generations table for user access
+                  } else if (ebookGeneration) {
+                    // Save the actual book to memory_books table for user access
                     const { error: memoryBookError } = await supabaseWithAuth
-                      .from('ebook_generations')
+                      .from('memory_books')
                       .insert({
                         user_id: userId,
                         original_story_id: storyId,
                         ebook_generation_id: ebookGeneration.id,
                         title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
                         description: `A ${storyFormats[selectedFormat].name.toLowerCase()}${useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : ''} generated from your story.`,
-                        chapters: formattedChapters,
+                        chapters: formattedChapters as unknown as Json,
                         chapter_count: formattedChapters.length,
                         word_count: formattedChapters.reduce((total, ch) => total + ch.content.length, 0),
                         generation_settings: {
@@ -429,6 +436,11 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                   }
                 } catch (dbError) {
                   console.error('Database error:', dbError);
+                  // Re-throw critical errors (like missing userId) to reject the Promise
+                  // Database operation errors are non-critical and can be logged without failing
+                  if (dbError instanceof Error && dbError.message.includes('user ID')) {
+                    throw dbError;
+                  }
                 }
               }
               
