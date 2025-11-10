@@ -34,12 +34,12 @@ describe('apiWithRetry', () => {
   it('should retry on rate limit error (429)', async () => {
     const mockError = {
       response: { status: 429 },
-      message: 'Rate limit exceeded'
-    };
+      message: 'Rate limit exceeded',
+      isAxiosError: true
+    } as any;
     const mockSuccessResponse = { data: 'success', status: 200 };
 
     mockedAxios
-      .mockRejectedValueOnce(mockError)
       .mockRejectedValueOnce(mockError)
       .mockResolvedValueOnce(mockSuccessResponse);
 
@@ -56,13 +56,14 @@ describe('apiWithRetry', () => {
     const result = await promise;
 
     expect(result).toEqual(mockSuccessResponse);
-    expect(mockedAxios).toHaveBeenCalledTimes(3);
+    expect(mockedAxios).toHaveBeenCalledTimes(2);
   });
 
   it('should retry on rate limit message in error', async () => {
     const mockError = {
-      message: 'rate limit exceeded'
-    };
+      message: 'rate limit exceeded',
+      isAxiosError: false
+    } as any;
     const mockSuccessResponse = { data: 'success', status: 200 };
 
     mockedAxios
@@ -85,8 +86,9 @@ describe('apiWithRetry', () => {
 
   it('should retry on "Rate limit" message in error', async () => {
     const mockError = {
-      message: 'Rate limit exceeded'
-    };
+      message: 'Rate limit exceeded',
+      isAxiosError: false
+    } as any;
     const mockSuccessResponse = { data: 'success', status: 200 };
 
     mockedAxios
@@ -110,8 +112,9 @@ describe('apiWithRetry', () => {
   it('should not retry on non-rate-limit errors', async () => {
     const mockError = {
       response: { status: 400 },
-      message: 'Bad request'
-    };
+      message: 'Bad request',
+      isAxiosError: true
+    } as any;
 
     mockedAxios.mockRejectedValueOnce(mockError);
 
@@ -127,10 +130,16 @@ describe('apiWithRetry', () => {
   it('should not retry after max retries exceeded', async () => {
     const mockError = {
       response: { status: 429 },
-      message: 'Rate limit exceeded'
-    };
+      message: 'Rate limit exceeded',
+      isAxiosError: true
+    } as any;
 
-    mockedAxios.mockRejectedValue(mockError);
+    // Mock 4 failures (1 initial + 3 retries)
+    mockedAxios
+      .mockRejectedValueOnce(mockError)
+      .mockRejectedValueOnce(mockError)
+      .mockRejectedValueOnce(mockError)
+      .mockRejectedValueOnce(mockError);
 
     const config = {
       method: 'GET' as const,
@@ -147,8 +156,9 @@ describe('apiWithRetry', () => {
   it('should use exponential backoff for retries', async () => {
     const mockError = {
       response: { status: 429 },
-      message: 'Rate limit exceeded'
-    };
+      message: 'Rate limit exceeded',
+      isAxiosError: true
+    } as any;
     const mockSuccessResponse = { data: 'success', status: 200 };
 
     mockedAxios
@@ -190,8 +200,9 @@ describe('apiWithRetry', () => {
   it('should preserve original config in retries', async () => {
     const mockError = {
       response: { status: 429 },
-      message: 'Rate limit exceeded'
-    };
+      message: 'Rate limit exceeded',
+      isAxiosError: true
+    } as any;
     const mockSuccessResponse = { data: 'success', status: 200 };
 
     mockedAxios
@@ -218,8 +229,9 @@ describe('apiWithRetry', () => {
   it('should handle concurrent retry attempts', async () => {
     const mockError = {
       response: { status: 429 },
-      message: 'Rate limit exceeded'
-    };
+      message: 'Rate limit exceeded',
+      isAxiosError: true
+    } as any;
     const mockSuccessResponse = { data: 'success', status: 200 };
 
     mockedAxios

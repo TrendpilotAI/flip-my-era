@@ -35,13 +35,15 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
       baseUrl: import.meta.env.VITE_APP_URL || 'http://localhost:8080',
       timeout: 10000,
     },
-    services: {
-      supabase: {
-        url: import.meta.env.VITE_SUPABASE_URL,
-        publishableKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        secretKey: import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '', // Assuming service role key is the 'secret' referred
+      services: {
+        supabase: {
+          url: import.meta.env.VITE_SUPABASE_URL,
+          publishableKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          // Note: Secret keys should never be exposed to client-side code
+          // Remove this field or ensure it's only used server-side
+          secretKey: '', // Client-side code should not have access to secret keys
+        },
       },
-    },
   }
 
   const config = {

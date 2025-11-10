@@ -3,17 +3,16 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '../ProtectedRoute';
-import { ClerkAuthProvider } from '@/modules/auth/contexts/ClerkAuthContext';
+import { ClerkAuthProvider } from '@/modules/auth/contexts';
 import { mockClerkUser } from '@/test/mocks/clerk';
 
-// Mock the useClerkAuth hook
+// Mock the useClerkAuth hook - return the mock function result directly
 const mockUseClerkAuth = vi.fn();
-vi.mock('@/modules/auth/contexts/ClerkAuthContext', async () => {
-  const actual = await vi.importActual('@/modules/auth/contexts/ClerkAuthContext');
+vi.mock('@/modules/auth/contexts', async () => {
+  const actual = await vi.importActual('@/modules/auth/contexts');
   return {
     ...actual,
-    useClerkAuth: () => mockUseClerkAuth(),
-    ClerkAuthProvider: ({ children }: any) => children,
+    useClerkAuth: mockUseClerkAuth,
   };
 });
 

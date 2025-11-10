@@ -9,7 +9,6 @@ import { personalityTypes } from '@/modules/story/types/personality';
 import { detectGender, transformName } from '@/modules/user/utils/genderUtils';
 import { getRandomViralTropes, getRandomSceneSettings, generateStoryPrompt } from '@/modules/story/utils/storyPrompts';
 import { saveStory, getLocalStory, getUserPreferences } from '@/modules/story/utils/storyPersistence';
-import { useClerkAuth } from '@/modules/auth/contexts';
 
 type GenderType = "same" | "flip" | "neutral";
 
@@ -87,7 +86,9 @@ export const useStoryGeneration = () => {
     if (name && detectedGender) {
       const updateTransformedName = async () => {
         try {
-          const newTransformedName = await transformName(name, detectedGender, gender);
+          // Get Clerk token for Edge Function authentication
+          const clerkToken = await getToken();
+          const newTransformedName = await transformName(name, detectedGender, gender, clerkToken);
           setTransformedName(newTransformedName);
         } catch (error: unknown) {
           // Fallback to original name if transformation fails
@@ -97,7 +98,7 @@ export const useStoryGeneration = () => {
       
       updateTransformedName();
     }
-  }, [name, detectedGender, gender]);
+  }, [name, detectedGender, gender, getToken]);
 
   const handleStorySelect = async (story: SavedStory) => {
     setPreviousStory({ content: result, id: storyId });

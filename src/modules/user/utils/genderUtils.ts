@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { generateName } from "@/modules/story/services/ai";
+import { generateWithGroq } from '@/modules/shared/utils/groq';
 
 export type GenderInfo = {
   gender: 'male' | 'female' | 'unknown';
@@ -117,7 +117,12 @@ const getFemaleToMaleMapping = (name: string): string => {
   return mappings[lowercaseName] || withoutEnding;
 };
 
-export const transformName = async (originalName: string, detectedGender: GenderInfo, genderType: "same" | "flip" | "neutral"): Promise<string> => {
+export const transformName = async (
+  originalName: string, 
+  detectedGender: GenderInfo, 
+  genderType: "same" | "flip" | "neutral",
+  clerkToken?: string | null
+): Promise<string> => {
   const [firstName, ...restOfName] = originalName.split(' ');
   const lastName = restOfName.join(' ');
 
@@ -130,25 +135,41 @@ export const transformName = async (originalName: string, detectedGender: Gender
       const gender = detectedGender.gender;
       const targetGender = gender === 'male' ? 'female' : 'male';
       
-      // Use Groq to generate a name of the opposite gender
-      const newFirstName = await generateName({
-        originalName: firstName,
-        targetGender,
-        shouldBeSimilar: true
-      });
-      
-      return `${newFirstName} ${lastName}`;
+      // Use Edge Function to generate a name of the opposite gender
+      if (clerkToken) {
+        const systemPrompt = 'You are a creative name generator who specializes in creating interesting and appropriate names.';
+        const userPrompt = `Generate a ${targetGender} name that is interesting and unique but somewhat similar in style or sound to the original name "${firstName}". Return ONLY the name, with no additional text or explanation.`;
+        
+        const generatedName = await generateWithGroq(userPrompt, clerkToken, {
+          systemPrompt,
+          temperature: 0.8,
+          maxTokens: 50
+        });
+        
+        return `${generatedName.trim()} ${lastName}`;
+      } else {
+        // Fallback to legacy mapping if no token available
+        throw new Error('No authentication token available');
+      }
     }
 
     if (genderType === "neutral") {
-      // Use Groq to generate a gender-neutral name
-      const newFirstName = await generateName({
-        originalName: firstName,
-        targetGender: 'neutral',
-        shouldBeSimilar: true
-      });
-      
-      return `${newFirstName} ${lastName}`;
+      // Use Edge Function to generate a gender-neutral name
+      if (clerkToken) {
+        const systemPrompt = 'You are a creative name generator who specializes in creating interesting and appropriate names.';
+        const userPrompt = `Generate a gender-neutral name that is interesting and unique but somewhat similar in style or sound to the original name "${firstName}". Return ONLY the name, with no additional text or explanation.`;
+        
+        const generatedName = await generateWithGroq(userPrompt, clerkToken, {
+          systemPrompt,
+          temperature: 0.8,
+          maxTokens: 50
+        });
+        
+        return `${generatedName.trim()} ${lastName}`;
+      } else {
+        // Fallback to legacy mapping if no token available
+        throw new Error('No authentication token available');
+      }
     }
   } catch (error) {
     console.error('Error generating name with Groq:', error);

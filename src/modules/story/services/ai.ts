@@ -99,8 +99,16 @@ export async function isRunwareAvailable(): Promise<boolean> {
 
 /**
  * Generate a story using the Groq API with retry logic for rate limits
+ * 
+ * @deprecated This function exposes API keys to the client. Use Edge Functions instead.
+ * Use generateWithGroq() from @/modules/shared/utils/groq which calls the groq-api Edge Function.
  */
 export async function generateStory(options: GenerateStoryOptions): Promise<string> {
+  const apiKey = getGroqApiKey();
+  if (!apiKey) {
+    throw new Error('Groq API key not available. Please use Edge Functions for story generation.');
+  }
+  
   try {
     const { prompt, maxTokens = 2048, temperature = 0.7 } = options;
     
@@ -108,7 +116,7 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${getGroqApiKey()}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       data: {
@@ -130,8 +138,16 @@ export async function generateStory(options: GenerateStoryOptions): Promise<stri
 
 /**
  * Generate chapter content based on a story with retry logic
+ * 
+ * @deprecated This function exposes API keys to the client. Use Edge Functions instead.
+ * Use useStreamingGeneration() hook which calls the stream-chapters Edge Function.
  */
 export async function generateChapters(story: string, numChapters: number = 3): Promise<Array<{ title: string; content: string }>> {
+  const apiKey = getGroqApiKey();
+  if (!apiKey) {
+    throw new Error('Groq API key not available. Please use Edge Functions (stream-chapters) for chapter generation.');
+  }
+  
   try {
     const prompt = `
       Create ${numChapters} chapters for a children's book based on this story:
@@ -146,7 +162,7 @@ export async function generateChapters(story: string, numChapters: number = 3): 
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${getGroqApiKey()}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       data: {
@@ -172,6 +188,9 @@ export async function generateChapters(story: string, numChapters: number = 3): 
 
 /**
  * Generate Taylor Swift-themed chapters with format-specific targeting
+ * 
+ * @deprecated This function exposes API keys to the client. Use Edge Functions instead.
+ * Use useStreamingGeneration() hook which calls the stream-chapters Edge Function.
  */
 export async function generateTaylorSwiftChapters(
   story: string,
@@ -179,6 +198,11 @@ export async function generateTaylorSwiftChapters(
   format: 'short-story' | 'novella',
   numChapters?: number
 ): Promise<Array<{ title: string; content: string }>> {
+  const apiKey = getGroqApiKey();
+  if (!apiKey) {
+    throw new Error('Groq API key not available. Please use Edge Functions (stream-chapters) for chapter generation.');
+  }
+  
   try {
     // Set chapter count and word targets based on format
     const chapterCount = numChapters || (format === 'novella' ? 8 : 3);
@@ -223,7 +247,7 @@ export async function generateTaylorSwiftChapters(
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${getGroqApiKey()}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       data: {
@@ -249,8 +273,16 @@ export async function generateTaylorSwiftChapters(
 
 /**
  * Generate a name based on gender using Groq API with retry logic
+ * 
+ * @deprecated This function exposes API keys to the client. Use Edge Functions instead.
+ * Use generateWithGroq() from @/modules/shared/utils/groq which calls the groq-api Edge Function.
  */
 export async function generateName(options: GenerateNameOptions): Promise<string> {
+  const apiKey = getGroqApiKey();
+  if (!apiKey) {
+    throw new Error('Groq API key not available. Please use Edge Functions for name generation.');
+  }
+  
   try {
     const { originalName, targetGender, shouldBeSimilar = true } = options;
     
@@ -267,7 +299,7 @@ export async function generateName(options: GenerateNameOptions): Promise<string
       method: 'POST',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${getGroqApiKey()}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       data: {

@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { ClerkAuthProvider, useClerkAuth } from '@/modules/auth/contexts';
 import { useUser, useAuth } from '@clerk/clerk-react';
-import { supabase } from '@/core/integrations/supabase/client';
 
 // Mock Clerk hooks
 vi.mock('@clerk/clerk-react', () => ({
@@ -15,35 +14,42 @@ vi.mock('@clerk/clerk-react', () => ({
 }));
 
 // Mock Supabase client
-vi.mock('@/core/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      signInWithIdToken: vi.fn(),
-      getSession: vi.fn()
-    },
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn()
-        }))
-      })),
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn()
-        }))
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn()
-      }))
-    }))
+const mockSupabaseClient = {
+  auth: {
+    signInWithIdToken: vi.fn(),
+    getSession: vi.fn()
   },
+  from: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        single: vi.fn()
+      }))
+    })),
+    insert: vi.fn(() => ({
+      select: vi.fn(() => ({
+        single: vi.fn()
+      }))
+    })),
+    update: vi.fn(() => ({
+      eq: vi.fn()
+    }))
+  })),
+  functions: {
+    invoke: vi.fn()
+  }
+};
+
+const mockCreateSupabaseClientWithClerkToken = vi.fn(() => mockSupabaseClient);
+
+vi.mock('@/core/integrations/supabase/client', () => ({
+  supabase: mockSupabaseClient,
   getSupabaseSession: vi.fn(),
-  signOutFromSupabase: vi.fn()
+  signOutFromSupabase: vi.fn(),
+  createSupabaseClientWithClerkToken: mockCreateSupabaseClientWithClerkToken
 }));
 
 const mockUseUser = vi.mocked(useUser);
 const mockUseAuth = vi.mocked(useAuth);
-const mockSupabase = vi.mocked(supabase);
 
 describe('ClerkAuthContext', () => {
   const mockGetToken = vi.fn();
@@ -126,7 +132,7 @@ describe('ClerkAuthContext', () => {
       } as any);
 
       // Mock Supabase responses
-      mockSupabase.auth.signInWithIdToken.mockResolvedValue({
+      mockSupabaseClient.auth.signInWithIdToken.mockResolvedValue({
         data: {
           user: {
             id: 'supabase-user-123',
@@ -136,14 +142,27 @@ describe('ClerkAuthContext', () => {
         error: null
       } as any);
 
-      mockSupabase.from().select().eq().single.mockResolvedValue({
-        data: null,
-        error: { code: 'PGRST116' } // Not found error
-      } as any);
+      const mockSelect = vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: { code: 'PGRST116' } // Not found error
+          })
+        }))
+      }));
 
-      mockSupabase.from().insert.mockResolvedValue({
-        data: null,
-        error: null
+      const mockInsert = vi.fn(() => ({
+        select: vi.fn(() => ({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'supabase-user-123', ...mockClerkUser, created_at: '2022-01-01T00:00:00.000Z', subscription_status: 'free' },
+            error: null
+          })
+        }))
+      }));
+
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        insert: mockInsert
       } as any);
 
       const { result } = renderHook(() => useClerkAuth(), { wrapper });
@@ -154,12 +173,12 @@ describe('ClerkAuthContext', () => {
 
       expect(result.current.isAuthenticated).toBe(true);
       expect(result.current.user).toMatchObject({
-        id: 'supabase-user-123',
+        id: 'clerk-user-123', // Clerk user ID is used, not Supabase ID
         email: 'test@example.com',
         name: 'Test User',
         avatar_url: 'https://example.com/avatar.jpg',
         subscription_status: 'free',
-        created_at: '2022-01-01T00:00:00Z'
+        created_at: '2022-01-01T00:00:00.000Z' // ISO format with milliseconds
       });
       expect(result.current.isNewUser).toBe(true);
     });
@@ -189,7 +208,7 @@ describe('ClerkAuthContext', () => {
         isLoaded: true
       } as any);
 
-      mockSupabase.auth.signInWithIdToken.mockResolvedValue({
+      mockSupabaseClient.auth.signInWithIdToken.mockResolvedValue({
         data: {
           user: {
             id: 'supabase-user-123',
@@ -199,14 +218,25 @@ describe('ClerkAuthContext', () => {
         error: null
       } as any);
 
-      mockSupabase.from().select().eq().single.mockResolvedValue({
-        data: existingProfile,
-        error: null
-      } as any);
+      const mockSelect = vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn().mockResolvedValue({
+            data: existingProfile,
+            error: null
+          })
+        }))
+      }));
 
-      mockSupabase.from().update().eq.mockResolvedValue({
-        data: null,
-        error: null
+      const mockUpdate = vi.fn(() => ({
+        eq: vi.fn().mockResolvedValue({
+          data: null,
+          error: null
+        })
+      }));
+
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect,
+        update: mockUpdate
       } as any);
 
       const { result } = renderHook(() => useClerkAuth(), { wrapper });
@@ -217,12 +247,12 @@ describe('ClerkAuthContext', () => {
 
       expect(result.current.isAuthenticated).toBe(true);
       expect(result.current.user).toMatchObject({
-        id: 'supabase-user-123',
+        id: 'clerk-user-123', // Clerk user ID is used
         email: 'test@example.com',
         name: 'Updated Name', // Updated from Clerk
         avatar_url: 'https://example.com/new-avatar.jpg', // Updated from Clerk
         subscription_status: 'premium', // Preserved from Supabase
-        created_at: '2022-01-01T00:00:00Z' // Preserved from Supabase
+        created_at: '2022-01-01T00:00:00.000Z' // ISO format with milliseconds
       });
       expect(result.current.isNewUser).toBe(false);
     });
@@ -243,7 +273,7 @@ describe('ClerkAuthContext', () => {
         isLoaded: true
       } as any);
 
-      mockSupabase.auth.signInWithIdToken.mockRejectedValue(new Error('Supabase auth failed'));
+      mockSupabaseClient.auth.signInWithIdToken.mockRejectedValue(new Error('Supabase auth failed'));
 
       const { result } = renderHook(() => useClerkAuth(), { wrapper });
 
@@ -380,16 +410,24 @@ describe('ClerkAuthContext', () => {
         user: { id: 'supabase-user-123' }
       } as any);
 
-      mockSupabase.from().select().eq().single.mockResolvedValue({
-        data: {
-          id: 'supabase-user-123',
-          email: 'test@example.com',
-          name: 'Updated Name',
-          avatar_url: 'https://example.com/new-avatar.jpg',
-          subscription_status: 'premium',
-          created_at: '2022-01-01T00:00:00Z'
-        },
-        error: null
+      const mockSelect = vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn().mockResolvedValue({
+            data: {
+              id: 'supabase-user-123',
+              email: 'test@example.com',
+              name: 'Updated Name',
+              avatar_url: 'https://example.com/new-avatar.jpg',
+              subscription_status: 'premium',
+              created_at: '2022-01-01T00:00:00Z'
+            },
+            error: null
+          })
+        }))
+      }));
+
+      mockSupabaseClient.from.mockReturnValue({
+        select: mockSelect
       } as any);
 
       const { result } = renderHook(() => useClerkAuth(), { wrapper });

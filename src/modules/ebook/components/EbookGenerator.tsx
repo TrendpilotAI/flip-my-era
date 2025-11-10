@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Book, Download, Loader2, Sparkles, AlertTriangle, Heart, Users, Zap, Star, Pause, Play, RotateCcw } from "lucide-react";
 import { cn, extractUserIdFromToken } from '@/core/lib/utils';
-import { generateChapters, generateTaylorSwiftChapters, generateEbookIllustration, generateTaylorSwiftIllustration } from "@/modules/story/services/ai";
+import { generateEbookIllustration, generateTaylorSwiftIllustration } from "@/modules/story/services/ai";
 import { samcartClient } from '@/core/integrations/samcart/client';
 import { CreditBalance } from "@/modules/user/components/CreditBalance";
 import { CreditPurchaseModal } from "@/modules/user/components/CreditPurchaseModal";
@@ -33,6 +33,7 @@ import {
 } from "@/modules/story/utils/storyPrompts";
 import { downloadEbook } from '@/modules/shared/utils/downloadUtils';
 import { Pencil } from 'lucide-react';
+import type { Json } from '@/integrations/supabase/types';
 
 interface Chapter {
   title: string;
@@ -46,7 +47,13 @@ interface EbookGeneratorProps {
   storyId: string;
   storyline?: {
     logline: string;
-    threeActStructure: any;
+    threeActStructure: {
+      setup?: string;
+      risingAction?: string;
+      climax?: string;
+      resolution?: string;
+      [key: string]: unknown;
+    };
     chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
     themes: string[];
     wordCountTotal: number;
@@ -265,17 +272,17 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
 
             if (ebookError) {
               console.error('Error creating ebook generation record:', ebookError);
-            } else {
-              // Save the actual book to ebook_generations table for user access
+            } else if (ebookGeneration) {
+              // Save the actual book to memory_books table for user access
               const { error: memoryBookError } = await supabaseWithAuth
-                .from('ebook_generations')
+                .from('memory_books')
                 .insert({
                   user_id: userId,
                   original_story_id: storyId,
                   ebook_generation_id: ebookGeneration.id,
                   title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${generatedChapters[0]?.title || 'Untitled'}`,
                   description: `A ${storyFormats[selectedFormat].name.toLowerCase()}${useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : ''} generated from your story.`,
-                  chapters: generatedChapters,
+                  chapters: generatedChapters as unknown as Json,
                   chapter_count: generatedChapters.length,
                   word_count: generatedChapters.reduce((total, ch) => total + ch.content.length, 0),
                   generation_settings: {
@@ -328,108 +335,137 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
     setIsGeneratingChapters(true);
     
     try {
-      // Choose generation method based on theme selection
-      const generatedChapters = useTaylorSwiftThemes
-        ? await generateTaylorSwiftChapters(originalStory, selectedTheme, selectedFormat, storyFormats[selectedFormat].chapters)
-        : await generateChapters(originalStory, storyFormats[selectedFormat].chapters);
+      // Use streaming generation hook but wait for completion
+      // This ensures we use Edge Functions instead of legacy client-side API calls
+      const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
       
-      // Map the generated chapters to our Chapter interface
-      const formattedChapters: Chapter[] = generatedChapters.map((chapter, index) => ({
-        title: chapter.title,
-        content: chapter.content,
-        id: `${storyId}-ch${index + 1}`
-      }));
-      
-      setChapters(formattedChapters);
-
-      // Create ebook generation record in database
-      if (creditValidation.transactionId) {
-        try {
-          const storyType = useTaylorSwiftThemes ? `taylor-swift-${selectedTheme}-${selectedFormat}` : 'ebook';
-          const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
-          const userId = token ? extractUserIdFromToken(token) : null;
-          
-          if (!token || !userId) {
-            console.error('No token or user ID available for database operation');
-            return;
-          }
-          
-          // Create authenticated Supabase client
-          const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
-          
-          const { data: ebookGeneration, error: ebookError } = await supabaseWithAuth
-            .from('ebook_generations')
-            .insert({
-              user_id: userId,
-              story_id: storyId,
-              title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
-              content: JSON.stringify(formattedChapters),
-              status: 'completed',
-              credits_used: creditValidation.bypassCredits ? 0 : 1,
-              paid_with_credits: !creditValidation.bypassCredits,
-              transaction_id: creditValidation.transactionId,
-              story_type: storyType,
-              chapter_count: formattedChapters.length,
-              word_count: formattedChapters.reduce((total, ch) => total + ch.content.length, 0)
-            })
-            .select()
-            .single();
-
-          if (ebookError) {
-            console.error('Error creating ebook generation record:', ebookError);
-          } else {
-            // Save the actual book to ebook_generations table for user access
-            const { error: memoryBookError } = await supabaseWithAuth
-              .from('ebook_generations')
-              .insert({
-                user_id: userId,
-                original_story_id: storyId,
-                ebook_generation_id: ebookGeneration.id,
-                title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
-                description: `A ${storyFormats[selectedFormat].name.toLowerCase()}${useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : ''} generated from your story.`,
-                chapters: formattedChapters,
-                chapter_count: formattedChapters.length,
-                word_count: formattedChapters.reduce((total, ch) => total + ch.content.length, 0),
-                generation_settings: {
-                  useTaylorSwiftThemes,
-                  selectedTheme,
-                  selectedFormat,
-                  storyType
-                },
-                style_preferences: {
-                  image_style: 'children',
-                  mood: 'happy',
-                  target_age_group: 'children'
-                },
-                status: 'completed',
-                generation_completed_at: new Date().toISOString()
-              });
-
-            if (memoryBookError) {
-              console.error('Error saving book to memory:', memoryBookError);
-            } else {
-              toast({
-                title: "Book Saved",
-                description: "Your book has been saved and is now available in your library.",
-              });
-            }
-          }
-        } catch (dbError) {
-          console.error('Database error:', dbError);
-        }
+      if (!token) {
+        throw new Error('Authentication required. Please sign in to generate chapters.');
       }
-      
-      const creditType = creditValidation.bypassCredits ? "unlimited subscription" : "credit";
-      const themeDescription = useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : '';
-      toast({
-        title: "Chapters Generated",
-        description: `Your ${storyFormats[selectedFormat].name.toLowerCase()}${themeDescription} has been created using your ${creditType}.`,
+
+      // Use streaming generation but wait for all chapters to complete
+      await new Promise<void>((resolve, reject) => {
+        streaming.startGeneration({
+          originalStory,
+          useTaylorSwiftThemes,
+          selectedTheme,
+          selectedFormat,
+          numChapters: storyFormats[selectedFormat].chapters,
+          storyline,
+          onComplete: async (generatedChapters) => {
+            try {
+              // Map the generated chapters to our Chapter interface
+              const formattedChapters: Chapter[] = generatedChapters.map((chapter, index) => ({
+                title: chapter.title,
+                content: chapter.content,
+                id: `${storyId}-ch${index + 1}`
+              }));
+              
+              setChapters(formattedChapters);
+
+              // Create ebook generation record in database
+              if (creditValidation.transactionId) {
+                try {
+                  const storyType = useTaylorSwiftThemes ? `taylor-swift-${selectedTheme}-${selectedFormat}` : 'ebook';
+                  const userId = token ? extractUserIdFromToken(token) : null;
+                  
+                  if (!userId) {
+                    console.error('No user ID available for database operation');
+                    throw new Error('No user ID available for database operation');
+                  }
+                  
+                  // Create authenticated Supabase client
+                  const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
+                  
+                  const { data: ebookGeneration, error: ebookError } = await supabaseWithAuth
+                    .from('ebook_generations')
+                    .insert({
+                      user_id: userId,
+                      story_id: storyId,
+                      title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
+                      content: JSON.stringify(formattedChapters) as Json,
+                      status: 'completed',
+                      credits_used: creditValidation.bypassCredits ? 0 : 1,
+                      paid_with_credits: !creditValidation.bypassCredits,
+                      transaction_id: creditValidation.transactionId,
+                      story_type: storyType,
+                      chapter_count: formattedChapters.length,
+                      word_count: formattedChapters.reduce((total, ch) => total + ch.content.length, 0)
+                    })
+                    .select()
+                    .single();
+
+                  if (ebookError) {
+                    console.error('Error creating ebook generation record:', ebookError);
+                  } else if (ebookGeneration) {
+                    // Save the actual book to memory_books table for user access
+                    const { error: memoryBookError } = await supabaseWithAuth
+                      .from('memory_books')
+                      .insert({
+                        user_id: userId,
+                        original_story_id: storyId,
+                        ebook_generation_id: ebookGeneration.id,
+                        title: `${useTaylorSwiftThemes ? `${taylorSwiftThemes[selectedTheme].title} ` : ''}${storyFormats[selectedFormat].name}: ${formattedChapters[0]?.title || 'Untitled'}`,
+                        description: `A ${storyFormats[selectedFormat].name.toLowerCase()}${useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : ''} generated from your story.`,
+                        chapters: formattedChapters as unknown as Json,
+                        chapter_count: formattedChapters.length,
+                        word_count: formattedChapters.reduce((total, ch) => total + ch.content.length, 0),
+                        generation_settings: {
+                          useTaylorSwiftThemes,
+                          selectedTheme,
+                          selectedFormat,
+                          storyType
+                        },
+                        style_preferences: {
+                          image_style: 'children',
+                          mood: 'happy',
+                          target_age_group: 'children'
+                        },
+                        status: 'completed',
+                        generation_completed_at: new Date().toISOString()
+                      });
+
+                    if (memoryBookError) {
+                      console.error('Error saving book to memory:', memoryBookError);
+                    } else {
+                      toast({
+                        title: "Book Saved",
+                        description: "Your book has been saved and is now available in your library.",
+                      });
+                    }
+                  }
+                } catch (dbError) {
+                  console.error('Database error:', dbError);
+                  // Re-throw critical errors (like missing userId) to reject the Promise
+                  // Database operation errors are non-critical and can be logged without failing
+                  if (dbError instanceof Error && dbError.message.includes('user ID')) {
+                    throw dbError;
+                  }
+                }
+              }
+              
+              const creditType = creditValidation.bypassCredits ? "unlimited subscription" : "credit";
+              const themeDescription = useTaylorSwiftThemes ? ` with ${taylorSwiftThemes[selectedTheme].title.toLowerCase()} themes` : '';
+              toast({
+                title: "Chapters Generated",
+                description: `Your ${storyFormats[selectedFormat].name.toLowerCase()}${themeDescription} has been created using your ${creditType}.`,
+              });
+              
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
+          onError: (error) => {
+            reject(new Error(error));
+          }
+        });
       });
     } catch (error) {
       console.error("Error generating chapters:", error);
       toast({
         title: "Generation Failed",
-        description: "There was an error generating your chapters. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error generating your chapters. Please try again.",
         variant: "destructive",
       });
     } finally {

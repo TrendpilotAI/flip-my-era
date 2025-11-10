@@ -135,13 +135,36 @@ export default defineConfig(({ mode }) => ({
     // Code splitting configuration
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks: (id) => {
           // Split vendor libraries
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast'],
-          'framer-motion': ['framer-motion'],
-          'clerk': ['@clerk/clerk-react'],
-          'supabase': ['@supabase/supabase-js'],
+          if (id.includes('node_modules')) {
+            // React and React DOM
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            // UI libraries
+            if (id.includes('@radix-ui') || id.includes('lucide-react')) {
+              return 'ui-vendor';
+            }
+            // Animation library
+            if (id.includes('framer-motion')) {
+              return 'framer-motion';
+            }
+            // Auth library
+            if (id.includes('@clerk')) {
+              return 'clerk';
+            }
+            // Database library
+            if (id.includes('@supabase')) {
+              return 'supabase';
+            }
+            // PDF generation
+            if (id.includes('jspdf') || id.includes('html2canvas')) {
+              return 'pdf-vendor';
+            }
+            // Other vendor libraries
+            return 'vendor';
+          }
         },
       },
     },
@@ -149,5 +172,15 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 1000,
     // Source maps for production debugging (can be disabled for smaller builds)
     sourcemap: mode === 'development',
+    // Minification
+    minify: 'esbuild',
+    // Target modern browsers for smaller bundles
+    target: 'esnext',
+    // CSS code splitting
+    cssCodeSplit: true,
+    // Optimize dependencies
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
   },
 }));
