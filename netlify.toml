@@ -10,6 +10,8 @@
   # These are included here temporarily to unblock builds, but they should be removed from client bundles.
   # TODO: Remove secret keys from client-side code and fetch them from secure backend endpoints instead.
   SECRETS_SCAN_OMIT_KEYS = "VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_STRIPE_PUBLISHABLE_KEY,VITE_OPENAI_API_KEY,VITE_RUNWARE_API_KEY,VITE_SUPABASE_JWT_SECRET,VITE_POSTHOG_KEY,VITE_PUBLIC_POSTHOG_KEY,VITE_GROQ_API_KEY,VITE_SUPABASE_SECRET_KEY,VITE_CLOUDFLARE_SECRET_KEY,VITE_CLOUDFLARE_SITE_KEY"
+  # Build optimization
+  NPM_FLAGS = "--prefer-offline --no-audit"
 
 [[headers]]
   for = "/*"

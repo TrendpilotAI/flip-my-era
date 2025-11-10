@@ -13,7 +13,9 @@
     "clean": "rm -rf dist node_modules",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "test:ci": "vitest run --reporter=verbose --reporter=junit --outputFile=test-results.xml --coverage",
     "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
     "generate:images": "bun run scripts/generate-era-images.ts",
     "verify:production": "node scripts/verify-production-readiness.js"
   },

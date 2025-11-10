@@ -205,11 +205,15 @@ vi.mock('@/modules/shared/utils/groq', () => ({
 
 // Mock AI Services
 vi.mock('@/modules/story/services/ai', () => ({
+  generateStory: vi.fn(),
   generateChapters: vi.fn(),
   generateImage: vi.fn(),
   generateEbookIllustration: vi.fn(),
   generateTaylorSwiftChapters: vi.fn(),
-  generateTaylorSwiftIllustration: vi.fn()
+  generateTaylorSwiftIllustration: vi.fn(),
+  generateName: vi.fn(),
+  generateAlternativeName: vi.fn(),
+  isRunwareAvailable: vi.fn(),
 }));
 
 // Mock story persistence
