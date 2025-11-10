@@ -59,7 +59,7 @@ export default defineConfig({
     // Retry flaky tests
     retry: 1,
     // Bail on first failure in CI
-    bail: process.env.CI ? 0 : 0,
+    bail: process.env.CI ? 1 : 0,
   },
   resolve: {
     alias: {
