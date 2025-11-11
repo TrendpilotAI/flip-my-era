@@ -138,7 +138,8 @@ export default defineConfig(({ mode }) => ({
         manualChunks: (id) => {
           // Split vendor libraries
           if (id.includes('node_modules')) {
-            // React and React DOM
+            // React, React DOM, and React Router must stay together
+            // Separating them can cause module resolution issues
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
             }
@@ -181,6 +182,10 @@ export default defineConfig(({ mode }) => ({
     // Optimize dependencies
     commonjsOptions: {
       include: [/node_modules/],
+    },
+    // Ensure proper module resolution for React
+    modulePreload: {
+      polyfill: true,
     },
   },
 }));
