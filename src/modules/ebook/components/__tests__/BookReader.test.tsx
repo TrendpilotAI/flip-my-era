@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { render, screen } from '@/test/test-utils';
+import { act, render, screen } from '@/test/test-utils';
 import { BookReader } from '../BookReader';
 
 const toastMock = vi.fn();
@@ -63,6 +63,7 @@ describe('BookReader', () => {
   });
 
   afterEach(() => {
+    vi.runOnlyPendingTimers();
     vi.useRealTimers();
   });
 
@@ -81,7 +82,7 @@ describe('BookReader', () => {
   });
 
   it('shows lock overlay and triggers unlock callback', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const onRequestUnlock = vi.fn();
 
     render(
@@ -95,13 +96,15 @@ describe('BookReader', () => {
 
     expect(screen.getByText(/unlock your story to continue reading/i)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /unlock full story/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /unlock full story/i }));
+    });
 
     expect(onRequestUnlock).toHaveBeenCalledTimes(1);
   });
 
   it('calls onClose when the reader is closed via overlay action', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const onClose = vi.fn();
 
     render(
@@ -113,7 +116,9 @@ describe('BookReader', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: /close reader/i }));
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /close reader/i }));
+    });
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

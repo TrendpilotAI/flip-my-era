@@ -261,7 +261,9 @@ describe('EbookGenerator', () => {
       />
     );
 
-    await user.click(screen.getByTestId('generate-chapters'));
+    await act(async () => {
+      await user.click(screen.getByTestId('generate-chapters'));
+    });
 
     await act(async () => {
       // ensure microtasks finish
