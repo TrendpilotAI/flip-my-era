@@ -17,7 +17,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const LINEAR_API_URL = 'https://api.linear.app/graphql';
-const LINEAR_API_KEY = process.env.LINEAR_API_KEY || 'lin_api_oPSOreefkLMTeyzYOEl8RzVV5CU0yxlT9HOoLgI9';
+const LINEAR_API_KEY = process.env.LINEAR_API_KEY;
+
+if (!LINEAR_API_KEY) {
+  console.error('❌ Error: LINEAR_API_KEY environment variable is required');
+  console.error('\nPlease set the API key before running this script:');
+  console.error('  export LINEAR_API_KEY=lin_api_...');
+  console.error('  node scripts/import-linear-tickets.js\n');
+  console.error('Or run it inline:');
+  console.error('  LINEAR_API_KEY=lin_api_... node scripts/import-linear-tickets.js\n');
+  process.exit(1);
+}
 const LINEAR_TEAM_ID = '5b8dab04-51d2-42b1-8eb5-eb1f658a1ab0'; // Trendpilotai team
 
 // Priority mapping (Linear: 0=No priority, 1=Urgent, 2=High, 3=Normal, 4=Low)

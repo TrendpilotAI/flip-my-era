@@ -190,11 +190,6 @@ vi.mock('@/modules/shared/utils/creditPricing', () => ({
   calculateCreditCost: () => ({ totalCost: 1 }),
 }));
 
-vi.mock('@/core/integrations/samcart/client', () => ({
-  samcartClient: {
-    redirectToCheckout: vi.fn(),
-  },
-}));
 
 vi.mock('@/modules/shared/utils/downloadUtils', () => ({
   downloadEbook: vi.fn(),

@@ -18,7 +18,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/mod
 import { Book, Download, Loader2, Sparkles, AlertTriangle, Heart, Users, Zap, Star, Pause, Play, RotateCcw } from "lucide-react";
 import { cn, extractUserIdFromToken } from '@/core/lib/utils';
 import { generateEbookIllustration, generateTaylorSwiftIllustration } from "@/modules/story/services/ai";
-import { samcartClient } from '@/core/integrations/samcart/client';
 import { CreditBalance } from "@/modules/user/components/CreditBalance";
 import { CreditPurchaseModal } from "@/modules/user/components/CreditPurchaseModal";
 import { CreditWallModal } from "./CreditWallModal";
@@ -994,11 +993,22 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
               onClick={async () => {
                 try {
                   const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
-                  await samcartClient.redirectToCheckout({
-                    productId,
-                    redirectUrl: `${window.location.origin}/checkout/success`,
-                    cancelUrl: window.location.href
+                  
+                  // Call Supabase Edge Function to get checkout URL
+                  const { data, error } = await supabase.functions.invoke('samcart-checkout', {
+                    body: {
+                      productId,
+                      redirectUrl: `${window.location.origin}/checkout/success`,
+                      cancelUrl: window.location.href
+                    }
                   });
+
+                  if (error || !data?.url) {
+                    throw new Error(error?.message || 'Failed to create checkout session');
+                  }
+
+                  // Redirect to checkout URL
+                  window.location.href = data.url;
                 } catch (error) {
                   console.error('Failed to redirect to checkout:', error);
                   toast({
