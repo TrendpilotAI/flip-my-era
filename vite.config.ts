@@ -130,6 +130,16 @@ export default defineConfig(({ mode }) => ({
       "@core": path.resolve(__dirname, "./src/core"),
     },
   },
+  optimizeDeps: {
+    // Ensure React is pre-bundled and available early
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    // Force React to be included in the optimized dependencies
+    force: false,
+    // Ensure React loads before other dependencies
+    esbuildOptions: {
+      // This ensures React is processed first
+    },
+  },
   assetsInclude: ['**/*.md'], // Include markdown files as assets
   build: {
     // Code splitting configuration
@@ -140,10 +150,11 @@ export default defineConfig(({ mode }) => ({
           if (id.includes('node_modules')) {
             // React, React DOM, and React Router must stay together
             // Separating them can cause module resolution issues
+            // IMPORTANT: React must be in react-vendor chunk and load first
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
             }
-            // UI libraries
+            // UI libraries that depend on React
             if (id.includes('@radix-ui') || id.includes('lucide-react')) {
               return 'ui-vendor';
             }
@@ -186,6 +197,16 @@ export default defineConfig(({ mode }) => ({
     // Ensure proper module resolution for React
     modulePreload: {
       polyfill: true,
+      // Ensure react-vendor loads before other vendor chunks
+      // This prevents "Cannot read properties of undefined (reading 'useState')" errors
+      resolveDependencies: (filename, deps) => {
+        // Sort dependencies to ensure react-vendor loads first
+        const reactVendor = deps.find(dep => dep.includes('react-vendor'));
+        if (reactVendor) {
+          return [reactVendor, ...deps.filter(dep => !dep.includes('react-vendor'))];
+        }
+        return deps;
+      },
     },
   },
 }));

@@ -1,3 +1,5 @@
+// Import React first to ensure react-vendor chunk loads before other vendor chunks
+import React from 'react';
 import { createRoot } from 'react-dom/client'
 import { ClerkProvider } from "@clerk/clerk-react";
 import { initOpenTelemetry } from "@/core/integrations/opentelemetry";
