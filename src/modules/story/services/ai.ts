@@ -1,6 +1,6 @@
 import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
 import { runwareService, createEbookIllustrationPrompt, enhancePromptWithGroq } from '@/modules/shared/utils/runware';
-import { getGroqApiKey, getOpenAiApiKey } from '@/modules/shared/utils/env';
+import { getGroqApiKey } from '@/modules/shared/utils/env';
 import { TaylorSwiftTheme } from '@/modules/story/utils/storyPrompts';
 import { type ImageMood } from '@/modules/story/utils/taylorSwiftImagePrompts';
 import { getEnchantedQuillPrompt } from '@/modules/story/utils/enchantedQuillPrompt';
@@ -381,7 +381,9 @@ export async function generateEbookIllustration(
         });
       }
       
-      return await generateImage({ prompt, useRunware: false });
+      // All image generation must go through Runware Edge Function
+      // This prevents secret API keys from being exposed in client-side code
+      throw new Error('Image generation must use Runware Edge Function. Please ensure Runware is properly configured.');
     } catch (fallbackError) {
       throw new Error('Ebook illustration generation failed. Please try again later.');
     }
@@ -483,29 +485,9 @@ export async function generateImage(options: GenerateImageOptions): Promise<stri
       }
     }
     
-    // First try with OpenAI
-    try {
-      const response = await apiRequestWithRetry<OpenAIImageResponse>({
-        method: 'POST',
-        url: 'https://api.openai.com/v1/images/generations',
-        headers: {
-          'Authorization': `Bearer ${getOpenAiApiKey()}`,
-          'Content-Type': 'application/json'
-        },
-        data: {
-          prompt,
-          n: 1,
-          size,
-          quality,
-          response_format: 'url'
-        }
-      });
-      
-      return response.data.data[0].url;
-    } catch (openaiError) {
-      // Fallback to a placeholder image if OpenAI fails
-      return `https://picsum.photos/seed/${Math.random().toString(36).substring(7)}/1024/1024`;
-    }
+    // OpenAI fallback removed - all image generation must go through Edge Functions
+    // This prevents secret API keys from being exposed in client-side code
+    throw new Error('Image generation must use Runware Edge Function. OpenAI fallback is not available in client-side code.');
   } catch (error) {
     throw new Error('Image generation failed. Please try again later.');
   }

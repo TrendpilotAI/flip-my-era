@@ -20,7 +20,20 @@ export function getGroqApiKey(): string | undefined {
   return getEnvVar('VITE_GROQ_API_KEY');
 }
 
+/**
+ * Get OpenAI API Key - DEPRECATED: This function should not be used in client-side code.
+ * All OpenAI API calls should go through Supabase Edge Functions to avoid exposing secrets.
+ * 
+ * @deprecated Use Edge Functions instead. This function returns undefined in production builds.
+ * @returns undefined in production builds to prevent secret exposure
+ */
 export function getOpenAiApiKey(): string | undefined {
+  // In production builds, return undefined to prevent secret keys from being bundled
+  // This ensures secrets are not exposed in client-side code
+  if (import.meta.env.PROD) {
+    console.warn('getOpenAiApiKey() called in production - this should use Edge Functions instead');
+    return undefined;
+  }
   return getEnvVar('VITE_OPENAI_API_KEY');
 }
 

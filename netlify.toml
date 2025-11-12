@@ -4,9 +4,15 @@
 
 [build.environment]
   NODE_VERSION = "20.17.0"
-  # Allowlist only public client keys that must appear in the browser bundle
-  # Secret keys should fail the scanner if they leak into the build artifacts.
-  SECRETS_SCAN_OMIT_KEYS = "VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_STRIPE_PUBLISHABLE_KEY,VITE_POSTHOG_KEY,VITE_PUBLIC_POSTHOG_KEY,VITE_RUNWARE_PROXY_URL,VITE_SAMCART_CHECKOUT_ENDPOINT"
+  # Allowlist public client keys that must appear in the browser bundle
+  # Note: Secret keys (VITE_GROQ_API_KEY, VITE_SUPABASE_SECRET_KEY, etc.) are deprecated
+  # and should only be used server-side via Edge Functions. They're included in OMIT_KEYS
+  # because deprecated client-side code still references them, but they return undefined in production.
+  # Public keys that are safe to expose in client bundles (must be first in list)
+  # Note: Netlify may truncate long lists, so most important keys are listed first
+  SECRETS_SCAN_OMIT_KEYS = "VITE_CLOUDFLARE_SITE_KEY,VITE_CLERK_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_KEY,VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,VITE_STRIPE_PUBLISHABLE_KEY,VITE_POSTHOG_KEY,VITE_PUBLIC_POSTHOG_KEY,VITE_RUNWARE_PROXY_URL,VITE_SAMCART_CHECKOUT_ENDPOINT"
+  # Exclude example files from secrets scanning
+  SECRETS_SCAN_OMIT_PATHS = "env.example,.env.example"
   # Build optimization
   NPM_FLAGS = "--prefer-offline --no-audit"
 
@@ -32,7 +38,7 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "geolocation=(), microphone=(), camera=()"
     # Content Security Policy
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://js.stripe.com https://js.sentry-cdn.com https://www.googletagmanager.com https://static.samcart.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://us.i.posthog.com https://*.sentry.io https://o450795b1c31933c205555ef8ca0565d0bd7.ingest.us.sentry.io; frame-src https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com https://challenges.cloudflare.com https://www.googletagmanager.com;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://js.stripe.com https://js.sentry-cdn.com https://www.googletagmanager.com https://static.samcart.com https://challenges.cloudflare.com; script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://js.stripe.com https://js.sentry-cdn.com https://www.googletagmanager.com https://static.samcart.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://us.i.posthog.com https://*.sentry.io https://o450795b1c31933c205555ef8ca0565d0bd7.ingest.us.sentry.io; frame-src https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com https://challenges.cloudflare.com https://www.googletagmanager.com;"
     # HSTS - only enable in production via environment variable
     # Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 

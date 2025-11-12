@@ -19,12 +19,6 @@ export const EnvironmentValidator = () => {
 
   const environmentChecks: Omit<EnvironmentCheck, 'status'>[] = [
     {
-      name: 'Groq API Key',
-      key: 'VITE_GROQ_API_KEY',
-      required: true,
-      description: 'Required for AI story generation'
-    },
-    {
       name: 'Supabase URL',
       key: 'VITE_SUPABASE_URL',
       required: true,
@@ -41,12 +35,6 @@ export const EnvironmentValidator = () => {
       key: 'VITE_CLERK_PUBLISHABLE_KEY',
       required: true,
       description: 'Required for user authentication'
-    },
-    {
-      name: 'OpenAI API Key',
-      key: 'VITE_OPENAI_API_KEY',
-      required: false,
-      description: 'Optional fallback for AI services'
     },
     {
       name: 'Runware Proxy Endpoint',
@@ -67,9 +55,9 @@ export const EnvironmentValidator = () => {
         status = 'present';
         
         // Additional validation for specific keys
-        if (check.key === 'VITE_GROQ_API_KEY' && !value.startsWith('gsk_')) {
-          status = 'invalid';
-        } else if (check.key === 'VITE_SUPABASE_URL' && !value.startsWith('https://')) {
+        // Note: Secret API keys (Groq, OpenAI, etc.) are not checked here as they should
+        // only be used server-side via Edge Functions, not in client-side code
+        if (check.key === 'VITE_SUPABASE_URL' && !value.startsWith('https://')) {
           status = 'invalid';
         } else if (check.key === 'VITE_CLERK_PUBLISHABLE_KEY' && !value.startsWith('pk_')) {
           status = 'invalid';
