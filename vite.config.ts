@@ -142,71 +142,19 @@ export default defineConfig(({ mode }) => ({
   },
   assetsInclude: ['**/*.md'], // Include markdown files as assets
   build: {
-    // Code splitting configuration
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // Split vendor libraries
-          if (id.includes('node_modules')) {
-            // React, React DOM, and React Router must stay together
-            // Separating them can cause module resolution issues
-            // IMPORTANT: React must be in react-vendor chunk and load first
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-              return 'react-vendor';
-            }
-            // UI libraries that depend on React
-            if (id.includes('@radix-ui') || id.includes('lucide-react')) {
-              return 'ui-vendor';
-            }
-            // Animation library
-            if (id.includes('framer-motion')) {
-              return 'framer-motion';
-            }
-            // Auth library
-            if (id.includes('@clerk')) {
-              return 'clerk';
-            }
-            // Database library
-            if (id.includes('@supabase')) {
-              return 'supabase';
-            }
-            // PDF generation
-            if (id.includes('jspdf') || id.includes('html2canvas')) {
-              return 'pdf-vendor';
-            }
-            // Other vendor libraries
-            return 'vendor';
-          }
-        },
-      },
-    },
-    // Optimize chunk size
+    // Let Vite handle chunk splitting automatically to avoid React loading order issues
+    // Manual chunking was causing "Cannot read properties of undefined (reading 'useState')" errors
+    // because vendor chunks were executing before React was loaded
     chunkSizeWarningLimit: 1000,
-    // Source maps for production debugging (can be disabled for smaller builds)
     sourcemap: mode === 'development',
-    // Minification
     minify: 'esbuild',
-    // Target modern browsers for smaller bundles
     target: 'esnext',
-    // CSS code splitting
     cssCodeSplit: true,
-    // Optimize dependencies
     commonjsOptions: {
       include: [/node_modules/],
     },
-    // Ensure proper module resolution for React
     modulePreload: {
       polyfill: true,
-      // Ensure react-vendor loads before other vendor chunks
-      // This prevents "Cannot read properties of undefined (reading 'useState')" errors
-      resolveDependencies: (filename, deps) => {
-        // Sort dependencies to ensure react-vendor loads first
-        const reactVendor = deps.find(dep => dep.includes('react-vendor'));
-        if (reactVendor) {
-          return [reactVendor, ...deps.filter(dep => !dep.includes('react-vendor'))];
-        }
-        return deps;
-      },
     },
   },
 }));
