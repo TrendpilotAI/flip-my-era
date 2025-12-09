@@ -23,6 +23,7 @@ import AuthCallback from "@/modules/auth/components/AuthCallback";
 import ResetPassword from "@/modules/auth/components/ResetPassword";
 import UserDashboard from "@/modules/user/components/UserDashboard";
 import FAQ from "@/app/pages/FAQ";
+import PlanSelector from "@/app/pages/PlanSelector";
 
 // Component to track page views for PostHog
 function PageViewTracker() {
