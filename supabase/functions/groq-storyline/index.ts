@@ -43,7 +43,7 @@ function debugLog(hypothesisId: string, location: string, message: string, data:
   fetch('http://127.0.0.1:7242/ingest/d0345e24-6e67-4039-bc40-ee39fe5b7167', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId: 'debug-session', runId: 'pre-fix', hypothesisId, location, message, data, timestamp: Date.now() }),
+    body: JSON.stringify({ sessionId: 'debug-session', runId: 'run2', hypothesisId, location, message, data, timestamp: Date.now() }),
   }).catch(() => {});
 }
 // #endregion
@@ -102,6 +102,7 @@ serve(async (req) => {
     // Get Groq API key from environment
     const groqApiKey = Deno.env.get('GROQ_API_KEY');
     if (!groqApiKey) {
+      debugLog('H5','supabase/functions/groq-storyline/index.ts:serve:missingGroqKey','GROQ_API_KEY missing',{});
       return new Response(
         JSON.stringify({ error: 'GROQ_API_KEY_MISSING', message: 'Groq API key not configured' }),
         {
@@ -114,6 +115,7 @@ serve(async (req) => {
     // Verify Clerk JWT token (frontend sends Clerk session token as Bearer)
     const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      debugLog('H2','supabase/functions/groq-storyline/index.ts:serve:noAuth','Missing or invalid auth header',{hasAuth:false});
       return new Response(
         JSON.stringify({ error: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' }),
         {
@@ -133,6 +135,7 @@ serve(async (req) => {
     // #endregion
 
     if (!userId) {
+      debugLog('H2','supabase/functions/groq-storyline/index.ts:serve:authInvalid','Auth token invalid or missing user_ sub',{});
       return new Response(
         JSON.stringify({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' }),
         {
@@ -146,9 +149,7 @@ serve(async (req) => {
     const rateLimitKey = `groq-storyline:${userId}`;
     const rateLimitRecord = await getRateLimitRecord(rateLimitKey, RATE_LIMIT);
     if (!rateLimitRecord.allowed) {
-      // #region agent log
       debugLog('H4','supabase/functions/groq-storyline/index.ts:serve:rateLimited','Rate limit exceeded',{userIdPresent:true,retryAfterSec:Math.ceil((rateLimitRecord.resetAt-Date.now())/1000)});
-      // #endregion
       return new Response(
         JSON.stringify({
           error: 'RATE_LIMIT_EXCEEDED',
@@ -184,6 +185,7 @@ serve(async (req) => {
 
     // Input validation
     if (!era || typeof era !== 'string') {
+      debugLog('H3','supabase/functions/groq-storyline/index.ts:serve:badRequestEra','Bad request: era missing or not string',{});
       return new Response(
         JSON.stringify({ error: 'BAD_REQUEST', message: 'Era is required and must be a string' }),
         {
@@ -363,7 +365,7 @@ Ensure the storyline:
       if (!groqResponse.ok) {
         const errorData = await groqResponse.json().catch(() => ({}));
         const errorMessage = errorData.error?.message || 'Groq API request failed';
-        
+        debugLog('H5','supabase/functions/groq-storyline/index.ts:groqResponse:notOk','Groq API error',{status:groqResponse.status,message:errorMessage});
         return new Response(
           JSON.stringify({
             error: 'GROQ_API_ERROR',
@@ -392,6 +394,7 @@ Ensure the storyline:
 
       // Validate the structure
       if (!storyline.logline || !storyline.threeActStructure || !storyline.chapters) {
+        debugLog('H5','supabase/functions/groq-storyline/index.ts:groqResponse:invalidStoryline','Invalid storyline structure',{});
         return new Response(
           JSON.stringify({
             error: 'INVALID_STORYLINE',
@@ -404,6 +407,7 @@ Ensure the storyline:
         );
       }
 
+      debugLog('H5','supabase/functions/groq-storyline/index.ts:groqResponse:success','Storyline generated',{userId,era});
       return new Response(
         JSON.stringify({ storyline }),
         {
@@ -414,6 +418,7 @@ Ensure the storyline:
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
+        debugLog('H5','supabase/functions/groq-storyline/index.ts:groqResponse:timeout','Groq request timeout',{});
         return new Response(
           JSON.stringify({
             error: 'REQUEST_TIMEOUT',
@@ -428,6 +433,12 @@ Ensure the storyline:
       throw error; // Re-throw to outer catch block
     }
   } catch (error) {
+    const errObj = error as any;
+    debugLog('H5','supabase/functions/groq-storyline/index.ts:serve:error','Unhandled error during storyline generation',{
+      message: errObj?.message ?? String(error),
+      name: errObj?.name ?? null,
+      stack: errObj?.stack ? String(errObj.stack).slice(0,300) : null,
+    });
     return new Response(
       JSON.stringify({
         error: 'INTERNAL_ERROR',
