@@ -27,6 +27,7 @@ export const StoryWizard: React.FC = () => {
   const [isRegeneratingStoryline, setIsRegeneratingStoryline] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [pendingStep, setPendingStep] = useState<WizardStep | null>(null);
+  const [pendingAction, setPendingAction] = useState<'generateStoryline' | null>(null);
 
   // Handle storyline generation
   const handleGenerateStoryline = async () => {
@@ -35,6 +36,24 @@ export const StoryWizard: React.FC = () => {
         title: "Missing Information",
         description: "Please complete all required fields.",
         variant: "destructive"
+      });
+      return;
+    }
+
+    // Require authentication before calling Edge Functions (Clerk token is required).
+    // Runtime evidence showed isAuthenticated=false → getToken() returns null → "unauthorized".
+    if (!isAuthenticated) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/d0345e24-6e67-4039-bc40-ee39fe5b7167',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H1',location:'src/modules/story/components/StoryWizard.tsx:handleGenerateStoryline:blockedUnauth',message:'Blocked storyline generation; user not authenticated',data:{isAuthenticated:false,step:state.currentStep},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+
+      setPendingAction('generateStoryline');
+      // After sign-in, move forward to keep the flow intuitive
+      setPendingStep('storyline-preview');
+      setShowAuthPrompt(true);
+      toast({
+        title: "Please sign in",
+        description: "Sign in to generate your storyline.",
       });
       return;
     }
@@ -151,11 +170,19 @@ export const StoryWizard: React.FC = () => {
       // Post-auth sync failed - silently continue
     }
 
+    // Resume pending action after successful auth
+    if (pendingAction === 'generateStoryline') {
+      setPendingAction(null);
+      // Re-run now that auth should be present
+      await handleGenerateStoryline();
+      return;
+    }
+
     if (pendingStep) {
       goToStep(pendingStep);
       setPendingStep(null);
     }
-  }, [fetchCreditBalance, goToStep, pendingStep, refreshUser]);
+  }, [fetchCreditBalance, goToStep, pendingAction, pendingStep, refreshUser]);
 
   // Render the appropriate step
   const renderCurrentStep = () => {
