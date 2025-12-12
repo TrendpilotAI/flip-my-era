@@ -38,6 +38,16 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
+// #region agent log helpers
+function debugLog(hypothesisId: string, location: string, message: string, data: Record<string, unknown>) {
+  fetch('http://127.0.0.1:7242/ingest/d0345e24-6e67-4039-bc40-ee39fe5b7167', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: 'debug-session', runId: 'pre-fix', hypothesisId, location, message, data, timestamp: Date.now() }),
+  }).catch(() => {});
+}
+// #endregion
+
 interface GenerateStorylineRequest {
   era: string;
   characterName: string;
@@ -85,6 +95,10 @@ serve(async (req) => {
   }
 
   try {
+    // #region agent log
+    debugLog('H2','supabase/functions/groq-storyline/index.ts:serve:entry','Edge function request received',{method:req.method,hasAuthHeader:!!(req.headers.get('authorization')??req.headers.get('Authorization'))});
+    // #endregion
+
     // Get Groq API key from environment
     const groqApiKey = Deno.env.get('GROQ_API_KEY');
     if (!groqApiKey) {
@@ -113,6 +127,11 @@ serve(async (req) => {
     const jwtPayload = decodeJwtPayload(token);
     const sub = jwtPayload && typeof jwtPayload === 'object' ? (jwtPayload as { sub?: unknown }).sub : undefined;
     const userId = typeof sub === 'string' && sub.startsWith('user_') ? sub : null;
+
+    // #region agent log
+    debugLog('H2','supabase/functions/groq-storyline/index.ts:serve:authParsed','Auth parsed',{hasBearer:true,userIdPresent:!!userId,subType:typeof sub});
+    // #endregion
+
     if (!userId) {
       return new Response(
         JSON.stringify({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' }),
@@ -127,6 +146,9 @@ serve(async (req) => {
     const rateLimitKey = `groq-storyline:${userId}`;
     const rateLimitRecord = await getRateLimitRecord(rateLimitKey, RATE_LIMIT);
     if (!rateLimitRecord.allowed) {
+      // #region agent log
+      debugLog('H4','supabase/functions/groq-storyline/index.ts:serve:rateLimited','Rate limit exceeded',{userIdPresent:true,retryAfterSec:Math.ceil((rateLimitRecord.resetAt-Date.now())/1000)});
+      // #endregion
       return new Response(
         JSON.stringify({
           error: 'RATE_LIMIT_EXCEEDED',
