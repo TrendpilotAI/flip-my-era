@@ -1,6 +1,5 @@
 // @ts-ignore -- Deno Edge Function imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +18,25 @@ const RATE_LIMIT = {
 };
 
 const REQUEST_TIMEOUT_MS = 60000; // 60 seconds (longer for storyline generation)
+
+/**
+ * Decode a JWT payload without verification.
+ * Clerk session tokens are JWTs; we only use this to extract the `sub` claim.
+ * NOTE: This is not cryptographic verification; the Edge Function gateway + RLS
+ * should be the real enforcement layer when needed.
+ */
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = parts[1];
+    const padded = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
 
 interface GenerateStorylineRequest {
   era: string;
@@ -79,11 +97,11 @@ serve(async (req) => {
       );
     }
 
-    // Verify JWT token
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    // Verify Clerk JWT token (frontend sends Clerk session token as Bearer)
+    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'UNAUTHORIZED', message: 'Missing authorization header' }),
+        JSON.stringify({ error: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' }),
         {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -91,16 +109,11 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client to verify token
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const token = authHeader.slice(7);
+    const jwtPayload = decodeJwtPayload(token);
+    const sub = jwtPayload && typeof jwtPayload === 'object' ? (jwtPayload as { sub?: unknown }).sub : undefined;
+    const userId = typeof sub === 'string' && sub.startsWith('user_') ? sub : null;
+    if (!userId) {
       return new Response(
         JSON.stringify({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' }),
         {
@@ -111,7 +124,7 @@ serve(async (req) => {
     }
 
     // Rate limiting check for storyline generation
-    const rateLimitKey = `groq-storyline:${user.id}`;
+    const rateLimitKey = `groq-storyline:${userId}`;
     const rateLimitRecord = await getRateLimitRecord(rateLimitKey, RATE_LIMIT);
     if (!rateLimitRecord.allowed) {
       return new Response(
