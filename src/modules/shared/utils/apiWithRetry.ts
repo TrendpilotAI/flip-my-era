@@ -15,11 +15,19 @@ export async function apiRequestWithRetry<T>(
   } catch (error: unknown) {
     // Check if it's a rate limit error
     let status: number | undefined;
-    let message = String(error);
+    let message = '';
+
     if (axios.isAxiosError(error)) {
       status = error.response?.status;
-      message = error.message ?? message;
+      message = error.message ?? '';
+    } else if (error instanceof Error) {
+      message = error.message;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      message = String((error as { message: unknown }).message);
+    } else {
+      message = String(error);
     }
+
     const isRateLimit = status === 429 || message.includes('rate limit') || message.includes('Rate limit');
     
     // If we have retries left and it's a rate limit error

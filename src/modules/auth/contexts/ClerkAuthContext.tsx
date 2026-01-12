@@ -16,18 +16,33 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   // Track if initial sync has completed to prevent duplicate fetches
   const hasSyncedRef = useRef(false);
   const isFetchingCreditsRef = useRef(false);
+  const lastCreditFetchTimeRef = useRef<number>(0);
+
+  // Cache TTL for credit balance (30 seconds)
+  const CREDIT_CACHE_TTL_MS = 30000;
 
   // Fetch credit balance using Supabase client
   // FIXED: Stable callback - no state dependencies to prevent infinite loops
-  const fetchCreditBalance = useCallback(async (): Promise<number> => {
+  // Added cache TTL to prevent excessive API calls
+  const fetchCreditBalance = useCallback(async (forceRefresh = false): Promise<number> => {
     if (!clerkUser) {
       return 0;
     }
-    
+
     // Prevent concurrent fetches
     if (isFetchingCreditsRef.current) {
-      return 0;
+      return creditBalance ?? 0;
     }
+
+    // Check cache TTL - skip fetch if recently fetched (unless forced)
+    const now = Date.now();
+    if (!forceRefresh && lastCreditFetchTimeRef.current > 0) {
+      const timeSinceLastFetch = now - lastCreditFetchTimeRef.current;
+      if (timeSinceLastFetch < CREDIT_CACHE_TTL_MS) {
+        return creditBalance ?? 0;
+      }
+    }
+
     isFetchingCreditsRef.current = true;
 
     try {
@@ -68,8 +83,9 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
         balance = data.balance;
       }
       
-      // Update credit balance state
+      // Update credit balance state and cache timestamp
       setCreditBalance(balance);
+      lastCreditFetchTimeRef.current = Date.now();
 
       // Persist the credit balance onto profiles.credits for dashboard queries
       // Do this in background without blocking

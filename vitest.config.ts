@@ -13,13 +13,13 @@ export default defineConfig({
     pool: 'threads',
     poolOptions: {
       threads: {
-        singleThread: false,
+        singleThread: true, // Prevent timer/mock pollution across threads
         minThreads: 1,
-        maxThreads: 4,
+        maxThreads: 1,
       },
     },
-    // Test timeout
-    testTimeout: 10000,
+    // Test timeout - increased to handle exponential backoff in retry tests
+    testTimeout: 15000,
     // Coverage configuration
     coverage: {
       provider: 'v8',

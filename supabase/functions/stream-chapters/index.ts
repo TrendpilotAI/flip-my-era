@@ -95,16 +95,11 @@ async function apiRequestWithRetry<T>(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Attempt ${attempt}: Making request to ${config.url}`);
-      console.log('Request headers:', Object.keys(config.headers));
-      
       const response = await fetch(config.url, {
         method: config.method,
         headers: config.headers,
         body: JSON.stringify(config.data),
       });
-
-      console.log(`Response status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -113,19 +108,16 @@ async function apiRequestWithRetry<T>(
       }
 
       const data = await response.json();
-      console.log('Request successful');
       return { data };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`Attempt ${attempt} failed:`, lastError.message);
-      
+
       if (attempt === maxRetries) {
         throw lastError;
       }
-      
+
       // Wait before retrying (exponential backoff)
       const delay = Math.pow(2, attempt) * 1000;
-      console.log(`Waiting ${delay}ms before retry...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -245,11 +237,7 @@ async function generateSingleChapter(
   if (!groqApiKey) {
     throw new Error('GROQ_API_KEY environment variable is not set');
   }
-  
-  console.log('Using Groq API key:', groqApiKey.substring(0, 10) + '...');
-  console.log('API key length:', groqApiKey.length);
-  console.log('API key starts with:', groqApiKey.startsWith('gsk_') ? 'gsk_ (valid format)' : 'Invalid format');
-  
+
   const response = await apiRequestWithRetry<GroqChatResponse>({
     method: 'POST',
     url: 'https://api.groq.com/openai/v1/chat/completions',
@@ -368,10 +356,6 @@ async function generateSingleChapter(
 }
 
 serve(async (req: Request) => {
-  // Log method and auth header
-  console.log('Request method:', req.method);
-  console.log('Authorization header:', req.headers.get('authorization'));
-
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -394,18 +378,7 @@ serve(async (req: Request) => {
     
     if (jwtPayload && typeof jwtPayload === 'object' && jwtPayload !== null && 'sub' in jwtPayload && typeof (jwtPayload as { sub?: unknown }).sub === 'string' && String((jwtPayload as { sub: string }).sub).startsWith('user_')) {
       userId = jwtPayload.sub;
-      console.log('Clerk user ID:', userId);
-    } else {
-      console.log('Invalid or missing Clerk JWT payload');
     }
-  } else {
-    console.log('No Authorization header or invalid format');
-  }
-  
-  // For now, allow the request to proceed even without valid authentication
-  // In production, you might want to require authentication
-  if (!userId) {
-    console.log('Proceeding without user authentication');
   }
 
   // Create Supabase client with user's auth context for RLS

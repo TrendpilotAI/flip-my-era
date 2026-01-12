@@ -161,7 +161,8 @@ describe('useStoryGeneration', () => {
     expect(mockTransformName).toHaveBeenCalledWith(
       'Alice',
       { gender: 'female', probability: 0.9 },
-      'flip'
+      'flip',
+      'mock-token'
     );
   });
 

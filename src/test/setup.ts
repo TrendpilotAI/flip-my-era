@@ -10,6 +10,13 @@ expect.extend(matchers);
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.clearAllTimers();
+  // Ensure real timers are restored if fake timers were used
+  try {
+    vi.useRealTimers();
+  } catch {
+    // Already using real timers
+  }
 });
 
 // Mock IntersectionObserver
@@ -58,7 +65,7 @@ Object.defineProperty(global, 'crypto', {
   }
 });
 
-// Mock WebSocket
+// Mock WebSocket with proper timer cleanup
 class MockWebSocket {
   static CONNECTING = 0;
   static OPEN = 1;
@@ -70,10 +77,11 @@ class MockWebSocket {
   public onclose: ((event: CloseEvent) => void) | null = null;
   public onerror: ((event: Event) => void) | null = null;
   public onmessage: ((event: MessageEvent) => void) | null = null;
+  private connectionTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
   constructor(public url: string) {
-    // Simulate connection opening
-    setTimeout(() => {
+    // Simulate connection opening with tracked timeout
+    this.connectionTimeoutId = setTimeout(() => {
       this.readyState = MockWebSocket.OPEN;
       if (this.onopen) {
         this.onopen(new Event('open'));
@@ -81,11 +89,16 @@ class MockWebSocket {
     }, 10);
   }
 
-  send(data: string) {
+  send(_data: string) {
     // Mock implementation
   }
 
   close() {
+    // Clear pending connection timeout to prevent leaks
+    if (this.connectionTimeoutId) {
+      clearTimeout(this.connectionTimeoutId);
+      this.connectionTimeoutId = undefined;
+    }
     this.readyState = MockWebSocket.CLOSED;
     if (this.onclose) {
       this.onclose(new CloseEvent('close'));
@@ -263,7 +276,34 @@ if (!(globalThis as any).fetch) {
   (globalThis as any).fetch = vi.fn();
 }
 
+// Mock PostHog completely to prevent window.location issues in tests
+vi.mock('posthog-js', () => ({
+  default: {
+    init: vi.fn(),
+    capture: vi.fn(),
+    identify: vi.fn(),
+    reset: vi.fn(),
+    people: { set: vi.fn() },
+    opt_out_capturing: vi.fn(),
+    opt_in_capturing: vi.fn(),
+  },
+  posthog: {
+    init: vi.fn(),
+    capture: vi.fn(),
+    identify: vi.fn(),
+    reset: vi.fn(),
+    people: { set: vi.fn() },
+    opt_out_capturing: vi.fn(),
+    opt_in_capturing: vi.fn(),
+  },
+}));
+
 // Mock PostHogProvider to prevent actual PostHog initialization in tests
 vi.mock('posthog-js/react', () => ({
   PostHogProvider: ({ children }: any) => children,
+  usePostHog: () => ({
+    capture: vi.fn(),
+    identify: vi.fn(),
+    reset: vi.fn(),
+  }),
 }));

@@ -54,7 +54,6 @@ describe('EnvironmentValidator', () => {
   it('revalidates configuration when refresh is clicked', async () => {
     const user = userEvent.setup();
 
-    envValues.set('VITE_GROQ_API_KEY', 'gsk_valid');
     envValues.set('VITE_SUPABASE_URL', 'https://example.supabase.co');
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
     envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'pk_test_valid');
@@ -62,7 +61,8 @@ describe('EnvironmentValidator', () => {
     render(<EnvironmentValidator />);
     expect(screen.getByText(/Configuration Complete/i)).toBeInTheDocument();
 
-    envValues.set('VITE_GROQ_API_KEY', 'bad');
+    // Change CLERK key to invalid format (doesn't start with 'pk_')
+    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'invalid_key');
 
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /refresh/i }));
