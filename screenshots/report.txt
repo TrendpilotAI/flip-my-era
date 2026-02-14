@@ -1,43 +1,30 @@
 === TEST 1: Homepage Load ===
 Status: 200
 Title: Flip My Era
+React root content length: 0
+JS errors (1):
+  ⚠️ ut is not a function or its return value is not iterable
 Screenshot: 01-homepage.png ✅
 
 === TEST 2: Key UI Elements ===
-Navigation: 1 found
-Buttons: 2 found
-Links: 10 found
-Images: 14 found
-H1 heading: 1 found
+Navigation: 0 found
+Buttons: 0 found
+Links: 0 found
+Images: 0 found
+H1 heading: 0 found
 H2 headings: 0 found
 
 === TEST 3: Navigation Links ===
-Nav link: 'Sign In' -> /auth
 
 === TEST 4: Navigate Internal Pages ===
-Page 'Sign In' (https://flipmyera.com/auth): status 200
 
 === TEST 5: Auth Elements ===
-Found 'Sign In' element(s): 1
 
 === TEST 6: Mobile Viewport ===
 Mobile screenshot: mobile-homepage.png ✅
 
 === TEST 7: Console Errors ===
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
-  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
-  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
-  warning: Clerk: The prop "afterSignInUrl" is deprecated and should be replaced with the new "fallbackRedirectUrl" or "forceRedirectUrl" props instead. Learn more: https://clerk.com/docs/guides/custom-redirects#redirect-url-props
-  warning: Clerk: The "signInFallbackRedirectUrl" prop ("https://flipmyera.com/") has priority over the legacy "afterSignInUrl" (or "redirectUrl") ("https://flipmyera.com/"), which will be completely ignored in this case. "afterSignInUrl" (or "redirectUrl" prop) should be replaced with the new "fallbackRedirectUrl" or "forceRedirectUrl" props instead. Learn more: https://clerk.com/docs/guides/custom-redirects#redirect-url-props
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
-  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
-  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
-  error: Loading the script 'https://static.samcart.com/checkouts/sc-slide-script.js' violates the following Content Security Policy directive: "script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.flipmyera.com https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com". The action has been blocked.
+No console errors ✅
 
 === TEST 8: Performance ===
-Page load time: 2.90s
+Page load time: 0.05s
