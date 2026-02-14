@@ -17,16 +17,21 @@ def log(msg):
 
 async def run():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True, args=["--headless=new"])
         context = await browser.new_context(
             viewport={"width": 1440, "height": 900},
             user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
         )
         page = await context.new_page()
 
-        # Collect console errors
+        # Collect console messages
         console_errors = []
-        page.on("console", lambda msg: console_errors.append(f"{msg.type}: {msg.text}") if msg.type in ["error", "warning"] else None)
+        all_console = []
+        page.on("console", lambda msg: (all_console.append(f"{msg.type}: {msg.text}"), console_errors.append(f"{msg.type}: {msg.text}") if msg.type in ["error", "warning"] else None))
+        
+        # Collect page errors
+        page_errors = []
+        page.on("pageerror", lambda err: page_errors.append(str(err)))
 
         # 1. Homepage load
         log("=== TEST 1: Homepage Load ===")
@@ -35,6 +40,19 @@ async def run():
             log(f"Status: {resp.status}")
             title = await page.title()
             log(f"Title: {title}")
+            # Wait for React to hydrate and render content
+            try:
+                await page.wait_for_selector('h1', timeout=10000)
+            except Exception:
+                # Fallback wait if no h1 appears
+                await page.wait_for_timeout(3000)
+            # Diagnostics
+            root_len = await page.evaluate("document.getElementById('root')?.innerHTML?.length || 0")
+            log(f"React root content length: {root_len}")
+            if page_errors:
+                log(f"JS errors ({len(page_errors)}):")
+                for err in page_errors[:5]:
+                    log(f"  ⚠️ {err[:200]}")
             await page.screenshot(path=f"{SCREENSHOT_DIR}/01-homepage.png", full_page=True)
             log("Screenshot: 01-homepage.png ✅")
         except Exception as e:
@@ -75,6 +93,11 @@ async def run():
             try:
                 idx += 1
                 resp = await page.goto(href, wait_until="networkidle", timeout=15000)
+                # Wait for lazy-loaded route to render
+                try:
+                    await page.wait_for_selector('h1, h2, main', timeout=8000)
+                except Exception:
+                    await page.wait_for_timeout(2000)
                 log(f"Page '{item['text']}' ({href}): status {resp.status}")
                 await page.screenshot(path=f"{SCREENSHOT_DIR}/{idx:02d}-{item['text'].lower().replace(' ', '-')[:20]}.png", full_page=True)
             except Exception as e:
@@ -83,6 +106,10 @@ async def run():
         # 5. Check for sign-in/sign-up buttons
         log("\n=== TEST 5: Auth Elements ===")
         await page.goto(SITE_URL, wait_until="networkidle", timeout=15000)
+        try:
+            await page.wait_for_selector('h1', timeout=8000)
+        except Exception:
+            await page.wait_for_timeout(2000)
         for text in ["Sign In", "Sign Up", "Login", "Register", "Get Started", "Create"]:
             els = await page.get_by_text(text, exact=False).all()
             if els:
@@ -92,6 +119,10 @@ async def run():
         log("\n=== TEST 6: Mobile Viewport ===")
         await page.set_viewport_size({"width": 375, "height": 812})
         await page.goto(SITE_URL, wait_until="networkidle", timeout=15000)
+        try:
+            await page.wait_for_selector('h1', timeout=8000)
+        except Exception:
+            await page.wait_for_timeout(2000)
         await page.screenshot(path=f"{SCREENSHOT_DIR}/mobile-homepage.png", full_page=True)
         log("Mobile screenshot: mobile-homepage.png ✅")
 
