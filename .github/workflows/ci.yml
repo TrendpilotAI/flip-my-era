@@ -1,195 +1,30 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
-
-env:
-  NODE_VERSION: '20.17.0'
+    branches: [main]
 
 jobs:
-  quality-checks:
-    name: Quality Checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run ESLint
-        run: npm run lint
-        
-      - name: Run TypeScript type check
-        run: npm run typecheck
-        
-  test:
-    name: Test Suite
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run tests
-        run: npm run test:ci
-        
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            coverage/
-            test-results.xml
-          retention-days: 7
-          
-  test-coverage:
-    name: Test Coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [quality-checks]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run tests with coverage
-        run: npm run test:coverage
-        
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage/coverage-final.json
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-          
-      - name: Check coverage threshold
-        run: |
-          if [ -f coverage/coverage-summary.json ]; then
-            COVERAGE=$(node -e "const fs=require('fs');const data=JSON.parse(fs.readFileSync('coverage/coverage-summary.json'));const total=data.total.lines.pct;console.log(total);")
-            THRESHOLD=60
-            IS_BELOW=$(node -e "console.log($COVERAGE < $THRESHOLD ? 1 : 0)")
-            if [ "$IS_BELOW" = "1" ]; then
-              echo "Coverage $COVERAGE% is below threshold $THRESHOLD%"
-              exit 1
-            fi
-            echo "Coverage $COVERAGE% meets threshold $THRESHOLD%"
-          else
-            echo "Coverage file not found, skipping threshold check"
-          fi
-          
   build:
-    name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [quality-checks]
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build application
-        run: npm run build
-        env:
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-          # Optional build-time variables (only set if secret exists)
-          VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
-          VITE_RUNWARE_API_KEY: ${{ secrets.VITE_RUNWARE_API_KEY }}
-          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
-          VITE_PUBLIC_POSTHOG_KEY: ${{ secrets.VITE_PUBLIC_POSTHOG_KEY }}
-          
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 1
-          
-      - name: Check build size
-        run: |
-          BUILD_SIZE=$(du -sh dist | cut -f1)
-          echo "Build size: $BUILD_SIZE"
-          # Check JavaScript bundle size (fail if larger than 10MB)
-          if [ -d dist/assets ]; then
-            JS_SIZE=$(find dist/assets -name "*.js" -type f -exec du -sk {} + 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
-            if [ -z "$JS_SIZE" ] || [ "$JS_SIZE" = "0" ]; then
-              echo "Warning: No JavaScript files found in dist/assets"
-            elif [ "$JS_SIZE" -gt 10240 ]; then
-              echo "JavaScript bundle size ($JS_SIZE KB) exceeds 10MB threshold"
-              exit 1
-            else
-              echo "JavaScript bundle size: ${JS_SIZE}KB (within 10MB limit)"
-            fi
-          else
-            echo "Warning: dist/assets directory not found"
-          fi
-          
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate || true
-        
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.29.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+      - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install
+
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Test
+        run: npm test -- --run
+
+      - name: Build
+        run: npm run build

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { initSentry } from "@/core/integrations/sentry";
 import { performanceMonitor } from "@/core/utils/performance";
@@ -9,21 +9,23 @@ import { ClerkAuthProvider } from "@/modules/auth/contexts/ClerkAuthContext";
 import { ProtectedRoute } from "@/modules/shared/components/ProtectedRoute";
 import { AdminRoute } from "@/modules/shared/components/AdminRoute";
 import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
-import Index from "@/app/pages/Index";
-import NotFound from "@/app/pages/NotFound";
-import Checkout from "@/app/pages/Checkout";
-import CheckoutSuccess from "@/app/pages/CheckoutSuccess";
-import UpgradePlan from "@/app/pages/UpgradePlan";
-import AdminDashboard from "@/app/pages/AdminDashboard";
-import AdminIntegrations from "@/app/pages/AdminIntegrations";
-import AdminUsers from "@/app/pages/AdminUsers";
-import AdminCredits from "@/app/pages/AdminCredits";
-import Auth from "@/modules/auth/components/Auth";
-import AuthCallback from "@/modules/auth/components/AuthCallback";
-import ResetPassword from "@/modules/auth/components/ResetPassword";
-import UserDashboard from "@/modules/user/components/UserDashboard";
-import FAQ from "@/app/pages/FAQ";
-import PlanSelector from "@/app/pages/PlanSelector";
+
+// Lazy-loaded route components
+const Index = lazy(() => import("@/app/pages/Index"));
+const NotFound = lazy(() => import("@/app/pages/NotFound"));
+const Checkout = lazy(() => import("@/app/pages/Checkout"));
+const CheckoutSuccess = lazy(() => import("@/app/pages/CheckoutSuccess"));
+const UpgradePlan = lazy(() => import("@/app/pages/UpgradePlan"));
+const AdminDashboard = lazy(() => import("@/app/pages/AdminDashboard"));
+const AdminIntegrations = lazy(() => import("@/app/pages/AdminIntegrations"));
+const AdminUsers = lazy(() => import("@/app/pages/AdminUsers"));
+const AdminCredits = lazy(() => import("@/app/pages/AdminCredits"));
+const Auth = lazy(() => import("@/modules/auth/components/Auth"));
+const AuthCallback = lazy(() => import("@/modules/auth/components/AuthCallback"));
+const ResetPassword = lazy(() => import("@/modules/auth/components/ResetPassword"));
+const UserDashboard = lazy(() => import("@/modules/user/components/UserDashboard"));
+const FAQ = lazy(() => import("@/app/pages/FAQ"));
+const PlanSelector = lazy(() => import("@/app/pages/PlanSelector"));
 
 // Component to track page views for PostHog
 function PageViewTracker() {
@@ -54,6 +56,7 @@ function App() {
         <Router>
           <PageViewTracker />
           <Layout>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
             <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
@@ -172,6 +175,7 @@ function App() {
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </Layout>
         <Toaster />
       </Router>

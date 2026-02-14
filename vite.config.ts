@@ -142,10 +142,7 @@ export default defineConfig(({ mode }) => ({
   },
   assetsInclude: ['**/*.md'], // Include markdown files as assets
   build: {
-    // Let Vite handle chunk splitting automatically to avoid React loading order issues
-    // Manual chunking was causing "Cannot read properties of undefined (reading 'useState')" errors
-    // because vendor chunks were executing before React was loaded
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     sourcemap: mode === 'development',
     minify: 'esbuild',
     target: 'esnext',
@@ -155,6 +152,47 @@ export default defineConfig(({ mode }) => ({
     },
     modulePreload: {
       polyfill: true,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react-dom') || id.includes('/react/')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@clerk')) {
+              return 'vendor-clerk';
+            }
+            if (id.includes('@sentry')) {
+              return 'vendor-sentry';
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-framer';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-radix';
+            }
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (id.includes('posthog')) {
+              return 'vendor-posthog';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-lucide';
+            }
+            if (id.includes('html2canvas')) {
+              return 'vendor-html2canvas';
+            }
+            if (id.includes('react-router') || id.includes('react-router-dom')) {
+              return 'vendor-router';
+            }
+          }
+        },
+      },
     },
   },
 }));
