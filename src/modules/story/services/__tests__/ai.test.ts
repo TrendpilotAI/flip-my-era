@@ -1,13 +1,55 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Unmock the module under test - setup.ts globally mocks it
+vi.unmock('@/modules/story/services/ai');
+
 import {
   generateStory,
   generateImage,
-  generateEbookIllustration,
-  generateTaylorSwiftIllustration,
   generateAlternativeName,
-  isRunwareAvailable,
 } from '../ai';
+
+// ── vi.hoisted() – mock values declared before vi.mock() factories ──
+const mocks = vi.hoisted(() => {
+  const mockRunwareService = {
+    isConfigured: vi.fn(),
+    isConnected: vi.fn(),
+    generateImage: vi.fn(),
+    generateEbookIllustration: vi.fn(),
+    generateTaylorSwiftIllustration: vi.fn(),
+    generateMultipleImages: vi.fn(),
+  };
+
+  const mockApiRequestWithRetry = vi.fn();
+  const mockEnhancePromptWithGroq = vi.fn().mockResolvedValue('enhanced prompt');
+
+  return { mockRunwareService, mockApiRequestWithRetry, mockEnhancePromptWithGroq };
+});
+
+vi.mock('@/modules/shared/utils/apiWithRetry', () => ({
+  apiRequestWithRetry: mocks.mockApiRequestWithRetry,
+}));
+
+vi.mock('@/modules/shared/utils/runware', () => ({
+  runwareService: mocks.mockRunwareService,
+  createEbookIllustrationPrompt: vi.fn().mockReturnValue('ebook prompt'),
+  enhancePromptWithGroq: mocks.mockEnhancePromptWithGroq,
+  RUNWARE_MODELS: { FLUX_1_1_PRO: 'flux-pro' },
+  RUNWARE_SCHEDULERS: { FLOW_MATCH_EULER_DISCRETE: 'scheduler' },
+}));
+
+vi.mock('@/modules/story/utils/storyPrompts', () => ({
+  getStoryPrompt: vi.fn().mockReturnValue('story prompt'),
+}));
+
+vi.mock('@/modules/story/utils/enchantedQuillPrompt', () => ({
+  getEnchantedQuillPrompt: vi.fn().mockReturnValue('enchanted quill prompt'),
+}));
+
+vi.mock('@/modules/shared/utils/env', () => ({
+  getGroqApiKey: vi.fn().mockReturnValue('gsk_test123'),
+}));
 
 const defaultGeneratedImage = {
   imageUUID: 'mock-image-uuid',
@@ -17,93 +59,35 @@ const defaultGeneratedImage = {
   seed: 42,
 };
 
-// Define mock service inside vi.mock factory to avoid hoisting issues
-const mockRunwareService = {
-  isConfigured: vi.fn(),
-  isConnected: vi.fn(),
-  generateImage: vi.fn(),
-  generateEbookIllustration: vi.fn(),
-  generateTaylorSwiftIllustration: vi.fn(),
-  generateMultipleImages: vi.fn(),
-};
-
-// Mock the apiRequestWithRetry function
-vi.mock('@/modules/shared/utils/apiWithRetry', () => ({
-  apiRequestWithRetry: vi.fn(),
-}));
-
-// Mock the Runware service module with inline object to avoid hoisting
-vi.mock('@/modules/shared/utils/runware', () => ({
-  runwareService: {
-    isConfigured: vi.fn(),
-    isConnected: vi.fn(),
-    generateImage: vi.fn(),
-    generateEbookIllustration: vi.fn(),
-    generateTaylorSwiftIllustration: vi.fn(),
-    generateMultipleImages: vi.fn(),
-  },
-  createEbookIllustrationPrompt: vi.fn().mockReturnValue('ebook prompt'),
-  enhancePromptWithGroq: vi.fn().mockResolvedValue('enhanced prompt'),
-  RUNWARE_MODELS: { FLUX_1_1_PRO: 'flux-pro' },
-  RUNWARE_SCHEDULERS: { FLOW_MATCH_EULER_DISCRETE: 'scheduler' },
-}));
-
-// Mock the story prompts
-vi.mock('@/modules/story/utils/storyPrompts', () => ({
-  getStoryPrompt: vi.fn().mockReturnValue('story prompt'),
-}));
-
-// Mock the enchanted quill prompt
-vi.mock('@/modules/story/utils/enchantedQuillPrompt', () => ({
-  getEnchantedQuillPrompt: vi.fn().mockReturnValue('enchanted quill prompt'),
-}));
-
-import { apiRequestWithRetry } from '@/modules/shared/utils/apiWithRetry';
-import { enhancePromptWithGroq } from '@/modules/shared/utils/runware';
-
-// Skip: Complex mock setup causing memory issues and test instability
-// TODO: Refactor tests to use simpler mocking approach
-describe.skip('AI Service', () => {
+describe('AI Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRunwareService.isConfigured.mockReturnValue(true);
-    mockRunwareService.isConnected.mockResolvedValue(true);
-    mockRunwareService.generateImage.mockResolvedValue(defaultGeneratedImage);
-    mockRunwareService.generateEbookIllustration.mockResolvedValue(defaultGeneratedImage);
-    mockRunwareService.generateTaylorSwiftIllustration.mockResolvedValue(defaultGeneratedImage);
-    mockRunwareService.generateMultipleImages.mockResolvedValue([defaultGeneratedImage]);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    mocks.mockRunwareService.isConfigured.mockReturnValue(true);
+    mocks.mockRunwareService.isConnected.mockResolvedValue(true);
+    mocks.mockRunwareService.generateImage.mockResolvedValue(defaultGeneratedImage);
+    mocks.mockRunwareService.generateEbookIllustration.mockResolvedValue(defaultGeneratedImage);
+    mocks.mockRunwareService.generateTaylorSwiftIllustration.mockResolvedValue(defaultGeneratedImage);
+    mocks.mockRunwareService.generateMultipleImages.mockResolvedValue([defaultGeneratedImage]);
   });
 
   describe('generateStory', () => {
     it('should generate a story successfully', async () => {
       const mockResponse = {
         data: {
-          choices: [
-            {
-              message: {
-                content: 'Once upon a time...',
-              },
-            },
-          ],
+          choices: [{ message: { content: 'Once upon a time...' } }],
         },
       };
 
-      (apiRequestWithRetry as any).mockResolvedValue(mockResponse);
+      mocks.mockApiRequestWithRetry.mockResolvedValue(mockResponse);
 
-      const result = await generateStory({
-        prompt: 'Write a story about a dragon',
-      });
+      const result = await generateStory({ prompt: 'Write a story about a dragon' });
 
       expect(result).toBe('Once upon a time...');
-      expect(apiRequestWithRetry).toHaveBeenCalled();
+      expect(mocks.mockApiRequestWithRetry).toHaveBeenCalled();
     });
 
     it('should handle API errors gracefully', async () => {
-      (apiRequestWithRetry as any).mockRejectedValue(new Error('API Error'));
+      mocks.mockApiRequestWithRetry.mockRejectedValue(new Error('API Error'));
 
       await expect(
         generateStory({ prompt: 'Test prompt' })
@@ -117,121 +101,36 @@ describe.skip('AI Service', () => {
         },
       };
 
-      (apiRequestWithRetry as any).mockResolvedValue(mockResponse);
+      mocks.mockApiRequestWithRetry.mockResolvedValue(mockResponse);
 
       const result = await generateStory({ prompt: 'Test prompt' });
-
-      // Just verify the function was called successfully and returned the content
       expect(result).toBe('Story content');
-      expect(apiRequestWithRetry).toHaveBeenCalled();
-    });
-
-    it('should handle missing API key', async () => {
-      // Temporarily override the mock to simulate missing API key
-      const originalEnv = import.meta.env.VITE_GROQ_API_KEY;
-      import.meta.env.VITE_GROQ_API_KEY = '';
-
-      await expect(
-        generateStory({ prompt: 'Test prompt' })
-      ).rejects.toThrow();
-
-      import.meta.env.VITE_GROQ_API_KEY = originalEnv;
+      expect(mocks.mockApiRequestWithRetry).toHaveBeenCalled();
     });
   });
 
   describe('generateImage', () => {
-    it.skip('should generate an image using RUNWARE when available', async () => {
-      // Skip: Module-level runwareService instance makes per-test mocking difficult
-      // Would require dependency injection or factory pattern to test properly
-      const result = await generateImage({
-        prompt: 'A beautiful sunset',
-        useRunware: true,
-      });
+    it('should throw when Runware is not available (OpenAI fallback removed)', async () => {
+      mocks.mockRunwareService.isConfigured.mockReturnValue(false);
+      mocks.mockRunwareService.isConnected.mockResolvedValue(false);
 
-      expect(result).toMatch(/^https:\/\//);
+      await expect(
+        generateImage({ prompt: 'A beautiful sunset', useRunware: true })
+      ).rejects.toThrow('Image generation failed');
     });
 
-    it('should fall back to OpenAI when RUNWARE is not available', async () => {
-      mockRunwareService.isConfigured.mockReturnValue(false);
-      mockRunwareService.isConnected.mockResolvedValue(false);
-      mockRunwareService.generateImage.mockResolvedValue(defaultGeneratedImage);
-
-      const mockOpenAIResponse = {
-        data: {
-          data: [{ url: 'https://example.com/openai-image.jpg' }],
-        },
-      };
-
-      (apiRequestWithRetry as any).mockResolvedValue(mockOpenAIResponse);
-
-      const result = await generateImage({
-        prompt: 'A beautiful sunset',
-        useRunware: true,
-      });
-
-      expect(result).toBe('https://example.com/openai-image.jpg');
-      expect(apiRequestWithRetry).toHaveBeenCalled();
-      mockRunwareService.isConfigured.mockReturnValue(true);
-      mockRunwareService.isConnected.mockResolvedValue(true);
+    it('should throw when useRunware is false (OpenAI fallback removed)', async () => {
+      await expect(
+        generateImage({ prompt: 'A mountain landscape', useRunware: false })
+      ).rejects.toThrow('Image generation failed');
     });
 
-    it('should use OpenAI directly when useRunware is false', async () => {
-      const mockOpenAIResponse = {
-        data: {
-          data: [{ url: 'https://example.com/openai-image.jpg' }],
-        },
-      };
+    it('should throw on image generation errors', async () => {
+      mocks.mockRunwareService.generateImage.mockRejectedValue(new Error('Runware down'));
 
-      (apiRequestWithRetry as any).mockResolvedValue(mockOpenAIResponse);
-
-      const result = await generateImage({
-        prompt: 'A mountain landscape',
-        useRunware: false,
-      });
-
-      expect(result).toBe('https://example.com/openai-image.jpg');
-    });
-
-    it('should handle image generation errors by returning placeholder', async () => {
-      (apiRequestWithRetry as any).mockRejectedValue(new Error('Image generation failed'));
-
-      const result = await generateImage({ prompt: 'Test prompt' });
-      
-      // Should return a placeholder image URL
-      expect(result).toMatch(/^https:\/\/picsum\.photos\/seed\/[a-z0-9]+\/1024\/1024$/);
-    });
-  });
-
-  describe('generateEbookIllustration', () => {
-    it.skip('should generate an ebook illustration with enhanced prompts', async () => {
-      // Skip: Module-level runwareService instance makes per-test mocking difficult
-      // Would require dependency injection or factory pattern to test properly
-      const mockEnhancedPrompt = 'Enhanced illustration prompt';
-      (enhancePromptWithGroq as any).mockResolvedValue(mockEnhancedPrompt);
-
-      const result = await generateEbookIllustration({
-        chapterTitle: 'Chapter 1',
-        chapterContent: 'Chapter content',
-        style: 'fantasy',
-        mood: 'mysterious',
-        useEnhancedPrompts: true,
-      });
-
-      expect(result).toMatch(/^https:\/\//);
-      expect(enhancePromptWithGroq).toHaveBeenCalled();
-    });
-
-    it.skip('should generate illustration without enhancement when disabled', async () => {
-      // Skip: Module-level runwareService instance makes per-test mocking difficult
-      // Would require dependency injection or factory pattern to test properly
-      const result = await generateEbookIllustration({
-        chapterTitle: 'Chapter 1',
-        chapterContent: 'Chapter content',
-        useEnhancedPrompts: false,
-      });
-
-      expect(result).toMatch(/^https:\/\//);
-      expect(enhancePromptWithGroq).not.toHaveBeenCalled();
+      await expect(
+        generateImage({ prompt: 'Test prompt', useRunware: true })
+      ).rejects.toThrow('Image generation failed');
     });
   });
 
@@ -239,17 +138,11 @@ describe.skip('AI Service', () => {
     it('should generate an alternative name successfully', async () => {
       const mockResponse = {
         data: {
-          choices: [
-            {
-              message: {
-                content: 'Jane Smith',
-              },
-            },
-          ],
+          choices: [{ message: { content: 'Jane Smith' } }],
         },
       };
 
-      (apiRequestWithRetry as any).mockResolvedValue(mockResponse);
+      mocks.mockApiRequestWithRetry.mockResolvedValue(mockResponse);
 
       const result = await generateAlternativeName({
         originalName: 'John Doe',
@@ -266,7 +159,7 @@ describe.skip('AI Service', () => {
         },
       };
 
-      (apiRequestWithRetry as any).mockResolvedValue(mockResponse);
+      mocks.mockApiRequestWithRetry.mockResolvedValue(mockResponse);
 
       await generateAlternativeName({
         originalName: 'John Doe',
@@ -274,11 +167,11 @@ describe.skip('AI Service', () => {
         shouldBeSimilar: true,
       });
 
-      expect(apiRequestWithRetry).toHaveBeenCalled();
+      expect(mocks.mockApiRequestWithRetry).toHaveBeenCalled();
     });
 
     it('should handle name generation errors', async () => {
-      (apiRequestWithRetry as any).mockRejectedValue(new Error('Name generation failed'));
+      mocks.mockApiRequestWithRetry.mockRejectedValue(new Error('Name generation failed'));
 
       await expect(
         generateAlternativeName({
@@ -286,28 +179,6 @@ describe.skip('AI Service', () => {
           targetGender: 'neutral',
         })
       ).rejects.toThrow('Name generation failed');
-    });
-  });
-
-  describe('isRunwareAvailable', () => {
-    it.skip('should return true when RUNWARE is configured and connected (uses module-level mock)', async () => {
-      // Skip: Module-level runwareService instance is created before mocks can be applied
-      // Would need to refactor the code to make runwareService injectable or use a factory pattern
-      const result = await isRunwareAvailable();
-      expect(result).toBe(true);
-    });
-
-    // Skip tests that try to override module-level instance - would need refactoring to support
-    it.skip('should return false when RUNWARE is not configured', async () => {
-      // This would require refactoring the code to make runwareService injectable or testable
-      const result = await isRunwareAvailable();
-      expect(result).toBe(false);
-    });
-
-    it.skip('should return false when connection check fails', async () => {
-      // This would require refactoring the code to make runwareService injectable or testable
-      const result = await isRunwareAvailable();
-      expect(result).toBe(false);
     });
   });
 
@@ -319,13 +190,12 @@ describe.skip('AI Service', () => {
         },
       };
 
-      // Mock successful response - apiRequestWithRetry handles retries internally
-      (apiRequestWithRetry as any).mockResolvedValue(mockResponse);
+      mocks.mockApiRequestWithRetry.mockResolvedValue(mockResponse);
 
       const result = await generateStory({ prompt: 'Test prompt' });
-      
+
       expect(result).toBe('Success after retry');
-      expect(apiRequestWithRetry).toHaveBeenCalled();
+      expect(mocks.mockApiRequestWithRetry).toHaveBeenCalled();
     });
   });
 });

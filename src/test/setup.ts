@@ -1,13 +1,19 @@
 import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
+import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { server } from './msw/server';
 
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
 
+// MSW server lifecycle
+beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
+afterAll(() => server.close());
+
 // Cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {
+  server.resetHandlers();
   cleanup();
   vi.clearAllMocks();
   vi.clearAllTimers();
@@ -110,8 +116,8 @@ Object.defineProperty(global, 'WebSocket', {
   value: MockWebSocket
 });
 
-// Mock fetch
-global.fetch = vi.fn();
+// NOTE: global.fetch is NOT mocked here — MSW intercepts fetch at the network level.
+// Tests that need a direct fetch mock should use vi.spyOn(global, 'fetch') locally.
 
 // Mock environment variables
 vi.stubEnv('VITE_GROQ_API_KEY', 'gsk_test123456789');
@@ -270,11 +276,6 @@ vi.mock('react-router-dom', async () => {
     useLocation: () => ({ pathname: '/test' })
   };
 });
-
-// Provide a default fetch mock to prevent accidental network calls
-if (!(globalThis as any).fetch) {
-  (globalThis as any).fetch = vi.fn();
-}
 
 // Mock PostHog completely to prevent window.location issues in tests
 vi.mock('posthog-js', () => ({

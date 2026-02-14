@@ -1,224 +1,115 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Unmock groq module to test the real implementation
 vi.unmock('@/modules/shared/utils/groq');
 
 import { generateWithGroq } from '../groq';
+import { __testSupabaseMocks__ } from '@/test/setup';
 
-// Mock fetch
-type MockFetch = ReturnType<typeof vi.fn>;
-global.fetch = vi.fn() as unknown as typeof fetch;
-
-// Skip tests - implementation has changed to use Supabase Edge Functions
-// These tests were for the old direct API implementation
-describe.skip('groq', () => {
+describe('generateWithGroq', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset environment variables
-    vi.stubEnv('VITE_GROQ_API_KEY', 'gsk_test123456789');
+    __testSupabaseMocks__.supabase.functions.invoke.mockResolvedValue({
+      data: { content: 'Generated story content' },
+      error: null,
+    });
   });
 
-  afterEach(() => {
-    vi.unstubAllEnvs();
+  it('should generate content via Edge Function', async () => {
+    const result = await generateWithGroq('Test prompt', 'mock-token');
+
+    expect(result).toBe('Generated story content');
+    expect(__testSupabaseMocks__.supabase.functions.invoke).toHaveBeenCalledWith(
+      'groq-api',
+      expect.objectContaining({
+        body: expect.objectContaining({ prompt: 'Test prompt' }),
+        headers: expect.objectContaining({ Authorization: 'Bearer mock-token' }),
+      }),
+    );
   });
 
-  describe('generateWithGroq', () => {
-    it('should generate story successfully', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          choices: [{
-            message: {
-              content: 'Generated story content'
-            }
-          }]
-        })
-      } as unknown as Response;
+  it('should throw UNAUTHORIZED when no token', async () => {
+    await expect(generateWithGroq('Test prompt', null)).rejects.toThrow('UNAUTHORIZED');
+  });
 
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      const result = await generateWithGroq('Test prompt');
-
-      expect(result).toBe('Generated story content');
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.groq.com/openai/v1/chat/completions',
-        expect.objectContaining({
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer gsk_test123456789'
-          },
-          body: expect.stringContaining('Test prompt')
-        })
-      );
+  it('should pass custom options', async () => {
+    await generateWithGroq('Test prompt', 'mock-token', {
+      model: 'custom-model',
+      temperature: 0.5,
+      maxTokens: 2048,
+      systemPrompt: 'custom system prompt',
     });
 
-    it('should throw error when API key is missing', async () => {
-      vi.stubEnv('VITE_GROQ_API_KEY', '');
+    expect(__testSupabaseMocks__.supabase.functions.invoke).toHaveBeenCalledWith(
+      'groq-api',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          model: 'custom-model',
+          temperature: 0.5,
+          maxTokens: 2048,
+          systemPrompt: 'custom system prompt',
+        }),
+      }),
+    );
+  });
 
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('GROQ_API_KEY_MISSING');
+  it('should throw on Edge Function error', async () => {
+    __testSupabaseMocks__.supabase.functions.invoke.mockResolvedValue({
+      data: null,
+      error: { message: 'Internal server error' },
     });
 
-    it('should throw error when API key format is invalid', async () => {
-      vi.stubEnv('VITE_GROQ_API_KEY', 'invalid-key');
+    await expect(generateWithGroq('Test prompt', 'mock-token')).rejects.toThrow('Internal server error');
+  });
 
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('INVALID_API_KEY_FORMAT');
+  it('should throw UNAUTHORIZED on 401 error', async () => {
+    __testSupabaseMocks__.supabase.functions.invoke.mockResolvedValue({
+      data: null,
+      error: { message: 'UNAUTHORIZED' },
     });
 
-    it('should handle 401 unauthorized error', async () => {
-      const mockResponse = {
-        ok: false,
-        status: 401,
-        json: vi.fn().mockResolvedValue({
-          error: { message: 'Invalid API key' }
-        })
-      } as unknown as Response;
+    await expect(generateWithGroq('Test prompt', 'mock-token')).rejects.toThrow('UNAUTHORIZED');
+  });
 
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('INVALID_API_KEY');
+  it('should throw RATE_LIMIT_EXCEEDED on 429 error', async () => {
+    __testSupabaseMocks__.supabase.functions.invoke.mockResolvedValue({
+      data: null,
+      error: { message: '429 rate limit' },
     });
 
-    it('should handle 429 rate limit error', async () => {
-      const mockResponse = {
-        ok: false,
-        status: 429,
-        json: vi.fn().mockResolvedValue({
-          error: { message: 'Rate limit exceeded' }
-        })
-      } as unknown as Response;
+    await expect(generateWithGroq('Test prompt', 'mock-token')).rejects.toThrow('RATE_LIMIT_EXCEEDED');
+  });
 
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('RATE_LIMIT_EXCEEDED');
+  it('should throw on empty data response', async () => {
+    __testSupabaseMocks__.supabase.functions.invoke.mockResolvedValue({
+      data: null,
+      error: null,
     });
 
-    it('should handle other API errors', async () => {
-      const mockResponse = {
-        ok: false,
-        status: 500,
-        json: vi.fn().mockResolvedValue({
-          error: { message: 'Internal server error' }
-        })
-      } as unknown as Response;
+    await expect(generateWithGroq('Test prompt', 'mock-token')).rejects.toThrow('Failed to generate with Groq');
+  });
 
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('API_ERROR: Internal server error');
+  it('should throw on data with error field', async () => {
+    __testSupabaseMocks__.supabase.functions.invoke.mockResolvedValue({
+      data: { error: 'Processing failed', message: 'Bad request' },
+      error: null,
     });
 
-    it('should handle API errors without error message', async () => {
-      const mockResponse = {
-        ok: false,
-        status: 500,
-        json: vi.fn().mockResolvedValue({})
-      } as unknown as Response;
+    await expect(generateWithGroq('Test prompt', 'mock-token')).rejects.toThrow('Bad request');
+  });
 
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
+  it('should use default parameters', async () => {
+    await generateWithGroq('Test prompt', 'mock-token');
 
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('API_ERROR: Unknown error');
-    });
-
-    it('should handle network errors', async () => {
-      (global.fetch as MockFetch).mockRejectedValue(new Error('Network error'));
-
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('Network error');
-    });
-
-    it('should use correct model and parameters', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          choices: [{ message: { content: 'Generated story' } }]
-        })
-      } as unknown as Response;
-
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      await generateWithGroq('Test prompt');
-
-      const callArgs = (global.fetch as MockFetch).mock.calls[0];
-      const requestBody = JSON.parse(callArgs[1].body);
-
-      expect(requestBody).toEqual({
-        model: 'openai/gpt-oss-120b',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a creative writer specializing in humorous alternate reality stories and chapter generation.'
-          },
-          {
-            role: 'user',
-            content: 'Test prompt'
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 4096,
-        top_p: 1,
-        stop: null
-      });
-    });
-
-    it('should handle empty response gracefully', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          choices: []
-        })
-      } as unknown as Response;
-
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow();
-    });
-
-    it('should handle malformed response', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          choices: [{}] // Missing message property
-        })
-      } as unknown as Response;
-
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow();
-    });
-
-    it('should log errors to console', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      const mockResponse = {
-        ok: false,
-        status: 500,
-        json: vi.fn().mockResolvedValue({
-          error: { message: 'Server error' }
-        })
-      } as unknown as Response;
-
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      try {
-        await generateWithGroq('Test prompt');
-      } catch (error) {
-        // Expected to throw
-      }
-
-      expect(consoleSpy).toHaveBeenCalledWith('Groq API error:', { error: { message: 'Server error' } });
-      
-      consoleSpy.mockRestore();
-    });
-
-    it('should handle JSON parsing errors in error response', async () => {
-      const mockResponse = {
-        ok: false,
-        status: 500,
-        json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
-      } as unknown as Response;
-
-      (global.fetch as MockFetch).mockResolvedValue(mockResponse);
-
-      await expect(generateWithGroq('Test prompt')).rejects.toThrow('Invalid JSON');
-    });
+    expect(__testSupabaseMocks__.supabase.functions.invoke).toHaveBeenCalledWith(
+      'groq-api',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          model: 'openai/gpt-oss-120b',
+          temperature: 0.7,
+          maxTokens: 4096,
+        }),
+      }),
+    );
   });
 });
