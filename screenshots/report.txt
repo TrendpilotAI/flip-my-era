@@ -1,0 +1,89 @@
+=== TEST 1: Homepage Load ===
+Status: 200
+Title: Flip My Era
+Screenshot: 01-homepage.png ✅
+
+=== TEST 2: Key UI Elements ===
+Navigation: 1 found
+Buttons: 2 found
+Links: 10 found
+Images: 14 found
+H1 heading: 1 found
+H2 headings: 0 found
+
+=== TEST 3: Navigation Links ===
+Nav link: '' -> /auth
+
+=== TEST 4: Navigate Internal Pages ===
+Page '' (https://flipmyera.com/auth): status 200
+
+=== TEST 5: Auth Elements ===
+
+=== TEST 6: Mobile Viewport ===
+Mobile screenshot: mobile-homepage.png ✅
+
+=== TEST 7: Console Errors ===
+  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
+  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
+  warning: Clerk: The prop "redirectUrl" is deprecated and should be replaced with the new "fallbackRedirectUrl" or "forceRedirectUrl" props instead. Learn more: https://clerk.com/docs/guides/custom-redirects#redirect-url-props
+  error: Sentry Logger [error]: Encountered error running transport request: TypeError: Failed to fetch
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:106623
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:52843
+    at Object.add (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:51562)
+    at Object.send (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:52835)
+    at ds.sendEnvelope (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:57842)
+    at ds.sendEvent (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:56766)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:61862
+    at Array.<anonymous> (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40239)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40591
+    at Array.forEach (<anonymous>)
+    at jn.it (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40555)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40323
+    at jn.rt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40758)
+    at new jn (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40169)
+    at jn.then (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40192)
+    at ds.Tt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:61318)
+    at ds.vt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:59073)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:55389
+    at Object.add (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:51562)
+    at ds.gt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:62194)
+    at ds.captureEvent (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:55377)
+    at Mt.captureEvent (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:13941)
+    at wn.V (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:31748)
+    at wn.end (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:30188)
+    at Object.apply (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:39508)
+    at HTMLDocument.<anonymous> (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:248373)
+    at HTMLDocument.sentryWrapped (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:78084)
+  error: Sentry Logger [error]: Error while sending envelope: TypeError: Failed to fetch
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:106623
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:52843
+    at Object.add (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:51562)
+    at Object.send (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:52835)
+    at ds.sendEnvelope (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:57842)
+    at ds.sendEvent (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:56766)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:61862
+    at Array.<anonymous> (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40239)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40591
+    at Array.forEach (<anonymous>)
+    at jn.it (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40555)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40323
+    at jn.rt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40758)
+    at new jn (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40169)
+    at jn.then (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:40192)
+    at ds.Tt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:61318)
+    at ds.vt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:59073)
+    at https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:55389
+    at Object.add (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:51562)
+    at ds.gt (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:62194)
+    at ds.captureEvent (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:55377)
+    at Mt.captureEvent (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:13941)
+    at wn.V (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:31748)
+    at wn.end (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:30188)
+    at Object.apply (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:39508)
+    at HTMLDocument.<anonymous> (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:248373)
+    at HTMLDocument.sentryWrapped (https://browser.sentry-cdn.com/10.38.0/bundle.tracing.replay.debug.min.js:2:78084)
+  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
+  warning: Sentry Logger [warn]: Discarded session because of missing or non-string release
+
+=== TEST 8: Performance ===
+Page load time: 2.38s

@@ -96,8 +96,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         </SignedIn>
         <SignedOut>
           <Link to="/auth">
-            <Button variant="outline" size="icon" className="bg-white/80 backdrop-blur-sm">
+            <Button variant="outline" className="bg-white/80 backdrop-blur-sm gap-2">
               <User className="h-5 w-5" />
+              <span>Sign In</span>
             </Button>
           </Link>
         </SignedOut>

@@ -84,7 +84,7 @@ const Auth = () => {
                     headerSubtitle: "hidden",
                   }
                 }}
-                redirectUrl={returnPath}
+                fallbackRedirectUrl={returnPath}
                 afterSignInUrl={returnPath}
               />
             ) : (
@@ -97,7 +97,7 @@ const Auth = () => {
                     headerSubtitle: "hidden",
                   }
                 }}
-                redirectUrl={returnPath}
+                fallbackRedirectUrl={returnPath}
                 afterSignUpUrl={returnPath}
               />
             )}
