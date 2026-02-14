@@ -85,7 +85,7 @@ const Auth = () => {
                   }
                 }}
                 fallbackRedirectUrl={returnPath}
-                afterSignInUrl={returnPath}
+                signInFallbackRedirectUrl={returnPath}
               />
             ) : (
               <SignUp 
@@ -98,7 +98,7 @@ const Auth = () => {
                   }
                 }}
                 fallbackRedirectUrl={returnPath}
-                afterSignUpUrl={returnPath}
+                signUpFallbackRedirectUrl={returnPath}
               />
             )}
           </CardContent>

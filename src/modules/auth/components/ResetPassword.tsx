@@ -14,8 +14,8 @@ const ResetPassword = () => {
   useEffect(() => {
     // Redirect to Clerk's password reset page
     clerk.openSignIn({
-      afterSignInUrl: "/",
-      afterSignUpUrl: "/",
+      signInFallbackRedirectUrl: "/",
+      signUpFallbackRedirectUrl: "/",
       initialValues: {
         emailAddress: "",
       },
