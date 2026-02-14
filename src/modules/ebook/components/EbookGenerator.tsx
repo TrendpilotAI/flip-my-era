@@ -992,13 +992,11 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
               size="lg"
               onClick={async () => {
                 try {
-                  const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
-                  
-                  // Call Supabase Edge Function to get checkout URL
-                  const { data, error } = await supabase.functions.invoke('samcart-checkout', {
+                  // Call Supabase Edge Function to create Stripe checkout session
+                  const { data, error } = await supabase.functions.invoke('create-checkout', {
                     body: {
-                      productId,
-                      redirectUrl: `${window.location.origin}/checkout/success`,
+                      priceId: 'ebook',
+                      successUrl: `${window.location.origin}/checkout/success`,
                       cancelUrl: window.location.href
                     }
                   });
@@ -1019,7 +1017,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                 }
               }}
             >
-              Buy this Ebook with SamCart
+              Buy this Ebook
             </Button>
           </div>
         </div>

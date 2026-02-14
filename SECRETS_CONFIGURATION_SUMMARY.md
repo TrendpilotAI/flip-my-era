@@ -32,7 +32,7 @@ Only public keys that are safe to expose in client bundles:
 - `VITE_POSTHOG_KEY` - Public analytics key
 - `VITE_SENTRY_DSN` - Public DSN
 - `VITE_RUNWARE_PROXY_URL` - Public endpoint URL
-- `VITE_SAMCART_CHECKOUT_ENDPOINT` - Public endpoint URL
+- `VITE_STRIPE_CHECKOUT_ENDPOINT` - Public endpoint URL
 
 **Security**: ✅ All are designed to be public
 

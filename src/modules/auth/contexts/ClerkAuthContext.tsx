@@ -1,7 +1,7 @@
 import { useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { useUser, useAuth as useClerkAuthHook, SignInButton, SignUpButton, UserButton } from "@clerk/clerk-react";
 import type { GetTokenOptions } from "@clerk/types";
-import { supabase, getSupabaseSession, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/core/integrations/supabase/client";
+import { supabase, signOutFromSupabase, createSupabaseClientWithClerkToken } from "@/core/integrations/supabase/client";
 import { AuthContext, type AuthUser, type AuthContextType, type ProfileType } from './AuthContext';
 import { sentryService } from '@/core/integrations/sentry';
 import { posthogService, posthogEvents } from '@/core/integrations/posthog';
@@ -17,6 +17,8 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
   const hasSyncedRef = useRef(false);
   const isFetchingCreditsRef = useRef(false);
   const lastCreditFetchTimeRef = useRef<number>(0);
+  // Track clerk user ID to detect user changes
+  const lastClerkUserIdRef = useRef<string | null>(null);
 
   // Cache TTL for credit balance (30 seconds)
   const CREDIT_CACHE_TTL_MS = 30000;
@@ -108,38 +110,43 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Create or update user profile in Supabase when Clerk user changes
   useEffect(() => {
+    if (!isLoaded) return;
+
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     const syncUserProfile = async () => {
       if (clerkUser) {
+        // Detect if user actually changed to avoid redundant syncs
+        const userChanged = lastClerkUserIdRef.current !== clerkUser.id;
+        if (!userChanged && hasSyncedRef.current) return;
+        lastClerkUserIdRef.current = clerkUser.id;
+        hasSyncedRef.current = true;
+
         try {
-          // For native integration, we use the Clerk token with Supabase template
           const clerkToken = await getToken({ template: 'supabase' });
+          if (signal.aborted) return;
           
           if (!clerkToken) {
             throw new Error("No Clerk token available");
           }
 
-          // Create a Supabase client with the Clerk token
-          // This requires proper Clerk-Supabase JWT integration
           const supabaseWithAuth = createSupabaseClientWithClerkToken(clerkToken);
-          
-
-          // For native integration, we work directly with Clerk user data
-          // and use the Clerk user ID for database operations
           const clerkUserId = clerkUser.id;
           
-          // Check if user profile exists in Supabase
           const { data: existingProfile, error: fetchError } = await supabaseWithAuth
             .from('profiles')
             .select('*')
             .eq('id', clerkUserId)
             .single();
 
+          if (signal.aborted) return;
+
           if (fetchError && fetchError.code !== 'PGRST116') {
             throw fetchError;
           }
 
           if (!existingProfile) {
-            // Profile doesn't exist, create it
             const { error: insertError } = await supabaseWithAuth
               .from('profiles')
               .insert({
@@ -150,6 +157,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
                 subscription_status: "free",
               });
 
+            if (signal.aborted) return;
             if (insertError) throw insertError;
 
             setIsNewUser(true);
@@ -160,12 +168,10 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               avatar_url: clerkUser.imageUrl,
               subscription_status: "free",
               created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
-              // Credits will be fetched separately after profile sync
               credits: 0
             };
             setUserProfile(newUserProfile);
             
-            // Set Sentry user context for new user
             sentryService.setUser({
               id: clerkUserId,
               email: newUserProfile.email,
@@ -178,7 +184,6 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               data: { userId: clerkUserId, isNewUser: true },
             });
             
-            // Identify user in PostHog
             posthogService.identify(clerkUserId, {
               email: newUserProfile.email,
               name: newUserProfile.name,
@@ -192,7 +197,6 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               subscription_status: newUserProfile.subscription_status,
             });
           } else {
-            // Profile exists, update it with latest Clerk data
             const { error: updateError } = await supabaseWithAuth
               .from('profiles')
               .update({
@@ -202,6 +206,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               })
               .eq('id', clerkUserId);
 
+            if (signal.aborted) return;
             if (updateError) throw updateError;
 
             const updatedUserProfile = {
@@ -211,12 +216,10 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               avatar_url: String(existingProfile.avatar_url),
               subscription_status: (existingProfile.subscription_status as "free" | "basic" | "premium") || "free",
               created_at: String(existingProfile.created_at),
-              // Use existing profile credits; will be updated by fetchCreditBalance
               credits: existingProfile.credits || 0
             };
             setUserProfile(updatedUserProfile);
             
-            // Set Sentry user context for existing user
             sentryService.setUser({
               id: updatedUserProfile.id,
               email: updatedUserProfile.email,
@@ -229,7 +232,6 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               data: { userId: updatedUserProfile.id },
             });
             
-            // Identify user in PostHog
             posthogService.identify(updatedUserProfile.id, {
               email: updatedUserProfile.email,
               name: updatedUserProfile.name,
@@ -243,9 +245,14 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               subscription_status: updatedUserProfile.subscription_status,
             });
           }
+
+          // Fetch credits after profile sync (only if not aborted)
+          if (!signal.aborted) {
+            fetchCreditBalance().catch(() => {});
+          }
         } catch (error) {
+          if (signal.aborted) return;
           console.error("Error syncing user profile:", error);
-          // Fall back to Clerk data on any error
           setUserProfile({
             id: clerkUser.id,
             email: clerkUser.primaryEmailAddress?.emailAddress || "",
@@ -253,44 +260,47 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             avatar_url: clerkUser.imageUrl,
             subscription_status: "free",
             created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
-            // Credits will be fetched separately
             credits: 0
           });
         }
       } else {
+        // User logged out
+        lastClerkUserIdRef.current = null;
+        hasSyncedRef.current = false;
         setUserProfile(null);
         setIsNewUser(false);
-        // Clear Sentry user context on sign out
+        setCreditBalance(null);
+        lastCreditFetchTimeRef.current = 0;
         sentryService.setUser(null);
         sentryService.addBreadcrumb({
           category: 'auth',
           message: 'User signed out',
           level: 'info',
         });
-        
-        // Reset PostHog user identification
         posthogService.reset();
         posthogEvents.userSignedOut();
       }
     };
 
-    // Only sync once when user changes (not on every creditBalance change)
-    if (isLoaded && !hasSyncedRef.current) {
-      hasSyncedRef.current = true;
-      syncUserProfile().finally(() => {
-        // After syncing profile, fetch and persist credit balance once
-        fetchCreditBalance().catch(() => {});
+    syncUserProfile();
+
+    // Cleanup: abort in-flight requests on unmount or dependency change
+    return () => {
+      abortController.abort();
+    };
+  }, [clerkUser?.id, isLoaded, getToken, fetchCreditBalance]);
+
+  // Periodically refresh token to prevent expiry (every 50 minutes, Clerk tokens last ~60min)
+  useEffect(() => {
+    if (!clerkUser) return;
+    const TOKEN_REFRESH_INTERVAL_MS = 50 * 60 * 1000;
+    const intervalId = setInterval(() => {
+      getToken({ template: 'supabase' }).catch((err) => {
+        console.warn('Token refresh failed:', err);
       });
-    } else if (isLoaded && clerkUser) {
-      // User already synced, just sync profile if clerkUser changed
-      syncUserProfile();
-    } else if (!clerkUser) {
-      // Reset sync state on logout
-      hasSyncedRef.current = false;
-    }
-    // FIXED: Removed creditBalance and fetchCreditBalance from dependencies
-    // to prevent infinite re-renders
-  }, [clerkUser, isLoaded, getToken]);
+    }, TOKEN_REFRESH_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [clerkUser?.id, getToken]);
 
   // Use Supabase profile data if available, otherwise fall back to Clerk data
   const user: AuthUser | null = userProfile || (clerkUser ? {

@@ -23,7 +23,7 @@ interface CreditTransaction {
   amount: number;
   description: string;
   transaction_date: string;
-  samcart_order_id?: string;
+  stripe_payment_id?: string;
 }
 
 interface CreditData {

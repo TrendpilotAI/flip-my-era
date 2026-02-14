@@ -18,7 +18,7 @@ Free ($0) → Swiftie Starter ($12.99) → Swiftie Deluxe ($25) → Opus VIP ($4
 - **Family Plan**: $29.99/month - Everything in Premium + up to 5 family members, shared library
 
 ### Payment Processing
-- **Provider**: Stripe via SamCart integration
+- **Provider**: Stripe
 - **Billing**: Monthly recurring subscriptions
 - **Trial**: No trial period currently
 

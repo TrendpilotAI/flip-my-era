@@ -64,7 +64,7 @@ Verify in Supabase Dashboard:
   - [ ] `credits-validate`
   - [ ] `ebook-generation`
   - [ ] `admin-credits`
-  - [ ] `samcart-webhook` (if using SamCart)
+  - [ ] `stripe-webhook` (if using Stripe)
   - [ ] `webhook-retry-processor` (if using webhook retry)
 
 ---

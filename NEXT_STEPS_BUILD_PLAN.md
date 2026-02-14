@@ -113,7 +113,7 @@
 2. ⚠️ **End-to-End Production Test**
    - Complete user journey: Sign up → Select ERA → Generate story → Create e-book
    - Verify credit system works
-   - Test payment flow (if SamCart integrated)
+   - Test payment flow (if Stripe integrated)
    - Check streaming generation works
    - Verify image generation
 

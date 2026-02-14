@@ -28,7 +28,7 @@ All public keys are correctly configured in Netlify:
 - ✅ `VITE_PUBLIC_POSTHOG_HOST`
 - ✅ `VITE_SENTRY_DSN`
 - ✅ `VITE_RUNWARE_PROXY_URL`
-- ✅ `VITE_SAMCART_CHECKOUT_ENDPOINT`
+- ✅ `VITE_STRIPE_CHECKOUT_ENDPOINT`
 
 ---
 

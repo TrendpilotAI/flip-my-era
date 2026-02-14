@@ -119,9 +119,9 @@ VITE_OPENAI_API_KEY=your_openai_api_key
 VITE_GROQ_API_KEY=your_groq_api_key
 VITE_RUNWARE_API_KEY=your_runware_api_key
 
-# SamCart Integration
-VITE_SAMCART_API_KEY=your_samcart_api_key
-VITE_SAMCART_MERCHANT_ID=your_merchant_id
+# Stripe Integration
+VITE_STRIPE_API_KEY=your_stripe_api_key
+VITE_STRIPE_MERCHANT_ID=your_merchant_id
 
 # Feature Flags
 VITE_ENABLE_DEBUG_MODE=true

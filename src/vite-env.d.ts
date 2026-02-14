@@ -18,7 +18,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_CLERK_PUBLISHABLE_KEY: string;
   readonly VITE_RUNWARE_PROXY_URL?: string;
-  readonly VITE_SAMCART_CHECKOUT_ENDPOINT?: string;
+  /** @deprecated SamCart removed - use Stripe */
+  // readonly VITE_SAMCART_CHECKOUT_ENDPOINT?: string;
   readonly VITE_PUBLIC_POSTHOG_KEY: string;
   readonly VITE_PUBLIC_POSTHOG_HOST: string;
   
@@ -34,7 +35,8 @@ interface ImportMetaEnv {
   // Legacy/optional keys
   readonly VITE_RUNWAY_API_KEY?: string;
   readonly VITE_RUNWAY_API_URL?: string;
-  readonly VITE_SAMCART_EBOOK_PRODUCT_ID?: string;
+  /** @deprecated SamCart removed - use Stripe */
+  // readonly VITE_SAMCART_EBOOK_PRODUCT_ID?: string;
 }
 
 interface ImportMeta {

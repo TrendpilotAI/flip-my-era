@@ -1,10 +1,10 @@
-# 🏗️ **Phase 1A Architecture: Credit System & Enhanced SamCart Integration**
+# 🏗️ **Phase 1A Architecture: Credit System & Enhanced Stripe Integration**
 
 **Status: PLANNED** | **Priority: CRITICAL** | **Timeline: 1-2 days**
 
 ## **📋 Executive Summary**
 
-This document outlines the complete architectural design for Phase 1A of the Enhanced E-Book Generation System, focusing on implementing a robust credit system with SamCart checkout integration. The system supports a hybrid monetization model with individual credit purchases, bundle pricing, and subscription plans, seamlessly integrating with the existing ebook generation workflow.
+This document outlines the complete architectural design for Phase 1A of the Enhanced E-Book Generation System, focusing on implementing a robust credit system with Stripe checkout integration. The system supports a hybrid monetization model with individual credit purchases, bundle pricing, and subscription plans, seamlessly integrating with the existing ebook generation workflow.
 
 ## **🎯 Goals & Requirements**
 
@@ -12,7 +12,7 @@ This document outlines the complete architectural design for Phase 1A of the Enh
 - Implement a credit-based monetization system ($2.99 per ebook)
 - Support bundle pricing (3 credits for $7.99, 5 credits for $12.99)
 - Enable subscription plans (monthly $9.99, annual $89.99)
-- Enhance existing SamCart integration with webhook processing
+- Enhance existing Stripe integration with webhook processing
 - Provide real-time credit balance tracking and transaction history
 - Ensure secure financial transaction handling
 
@@ -47,8 +47,8 @@ CREATE TABLE user_credits (
     current_period_start TIMESTAMP DEFAULT NULL,
     current_period_end TIMESTAMP DEFAULT NULL,
     
-    -- SamCart integration
-    samcart_subscription_id VARCHAR(255) DEFAULT NULL,
+    -- Stripe integration
+    stripe_subscription_id VARCHAR(255) DEFAULT NULL,
     
     -- Timestamps
     created_at TIMESTAMP DEFAULT NOW(),
@@ -68,8 +68,8 @@ CREATE TABLE credit_transactions (
     description TEXT NOT NULL,
     
     -- Reference information
-    reference_id VARCHAR(255), -- SamCart order ID, ebook generation ID, etc.
-    samcart_order_id VARCHAR(255),
+    reference_id VARCHAR(255), -- Stripe order ID, ebook generation ID, etc.
+    stripe_order_id VARCHAR(255),
     ebook_generation_id UUID,
     
     -- Transaction metadata
@@ -233,13 +233,13 @@ sequenceDiagram
     end
 ```
 
-## **🛒 Enhanced SamCart Integration**
+## **🛒 Enhanced Stripe Integration**
 
 ### **Product Configuration**
 
-#### **SamCart Product Mapping**
+#### **Stripe Product Mapping**
 ```typescript
-interface SamCartProduct {
+interface StripeProduct {
   id: string;
   name: string;
   price: number;
@@ -251,7 +251,7 @@ interface SamCartProduct {
   };
 }
 
-const SAMCART_PRODUCTS: SamCartProduct[] = [
+const STRIPE_PRODUCTS: StripeProduct[] = [
   {
     id: 'single-credit-299',
     name: 'Single E-Book Credit',
@@ -300,13 +300,13 @@ const SAMCART_PRODUCTS: SamCartProduct[] = [
 
 ### **Enhanced Webhook Processing**
 
-#### **POST /api/webhooks/samcart**
-Process SamCart payment webhooks and allocate credits.
+#### **POST /api/webhooks/stripe**
+Process Stripe payment webhooks and allocate credits.
 
 **Webhook Flow:**
 ```mermaid
 sequenceDiagram
-    participant SC as SamCart
+    participant SC as Stripe
     participant WH as Webhook Handler
     participant DB as Database
     participant USER as User
@@ -333,8 +333,8 @@ sequenceDiagram
 
 **Order (One-time Purchase):**
 ```typescript
-async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
-  const product = SAMCART_PRODUCTS.find(p => p.id === payload.product.id);
+async function handleNewOrder(supabase: SupabaseClient, payload: StripeWebhookPayload) {
+  const product = STRIPE_PRODUCTS.find(p => p.id === payload.product.id);
   
   if (product?.product_type === 'one_time') {
     // Add credits to user account
@@ -342,7 +342,7 @@ async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookP
       user_email: payload.customer.email,
       amount: product.credits_allocated,
       transaction_type: getTransactionType(product.id),
-      samcart_order_id: payload.order.id.toString(),
+      stripe_order_id: payload.order.id.toString(),
       reference_id: payload.order.id.toString()
     });
   }
@@ -351,8 +351,8 @@ async function handleNewOrder(supabase: SupabaseClient, payload: SamCartWebhookP
 
 **Subscription Events:**
 ```typescript
-async function handleSubscriptionPayment(supabase: SupabaseClient, payload: SamCartWebhookPayload) {
-  const product = SAMCART_PRODUCTS.find(p => p.id === payload.product.id);
+async function handleSubscriptionPayment(supabase: SupabaseClient, payload: StripeWebhookPayload) {
+  const product = STRIPE_PRODUCTS.find(p => p.id === payload.product.id);
   
   if (product?.product_type === 'subscription') {
     await updateSubscriptionStatus({
@@ -360,7 +360,7 @@ async function handleSubscriptionPayment(supabase: SupabaseClient, payload: SamC
       status: 'active',
       type: product.subscription_details.billing_cycle,
       monthly_allowance: product.subscription_details.monthly_credit_allowance,
-      samcart_subscription_id: payload.order.subscription_id?.toString()
+      stripe_subscription_id: payload.order.subscription_id?.toString()
     });
   }
 }
@@ -388,7 +388,7 @@ flowchart TD
     J -->|No| L[Show upgrade/purchase modal]
     
     H -->|No| L
-    L --> M[Redirect to SamCart checkout]
+    L --> M[Redirect to Stripe checkout]
     M --> N[Process payment]
     N --> O[Allocate credits]
     O --> P[Return to generation]
@@ -401,9 +401,9 @@ flowchart TD
 flowchart TD
     A[User needs credits] --> B[Show purchase options modal]
     B --> C[User selects option]
-    C --> D[Redirect to SamCart]
+    C --> D[Redirect to Stripe]
     D --> E[User completes payment]
-    E --> F[SamCart sends webhook]
+    E --> F[Stripe sends webhook]
     F --> G[Process webhook]
     G --> H[Allocate credits]
     H --> I[Update user balance]
@@ -446,9 +446,9 @@ class CreditSystemValidator {
   }
 
   static validateWebhookSignature(payload: string, signature: string): boolean {
-    // Implement SamCart webhook signature validation
+    // Implement Stripe webhook signature validation
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.SAMCART_WEBHOOK_SECRET)
+      .createHmac('sha256', process.env.STRIPE_WEBHOOK_SECRET)
       .update(payload)
       .digest('hex');
     
@@ -525,7 +525,7 @@ const ERROR_RESPONSES: Record<CreditSystemErrors, ErrorResponse> = {
 #### **Failed Payment Handling**
 ```typescript
 interface FailedPaymentHandler {
-  async handleFailedPayment(webhookData: SamCartWebhook): Promise<void> {
+  async handleFailedPayment(webhookData: StripeWebhook): Promise<void> {
     // Log failed payment attempt
     await this.logFailedPayment(webhookData);
     
@@ -542,7 +542,7 @@ interface FailedPaymentHandler {
     }
   }
 
-  async handleRefund(webhookData: SamCartWebhook): Promise<void> {
+  async handleRefund(webhookData: StripeWebhook): Promise<void> {
     // Reverse credit allocation
     const originalTransaction = await this.findTransactionByOrderId(
       webhookData.order.id.toString()
@@ -648,7 +648,7 @@ const PurchaseCreditsModal: React.FC<PurchaseCreditsModalProps> = ({ isOpen, onC
   ];
 
   const handlePurchase = (productId: string) => {
-    samcartClient.redirectToCheckout({
+    stripeClient.redirectToCheckout({
       productId,
       redirectUrl: `${window.location.origin}/checkout/success`,
       cancelUrl: window.location.href
@@ -694,7 +694,7 @@ CREATE TABLE user_credits (
   monthly_credits_used INTEGER DEFAULT 0,
   current_period_start TIMESTAMP DEFAULT NULL,
   current_period_end TIMESTAMP DEFAULT NULL,
-  samcart_subscription_id VARCHAR(255) DEFAULT NULL,
+  stripe_subscription_id VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -707,7 +707,7 @@ CREATE TABLE credit_transactions (
   transaction_type transaction_type NOT NULL,
   description TEXT NOT NULL,
   reference_id VARCHAR(255),
-  samcart_order_id VARCHAR(255),
+  stripe_order_id VARCHAR(255),
   ebook_generation_id UUID,
   metadata JSONB DEFAULT '{}',
   balance_after_transaction INTEGER NOT NULL,
@@ -767,8 +767,8 @@ COMMIT;
 - [ ] Create credit allocation and deduction functions
 - [ ] Implement basic error handling
 
-### **Day 2: SamCart Integration & UI**
-- [ ] Enhance SamCart webhook processing
+### **Day 2: Stripe Integration & UI**
+- [ ] Enhance Stripe webhook processing
 - [ ] Create separate product configurations
 - [ ] Build credit balance widget component
 - [ ] Implement purchase credits modal
@@ -806,4 +806,4 @@ Once Phase 1A is implemented:
 
 ---
 
-**This architecture provides a robust, scalable foundation for the credit system while maintaining clean separation of concerns and strong integration with the existing SamCart payment system. The hybrid model supports both one-time purchases and subscriptions, with comprehensive transaction tracking and error handling.**
+**This architecture provides a robust, scalable foundation for the credit system while maintaining clean separation of concerns and strong integration with the existing Stripe payment system. The hybrid model supports both one-time purchases and subscriptions, with comprehensive transaction tracking and error handling.**

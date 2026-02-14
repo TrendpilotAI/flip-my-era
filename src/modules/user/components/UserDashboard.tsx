@@ -383,25 +383,34 @@ const UserDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="w-full h-[600px] rounded-lg overflow-hidden border border-gray-200">
-                  {loading ? (
-                    <div className="flex justify-center items-center h-[600px]">
-                      <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
-                      <span className="ml-2">Loading billing portal...</span>
-                    </div>
-                  ) : (
-                    <iframe
-                      src="https://flipmyera.samcart.com/customer_hub/login"
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      title="SamCart Customer Portal"
-                      className="w-full h-full"
-                      allow="payment"
-                      onLoad={() => setLoading(false)}
-                      onError={() => setError('Failed to load billing portal')}
-                    />
-                  )}
+                <div className="w-full py-4">
+                  <Button
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                        const { data, error } = await supabase.functions.invoke('stripe-portal', {
+                          method: 'POST',
+                        });
+                        if (error || !data?.url) throw new Error('Failed to open billing portal');
+                        window.location.href = data.url;
+                      } catch {
+                        setError('Failed to open billing portal');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Opening billing portal...
+                      </>
+                    ) : (
+                      'Manage Billing'
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

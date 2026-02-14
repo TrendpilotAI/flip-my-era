@@ -5,10 +5,20 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'process.env.NODE_ENV': '"development"',
+  },
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    deps: {
+      optimizer: {
+        web: {
+          include: ['react/jsx-dev-runtime', 'react/jsx-runtime'],
+        },
+      },
+    },
     // Optimize test performance
     pool: 'threads',
     poolOptions: {

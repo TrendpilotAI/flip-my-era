@@ -48,7 +48,7 @@ The Stripe payment integration is **80% complete** but has a **critical gap**: n
 
 **File:** `supabase/functions/stripe-webhook/index.ts`
 
-**Based on:** `samcart-webhook/index.ts` pattern + WEBHOOK_COMPARISON.md recommendations
+**Based on:** `stripe-webhook/index.ts` pattern + WEBHOOK_COMPARISON.md recommendations
 
 **Key Features:**
 ```typescript
@@ -101,7 +101,7 @@ const { data: profile } = await supabase
 
 **Credit Update Strategy:**
 ```typescript
-// Option 1: Direct UPDATE (simpler, used by samcart-webhook)
+// Option 1: Direct UPDATE (simpler, used by stripe-webhook)
 await supabase
   .from('profiles')
   .update({ credits: currentCredits + purchasedCredits })

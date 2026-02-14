@@ -121,9 +121,9 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_key_here
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
-# SamCart (Optional)
-VITE_SAMCART_API_KEY=your_samcart_api_key_here
-VITE_SAMCART_MERCHANT_ID=your_samcart_merchant_id_here
+# Stripe (Optional)
+VITE_STRIPE_API_KEY=your_stripe_api_key_here
+VITE_STRIPE_MERCHANT_ID=your_stripe_merchant_id_here
 ```
 
 4. Start the development server:
@@ -156,8 +156,8 @@ The following environment variables are required:
 - `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key
 
 ### E-commerce (Optional)
-- `VITE_SAMCART_API_KEY`: SamCart API key for checkout functionality
-- `VITE_SAMCART_MERCHANT_ID`: SamCart merchant ID
+- `VITE_STRIPE_API_KEY`: Stripe API key for checkout functionality
+- `VITE_STRIPE_MERCHANT_ID`: Stripe merchant ID
 
 ## User Experience
 

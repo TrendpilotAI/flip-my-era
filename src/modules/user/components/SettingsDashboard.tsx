@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from '@/modules/shared/components/ui/button';
 import { Separator } from '@/modules/shared/components/ui/separator';
 import { ArrowLeft, User, BookOpen, CreditCard } from "lucide-react";
+import { supabase } from "@/core/integrations/supabase/client";
 
 type SettingsSection = "profile" | "stories" | "billing";
 
@@ -73,16 +74,23 @@ const SettingsDashboard = () => {
               {activeSection === "billing" && (
                 <div className="space-y-6 w-full">
                   <h3 className="text-2xl font-semibold text-gray-900">Plan & Billing</h3>
-                  <div className="w-full h-[800px] rounded-lg overflow-hidden border border-gray-200">
-                    <iframe
-                      src="https://flipmyera.samcart.com/customer_hub/login"
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      title="SamCart Customer Portal"
-                      className="w-full h-full"
-                      allow="payment"
-                    />
+                  <div className="w-full">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const { data, error } = await supabase.functions.invoke('stripe-portal', {
+                            method: 'POST',
+                          });
+                          if (error || !data?.url) throw new Error('Failed to open billing portal');
+                          window.location.href = data.url;
+                        } catch {
+                          console.error('Failed to open Stripe billing portal');
+                        }
+                      }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      Manage Billing
+                    </Button>
                   </div>
                 </div>
               )}

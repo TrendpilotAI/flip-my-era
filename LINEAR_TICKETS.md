@@ -58,7 +58,7 @@ Complete end-to-end verification of all systems in production environment before
 - [ ] Run full smoke test
 - [ ] Complete user journey: Sign up → Select ERA → Generate story → Create e-book
 - [ ] Verify credit system works
-- [ ] Test payment flow (if SamCart integrated)
+- [ ] Test payment flow (if Stripe integrated)
 - [ ] Check streaming generation works
 - [ ] Verify image generation
 - [ ] Measure Core Web Vitals (LCP, FID, CLS)

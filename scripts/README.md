@@ -70,7 +70,7 @@ const planOptions: PlanOption[] = [
 const pricingTiers: PricingTier[] = [
   {
     id: 'starter-pack',
-    samcartProductId: 'actual_stripe_product_id',
+    stripeProductId: 'actual_stripe_product_id',
   },
   // ... other credit packs
 ];

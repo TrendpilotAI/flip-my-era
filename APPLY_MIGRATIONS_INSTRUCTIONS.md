@@ -59,7 +59,7 @@ This will apply all migrations from `supabase/migrations/` that haven't been app
 10. `20250702_001_create_memory_books.sql`
 11. `20250703_001_fix_ebook_generations_user_id.sql`
 12. `20250704_005_comprehensive_rls_setup.sql`
-13. `20250914_001_create_samcart_webhook_logs.sql`
+13. `20250914_001_create_stripe_webhook_logs.sql`
 14. `20250914_002_create_credit_transactions.sql`
 15. `20250914_003_create_webhook_retry_queue.sql`
 16. `20250914_004_create_credit_usage_logs.sql`

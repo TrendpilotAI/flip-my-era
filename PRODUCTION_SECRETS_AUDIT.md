@@ -162,9 +162,9 @@ These are **PUBLIC** keys that are safe to expose in client-side bundles. They *
     - **Status**: ✅ Correctly configured in Netlify
     - **Safe to expose**: Yes (it's a public endpoint URL)
 
-12. **`VITE_SAMCART_CHECKOUT_ENDPOINT`** ✅
+12. **`VITE_STRIPE_CHECKOUT_ENDPOINT`** ✅
     - **Type**: Public endpoint URL
-    - **Usage**: Client-side SamCart checkout
+    - **Usage**: Client-side Stripe checkout
     - **Status**: ✅ Correctly configured in Netlify
     - **Safe to expose**: Yes (it's a public endpoint URL)
 
@@ -262,7 +262,7 @@ These secrets are correctly configured in Netlify for server-side use only:
 - [x] `VITE_PUBLIC_POSTHOG_HOST` - In Netlify ✅
 - [x] `VITE_SENTRY_DSN` - In Netlify ✅
 - [x] `VITE_RUNWARE_PROXY_URL` - In Netlify ✅
-- [x] `VITE_SAMCART_CHECKOUT_ENDPOINT` - In Netlify ✅
+- [x] `VITE_STRIPE_CHECKOUT_ENDPOINT` - In Netlify ✅
 
 ### Netlify Server-Side Secrets (Correctly Scoped)
 - [x] `CLERK_SECRET_KEY` - Scoped to server-side ✅

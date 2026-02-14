@@ -10,7 +10,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface SamcartEventData {
+interface WebhookEventData {
   event: string;
   customer_email: string;
   order_id: string;
@@ -59,8 +59,8 @@ serve(async (req: Request) => {
 
         // Process based on webhook type
         switch (webhook.webhook_type) {
-          case 'samcart':
-            await processSamcartWebhook(webhook, retryQueue);
+          case 'stripe':
+            await processStripeWebhook(webhook, retryQueue);
             results.processed++;
             break;
           
@@ -106,63 +106,37 @@ serve(async (req: Request) => {
 });
 
 /**
- * Process a Samcart webhook from the retry queue
+ * Process a Stripe webhook from the retry queue
  */
-async function processSamcartWebhook(webhook: RetryQueueItem, retryQueue: RetryQueue): Promise<void> {
-  // Use the same supabase client created in the main handler
+async function processStripeWebhook(webhook: RetryQueueItem, retryQueue: RetryQueue): Promise<void> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    // Get the original webhook log
-    const { data: webhookLog, error: logError } = await supabase
-      .from('samcart_webhook_logs')
-      .select('*')
-      .eq('id', webhook.webhook_id)
-      .single();
-
-    if (logError || !webhookLog) {
-      throw new Error(`Webhook log not found: ${webhook.webhook_id}`);
-    }
-
-    // Process the webhook based on event type
     const eventData = webhook.payload;
-    const eventType = eventData.event;
+    const eventType = eventData.type || eventData.event;
 
-    console.log(`Processing Samcart event: ${eventType}`);
+    console.log(`Processing Stripe event: ${eventType}`);
 
     switch (eventType) {
-      case 'subscription_created':
-      case 'subscription_charged':
-      case 'order_completed':
+      case 'checkout.session.completed':
+      case 'invoice.payment_succeeded':
         await processOrderEvent(eventData, supabase);
         break;
       
-      case 'subscription_cancelled':
-      case 'order_refunded':
+      case 'customer.subscription.deleted':
+      case 'charge.refunded':
         await processCancellationEvent(eventData, supabase);
         break;
       
       default:
-        console.log(`Unhandled event type: ${eventType}`);
+        console.log(`Unhandled Stripe event type: ${eventType}`);
     }
 
-    // Mark webhook log as processed
-    const { error: updateError } = await supabase
-      .from('samcart_webhook_logs')
-      .update({
-        processed: true,
-        processed_at: new Date().toISOString(),
-      })
-      .eq('id', webhook.webhook_id);
-
-    if (updateError) throw updateError;
-
-    // Mark retry queue item as processed
     await retryQueue.markProcessed(webhook.id);
 
-    console.log(`Successfully processed Samcart webhook: ${webhook.webhook_id}`);
+    console.log(`Successfully processed Stripe webhook: ${webhook.webhook_id}`);
   } catch (error) {
-    console.error(`Failed to process Samcart webhook:`, error);
+    console.error(`Failed to process Stripe webhook:`, error);
     throw error;
   }
 }
@@ -170,7 +144,7 @@ async function processSamcartWebhook(webhook: RetryQueueItem, retryQueue: RetryQ
 /**
  * Process order events (subscription created, charged, order completed)
  */
-async function processOrderEvent(eventData: SamcartEventData, supabase: SupabaseClient): Promise<void> {
+async function processOrderEvent(eventData: WebhookEventData, supabase: SupabaseClient): Promise<void> {
   const { customer_email, order_id, product_id, product_name, order_total } = eventData;
 
   // Find user by email
@@ -211,7 +185,7 @@ async function processOrderEvent(eventData: SamcartEventData, supabase: Supabase
 /**
  * Process cancellation events (subscription cancelled, order refunded)
  */
-async function processCancellationEvent(eventData: SamcartEventData, supabase: SupabaseClient): Promise<void> {
+async function processCancellationEvent(eventData: WebhookEventData, supabase: SupabaseClient): Promise<void> {
   const { customer_email, order_id, subscription_id } = eventData;
 
   // Find user by email

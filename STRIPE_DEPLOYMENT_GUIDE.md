@@ -236,7 +236,7 @@ WHERE stripe_customer_id IS NOT NULL;
 
 ## 📝 Notes
 
-- The system maintains backward compatibility with SamCart
+- The system maintains backward compatibility with Stripe
 - Stripe webhooks handle credit allocation automatically
 - Credits are added immediately after webhook processing
 - Subscription credits are allocated on activation

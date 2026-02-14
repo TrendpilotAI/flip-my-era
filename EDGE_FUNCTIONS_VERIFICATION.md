@@ -115,7 +115,7 @@ Consider adding `deno.json` files for remaining functions:
 - `ebook-generation`
 - `generate-video`
 - `migrate-email-templates`
-- `samcart-webhook`
+- `stripe-webhook`
 - `stripe-portal`
 - `stripe-webhook`
 - `text-to-speech`

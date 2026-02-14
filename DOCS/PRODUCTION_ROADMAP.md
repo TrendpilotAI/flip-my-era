@@ -11,7 +11,7 @@ This roadmap outlines the complete transformation of FlipMyEra from a developmen
 - **UI/UX**: Modern, responsive interface with good user experience
 - **AI Integration**: Successfully integrated with multiple AI services (Groq, RUNWARE, OpenAI)
 - **Authentication**: Basic Supabase auth implementation
-- **Payment Integration**: SamCart integration for billing
+- **Payment Integration**: Stripe integration for billing
 
 ### ⚠️ Areas Requiring Improvement
 - **Architecture**: Monolithic frontend with mixed concerns
@@ -573,7 +573,7 @@ Transform the current basic ebook generation into a premium, Taylor Swift-inspir
 
 ---
 
-## 🛒 **SamCart Checkout Enhancement**
+## 🛒 **Stripe Checkout Enhancement**
 
 ### **Core Checkout Features:**
 - ✅ **Single Product**: "Generate E-Book" - $2.99
@@ -606,7 +606,7 @@ Transform the current basic ebook generation into a premium, Taylor Swift-inspir
 - [ ] Track generation history for users
 - [ ] Add credit balance display in user dashboard
 
-#### **Task 1.2: Enhanced SamCart Integration**
+#### **Task 1.2: Enhanced Stripe Integration**
 - [ ] Create $2.99 single ebook product checkout
 - [ ] Add bundle options (3 for $7.99, 5 for $12.99)
 - [ ] Implement instant credit allocation after payment
@@ -616,7 +616,7 @@ Transform the current basic ebook generation into a premium, Taylor Swift-inspir
 #### **Task 1.3: Pre-Generation Credit Check**
 - [ ] Check credits before ebook generation starts
 - [ ] Show pricing modal if insufficient credits
-- [ ] Redirect to SamCart checkout with return URL
+- [ ] Redirect to Stripe checkout with return URL
 - [ ] Resume generation after successful payment
 - [ ] Handle payment failures gracefully
 
@@ -743,7 +743,7 @@ Transform the current basic ebook generation into a premium, Taylor Swift-inspir
 - `BookPageLayout` - Book-style page components with animations
 - `ChapterStreamer` - Real-time text streaming with typewriter effects
 - `ProgressTracker` - Generation progress management
-- `CheckoutIntegration` - Enhanced SamCart integration
+- `CheckoutIntegration` - Enhanced Stripe integration
 
 ### **Database Schema Updates:**
 ```sql
@@ -765,7 +765,7 @@ CREATE TABLE credit_transactions (
   amount INTEGER NOT NULL, -- positive for purchases, negative for usage
   transaction_type TEXT NOT NULL, -- 'purchase', 'usage', 'refund', 'subscription'
   description TEXT,
-  reference_id TEXT, -- SamCart order ID or generation ID
+  reference_id TEXT, -- Stripe order ID or generation ID
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -782,7 +782,7 @@ ALTER TABLE ebook_generations ADD COLUMN IF NOT EXISTS credits_used INTEGER DEFA
 - `POST /api/credits/check` - Validate sufficient credits for operation
 - `POST /api/ebook/generate-stream` - Start streaming ebook generation
 - `GET /api/ebook/progress/:id` - Get generation progress
-- `POST /api/webhooks/samcart` - Handle SamCart payment webhooks
+- `POST /api/webhooks/stripe` - Handle Stripe payment webhooks
 - `GET /api/themes/detect` - Analyze story content for themes
 
 ---
@@ -842,7 +842,7 @@ ALTER TABLE ebook_generations ADD COLUMN IF NOT EXISTS credits_used INTEGER DEFA
 
 | **Phase** | **Duration** | **Key Deliverables** |
 |-----------|--------------|---------------------|
-| **1A** | 1-2 days | Credit system, SamCart integration |
+| **1A** | 1-2 days | Credit system, Stripe integration |
 | **1B** | 2-3 days | Theme detection, story formats |
 | **1C** | 2-3 days | Streaming UI, progress tracking |
 | **1D** | 2 days | Thematic image generation |

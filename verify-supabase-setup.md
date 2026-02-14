@@ -35,7 +35,7 @@
 8. **ebook-generation/** - Ebook generation service
 9. **generate-video/** - Video generation service
 10. **migrate-email-templates/** - Email template migration
-11. **samcart-webhook/** - SamCart webhook handler
+11. **stripe-webhook/** - Stripe webhook handler
 12. **stream-chapters/** - Chapter streaming for ebooks
 13. **stripe-portal/** - Stripe customer portal
 14. **text-to-speech/** - Text-to-speech conversion
