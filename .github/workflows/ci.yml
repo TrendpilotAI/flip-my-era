@@ -160,18 +160,101 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  database-tests:
+    name: Database Tests (pgTAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: supabase start -x realtime,storage-api,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+
+      - name: Run pgTAP tests
+        run: supabase test db
+
+  edge-function-tests:
+    name: Edge Function Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v1.x
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Serve Edge Functions
+        run: supabase functions serve &
+        env:
+          GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+
+      - name: Wait for functions to be ready
+        run: sleep 5
+
+      - name: Run Edge Function tests
+        run: deno test --allow-net --allow-env supabase/functions/tests/
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Run Lighthouse CI
+        run: npx @lhci/cli autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Run npm audit
         run: npm audit --audit-level=high
-        
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
         with:
@@ -179,7 +262,7 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
-          
+
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
