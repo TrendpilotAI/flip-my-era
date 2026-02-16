@@ -1,15 +1,36 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// Standard CORS headers for all functions
+// Production CORS origin allowlist
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'https://flip-my-era.netlify.app',
+  'https://flipmyera.com',
+  'https://www.flipmyera.com',
+];
+
+// Get CORS headers with origin validation
+export function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
+// Legacy export for backwards compatibility
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://flipmyera.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 // Helper to handle CORS preflight requests
 export function handleCors(req: Request) {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
   return null;
 }

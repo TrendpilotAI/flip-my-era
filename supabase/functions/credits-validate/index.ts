@@ -82,30 +82,17 @@ function calculateCreditCost(operation: Operation): number {
   return Math.max(0.1, Math.round(baseCost * 100) / 100);
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',  // More permissive for development
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'https://flip-my-era.netlify.app',
+  'https://flipmyera.com',
+  'https://www.flipmyera.com',
+];
 
-// For production, we'll determine the correct origin
 const getCorsHeaders = (req: Request) => {
-  const origin = req.headers.get('Origin') || '*';
-  const allowedOrigins = [
-    'http://localhost:8080',
-    'http://localhost:8081',
-    'http://localhost:8082',
-    'http://localhost:8083',
-    'http://localhost:8084',
-    'http://localhost:3000',
-    'https://flip-my-era.netlify.app',
-    'https://flipmyera.com',
-    'https://www.flipmyera.com'
-  ];
-  
+  const origin = req.headers.get('Origin') || '';
   return {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
@@ -251,20 +238,6 @@ const validateCreditsWithSupabase = async (userId: string, creditsRequired: numb
   }
 };
 
-// Mock validation data for testing (fallback)
-const getMockValidationData = (creditsRequired: number = 1): ValidationResponse['data'] => {
-  const mockBalance = 10; // Mock balance
-  const hasSufficientCredits = mockBalance >= creditsRequired;
-  
-  return {
-    has_sufficient_credits: hasSufficientCredits,
-    current_balance: hasSufficientCredits ? mockBalance - creditsRequired : mockBalance,
-    subscription_type: 'monthly',
-    transaction_id: hasSufficientCredits ? 'mock-transaction-123' : undefined,
-    bypass_credits: false
-  };
-};
-
 // @ts-expect-error -- Deno.serve is available in Supabase Edge Functions runtime
 Deno.serve(async (req: Request) => {
   // Get dynamic CORS headers based on request
@@ -342,10 +315,17 @@ Deno.serve(async (req: Request) => {
       // Try to validate with real Supabase data first
       let validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);
 
-      // Fallback to mock data if Supabase validation fails
       if (!validationData) {
-        console.log('Falling back to mock validation data');
-        validationData = getMockValidationData(totalCreditsRequired);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Unable to validate credits'
+          }),
+          {
+            status: 503,
+            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
       
       const response: ValidationResponse = {

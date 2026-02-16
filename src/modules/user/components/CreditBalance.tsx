@@ -49,45 +49,13 @@ export const CreditBalance: React.FC<{
 
     try {
       setError(null);
-      console.log('🔍 CreditBalance: Starting credit balance fetch...');
-      console.log('🔍 CreditBalance: isSignedIn:', isSignedIn);
 
       // Try to get token with supabase template, fallback to default if not available
       let token = await getToken({ template: 'supabase' });
-      
       if (!token) {
-        console.log('🔍 CreditBalance: No token with supabase template, trying default...');
         token = await getToken();
       }
-      
-      console.log('🔍 CreditBalance: Token received:', token ? 'YES (length: ' + token.length + ')' : 'NO');
-      console.log('🔍 CreditBalance: Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-      
-      // Try to decode the token to check its structure
-      if (token) {
-        try {
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(atob(parts[1]));
-            console.log('🔍 CreditBalance: Token payload:', {
-              sub: payload.sub,
-              aud: payload.aud,
-              iss: payload.iss,
-              exp: payload.exp,
-              iat: payload.iat,
-            });
-          }
-        } catch (e) {
-          console.error('🔍 CreditBalance: Could not decode token:', e);
-        }
-      }
 
-      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-      console.log('🔍 CreditBalance: Headers to send:', headers ? 'Authorization header present' : 'No authorization header');
-
-      console.log('🔍 CreditBalance: Invoking credits function with token...');
-
-      // Use the regular supabase client and pass the token in headers
       const { data, error } = await supabase.functions.invoke('credits', {
         method: 'GET',
         headers: token ? {
@@ -97,14 +65,6 @@ export const CreditBalance: React.FC<{
       });
 
       if (error) {
-        console.error('❌ CreditBalance: Error fetching credit balance:', error);
-        const errorObj = error as { message?: string; status?: number; code?: string; details?: unknown };
-        console.error('❌ CreditBalance: Error details:', {
-          message: errorObj.message,
-          status: errorObj.status,
-          code: errorObj.code,
-          details: errorObj.details,
-        });
         setError('Failed to load credit balance');
         return;
       }
