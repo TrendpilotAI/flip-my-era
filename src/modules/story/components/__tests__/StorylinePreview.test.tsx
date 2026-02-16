@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { axeComponent } from '@/test/a11y-helpers';
 import { StorylinePreview } from '../StorylinePreview';
 import type { Storyline } from '../../services/storylineGeneration';
 
@@ -120,5 +121,11 @@ describe('StorylinePreview', () => {
   it('should disable regenerate button when regenerating', () => {
     render(<StorylinePreview {...defaultProps} isRegenerating={true} />);
     expect(screen.getByText('Regenerating...').closest('button')).toBeDisabled();
+  });
+
+  it('should have no accessibility violations', async () => {
+    const { container } = render(<StorylinePreview {...defaultProps} />);
+    const results = await axeComponent(container);
+    expect(results).toHaveNoViolations();
   });
 });

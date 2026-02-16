@@ -2,10 +2,12 @@ import '@testing-library/jest-dom';
 import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import * as axeMatchers from 'vitest-axe/matchers';
 import { server } from './msw/server';
 
-// Extend Vitest's expect method with methods from react-testing-library
+// Extend Vitest's expect method with methods from react-testing-library and vitest-axe
 expect.extend(matchers);
+expect.extend(axeMatchers);
 
 // MSW server lifecycle
 beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));

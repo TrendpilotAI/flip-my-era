@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { axeComponent } from '@/test/a11y-helpers';
 import { StoryFormatSelector } from '../StoryFormatSelector';
 
 // Mock StoryWizardContext to avoid pulling in storylineGeneration -> supabase chain
@@ -72,5 +73,11 @@ describe('StoryFormatSelector', () => {
 
     await user.click(screen.getByText(/Back to Storyline/));
     expect(onBack).toHaveBeenCalled();
+  });
+
+  it('should have no accessibility violations', async () => {
+    const { container } = render(<StoryFormatSelector {...defaultProps} />);
+    const results = await axeComponent(container);
+    expect(results).toHaveNoViolations();
   });
 });

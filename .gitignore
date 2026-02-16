@@ -35,6 +35,9 @@ dist-ssr
 
 # Testing
 /coverage
+test-results.xml
+playwright-report/
+test-results/
 
 # Supabase
 .supabase

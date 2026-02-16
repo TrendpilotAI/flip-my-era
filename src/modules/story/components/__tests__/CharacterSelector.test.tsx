@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { axeComponent } from '@/test/a11y-helpers';
 import { CharacterSelector } from '../CharacterSelector';
 
 vi.mock('../../types/eras', () => ({
@@ -72,5 +73,11 @@ describe('CharacterSelector', () => {
 
     await user.click(screen.getByText('Continue to Story Details'));
     expect(onContinue).toHaveBeenCalled();
+  });
+
+  it('should have no accessibility violations', async () => {
+    const { container } = render(<CharacterSelector {...defaultProps} />);
+    const results = await axeComponent(container);
+    expect(results).toHaveNoViolations();
   });
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { axeComponent } from '@/test/a11y-helpers';
 import { EraSelector } from '../EraSelector';
 
 vi.mock('../../types/eras', () => ({
@@ -41,5 +42,11 @@ describe('EraSelector', () => {
   it('should render heading text', () => {
     render(<EraSelector onEraSelect={vi.fn()} />);
     expect(screen.getByText('Choose Your Era')).toBeInTheDocument();
+  });
+
+  it('should have no accessibility violations', async () => {
+    const { container } = render(<EraSelector onEraSelect={vi.fn()} />);
+    const results = await axeComponent(container);
+    expect(results).toHaveNoViolations();
   });
 });
