@@ -38,7 +38,8 @@ jobs:
     name: Test Suite
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+    needs: [quality-checks]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -64,51 +65,6 @@ jobs:
             coverage/
             test-results.xml
           retention-days: 7
-          
-  test-coverage:
-    name: Test Coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: [quality-checks]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run tests with coverage
-        run: npm run test:coverage
-        
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./coverage/coverage-final.json
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-          
-      - name: Check coverage threshold
-        run: |
-          if [ -f coverage/coverage-summary.json ]; then
-            COVERAGE=$(node -e "const fs=require('fs');const data=JSON.parse(fs.readFileSync('coverage/coverage-summary.json'));const total=data.total.lines.pct;console.log(total);")
-            THRESHOLD=20
-            IS_BELOW=$(node -e "console.log($COVERAGE < $THRESHOLD ? 1 : 0)")
-            if [ "$IS_BELOW" = "1" ]; then
-              echo "Coverage $COVERAGE% is below threshold $THRESHOLD%"
-              exit 1
-            fi
-            echo "Coverage $COVERAGE% meets threshold $THRESHOLD%"
-          else
-            echo "Coverage file not found, skipping threshold check"
-          fi
           
   build:
     name: Build
@@ -214,7 +170,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Run npm audit
-        run: npm audit --audit-level=moderate || true
+        run: npm audit --audit-level=high
         
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.29.0
