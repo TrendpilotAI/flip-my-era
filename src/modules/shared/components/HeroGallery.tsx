@@ -206,9 +206,9 @@ export const HeroGallery = ({
         A Journey Through Taylor Swift's Eras
       </p>
       
-      <h3 className="z-20 mx-auto max-w-4xl justify-center bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text py-3 text-center text-4xl text-transparent dark:bg-gradient-to-r dark:from-purple-100 dark:via-pink-200 dark:to-blue-100 md:text-7xl font-bold">
+      <h1 className="z-20 mx-auto max-w-4xl justify-center bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text py-3 text-center text-4xl text-transparent dark:bg-gradient-to-r dark:from-purple-100 dark:via-pink-200 dark:to-blue-100 md:text-7xl font-bold">
         Flip My <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text"> Era</span>
-      </h3>
+      </h1>
       
       <p className="text-center text-gray-600 dark:text-gray-400 mt-4 text-lg max-w-2xl mx-auto">
         Transform your story idea into a beautifully crafted narrative inspired by Taylor Swift's iconic storytelling eras.
