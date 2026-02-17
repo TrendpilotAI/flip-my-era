@@ -1,8 +1,14 @@
+import { SEO } from '@/modules/shared/components/SEO';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/modules/shared/components/ui/accordion";
 
 const FAQ = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
+      <SEO
+        title="FAQ"
+        description="Frequently asked questions about FlipMyEra pricing, credits, subscriptions and features."
+        url="/faq"
+      />
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">Frequently Asked Questions</h1>
         <p className="text-gray-600 text-lg">

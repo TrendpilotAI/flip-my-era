@@ -4,9 +4,10 @@ import { Layout, ProtectedRoute, AdminRoute } from "@/modules/shared";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth";
 import React, { lazy, Suspense } from 'react';
-import { initSentry } from "@/core/integrations/sentry";
+import { HelmetProvider } from 'react-helmet-async';
 import { performanceMonitor } from "@/core/utils/performance";
 import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
+import { DashboardSkeleton, CheckoutSkeleton } from "@/modules/shared/components/Skeleton";
 
 // Public components (eagerly loaded)
 import Index from "@/app/pages/Index";
@@ -31,19 +32,25 @@ const AdminIntegrations = lazy(() => import("@/app/pages/AdminIntegrations"));
 const AdminUsers = lazy(() => import("@/app/pages/AdminUsers"));
 const AdminCredits = lazy(() => import("@/app/pages/AdminCredits"));
 
+/** Minimal fallback for generic lazy routes */
+const PageLoader = () => (
+  <div className="container py-8 flex items-center justify-center min-h-[60vh]">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+  </div>
+);
+
 function App() {
   // Initialize error tracking and performance monitoring
   useEffect(() => {
-    initSentry();
     performanceMonitor.init();
   }, []);
 
   return (
     <ErrorBoundary>
+    <HelmetProvider>
     <ClerkAuthProvider>
       <Router>
         <Layout>
-          <Suspense fallback={<div>Loading...</div>}>
             <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
@@ -57,7 +64,11 @@ function App() {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <UserDashboard />
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <UserDashboard />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -67,7 +78,11 @@ function App() {
               path="/stories"
               element={
                 <ProtectedRoute>
-                  <Stories />
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <Stories />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -75,7 +90,11 @@ function App() {
               path="/settings-dashboard"
               element={
                 <ProtectedRoute>
-                  <SettingsDashboard />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <SettingsDashboard />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -83,7 +102,11 @@ function App() {
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <Settings />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <Settings />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -93,7 +116,11 @@ function App() {
               path="/admin"
               element={
                 <AdminRoute>
-                  <AdminDashboard />
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <AdminDashboard />
+                    </Suspense>
+                  </ErrorBoundary>
                 </AdminRoute>
               }
             />
@@ -101,7 +128,11 @@ function App() {
               path="/admin/integrations"
               element={
                 <AdminRoute>
-                  <AdminIntegrations />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminIntegrations />
+                    </Suspense>
+                  </ErrorBoundary>
                 </AdminRoute>
               }
             />
@@ -109,7 +140,11 @@ function App() {
               path="/admin/users"
               element={
                 <AdminRoute>
-                  <AdminUsers />
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <AdminUsers />
+                    </Suspense>
+                  </ErrorBoundary>
                 </AdminRoute>
               }
             />
@@ -117,7 +152,11 @@ function App() {
               path="/admin/credits"
               element={
                 <AdminRoute>
-                  <AdminCredits />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminCredits />
+                    </Suspense>
+                  </ErrorBoundary>
                 </AdminRoute>
               }
             />
@@ -127,7 +166,11 @@ function App() {
               path="/checkout"
               element={
                 <ProtectedRoute>
-                  <Checkout />
+                  <ErrorBoundary>
+                    <Suspense fallback={<CheckoutSkeleton />}>
+                      <Checkout />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -135,7 +178,11 @@ function App() {
               path="/checkout/success"
               element={
                 <ProtectedRoute>
-                  <CheckoutSuccess />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <CheckoutSuccess />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -143,7 +190,11 @@ function App() {
               path="/upgrade"
               element={
                 <ProtectedRoute>
-                  <UpgradePlan />
+                  <ErrorBoundary>
+                    <Suspense fallback={<CheckoutSkeleton />}>
+                      <UpgradePlan />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -153,7 +204,11 @@ function App() {
               path="/credits"
               element={
                 <ProtectedRoute>
-                  <Credits />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <Credits />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -161,7 +216,11 @@ function App() {
               path="/plans"
               element={
                 <ProtectedRoute>
-                  <UpgradePlan />
+                  <ErrorBoundary>
+                    <Suspense fallback={<CheckoutSkeleton />}>
+                      <UpgradePlan />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -169,7 +228,11 @@ function App() {
               path="/test-credits"
               element={
                 <ProtectedRoute>
-                  <TestCredits />
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <TestCredits />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -187,11 +250,11 @@ function App() {
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
             </Routes>
-          </Suspense>
         </Layout>
         <Toaster />
       </Router>
     </ClerkAuthProvider>
+    </HelmetProvider>
     </ErrorBoundary>
   );
 }
