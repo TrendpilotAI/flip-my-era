@@ -1,8 +1,12 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout, ProtectedRoute, AdminRoute } from "@/modules/shared";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
 import { ClerkAuthProvider } from "@/modules/auth";
 import React, { lazy, Suspense } from 'react';
+import { initSentry } from "@/core/integrations/sentry";
+import { performanceMonitor } from "@/core/utils/performance";
+import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
 
 // Public components (eagerly loaded)
 import Index from "@/app/pages/Index";
@@ -28,7 +32,14 @@ const AdminUsers = lazy(() => import("@/app/pages/AdminUsers"));
 const AdminCredits = lazy(() => import("@/app/pages/AdminCredits"));
 
 function App() {
+  // Initialize error tracking and performance monitoring
+  useEffect(() => {
+    initSentry();
+    performanceMonitor.init();
+  }, []);
+
   return (
+    <ErrorBoundary>
     <ClerkAuthProvider>
       <Router>
         <Layout>
@@ -181,6 +192,7 @@ function App() {
         <Toaster />
       </Router>
     </ClerkAuthProvider>
+    </ErrorBoundary>
   );
 }
  

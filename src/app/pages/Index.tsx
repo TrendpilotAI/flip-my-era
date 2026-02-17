@@ -9,11 +9,10 @@ import { StoryWizard } from "@/modules/story/components/StoryWizard";
 import { StoryWizardProvider } from "@/modules/story/contexts/StoryWizardContext";
 import { AnimatedShaderBackground } from "@/modules/shared/components/AnimatedShaderBackground";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
-import AuthTest from "@/components/AuthTest";
 
 const Index = () => {
   useApiCheck();
-  const { isAuthenticated, user } = useClerkAuth();
+  const { isAuthenticated } = useClerkAuth();
   const wizardRef = useRef<HTMLDivElement>(null);
 
   const scrollToWizard = () => {
@@ -27,17 +26,6 @@ const Index = () => {
       
       {/* Content wrapper with higher z-index */}
       <div className="relative z-10">
-        {/* Admin AuthTest Component */}
-        {isAuthenticated && user && (
-          (user.email === 'admin@flipmyera.com' ||
-           user.email === 'danny.ijdo@gmail.com' ||
-           user.email?.includes('trendpilot')) && (
-            <div className="max-w-4xl mx-auto px-4 pt-8">
-              <AuthTest />
-            </div>
-          )
-        )}
-
         {/* Hero Section with Photo Gallery */}
       <HeroGallery animationDelay={0.3} onGetStarted={scrollToWizard} />
 
