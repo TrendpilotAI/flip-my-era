@@ -160,6 +160,32 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
             if (signal.aborted) return;
             if (insertError) throw insertError;
 
+            // Grant 3 free credits to new users
+            const FREE_SIGNUP_CREDITS = 3;
+            try {
+              await supabaseWithAuth
+                .from('user_credits')
+                .upsert({
+                  user_id: clerkUserId,
+                  balance: FREE_SIGNUP_CREDITS,
+                  subscription_type: 'free',
+                  updated_at: new Date().toISOString(),
+                }, { onConflict: 'user_id' });
+
+              await supabaseWithAuth
+                .from('credit_transactions')
+                .insert({
+                  user_id: clerkUserId,
+                  amount: FREE_SIGNUP_CREDITS,
+                  transaction_type: 'signup_bonus',
+                  description: 'Welcome bonus: 3 free credits on signup',
+                  balance_after_transaction: FREE_SIGNUP_CREDITS,
+                  metadata: { source: 'signup_bonus' },
+                });
+            } catch (creditError) {
+              console.warn('Failed to grant signup credits:', creditError);
+            }
+
             setIsNewUser(true);
             const newUserProfile = {
               id: clerkUserId,
@@ -168,7 +194,7 @@ export const ClerkAuthProvider = ({ children }: { children: ReactNode }) => {
               avatar_url: clerkUser.imageUrl,
               subscription_status: "free",
               created_at: clerkUser.createdAt ? new Date(clerkUser.createdAt).toISOString() : undefined,
-              credits: 0
+              credits: FREE_SIGNUP_CREDITS
             };
             setUserProfile(newUserProfile);
             

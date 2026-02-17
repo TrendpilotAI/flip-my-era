@@ -38,15 +38,18 @@ const CreditsPage = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Popular credit packs</CardTitle>
+            <CardTitle>Credit Packs</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {pricingTiers.map((tier) => (
-                <div key={tier.id} className="p-4 border rounded-md">
-                  <div className="font-semibold mb-1">{tier.name}</div>
+                <div key={tier.id} className={`p-4 border rounded-md ${tier.bestValue ? 'ring-2 ring-indigo-400' : ''}`}>
+                  <div className="font-semibold mb-1">{tier.name} — {tier.credits} credits</div>
+                  <div className="text-lg font-bold mb-1">${tier.price.toFixed(2)}</div>
                   <div className="text-sm text-muted-foreground mb-3">{tier.description}</div>
-                  <Button variant="outline" onClick={() => setShowPurchase(true)} className="w-full">Purchase</Button>
+                  <Button variant={tier.bestValue ? 'default' : 'outline'} onClick={() => setShowPurchase(true)} className="w-full">
+                    Buy {tier.name}
+                  </Button>
                 </div>
               ))}
             </div>
