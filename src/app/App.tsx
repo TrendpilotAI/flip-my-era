@@ -11,6 +11,7 @@ import { DashboardSkeleton, CheckoutSkeleton } from "@/modules/shared/components
 
 // Public components (eagerly loaded)
 import Index from "@/app/pages/Index";
+import Gallery from "@/app/pages/Gallery";
 import Auth from "@/modules/auth/components/Auth";
 import AuthCallback from "@/modules/auth/components/AuthCallback";
 import ResetPassword from "@/modules/auth/components/ResetPassword";
@@ -18,6 +19,7 @@ import NotFound from "@/app/pages/NotFound";
 import ImageReview from "@/app/pages/ImageReview";
 
 // Lazy-loaded components
+const ShareablePreview = lazy(() => import("@/modules/sharing/ShareablePreview"));
 const Settings = lazy(() => import("@/modules/user/components/Settings"));
 const Stories = lazy(() => import("@/modules/story/components/Stories"));
 const SettingsDashboard = lazy(() => import("@/modules/user/components/SettingsDashboard"));
@@ -31,6 +33,22 @@ const AdminDashboard = lazy(() => import("@/app/pages/AdminDashboard"));
 const AdminIntegrations = lazy(() => import("@/app/pages/AdminIntegrations"));
 const AdminUsers = lazy(() => import("@/app/pages/AdminUsers"));
 const AdminCredits = lazy(() => import("@/app/pages/AdminCredits"));
+const OnboardingWizard = lazy(() => import("@/modules/onboarding/OnboardingWizard"));
+const AdminConversion = lazy(() => import("@/app/pages/AdminConversion"));
+const AdminRevenue = lazy(() => import("@/app/pages/AdminRevenue"));
+const TermsOfService = lazy(() => import("@/app/pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("@/app/pages/PrivacyPolicy"));
+const CreatorProfile = lazy(() => import("@/modules/creators/CreatorProfile"));
+const CreatorAnalytics = lazy(() => import("@/modules/creators/CreatorAnalytics"));
+const MarketplacePage = lazy(() => import("@/modules/marketplace/Marketplace"));
+const GiftCardPage = lazy(() => import("@/modules/gifting/GiftCard"));
+const AffiliateSystem = lazy(() => import("@/modules/affiliates/AffiliateSystem"));
+const RevenueDashboard = lazy(() => import("@/modules/admin/RevenueDashboard"));
+const CoverArtGenerator = lazy(() => import("@/modules/images/CoverArtGenerator"));
+const StyleTransfer = lazy(() => import("@/modules/images/StyleTransfer"));
+const ChapterIllustrations = lazy(() => import("@/modules/images/ChapterIllustrations"));
+const ImageEditor = lazy(() => import("@/modules/images/ImageEditor"));
+const AssetLibrary = lazy(() => import("@/modules/images/AssetLibrary"));
 
 /** Minimal fallback for generic lazy routes */
 const PageLoader = () => (
@@ -58,6 +76,12 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/image-review" element={<ImageReview />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/ebook/:id/preview" element={
+              <Suspense fallback={<PageLoader />}>
+                <ShareablePreview />
+              </Suspense>
+            } />
             
             {/* Protected routes - New unified dashboard */}
             <Route
@@ -161,6 +185,45 @@ function App() {
               }
             />
             
+            <Route
+              path="/admin/revenue"
+              element={
+                <AdminRoute>
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <AdminRevenue />
+                    </Suspense>
+                  </ErrorBoundary>
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <AdminRoute>
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <AdminConversion />
+                    </Suspense>
+                  </ErrorBoundary>
+                </AdminRoute>
+              }
+            />
+            
+            {/* Onboarding wizard for first-time users */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <OnboardingWizard onComplete={(data) => { console.log('Onboarding complete:', data); window.location.href = '/dashboard'; }} />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            
             {/* Checkout routes */}
             <Route
               path="/checkout"
@@ -244,6 +307,103 @@ function App() {
                 <ProtectedRoute requiredSubscription="premium">
                   <div>Premium Features</div>
                 </ProtectedRoute>
+              }
+            />
+            
+            {/* Marketplace */}
+            <Route
+              path="/marketplace"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <MarketplacePage />
+                </Suspense>
+              }
+            />
+            
+            {/* Creator profile (public) */}
+            <Route path="/creator/:id" element={
+              <Suspense fallback={<PageLoader />}>
+                <CreatorProfile />
+              </Suspense>
+            } />
+            
+            {/* Creator analytics (protected) */}
+            <Route path="/creator/analytics" element={
+              <ProtectedRoute>
+                <Suspense fallback={<PageLoader />}>
+                  <CreatorAnalytics />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+
+            {/* Legal pages */}
+            <Route path="/terms" element={
+              <Suspense fallback={<PageLoader />}>
+                <TermsOfService />
+              </Suspense>
+            } />
+            <Route path="/privacy" element={
+              <Suspense fallback={<PageLoader />}>
+                <PrivacyPolicy />
+              </Suspense>
+            } />
+            
+            {/* AI Image Enhancement routes */}
+            <Route path="/images/cover-generator" element={
+              <ProtectedRoute><Suspense fallback={<PageLoader />}><CoverArtGenerator /></Suspense></ProtectedRoute>
+            } />
+            <Route path="/images/style-transfer" element={
+              <ProtectedRoute><Suspense fallback={<PageLoader />}><StyleTransfer /></Suspense></ProtectedRoute>
+            } />
+            <Route path="/images/illustrations" element={
+              <ProtectedRoute><Suspense fallback={<PageLoader />}><ChapterIllustrations /></Suspense></ProtectedRoute>
+            } />
+            <Route path="/images/editor" element={
+              <ProtectedRoute><Suspense fallback={<PageLoader />}><ImageEditor /></Suspense></ProtectedRoute>
+            } />
+            <Route path="/images/assets" element={
+              <Suspense fallback={<PageLoader />}><AssetLibrary /></Suspense>
+            } />
+            
+            {/* Gift Cards */}
+            <Route
+              path="/gift-cards"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <GiftCardPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Affiliate Program */}
+            <Route
+              path="/affiliates"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageLoader />}>
+                      <AffiliateSystem />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Admin Revenue Dashboard */}
+            <Route
+              path="/admin/revenue-dashboard"
+              element={
+                <AdminRoute>
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <RevenueDashboard />
+                    </Suspense>
+                  </ErrorBoundary>
+                </AdminRoute>
               }
             />
             

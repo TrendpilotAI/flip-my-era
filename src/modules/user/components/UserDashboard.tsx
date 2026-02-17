@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { UserBooks } from '@/modules/ebook/components/UserBooks';
+import { CreatorAnalytics } from '@/modules/creator/CreatorAnalytics';
 import { withErrorBoundary } from '@/modules/shared/components/ErrorBoundary';
 
 interface Story {
@@ -51,7 +52,7 @@ const UserDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['overview', 'stories', 'account', 'billing'].includes(tabParam)) {
+    if (tabParam && ['overview', 'stories', 'books', 'analytics', 'account', 'billing'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -136,10 +137,11 @@ const UserDashboard = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="stories">My Stories</TabsTrigger>
             <TabsTrigger value="books">My Books</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
@@ -324,6 +326,11 @@ const UserDashboard = () => {
           {/* Books Tab */}
           <TabsContent value="books" className="space-y-6">
             <UserBooks />
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <CreatorAnalytics />
           </TabsContent>
 
           {/* Account Tab */}

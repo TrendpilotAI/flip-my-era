@@ -1,7 +1,7 @@
 /**
  * PricingPage — Era-themed tiered pricing with monthly/annual toggle
  * 
- * Tiers: Debut (Free) / Speak Now ($4.99) / Midnights ($9.99)
+ * Tiers: Debut (Free) / Speak Now ($9.99) / Midnights ($19.99) / Eras Tour ($49.99)
  * Credit Packs: Single (5) / Album (20) / Tour (50)
  */
 
@@ -76,7 +76,7 @@ const tiers: TierConfig[] = [
       { label: 'No watermark', included: false },
       { label: 'Premium templates', included: false },
       { label: 'Priority generation', included: false },
-      { label: 'Early access', included: false },
+      { label: 'API access', included: false },
     ],
   },
   {
@@ -84,27 +84,26 @@ const tiers: TierConfig[] = [
     name: 'Speak Now',
     tagline: 'Find your voice',
     icon: <Star className="h-8 w-8 text-purple-500" />,
-    monthlyPrice: 4.99,
-    annualPricePerMonth: 3.99,
-    annualTotal: 47.88,
-    credits: '15 credits/mo',
+    monthlyPrice: 9.99,
+    annualPricePerMonth: 7.99,
+    annualTotal: 95.88,
+    credits: '3 ebooks/mo',
     gradient: 'from-purple-50 to-violet-50',
     borderColor: 'border-purple-200',
     badgeColor: 'bg-purple-100 text-purple-800',
     ctaLabel: 'Go Speak Now',
     ctaVariant: 'default',
-    popular: true,
     features: [
-      { label: '15 credits per month', included: true },
+      { label: '3 ebooks per month', included: true },
+      { label: 'Standard templates', included: true },
+      { label: 'Email support', included: true },
       { label: 'All era themes unlocked', included: true },
       { label: 'No watermark on exports', included: true },
-      { label: 'Basic templates', included: true },
-      { label: 'High-quality illustrations', included: true },
-      { label: 'Priority support', included: true },
-      { label: 'Premium templates (100+)', included: false },
+      { label: 'Custom templates', included: false },
+      { label: 'Priority support', included: false },
       { label: 'Priority generation queue', included: false },
-      { label: 'Early access to features', included: false },
-      { label: 'Vault content drops', included: false },
+      { label: 'API access', included: false },
+      { label: 'Team accounts', included: false },
     ],
   },
   {
@@ -112,26 +111,54 @@ const tiers: TierConfig[] = [
     name: 'Midnights',
     tagline: "You're the main character",
     icon: <Moon className="h-8 w-8 text-indigo-400" />,
-    monthlyPrice: 9.99,
-    annualPricePerMonth: 7.99,
-    annualTotal: 95.88,
-    credits: '40 credits/mo',
+    monthlyPrice: 19.99,
+    annualPricePerMonth: 15.99,
+    annualTotal: 191.88,
+    credits: 'Unlimited ebooks',
     gradient: 'from-indigo-50 to-blue-50',
     borderColor: 'border-indigo-200',
     badgeColor: 'bg-indigo-100 text-indigo-800',
     ctaLabel: 'Go Midnights',
     ctaVariant: 'default',
+    popular: true,
     features: [
-      { label: '40 credits per month', included: true },
-      { label: 'All era themes unlocked', included: true },
+      { label: 'Unlimited ebooks', included: true },
+      { label: 'All templates + custom', included: true },
+      { label: 'Priority support', included: true },
       { label: 'No watermark on exports', included: true },
-      { label: 'Premium templates (100+)', included: true },
-      { label: 'High-quality illustrations', included: true },
       { label: 'Priority generation queue', included: true },
-      { label: 'Early access to new features', included: true },
-      { label: 'AI layout suggestions', included: true },
+      { label: 'Early access to features', included: true },
       { label: 'Print-ready exports', included: true },
-      { label: 'Vault content drops', included: true },
+      { label: 'AI layout suggestions', included: true },
+      { label: 'API access', included: false },
+      { label: 'Team accounts & white-label', included: false },
+    ],
+  },
+  {
+    key: 'erasTour',
+    name: 'The Eras Tour',
+    tagline: 'For teams and brands',
+    icon: <Crown className="h-8 w-8 text-amber-500" />,
+    monthlyPrice: 49.99,
+    annualPricePerMonth: 39.99,
+    annualTotal: 479.88,
+    credits: 'Unlimited + API',
+    gradient: 'from-amber-50 to-yellow-50',
+    borderColor: 'border-amber-200',
+    badgeColor: 'bg-amber-100 text-amber-800',
+    ctaLabel: 'Go Enterprise',
+    ctaVariant: 'default',
+    features: [
+      { label: 'Everything in Midnights', included: true },
+      { label: 'API access', included: true },
+      { label: 'Team accounts (up to 25)', included: true },
+      { label: 'White-label branding', included: true },
+      { label: 'Dedicated account manager', included: true },
+      { label: 'Custom integrations', included: true },
+      { label: 'SLA guarantee', included: true },
+      { label: 'Bulk generation', included: true },
+      { label: 'Analytics dashboard', included: true },
+      { label: 'Priority everything', included: true },
     ],
   },
 ];
@@ -255,7 +282,7 @@ export const PricingPage: React.FC = () => {
 
         {/* ── Tier Cards ── */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16"
           variants={containerVariants}
           initial="hidden"
           animate="visible"

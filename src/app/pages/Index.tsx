@@ -10,6 +10,7 @@ import { StoryWizard } from "@/modules/story/components/StoryWizard";
 import { StoryWizardProvider } from "@/modules/story/contexts/StoryWizardContext";
 import { AnimatedShaderBackground } from "@/modules/shared/components/AnimatedShaderBackground";
 import { BookOpen, Sparkles, User, Star } from "lucide-react";
+import { FeaturedCreators } from "@/modules/creator/FeaturedCreators";
 
 const Index = () => {
   useApiCheck();
@@ -30,6 +31,9 @@ const Index = () => {
       <div className="relative z-10">
         {/* Hero Section with Photo Gallery */}
       <HeroGallery animationDelay={0.3} onGetStarted={scrollToWizard} />
+
+      {/* Featured Creators */}
+      <FeaturedCreators />
 
       {/* Story Wizard Section */}
       <div ref={wizardRef} className="scroll-mt-8">
