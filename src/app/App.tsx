@@ -50,6 +50,18 @@ const ChapterIllustrations = lazy(() => import("@/modules/images/ChapterIllustra
 const ImageEditor = lazy(() => import("@/modules/images/ImageEditor"));
 const AssetLibrary = lazy(() => import("@/modules/images/AssetLibrary"));
 
+// SEO Content Pages
+const ErasTourEbook = lazy(() => import("@/app/pages/seo/ErasTourEbook"));
+const CustomTaylorSwiftGifts = lazy(() => import("@/app/pages/seo/CustomTaylorSwiftGifts"));
+const SwiftieBirthdayPresents = lazy(() => import("@/app/pages/seo/SwiftieBirthdayPresents"));
+const TaylorSwiftFanArtBook = lazy(() => import("@/app/pages/seo/TaylorSwiftFanArtBook"));
+const ErasTourMemoriesBook = lazy(() => import("@/app/pages/seo/ErasTourMemoriesBook"));
+const PersonalizedErasTourPhotoBook = lazy(() => import("@/app/pages/seo/PersonalizedErasTourPhotoBook"));
+const TaylorSwiftConcertKeepsake = lazy(() => import("@/app/pages/seo/TaylorSwiftConcertKeepsake"));
+const SwiftieGraduationGift = lazy(() => import("@/app/pages/seo/SwiftieGraduationGift"));
+const FriendshipBraceletBook = lazy(() => import("@/app/pages/seo/FriendshipBraceletBook"));
+const ErasTourScrapbook = lazy(() => import("@/app/pages/seo/ErasTourScrapbook"));
+
 /** Minimal fallback for generic lazy routes */
 const PageLoader = () => (
   <div className="container py-8 flex items-center justify-center min-h-[60vh]">
@@ -407,6 +419,18 @@ function App() {
               }
             />
             
+            {/* SEO Content Pages */}
+            <Route path="/taylor-swift-eras-tour-ebook" element={<Suspense fallback={<PageLoader />}><ErasTourEbook /></Suspense>} />
+            <Route path="/custom-taylor-swift-gifts" element={<Suspense fallback={<PageLoader />}><CustomTaylorSwiftGifts /></Suspense>} />
+            <Route path="/swiftie-birthday-present-ideas" element={<Suspense fallback={<PageLoader />}><SwiftieBirthdayPresents /></Suspense>} />
+            <Route path="/taylor-swift-fan-art-book" element={<Suspense fallback={<PageLoader />}><TaylorSwiftFanArtBook /></Suspense>} />
+            <Route path="/eras-tour-memories-book" element={<Suspense fallback={<PageLoader />}><ErasTourMemoriesBook /></Suspense>} />
+            <Route path="/personalized-eras-tour-photo-book" element={<Suspense fallback={<PageLoader />}><PersonalizedErasTourPhotoBook /></Suspense>} />
+            <Route path="/taylor-swift-concert-keepsake-gift" element={<Suspense fallback={<PageLoader />}><TaylorSwiftConcertKeepsake /></Suspense>} />
+            <Route path="/swiftie-graduation-gift-ideas" element={<Suspense fallback={<PageLoader />}><SwiftieGraduationGift /></Suspense>} />
+            <Route path="/taylor-swift-friendship-bracelet-book" element={<Suspense fallback={<PageLoader />}><FriendshipBraceletBook /></Suspense>} />
+            <Route path="/eras-tour-scrapbook-digital" element={<Suspense fallback={<PageLoader />}><ErasTourScrapbook /></Suspense>} />
+
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://flipmyera.com/sitemap.xml
+
+# Disallow admin and protected routes
+Disallow: /admin/*
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /checkout
+Disallow: /auth/callback
