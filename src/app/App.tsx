@@ -36,6 +36,7 @@ const AdminCredits = lazy(() => import("@/app/pages/AdminCredits"));
 const OnboardingWizard = lazy(() => import("@/modules/onboarding/OnboardingWizard"));
 const AdminConversion = lazy(() => import("@/app/pages/AdminConversion"));
 const AdminRevenue = lazy(() => import("@/app/pages/AdminRevenue"));
+const AdminAnalyticsDashboard = lazy(() => import("@/app/pages/AdminAnalyticsDashboard"));
 const TermsOfService = lazy(() => import("@/app/pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("@/app/pages/PrivacyPolicy"));
 const CreatorProfile = lazy(() => import("@/modules/creators/CreatorProfile"));
@@ -211,6 +212,18 @@ function App() {
             />
             <Route
               path="/admin/analytics"
+              element={
+                <AdminRoute>
+                  <ErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <AdminAnalyticsDashboard />
+                    </Suspense>
+                  </ErrorBoundary>
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/conversion"
               element={
                 <AdminRoute>
                   <ErrorBoundary>

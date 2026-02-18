@@ -38,8 +38,7 @@ const AdminNav = () => {
     {
       path: "/admin/analytics",
       label: "Analytics",
-      icon: BarChart3,
-      disabled: true
+      icon: BarChart3
     },
     {
       path: "/admin/content",
