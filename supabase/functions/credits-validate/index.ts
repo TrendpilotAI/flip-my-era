@@ -339,13 +339,21 @@ Deno.serve(async (req: Request) => {
 
       const generationId = body.generation_id;
 
-      // Try to validate with real Supabase data first
-      let validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);
+      // Validate credits with Supabase
+      const validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);
 
-      // Fallback to mock data if Supabase validation fails
       if (!validationData) {
-        console.log('Falling back to mock validation data');
-        validationData = getMockValidationData(totalCreditsRequired);
+        console.error('Failed to validate credits for user:', userId);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to validate credits. Please try again.'
+          }),
+          {
+            status: 500,
+            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
       
       const response: ValidationResponse = {

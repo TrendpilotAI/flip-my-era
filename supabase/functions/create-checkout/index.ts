@@ -127,6 +127,9 @@ serve(async (req) => {
       logStep("Warning: credits not found in price metadata", { priceId });
     }
     
+    // Generate idempotency key to prevent duplicate checkout sessions
+    const idempotencyKey = `checkout_${user.id}_${priceId}_${Math.floor(Date.now() / 30000)}`; // 30s window
+    
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,

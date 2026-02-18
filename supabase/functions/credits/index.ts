@@ -293,13 +293,21 @@ serve(async (req: Request) => {
       const url = new URL(req.url);
       const includeTransactions = url.searchParams.get('include_transactions') === 'true';
       
-      // Try to get real data from Supabase first
-      let creditData = await getCreditDataFromSupabase(userId);
+      // Get credit data from Supabase
+      const creditData = await getCreditDataFromSupabase(userId);
       
-      // Fallback to mock data if Supabase query fails
       if (!creditData) {
-        console.log('Falling back to mock data');
-        creditData = getMockCreditData();
+        console.error('Failed to fetch credit data for user:', userId);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Failed to fetch credit data. Please try again.'
+          }),
+          {
+            status: 500,
+            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
       
       const response: ApiResponse = {

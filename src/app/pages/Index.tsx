@@ -13,6 +13,7 @@ import { AnimatedShaderBackground } from "@/modules/shared/components/AnimatedSh
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/modules/shared/components/ui/accordion";
 import { BookOpen, Sparkles, User, Star, Shield, Clock, Zap, Heart, CheckCircle, ArrowRight } from "lucide-react";
 import { FeaturedCreators } from "@/modules/creator/FeaturedCreators";
+import { OnboardingFlow } from "@/modules/onboarding";
 
 const Index = () => {
   useApiCheck();
@@ -29,6 +30,9 @@ const Index = () => {
         url="/"
         description="Create stunning AI-generated personalized storybooks inspired by Taylor Swift's eras. Upload your photo, pick an era, and get a beautifully illustrated story in minutes. Free to start!"
       />
+      {/* First-time user onboarding flow */}
+      <OnboardingFlow />
+
       {/* Animated Shader Background */}
       <AnimatedShaderBackground className="z-0" />
       
