@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/clerk-react";
-import { supabase, createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { supabase } from "@/core/integrations/supabase/client";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
@@ -59,7 +59,7 @@ interface UserBooksProps {
 }
 
 export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken } = useSupabaseAuth();
   const { toast } = useToast();
   const [books, setBooks] = useState<MemoryBook[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +92,7 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
   const fetchUserBooks = async () => {
     try {
       setLoading(true);
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       if (!token) {
         console.error('No token available for database operation');
@@ -101,11 +101,11 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
       }
       
       // Create authenticated Supabase client
-      const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
+      
       
       // First, try to fetch from ebook_generations which is the primary table
       // memory_books is a future feature that may not be deployed yet
-      const { data: ebookData, error } = await supabaseWithAuth
+      const { data: ebookData, error } = await supabase
         .from('ebook_generations')
         .select('*')
         .order('created_at', { ascending: false });

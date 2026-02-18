@@ -1,25 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { StoryForm } from '../StoryForm';
-import { useClerkAuth } from '@/modules/auth/contexts';
 import React from 'react';
 
-// Mock Clerk components
-const MockSignInButton = ({ children, mode }: { children: React.ReactNode; mode?: string }) => (
-  <button data-testid="sign-in-button" data-mode={mode}>
-    {children}
-  </button>
-);
+const mockUseClerkAuth = vi.fn();
 
-vi.mock('@clerk/clerk-react', () => ({
-  SignInButton: MockSignInButton
-}));
-
-// Mock the auth context
 vi.mock('@/modules/auth/contexts', () => ({
-  useClerkAuth: vi.fn(),
+  useClerkAuth: (...args: any[]) => mockUseClerkAuth(...args),
 }));
-const mockUseClerkAuth = useClerkAuth as ReturnType<typeof vi.fn>;
 
 describe('StoryForm', () => {
   const defaultProps = {
@@ -65,9 +53,6 @@ describe('StoryForm', () => {
       getToken: vi.fn().mockResolvedValue('mock-token'),
       isNewUser: false,
       setIsNewUser: vi.fn(),
-      SignInButton: MockSignInButton,
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
     });
   });
 
@@ -89,7 +74,7 @@ describe('StoryForm', () => {
     render(<StoryForm {...defaultProps} />);
 
     expect(screen.getByText('Welcome Back!')).toBeInTheDocument();
-    expect(screen.queryByTestId('sign-in-button')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sign In / Register')).not.toBeInTheDocument();
   });
 
   it('should display sign in button for unauthenticated users', () => {
@@ -106,14 +91,11 @@ describe('StoryForm', () => {
       getToken: vi.fn().mockResolvedValue(null),
       isNewUser: false,
       setIsNewUser: vi.fn(),
-      SignInButton: MockSignInButton,
-      SignUpButton: vi.fn(),
-      UserButton: vi.fn()
     });
 
     render(<StoryForm {...defaultProps} />);
 
-    expect(screen.getByTestId('sign-in-button')).toBeInTheDocument();
+    expect(screen.getByText('Sign In / Register')).toBeInTheDocument();
     expect(screen.queryByText('Welcome Back!')).not.toBeInTheDocument();
   });
 

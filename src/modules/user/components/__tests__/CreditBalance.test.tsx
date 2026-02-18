@@ -8,7 +8,11 @@ let mockIsSignedIn = true;
 
 const mockInvoke = vi.fn();
 
-vi.mock('@clerk/clerk-react', () => ({
+vi.mock('@/core/integrations/supabase/auth', () => ({
+  useSupabaseAuth: () => ({
+    isSignedIn: mockIsSignedIn,
+    getToken: mockGetToken,
+  }),
   useAuth: () => ({
     isSignedIn: mockIsSignedIn,
     getToken: mockGetToken,

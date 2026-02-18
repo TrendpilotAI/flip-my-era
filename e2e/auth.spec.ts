@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Authentication Flow', () => {
   test('auth page renders login form', async ({ page }) => {
     await page.goto('/auth');
-    // Should show sign-in UI (Clerk or custom)
-    const authContainer = page.locator('[class*="auth"], [class*="login"], [class*="sign"], [id*="clerk"]').first();
+    // Should show sign-in UI (Supabase Auth)
+    const authContainer = page.locator('[class*="auth"], [class*="login"], [class*="sign"], ').first();
     await expect(authContainer).toBeVisible({ timeout: 10_000 });
   });
 
@@ -28,10 +28,10 @@ test.describe('Authentication Flow', () => {
   test('auth page has Google OAuth option', async ({ page }) => {
     await page.goto('/auth');
     await page.waitForTimeout(3000);
-    // Look for Google sign-in button (Clerk renders this)
+    // Look for Google sign-in button (Supabase Auth)
     const googleBtn = page.locator('button, [role="button"]').filter({ hasText: /google/i }).first();
     const hasGoogle = await googleBtn.isVisible().catch(() => false);
-    // Or look for Clerk's social buttons
+    // Or look for Social buttons
     const clerkSocial = page.locator('[class*="socialButton"], .cl-socialButton').first();
     const hasClerkSocial = await clerkSocial.isVisible().catch(() => false);
     // At least one auth method should be visible

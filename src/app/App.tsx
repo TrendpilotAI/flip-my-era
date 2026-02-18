@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout, ProtectedRoute, AdminRoute } from "@/modules/shared";
 import { Toaster } from "@/modules/shared/components/ui/toaster";
-import { ClerkAuthProvider } from "@/modules/auth";
+import { SupabaseAuthProvider } from "@/core/integrations/supabase/auth";
 import React, { lazy, Suspense } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { performanceMonitor } from "@/core/utils/performance";
@@ -79,7 +79,7 @@ function App() {
   return (
     <ErrorBoundary>
     <HelmetProvider>
-    <ClerkAuthProvider>
+    <SupabaseAuthProvider>
       <Router>
         <Layout>
             <Routes>
@@ -450,7 +450,7 @@ function App() {
         </Layout>
         <Toaster />
       </Router>
-    </ClerkAuthProvider>
+    </SupabaseAuthProvider>
     </HelmetProvider>
     </ErrorBoundary>
   );

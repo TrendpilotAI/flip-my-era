@@ -75,7 +75,7 @@ export const StoryWizard: React.FC = () => {
       }
 
       // Get Clerk token for authentication
-      const clerkToken = await getToken({ template: 'supabase' });
+      const clerkToken = await getToken();
 
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/d0345e24-6e67-4039-bc40-ee39fe5b7167',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H1',location:'src/modules/story/components/StoryWizard.tsx:handleGenerateStoryline:postToken',message:'Clerk token fetched for storyline',data:{tokenPresent:!!clerkToken,tokenLength:clerkToken?clerkToken.length:0,template:'supabase'},timestamp:Date.now()})}).catch(()=>{});

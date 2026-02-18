@@ -18,7 +18,6 @@ describe('EnvironmentValidator', () => {
     envValues.set('VITE_GROQ_API_KEY', undefined);
     envValues.set('VITE_SUPABASE_URL', undefined);
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', undefined);
-    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', undefined);
 
     render(<EnvironmentValidator />);
 
@@ -30,7 +29,6 @@ describe('EnvironmentValidator', () => {
     envValues.set('VITE_GROQ_API_KEY', 'invalid');
     envValues.set('VITE_SUPABASE_URL', 'http://example.com');
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'anon');
-    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'pk_123');
 
     render(<EnvironmentValidator />);
 
@@ -42,7 +40,6 @@ describe('EnvironmentValidator', () => {
     envValues.set('VITE_GROQ_API_KEY', 'gsk_valid');
     envValues.set('VITE_SUPABASE_URL', 'https://example.supabase.co');
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
-    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'pk_test_valid');
     envValues.set('VITE_OPENAI_API_KEY', 'sk_test');
 
     render(<EnvironmentValidator />);
@@ -56,19 +53,18 @@ describe('EnvironmentValidator', () => {
 
     envValues.set('VITE_SUPABASE_URL', 'https://example.supabase.co');
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
-    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'pk_test_valid');
 
     render(<EnvironmentValidator />);
     expect(screen.getByText(/Configuration Complete/i)).toBeInTheDocument();
 
-    // Change CLERK key to invalid format (doesn't start with 'pk_')
-    envValues.set('VITE_CLERK_PUBLISHABLE_KEY', 'invalid_key');
+    // Remove a required key to trigger invalid config
+    envValues.delete('VITE_SUPABASE_URL');
 
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /refresh/i }));
     });
 
-    expect(screen.getByText(/Invalid Configuration/i)).toBeInTheDocument();
+    expect(screen.getByText(/Configuration Required/i)).toBeInTheDocument();
   });
 });
 

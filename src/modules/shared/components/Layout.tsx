@@ -2,17 +2,14 @@ import { Link } from "react-router-dom";
 import { Button } from '@/modules/shared/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/modules/shared/components/ui/dropdown-menu';
 import { BookOpen, LogOut, Settings, User, Crown } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts';
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
 import { Footer } from './Footer';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, user, signOut, UserButton } = useClerkAuth();
+  const { isAuthenticated, user, signOut } = useSupabaseAuth();
   const { toast } = useToast();
 
-  // Check if user is admin
   const isAdmin = user?.email === "admin@flipmyera.com" || 
                   user?.email === "danny.ijdo@gmail.com" ||
                   user?.email?.includes("trendpilot");
@@ -21,7 +18,6 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     try {
       const { error } = await signOut();
       if (error) throw error;
-      
       toast({
         title: "Successfully Signed Out",
         description: "You have been securely logged out of your account. Come back soon!",
@@ -39,7 +35,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="fixed top-0 right-0 p-4 z-50 flex gap-2">
-        <SignedIn>
+        {isAuthenticated ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="bg-white/80 backdrop-blur-sm">
@@ -93,15 +89,14 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </SignedIn>
-        <SignedOut>
+        ) : (
           <Link to="/auth">
             <Button variant="outline" className="bg-white/80 backdrop-blur-sm gap-2">
               <User className="h-5 w-5" />
               <span>Sign In</span>
             </Button>
           </Link>
-        </SignedOut>
+        )}
       </nav>
       <main className="flex-1">
         {children}

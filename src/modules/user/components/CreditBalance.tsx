@@ -8,7 +8,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { supabase } from '@/core/integrations/supabase/client';
-import { useAuth } from '@clerk/clerk-react';
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
 import { CreditPurchaseModal } from './CreditPurchaseModal';
 
 interface CreditBalance {
@@ -35,7 +35,7 @@ export const CreditBalance: React.FC<{
   onBalanceChange?: (balance: number) => void;
   className?: string;
 }> = ({ onBalanceChange, className = '' }) => {
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken } = useSupabaseAuth();
   const [creditData, setCreditData] = useState<CreditData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export const CreditBalance: React.FC<{
       console.log('🔍 CreditBalance: isSignedIn:', isSignedIn);
 
       // Try to get token with supabase template, fallback to default if not available
-      let token = await getToken({ template: 'supabase' });
+      let token = await getToken();
       
       if (!token) {
         console.log('🔍 CreditBalance: No token with supabase template, trying default...');

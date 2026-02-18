@@ -6,7 +6,7 @@ test.describe('Pricing & Plans Page', () => {
   });
 
   test('renders pricing tiers', async ({ page }) => {
-    await page.waitForTimeout(3000); // Wait for Clerk + React render
+    await page.waitForTimeout(3000); // Wait for React render
     const body = await page.textContent('body');
     // Check for tier names OR legacy pricing content
     const hasDebut = /debut|free/i.test(body || '');

@@ -48,7 +48,7 @@ const StoryFormComponent = ({
   location,
   setLocation
 }: StoryFormProps) => {
-  const { isAuthenticated, SignInButton } = useClerkAuth();
+  const { isAuthenticated } = useClerkAuth();
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.valueAsDate;
@@ -75,7 +75,7 @@ const StoryFormComponent = ({
               <span>Welcome Back!</span>
             </Button>
           ) : (
-            <SignInButton mode="modal">
+            <a href="/auth">
               <Button 
                 variant="outline" 
                 className="border-[#E5DEFF] hover:bg-[#E5DEFF]/10 transition-all duration-300 hover:scale-105 group"
@@ -83,7 +83,7 @@ const StoryFormComponent = ({
                 <span className="mr-2">Sign In / Register</span>
                 <Sparkles className="h-4 w-4 text-purple-500 group-hover:animate-pulse" />
               </Button>
-            </SignInButton>
+            </a>
           )}
         </div>
       </div>
