@@ -8,6 +8,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { performanceMonitor } from "@/core/utils/performance";
 import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
 import { DashboardSkeleton, CheckoutSkeleton } from "@/modules/shared/components/Skeleton";
+import { FeatureGate } from "@/modules/shared/components/FeatureGate";
 
 // Public components (eagerly loaded)
 import Index from "@/app/pages/Index";
@@ -315,50 +316,60 @@ function App() {
             <Route
               path="/test-credits"
               element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Suspense fallback={<PageLoader />}>
-                      <TestCredits />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
+                <FeatureGate flag="test_credits" fallback="notfound">
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Suspense fallback={<PageLoader />}>
+                        <TestCredits />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                </FeatureGate>
               }
             />
             
-            {/* Premium features */}
+            {/* Premium features (feature-flagged) */}
             <Route
               path="/premium-features"
               element={
-                <ProtectedRoute requiredSubscription="premium">
-                  <div>Premium Features</div>
-                </ProtectedRoute>
+                <FeatureGate flag="premium_features" fallback="notfound">
+                  <ProtectedRoute requiredSubscription="premium">
+                    <div>Premium Features</div>
+                  </ProtectedRoute>
+                </FeatureGate>
               }
             />
             
-            {/* Marketplace */}
+            {/* Marketplace (feature-flagged) */}
             <Route
               path="/marketplace"
               element={
-                <Suspense fallback={<PageLoader />}>
-                  <MarketplacePage />
-                </Suspense>
+                <FeatureGate flag="marketplace" fallback="notfound">
+                  <Suspense fallback={<PageLoader />}>
+                    <MarketplacePage />
+                  </Suspense>
+                </FeatureGate>
               }
             />
             
-            {/* Creator profile (public) */}
+            {/* Creator profile (feature-flagged) */}
             <Route path="/creator/:id" element={
-              <Suspense fallback={<PageLoader />}>
-                <CreatorProfile />
-              </Suspense>
+              <FeatureGate flag="creator_profiles" fallback="notfound">
+                <Suspense fallback={<PageLoader />}>
+                  <CreatorProfile />
+                </Suspense>
+              </FeatureGate>
             } />
             
-            {/* Creator analytics (protected) */}
+            {/* Creator analytics (feature-flagged) */}
             <Route path="/creator/analytics" element={
-              <ProtectedRoute>
-                <Suspense fallback={<PageLoader />}>
-                  <CreatorAnalytics />
-                </Suspense>
-              </ProtectedRoute>
+              <FeatureGate flag="creator_profiles" fallback="notfound">
+                <ProtectedRoute>
+                  <Suspense fallback={<PageLoader />}>
+                    <CreatorAnalytics />
+                  </Suspense>
+                </ProtectedRoute>
+              </FeatureGate>
             } />
 
             {/* Legal pages */}
@@ -373,48 +384,62 @@ function App() {
               </Suspense>
             } />
             
-            {/* AI Image Enhancement routes */}
+            {/* AI Image Enhancement routes (feature-flagged) */}
             <Route path="/images/cover-generator" element={
-              <ProtectedRoute><Suspense fallback={<PageLoader />}><CoverArtGenerator /></Suspense></ProtectedRoute>
+              <FeatureGate flag="cover_art_generator" fallback="notfound">
+                <ProtectedRoute><Suspense fallback={<PageLoader />}><CoverArtGenerator /></Suspense></ProtectedRoute>
+              </FeatureGate>
             } />
             <Route path="/images/style-transfer" element={
-              <ProtectedRoute><Suspense fallback={<PageLoader />}><StyleTransfer /></Suspense></ProtectedRoute>
+              <FeatureGate flag="style_transfer" fallback="notfound">
+                <ProtectedRoute><Suspense fallback={<PageLoader />}><StyleTransfer /></Suspense></ProtectedRoute>
+              </FeatureGate>
             } />
             <Route path="/images/illustrations" element={
-              <ProtectedRoute><Suspense fallback={<PageLoader />}><ChapterIllustrations /></Suspense></ProtectedRoute>
+              <FeatureGate flag="chapter_illustrations" fallback="notfound">
+                <ProtectedRoute><Suspense fallback={<PageLoader />}><ChapterIllustrations /></Suspense></ProtectedRoute>
+              </FeatureGate>
             } />
             <Route path="/images/editor" element={
-              <ProtectedRoute><Suspense fallback={<PageLoader />}><ImageEditor /></Suspense></ProtectedRoute>
+              <FeatureGate flag="image_editor" fallback="notfound">
+                <ProtectedRoute><Suspense fallback={<PageLoader />}><ImageEditor /></Suspense></ProtectedRoute>
+              </FeatureGate>
             } />
             <Route path="/images/assets" element={
-              <Suspense fallback={<PageLoader />}><AssetLibrary /></Suspense>
+              <FeatureGate flag="asset_library" fallback="notfound">
+                <Suspense fallback={<PageLoader />}><AssetLibrary /></Suspense>
+              </FeatureGate>
             } />
             
-            {/* Gift Cards */}
+            {/* Gift Cards (feature-flagged) */}
             <Route
               path="/gift-cards"
               element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Suspense fallback={<PageLoader />}>
-                      <GiftCardPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
+                <FeatureGate flag="gift_cards" fallback="notfound">
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Suspense fallback={<PageLoader />}>
+                        <GiftCardPage />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                </FeatureGate>
               }
             />
             
-            {/* Affiliate Program */}
+            {/* Affiliate Program (feature-flagged) */}
             <Route
               path="/affiliates"
               element={
-                <ProtectedRoute>
-                  <ErrorBoundary>
-                    <Suspense fallback={<PageLoader />}>
-                      <AffiliateSystem />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
+                <FeatureGate flag="affiliates" fallback="notfound">
+                  <ProtectedRoute>
+                    <ErrorBoundary>
+                      <Suspense fallback={<PageLoader />}>
+                        <AffiliateSystem />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ProtectedRoute>
+                </FeatureGate>
               }
             />
             

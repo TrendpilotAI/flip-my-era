@@ -13,6 +13,7 @@ import { AnimatedShaderBackground } from "@/modules/shared/components/AnimatedSh
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/modules/shared/components/ui/accordion";
 import { BookOpen, Sparkles, User, Star, Shield, Clock, Zap, Heart, CheckCircle, ArrowRight } from "lucide-react";
 import { FeaturedCreators } from "@/modules/creator/FeaturedCreators";
+import { FeatureGate } from "@/modules/shared/components/FeatureGate";
 import { OnboardingFlow } from "@/modules/onboarding";
 
 const Index = () => {
@@ -132,8 +133,10 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Featured Creators */}
-        <FeaturedCreators />
+        {/* Featured Creators (feature-flagged) */}
+        <FeatureGate flag="creator_profiles">
+          <FeaturedCreators />
+        </FeatureGate>
 
         {/* Trust Signals */}
         <section className="py-10 border-y border-purple-100 dark:border-purple-900/50">
