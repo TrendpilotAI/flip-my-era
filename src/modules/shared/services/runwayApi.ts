@@ -129,8 +129,7 @@ export async function generateImageWithVariations(
     };
   }
 
-  try {
-    let results: Array<{ imageURL: string; seed: number; cost?: number }>;
+  let results: Array<{ imageURL: string; seed: number; cost?: number }>;
 
     // Determine if this is an ERA or story prompt image
     if (params.vibeCheck && params.swiftieSignal && params.eraType) {
@@ -179,9 +178,6 @@ export async function generateImageWithVariations(
       bestImageIndex: analysis.bestIndex,
       bestImage: variations[analysis.bestIndex]
     };
-  } catch (error) {
-    throw error;
-  }
 }
 
 /**

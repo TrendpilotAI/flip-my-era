@@ -176,12 +176,14 @@ Ensure the storyline:
 
     // #region agent log
     {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const eAny = error as any;
       const ctx = eAny?.context;
       const ctxStatus = ctx?.status ?? eAny?.status ?? null;
       const ctxBody = typeof ctx?.body === 'string' ? ctx.body.slice(0, 300) : null;
       const ctxKeys = ctx && typeof ctx === 'object' ? Object.keys(ctx).slice(0, 10) : [];
-      fetch('http://127.0.0.1:7242/ingest/d0345e24-6e67-4039-bc40-ee39fe5b7167',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H4',location:'src/modules/story/services/storylineGeneration.ts:generateStoryline:afterInvoke',message:'groq-storyline invoke returned',data:{ok:!error,errMsg:error?.message??null,errName:eAny?.name??null,ctxStatus,ctxKeys,ctxBody,hasData:!!data,dataError:(data as any)?.error??null},timestamp:Date.now()})}).catch(()=>{});
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fetch('http://127.0.0.1:7242/ingest/d0345e24-6e67-4039-bc40-ee39fe5b7167',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix',hypothesisId:'H4',location:'src/modules/story/services/storylineGeneration.ts:generateStoryline:afterInvoke',message:'groq-storyline invoke returned',data:{ok:!error,errMsg:error?.message??null,errName:eAny?.name??null,ctxStatus,ctxKeys,ctxBody,hasData:!!data,dataError:(data as Record<string, unknown>)?.error??null},timestamp:Date.now()})}).catch(()=>{});
     }
     // #endregion
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Payment Flow Edge Case Tests
  * Tests for idempotency, refunds, failed payments, race conditions, and subscription lifecycle

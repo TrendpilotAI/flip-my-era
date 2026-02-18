@@ -3,6 +3,15 @@
  * Tracks Core Web Vitals and custom performance metrics
  */
 
+interface PerformanceEventTiming extends PerformanceEntry {
+  processingStart: number;
+}
+
+interface LayoutShift extends PerformanceEntry {
+  hadRecentInput: boolean;
+  value: number;
+}
+
 interface PerformanceMetric {
   name: string;
   value: number;
@@ -53,8 +62,8 @@ class PerformanceMonitor {
       // First Input Delay (FID)
       const fidObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
-        entries.forEach((entry: any) => {
-          this.recordMetric('FID', entry.processingStart - entry.startTime, 'ms');
+        entries.forEach((entry) => {
+          this.recordMetric('FID', (entry as PerformanceEventTiming).processingStart - entry.startTime, 'ms');
         });
       });
       fidObserver.observe({ entryTypes: ['first-input'] });
@@ -64,9 +73,9 @@ class PerformanceMonitor {
       let clsValue = 0;
       const clsObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
-        entries.forEach((entry: any) => {
-          if (!(entry as any).hadRecentInput) {
-            clsValue += (entry as any).value;
+        entries.forEach((entry) => {
+          if (!(entry as LayoutShift).hadRecentInput) {
+            clsValue += (entry as LayoutShift).value;
           }
         });
         this.recordMetric('CLS', clsValue, 'score');
