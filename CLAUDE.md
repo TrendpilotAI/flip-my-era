@@ -184,7 +184,7 @@ Local development proxy setup in `vite.config.ts`:
 - **`ebook_generations`**: E-book generation jobs and status
 - **`credit_transactions`**: Credit purchases and adjustments
 - **`credit_usage_logs`**: Tracks credit consumption per generation
-- **`samcart_webhook_logs`**: SamCart purchase webhook logs
+- **`stripe_webhook_logs`**: Stripe purchase webhook logs
 - **`webhook_retry_queue`**: Failed webhook retry system
 
 ### State Management Patterns
@@ -216,8 +216,8 @@ VITE_RUNWAY_API_KEY=your_key
 VITE_RUNWAY_API_URL=https://api.runwayml.com/v1
 
 # Optional: E-commerce
-VITE_SAMCART_API_KEY=your_key
-VITE_SAMCART_MERCHANT_ID=your_merchant_id
+VITE_STRIPE_API_KEY=your_key
+VITE_STRIPE_MERCHANT_ID=your_merchant_id
 ```
 
 ## Common Development Tasks

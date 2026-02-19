@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { UserProfile } from "@clerk/clerk-react";
+// UserProfile was from Clerk — removed during Supabase Auth migration
 import { supabase } from '@/core/integrations/supabase/client';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Button } from '@/modules/shared/components/ui/button';

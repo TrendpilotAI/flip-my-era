@@ -1,8 +1,11 @@
 /**
  * Centralized Stripe Product Configuration
  * 
- * This file contains all Stripe product and price IDs in one location.
- * Price IDs can be overridden via environment variables.
+ * Tiered pricing: Debut (Free) / Speak Now ($4.99) / Midnights ($9.99)
+ * À la carte credit packs: Single / Album / Tour
+ * 
+ * Note: Stripe price/product IDs are placeholders — update after creating
+ * products in the Stripe Dashboard.
  */
 
 export interface StripeProduct {
@@ -19,90 +22,151 @@ export interface StripeSubscription extends StripeProduct {
   features?: string[];
 }
 
+export type TierKey = 'debut' | 'speakNow' | 'midnights';
+export type CreditPackKey = 'single' | 'album' | 'tour';
+
 export const STRIPE_PRODUCTS = {
-  // Credit Packs (One-time purchases)
+  // ─── À La Carte Credit Packs ───────────────────────────────
   credits: {
-    starter: {
-      productId: "prod_T6Bh9entCOJCNA",
-      priceId: import.meta.env.VITE_STRIPE_PRICE_25_CREDITS || "price_1S9zK25U03MNTw3qMH90DnC1",
-      credits: 25,
-      price: 25.00,
-      name: "$25 Credit Pack",
-      description: "Perfect for a story project"
+    single: {
+      productId: "prod_credit_single",
+      priceId: import.meta.env.VITE_STRIPE_PRICE_SINGLE || "price_single_placeholder",
+      credits: 5,
+      price: 2.99,
+      name: "Single",
+      description: "5 credits — quick creative burst",
     },
-    creator: {
-      productId: "prod_T6BhQaa0OH644p",
-      priceId: import.meta.env.VITE_STRIPE_PRICE_55_CREDITS || "price_1S9zK25U03MNTw3qFkq00yiu",
-      credits: 55,
-      price: 50.00,
-      name: "$50 Credit Pack",
-      description: "Best value for creators (10% bonus)"
+    album: {
+      productId: "prod_credit_album",
+      priceId: import.meta.env.VITE_STRIPE_PRICE_ALBUM || "price_album_placeholder",
+      credits: 20,
+      price: 9.99,
+      name: "Album",
+      description: "20 credits — a full creative session",
     },
-    studio: {
-      productId: "prod_T6BhrpyA6MJQzK",
-      priceId: import.meta.env.VITE_STRIPE_PRICE_120_CREDITS || "price_1S9zK35U03MNTw3qpmqEDL80",
-      credits: 120,
-      price: 100.00,
-      name: "$100 Credit Pack",
-      description: "Maximum value pack (20% bonus)"
-    }
+    tour: {
+      productId: "prod_credit_tour",
+      priceId: import.meta.env.VITE_STRIPE_PRICE_TOUR || "price_tour_placeholder",
+      credits: 50,
+      price: 19.99,
+      name: "Tour",
+      description: "50 credits — best value pack",
+      bestValue: true,
+    },
+
+    // ── Legacy aliases (keep imports working) ──
+    /** @deprecated Use `single` */
+    get starter() { return this.single; },
+    /** @deprecated Use `album` */
+    get creator() { return this.album; },
+    /** @deprecated Use `tour` */
+    get studio() { return this.tour; },
   },
-  
-  // Subscriptions (Recurring)
+
+  // ─── Subscription Tiers ────────────────────────────────────
   subscriptions: {
-    starter: {
-      productId: "prod_T6BhtW05ZjAkHC",
-      priceId: import.meta.env.VITE_STRIPE_PRICE_STARTER || "price_1S9zK15U03MNTw3qAO5JnplW",
-      credits: 30,
-      price: 12.99,
+    // Monthly
+    debut: {
+      productId: "prod_debut",
+      priceId: "price_free",
+      credits: 3,
+      price: 0,
       interval: 'monthly' as const,
-      name: "Swiftie Starter",
-      description: "Perfect for Taylor Swift fans",
+      name: "Debut",
+      description: "Start your era — free forever",
       features: [
-        "30 credits per month",
-        "Taylor Swift era templates",
+        "3 free credits on signup",
+        "1 era theme unlocked",
+        "Watermarked exports",
+        "Basic story generation",
+        "Community access",
+      ],
+    },
+    speakNow: {
+      productId: "prod_speak_now",
+      priceId: import.meta.env.VITE_STRIPE_PRICE_SPEAK_NOW || "price_speak_now_monthly_placeholder",
+      credits: 15,
+      price: 4.99,
+      interval: 'monthly' as const,
+      name: "Speak Now",
+      description: "Find your voice",
+      features: [
+        "15 credits per month",
+        "All era themes unlocked",
+        "No watermark on exports",
+        "Basic templates",
         "High-quality illustrations",
-        "Character portraits",
-        "Priority support"
-      ]
+        "Priority support",
+      ],
     },
-    deluxe: {
-      productId: "prod_T6BhX2nQGqxdmm",
-      priceId: import.meta.env.VITE_STRIPE_PRICE_DELUXE || "price_1S9zK25U03MNTw3qdDnUn7hk",
-      credits: 75,
-      price: 25.00,
+    midnights: {
+      productId: "prod_midnights",
+      priceId: import.meta.env.VITE_STRIPE_PRICE_MIDNIGHTS || "price_midnights_monthly_placeholder",
+      credits: 40,
+      price: 9.99,
       interval: 'monthly' as const,
-      name: "Swiftie Deluxe",
-      description: "For content creators",
+      name: "Midnights",
+      description: "You're the main character",
       features: [
-        "75 credits per month",
-        "Everything in Starter",
-        "Cinematic spreads",
-        "TikTok-ready animations",
-        "Priority GPU processing",
-        "Commercial licensing",
-        "30% off extra credits"
-      ]
+        "40 credits per month",
+        "All era themes unlocked",
+        "No watermark on exports",
+        "Premium templates (100+)",
+        "Priority generation queue",
+        "Early access to new features",
+        "AI layout suggestions",
+        "Print-ready exports",
+        "Vault content drops",
+      ],
     },
-    vip: {
-      productId: "prod_T6Bhc1NIFJgcuW",
-      priceId: import.meta.env.VITE_STRIPE_PRICE_VIP || "price_1S9zK25U03MNTw3qoCHo9KzE",
-      credits: 150,
-      price: 49.99,
-      interval: 'monthly' as const,
-      name: "Opus VIP",
-      description: "For professional creators",
+
+    // Annual (2 months free)
+    speakNowAnnual: {
+      productId: "prod_speak_now",
+      priceId: import.meta.env.VITE_STRIPE_PRICE_SPEAK_NOW_ANNUAL || "price_speak_now_annual_placeholder",
+      credits: 15,
+      price: 3.99, // per month, billed $47.88/yr
+      interval: 'annual' as const,
+      name: "Speak Now (Annual)",
+      description: "Find your voice — save with annual billing",
       features: [
-        "150 credits per month",
-        "Everything in Deluxe",
-        "AI audio narration",
-        "Analytics dashboard",
-        "Commercial distribution tools",
-        "Sell on Kindle, Gumroad, etc.",
-        "Custom creator features"
-      ]
-    }
-  }
+        "15 credits per month",
+        "All era themes unlocked",
+        "No watermark on exports",
+        "Basic templates",
+        "High-quality illustrations",
+        "Priority support",
+      ],
+    },
+    midnightsAnnual: {
+      productId: "prod_midnights",
+      priceId: import.meta.env.VITE_STRIPE_PRICE_MIDNIGHTS_ANNUAL || "price_midnights_annual_placeholder",
+      credits: 40,
+      price: 7.99, // per month, billed $95.88/yr
+      interval: 'annual' as const,
+      name: "Midnights (Annual)",
+      description: "You're the main character — save with annual billing",
+      features: [
+        "40 credits per month",
+        "All era themes unlocked",
+        "No watermark on exports",
+        "Premium templates (100+)",
+        "Priority generation queue",
+        "Early access to new features",
+        "AI layout suggestions",
+        "Print-ready exports",
+        "Vault content drops",
+      ],
+    },
+
+    // ── Legacy aliases ──
+    /** @deprecated Use `debut` */
+    get starter() { return this.speakNow; },
+    /** @deprecated Use `speakNow` */
+    get deluxe() { return this.midnights; },
+    /** @deprecated Use `midnights` */
+    get vip() { return this.midnights; },
+  },
 };
 
 /**
@@ -111,19 +175,22 @@ export const STRIPE_PRODUCTS = {
 export function getCreditsForPlan(planOrPriceId: string): number {
   // Check credit packs
   for (const [key, product] of Object.entries(STRIPE_PRODUCTS.credits)) {
-    if (key === planOrPriceId || product.priceId === planOrPriceId) {
-      return product.credits;
+    if (typeof product === 'object' && 'credits' in product) {
+      if (key === planOrPriceId || product.priceId === planOrPriceId) {
+        return product.credits;
+      }
     }
   }
   
   // Check subscriptions
   for (const [key, product] of Object.entries(STRIPE_PRODUCTS.subscriptions)) {
-    if (key === planOrPriceId || product.priceId === planOrPriceId) {
-      return product.credits;
+    if (typeof product === 'object' && 'credits' in product) {
+      if (key === planOrPriceId || product.priceId === planOrPriceId) {
+        return product.credits;
+      }
     }
   }
   
-  // Default to 0 if not found
   return 0;
 }
 
@@ -131,19 +198,17 @@ export function getCreditsForPlan(planOrPriceId: string): number {
  * Helper function to get product details by price ID
  */
 export function getProductByPriceId(priceId: string): StripeProduct | StripeSubscription | null {
-  // Check credit packs
   for (const product of Object.values(STRIPE_PRODUCTS.credits)) {
-    if (product.priceId === priceId) {
-      return product;
+    if (typeof product === 'object' && 'priceId' in product && product.priceId === priceId) {
+      return product as StripeProduct;
     }
   }
-  
-  // Check subscriptions
+
   for (const product of Object.values(STRIPE_PRODUCTS.subscriptions)) {
-    if (product.priceId === priceId) {
-      return product;
+    if (typeof product === 'object' && 'priceId' in product && product.priceId === priceId) {
+      return product as StripeSubscription;
     }
   }
-  
+
   return null;
 }

@@ -49,11 +49,11 @@ const AdminDashboard = () => {
     },
     {
       title: "Analytics",
-      description: "View usage statistics and performance metrics",
+      description: "View conversion funnel and A/B test results",
       icon: BarChart3,
       path: "/admin/analytics",
       color: "bg-purple-500",
-      badge: "Coming Soon"
+      badge: "Active"
     },
     {
       title: "Content Management",

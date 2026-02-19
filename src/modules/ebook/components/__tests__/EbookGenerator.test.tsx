@@ -24,7 +24,11 @@ const streamingMock = {
   chapters: [] as Array<{ title: string; content: string; id: string }> ,
 };
 
-vi.mock('@clerk/clerk-react', () => ({
+vi.mock('@/core/integrations/supabase/auth', () => ({
+  useSupabaseAuth: () => ({
+    isSignedIn: true,
+    getToken: vi.fn(async () => 'test-token'),
+  }),
   useAuth: () => ({
     isSignedIn: true,
     getToken: vi.fn(async () => 'test-token'),

@@ -67,7 +67,7 @@ export const StoryWizard: React.FC = () => {
       }
 
       // Get Clerk token for authentication
-      const clerkToken = await getToken({ template: 'supabase' });
+      const clerkToken = await getToken();
 
       // Generate the storyline
       const storyline = await generateStoryline({
@@ -326,7 +326,7 @@ export const StoryWizard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="">
       <AnimatePresence mode="wait">
         {renderCurrentStep()}
       </AnimatePresence>

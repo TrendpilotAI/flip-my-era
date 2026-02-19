@@ -1,0 +1,338 @@
+{
+  "pages": {
+    "homepage_desktop": {
+      "url": "https://flipmyera.com",
+      "status": 200,
+      "load_time": 4.88,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/homepage_desktop.png"
+    },
+    "auth_desktop": {
+      "url": "https://flipmyera.com/auth",
+      "status": 200,
+      "load_time": 2.68,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/auth_desktop.png"
+    },
+    "page_plans_desktop": {
+      "url": "https://flipmyera.com/plans",
+      "status": 200,
+      "load_time": 1.91,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/page_plans_desktop.png"
+    },
+    "page_faq_desktop": {
+      "url": "https://flipmyera.com/faq",
+      "status": 200,
+      "load_time": 1.98,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/page_faq_desktop.png"
+    },
+    "page_sign-up_desktop": {
+      "error": "Page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://accounts.flipmyera.com/sign-up\", waiting until \"networkidle\"\n",
+      "url": "https://accounts.flipmyera.com/sign-up"
+    },
+    "homepage_mobile": {
+      "url": "https://flipmyera.com",
+      "status": 200,
+      "load_time": 4.0,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/homepage_mobile.png"
+    },
+    "auth_mobile": {
+      "url": "https://flipmyera.com/auth",
+      "status": 200,
+      "load_time": 2.55,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/auth_mobile.png"
+    },
+    "page_plans_mobile": {
+      "url": "https://flipmyera.com/plans",
+      "status": 200,
+      "load_time": 1.1,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/page_plans_mobile.png"
+    },
+    "page_faq_mobile": {
+      "url": "https://flipmyera.com/faq",
+      "status": 200,
+      "load_time": 1.18,
+      "screenshot": "/data/workspace/projects/flip-my-era/screenshots/audit/page_faq_mobile.png"
+    },
+    "page_sign-up_mobile": {
+      "error": "Page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://accounts.flipmyera.com/sign-up\", waiting until \"networkidle\"\n",
+      "url": "https://accounts.flipmyera.com/sign-up"
+    }
+  },
+  "broken_links": [
+    {
+      "url": "https://accounts.flipmyera.com/sign-up",
+      "status": 403,
+      "text": "Sign up"
+    }
+  ],
+  "missing_images": [],
+  "console_errors": {
+    "homepage": [],
+    "auth": [],
+    "page_plans": [],
+    "page_faq": [
+      {
+        "type": "error",
+        "text": "404 Error: User attempted to access non-existent route: /faq"
+      }
+    ]
+  },
+  "accessibility": {
+    "homepage": {
+      "missing_alt": [],
+      "broken_images": [],
+      "form_issues": [],
+      "headings": [
+        {
+          "tag": "H3",
+          "text": "Flip My  Era"
+        },
+        {
+          "tag": "H1",
+          "text": "Choose Your Era"
+        },
+        {
+          "tag": "H3",
+          "text": "1989"
+        },
+        {
+          "tag": "H3",
+          "text": "The Life of a Showgirl"
+        },
+        {
+          "tag": "H3",
+          "text": "Folklore/Evermore"
+        },
+        {
+          "tag": "H3",
+          "text": "Red"
+        },
+        {
+          "tag": "H3",
+          "text": "Reputation"
+        },
+        {
+          "tag": "H3",
+          "text": "Lover"
+        },
+        {
+          "tag": "H3",
+          "text": "Midnights"
+        },
+        {
+          "tag": "H3",
+          "text": "Product"
+        },
+        {
+          "tag": "H3",
+          "text": "Support"
+        },
+        {
+          "tag": "H3",
+          "text": "Legal"
+        }
+      ]
+    },
+    "auth": {
+      "missing_alt": [],
+      "broken_images": [],
+      "form_issues": [],
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "FlipMyEra"
+        },
+        {
+          "tag": "H3",
+          "text": "Sign In to FlipMyEra"
+        },
+        {
+          "tag": "H1",
+          "text": "Sign in to FlipMyEra"
+        },
+        {
+          "tag": "H3",
+          "text": "Product"
+        },
+        {
+          "tag": "H3",
+          "text": "Support"
+        },
+        {
+          "tag": "H3",
+          "text": "Legal"
+        }
+      ]
+    },
+    "page_plans": {
+      "missing_alt": [],
+      "broken_images": [],
+      "form_issues": [],
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "FlipMyEra"
+        },
+        {
+          "tag": "H3",
+          "text": "Sign In to FlipMyEra"
+        },
+        {
+          "tag": "H1",
+          "text": "Sign in to FlipMyEra"
+        },
+        {
+          "tag": "H3",
+          "text": "Product"
+        },
+        {
+          "tag": "H3",
+          "text": "Support"
+        },
+        {
+          "tag": "H3",
+          "text": "Legal"
+        }
+      ]
+    },
+    "page_faq": {
+      "missing_alt": [],
+      "broken_images": [],
+      "form_issues": [],
+      "headings": [
+        {
+          "tag": "H1",
+          "text": "404"
+        },
+        {
+          "tag": "H2",
+          "text": "Page Not Found"
+        },
+        {
+          "tag": "H3",
+          "text": "Product"
+        },
+        {
+          "tag": "H3",
+          "text": "Support"
+        },
+        {
+          "tag": "H3",
+          "text": "Legal"
+        }
+      ]
+    }
+  },
+  "seo": {
+    "homepage": {
+      "title": "Flip My Era",
+      "meta_description": "Lovable Generated Project",
+      "og_image": "/og-image.png",
+      "og_title": "",
+      "canonical": ""
+    },
+    "auth": {
+      "title": "Flip My Era",
+      "meta_description": "Lovable Generated Project",
+      "og_image": "/og-image.png",
+      "og_title": "",
+      "canonical": ""
+    },
+    "page_plans": {
+      "title": "Flip My Era",
+      "meta_description": "Lovable Generated Project",
+      "og_image": "/og-image.png",
+      "og_title": "",
+      "canonical": ""
+    },
+    "page_faq": {
+      "title": "Flip My Era",
+      "meta_description": "Lovable Generated Project",
+      "og_image": "/og-image.png",
+      "og_title": "",
+      "canonical": ""
+    }
+  },
+  "performance": {
+    "homepage": {
+      "load_time_s": 4.88
+    },
+    "auth": {
+      "load_time_s": 2.68
+    },
+    "page_plans": {
+      "load_time_s": 1.91
+    },
+    "page_faq": {
+      "load_time_s": 1.98
+    }
+  },
+  "era_cards": [],
+  "auth_test": {
+    "inputs": [
+      {
+        "type": "text",
+        "name": "identifier",
+        "id": "identifier-field",
+        "placeholder": "Enter your email address",
+        "visible": true
+      },
+      {
+        "type": "password",
+        "name": "password",
+        "id": "password-field",
+        "placeholder": "Enter your password",
+        "visible": true
+      }
+    ],
+    "buttons": [
+      {
+        "tag": "BUTTON",
+        "text": "Sign In",
+        "class": "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input shadow-sm shadow-black/5 hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 bg-white/80 backdrop-blur-sm gap-2",
+        "type": "submit"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Sign In",
+        "class": "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 bg-primary text-primary-foreground shadow-sm shadow-black/5 hover:bg-primary/90 h-9 px-4 py-2 flex-1",
+        "type": "submit"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Register",
+        "class": "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 border border-input bg-background shadow-sm shadow-black/5 hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 flex-1",
+        "type": "submit"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Continue with Google",
+        "class": "cl-socialButtonsBlockButton cl-button cl-socialButtonsBlockButton__google cl-button__google \ud83d\udd12\ufe0f cl-internal-1hdlqow",
+        "type": "submit"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "",
+        "class": "",
+        "type": "submit"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "",
+        "class": "cl-formFieldInputShowPasswordButton cl-button \ud83d\udd12\ufe0f cl-internal-f7en1o",
+        "type": "submit"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Continue",
+        "class": "cl-formButtonPrimary cl-button bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 \ud83d\udd12\ufe0f cl-internal-ztsfnw",
+        "type": "submit"
+      }
+    ],
+    "fill_results": {
+      "email": "filled successfully",
+      "password": "filled successfully"
+    },
+    "url": "https://flipmyera.com/auth"
+  },
+  "era_cards_found": []
+}

@@ -30,12 +30,7 @@ export const EnvironmentValidator = () => {
       required: true,
       description: 'Required for database access'
     },
-    {
-      name: 'Clerk Publishable Key',
-      key: 'VITE_CLERK_PUBLISHABLE_KEY',
-      required: true,
-      description: 'Required for user authentication'
-    },
+    // Clerk removed — using Supabase Auth (no additional key needed)
     {
       name: 'Runware Proxy Endpoint',
       key: 'VITE_RUNWARE_PROXY_URL',

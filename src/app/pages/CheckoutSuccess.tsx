@@ -87,9 +87,7 @@ const CheckoutSuccess = () => {
           return;
         }
 
-        // Legacy SamCart flow
-        // NOTE: The subscription update logic has been removed to prevent a security vulnerability.
-        // A backend verification flow for SamCart purchases is required before re-enabling automatic subscription updates.
+        // Legacy plan parameter handling (Stripe redirects)
         const legacyPlan = params.get("plan");
         if (legacyPlan) {
           const planDisplayName = getLegacyPlanDisplayName(legacyPlan);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { SEO } from '@/modules/shared/components/SEO';
 import { useNavigate, useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { supabase } from '@/integrations/supabase/client';
@@ -151,6 +152,7 @@ const Checkout = () => {
 
   return (
     <div className="container max-w-4xl mx-auto py-12">
+      <SEO title="Checkout" description="Choose your FlipMyEra plan and start creating personalized storybooks." url="/checkout" />
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold mb-2">Choose Your Plan</h1>
         <p className="text-gray-600">

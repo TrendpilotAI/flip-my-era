@@ -284,8 +284,8 @@ Deno.serve(async (req: Request) => {
 
       const generationId = body.generation_id;
 
-      // Try to validate with real Supabase data first
-      let validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);
+      // Validate credits with Supabase
+      const validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);
 
       if (!validationData) {
         return new Response(

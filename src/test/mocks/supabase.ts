@@ -150,7 +150,7 @@ export const setupSupabaseMocks = () => {
     supabase: mockSupabaseClient,
     getSupabaseSession: vi.fn().mockResolvedValue(null),
     signOutFromSupabase: vi.fn().mockResolvedValue(undefined),
-    createSupabaseClientWithClerkToken: vi.fn().mockReturnValue(mockSupabaseClient),
+    createSupabaseClientLegacy: vi.fn().mockReturnValue(mockSupabaseClient),
   }));
   
   vi.mock('@/integrations/supabase/client', () => ({

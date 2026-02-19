@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +11,7 @@ interface SupabaseError {
 }
 
 const TestCreditsPage = () => {
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken } = useSupabaseAuth();
   const [testResults, setTestResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -24,15 +24,8 @@ const TestCreditsPage = () => {
       results.push(`✅ Signed in: ${isSignedIn}`);
       
       // Test 2: Get Clerk token with supabase template
-      const tokenWithTemplate = await getToken({ template: 'supabase' });
-      results.push(`${tokenWithTemplate ? '✅' : '❌'} Token with 'supabase' template: ${tokenWithTemplate ? tokenWithTemplate.substring(0, 20) + '...' : 'null'}`);
-      
-      // Test 3: Get Clerk token without template
-      const tokenDefault = await getToken();
-      results.push(`${tokenDefault ? '✅' : '❌'} Token without template: ${tokenDefault ? tokenDefault.substring(0, 20) + '...' : 'null'}`);
-      
-      // Test 4: Decode token to check structure
-      const token = tokenWithTemplate || tokenDefault;
+      const token = await getToken();
+      results.push(`${token ? '✅' : '❌'} Access token: ${token ? token.substring(0, 20) + '...' : 'null'}`);
       if (token) {
         try {
           const parts = token.split('.');

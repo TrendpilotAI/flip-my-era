@@ -33,6 +33,7 @@ class Logger {
     // In production, send to error tracking service
     if (this.isProduction) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { sentryService } = require('@/core/integrations/sentry');
         const errorMessage = args.map(arg => 
           arg instanceof Error ? arg.message : String(arg)

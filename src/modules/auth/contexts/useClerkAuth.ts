@@ -1,10 +1,4 @@
-import { useContext } from 'react';
-import { AuthContext } from './AuthContext';
+// Backward-compatible alias — now backed by Supabase Auth
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
 
-export const useClerkAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useClerkAuth must be used within a ClerkAuthProvider');
-  }
-  return context;
-};
+export const useClerkAuth = useSupabaseAuth;

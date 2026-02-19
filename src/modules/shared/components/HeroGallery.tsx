@@ -206,12 +206,12 @@ export const HeroGallery = ({
         A Journey Through Taylor Swift's Eras
       </p>
       
-      <h3 className="z-20 mx-auto max-w-4xl justify-center bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text py-3 text-center text-4xl text-transparent dark:bg-gradient-to-r dark:from-purple-100 dark:via-pink-200 dark:to-blue-100 md:text-7xl font-bold">
+      <h1 className="z-20 mx-auto max-w-4xl justify-center bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text py-3 text-center text-4xl text-transparent dark:bg-gradient-to-r dark:from-purple-100 dark:via-pink-200 dark:to-blue-100 md:text-7xl font-bold">
         Flip My <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text"> Era</span>
-      </h3>
+      </h1>
       
-      <p className="text-center text-gray-600 dark:text-gray-400 mt-4 text-lg max-w-2xl mx-auto">
-        Transform your story idea into a beautifully crafted narrative inspired by Taylor Swift's iconic storytelling eras.
+      <p className="text-center text-gray-600 dark:text-gray-400 mt-4 text-lg max-w-2xl mx-auto px-4">
+        Upload your photo. Pick your era. Get a beautifully illustrated personalized storybook in under 60 seconds.
       </p>
 
       <div className="relative mb-10 h-[460px] w-full items-center justify-center lg:flex">
@@ -260,13 +260,13 @@ export const HeroGallery = ({
         <Button
           size="lg"
           onClick={onGetStarted}
-          className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white hover:from-purple-700 hover:to-pink-600 px-10 py-6 text-lg shadow-lg"
+          className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white hover:from-purple-700 hover:to-pink-600 px-10 py-7 text-lg font-bold shadow-2xl hover:shadow-purple-500/25 transition-all"
         >
-          Begin Your Story
+          Create Your Story Free
           <ArrowDown className="ml-2 h-5 w-5" />
         </Button>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Scroll to start the storytelling journey
+          ✨ No credit card required • 10 free credits to start
         </p>
       </div>
     </div>

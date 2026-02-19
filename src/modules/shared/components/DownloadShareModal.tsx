@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from "@clerk/clerk-react";
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/modules/shared/components/ui/dialog';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/modules/shared/components/ui/tabs';
@@ -76,7 +76,7 @@ export const DownloadShareModal = ({
   content, 
   className 
 }: DownloadShareModalProps) => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'download' | 'share'>('download');

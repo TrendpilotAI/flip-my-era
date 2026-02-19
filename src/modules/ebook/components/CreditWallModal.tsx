@@ -55,7 +55,7 @@ export const CreditWallModal: React.FC<CreditWallModalProps> = ({
 
     try {
       // Get authentication token
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       
       if (!token) {
         toast({

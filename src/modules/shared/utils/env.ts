@@ -45,7 +45,5 @@ export function getSupabaseAnonKey(): string | undefined {
   return getEnvVar('VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY');
 }
 
-export function getClerkPublishableKey(): string | undefined {
-  return getEnvVar('VITE_CLERK_PUBLISHABLE_KEY');
-}
+// Clerk removed — using Supabase Auth
 

@@ -8,7 +8,7 @@ This directory contains serverless edge functions that run on Deno Deploy throug
 - `brevo-email/` - Function to send emails using the Brevo API
 - `generate-video/` - Function to generate videos from text prompts
 - `migrate-email-templates/` - Function to migrate email templates to Brevo
-- `samcart-webhook/` - Function to handle SamCart webhook events
+- `stripe-webhook/` - Function to handle Stripe webhook events
 - `text-to-speech/` - Function to convert text to speech using ElevenLabs
 - `tiktok-auth/` - Function to handle TikTok authentication
 - `tiktok-share-analytics/` - Function to track TikTok share analytics

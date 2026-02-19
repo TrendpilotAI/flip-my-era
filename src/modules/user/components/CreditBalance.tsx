@@ -8,7 +8,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { supabase } from '@/core/integrations/supabase/client';
-import { useAuth } from '@clerk/clerk-react';
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
 import { CreditPurchaseModal } from './CreditPurchaseModal';
 
 interface CreditBalance {
@@ -23,7 +23,7 @@ interface CreditTransaction {
   amount: number;
   description: string;
   transaction_date: string;
-  samcart_order_id?: string;
+  stripe_payment_id?: string;
 }
 
 interface CreditData {
@@ -35,7 +35,7 @@ export const CreditBalance: React.FC<{
   onBalanceChange?: (balance: number) => void;
   className?: string;
 }> = ({ onBalanceChange, className = '' }) => {
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken } = useSupabaseAuth();
   const [creditData, setCreditData] = useState<CreditData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,11 +50,7 @@ export const CreditBalance: React.FC<{
     try {
       setError(null);
 
-      // Try to get token with supabase template, fallback to default if not available
-      let token = await getToken({ template: 'supabase' });
-      if (!token) {
-        token = await getToken();
-      }
+      const token = await getToken();
 
       const { data, error } = await supabase.functions.invoke('credits', {
         method: 'GET',

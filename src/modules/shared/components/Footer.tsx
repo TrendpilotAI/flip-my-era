@@ -131,19 +131,19 @@ export const Footer = () => {
             <h3 className="font-semibold text-gray-900">Legal</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-gray-600 hover:text-purple-600 transition-colors hover:underline">
+                <Link to="/privacy" className="text-gray-600 hover:text-purple-600 transition-colors hover:underline">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-purple-600 transition-colors hover:underline">
+                <Link to="/terms" className="text-gray-600 hover:text-purple-600 transition-colors hover:underline">
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-purple-600 transition-colors hover:underline">
+                <Link to="/privacy#cookies" className="text-gray-600 hover:text-purple-600 transition-colors hover:underline">
                   Cookie Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </motion.div>

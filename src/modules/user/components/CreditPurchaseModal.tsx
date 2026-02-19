@@ -1,9 +1,8 @@
 // Credit Purchase Modal Component
-// Modal for purchasing credits with different pricing tiers
-// Phase 1A: Enhanced E-Book Generation System
+// Updated for tiered pricing: Single / Album / Tour credit packs
 
 import React, { useState } from 'react';
-import { X, Coins, Crown, Zap, Check } from 'lucide-react';
+import { Coins, Crown, Zap, Check, Disc3, Music, ShoppingBag } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,55 +28,63 @@ interface CreditPurchaseModalProps {
 export interface PricingTier {
   id: string;
   name: string;
-  credits: number | null; // null for unlimited
+  credits: number | null;
   price: number;
   originalPrice?: number;
   description: string;
   features: string[];
   popular?: boolean;
+  bestValue?: boolean;
   type: 'credits' | 'subscription';
   billingCycle?: string;
   stripeProductId: string;
   stripePriceId: string;
 }
 
-// Convert centralized config to pricing tiers format
+// À la carte credit packs from centralized config
 export const pricingTiers: PricingTier[] = [
   {
-    id: 'starter-pack',
-    name: STRIPE_PRODUCTS.credits.starter.name!,
-    credits: STRIPE_PRODUCTS.credits.starter.credits,
-    price: STRIPE_PRODUCTS.credits.starter.price,
-    description: STRIPE_PRODUCTS.credits.starter.description!,
-    features: ['25 Credits', 'Never expires', 'Use anytime', '$1.00 per credit'],
+    id: 'single',
+    name: STRIPE_PRODUCTS.credits.single.name!,
+    credits: STRIPE_PRODUCTS.credits.single.credits,
+    price: STRIPE_PRODUCTS.credits.single.price,
+    description: STRIPE_PRODUCTS.credits.single.description!,
+    features: ['5 Credits', 'Never expires', 'Use anytime', '$0.60 per credit'],
     type: 'credits',
-    stripeProductId: STRIPE_PRODUCTS.credits.starter.productId,
-    stripePriceId: STRIPE_PRODUCTS.credits.starter.priceId,
+    stripeProductId: STRIPE_PRODUCTS.credits.single.productId,
+    stripePriceId: STRIPE_PRODUCTS.credits.single.priceId,
   },
   {
-    id: 'creator-pack',
-    name: STRIPE_PRODUCTS.credits.creator.name!,
-    credits: STRIPE_PRODUCTS.credits.creator.credits,
-    price: STRIPE_PRODUCTS.credits.creator.price,
-    description: STRIPE_PRODUCTS.credits.creator.description!,
-    features: ['55 Credits (10% bonus!)', 'Never expires', 'Most popular choice', '$0.91 per credit'],
+    id: 'album',
+    name: STRIPE_PRODUCTS.credits.album.name!,
+    credits: STRIPE_PRODUCTS.credits.album.credits,
+    price: STRIPE_PRODUCTS.credits.album.price,
+    description: STRIPE_PRODUCTS.credits.album.description!,
+    features: ['20 Credits', 'Never expires', 'Great for a full project', '$0.50 per credit'],
     popular: true,
     type: 'credits',
-    stripeProductId: STRIPE_PRODUCTS.credits.creator.productId,
-    stripePriceId: STRIPE_PRODUCTS.credits.creator.priceId,
+    stripeProductId: STRIPE_PRODUCTS.credits.album.productId,
+    stripePriceId: STRIPE_PRODUCTS.credits.album.priceId,
   },
   {
-    id: 'studio-pack',
-    name: STRIPE_PRODUCTS.credits.studio.name!,
-    credits: STRIPE_PRODUCTS.credits.studio.credits,
-    price: STRIPE_PRODUCTS.credits.studio.price,
-    description: STRIPE_PRODUCTS.credits.studio.description!,
-    features: ['120 Credits (20% bonus!)', 'Never expires', 'Best long-term value', '$0.83 per credit'],
+    id: 'tour',
+    name: STRIPE_PRODUCTS.credits.tour.name!,
+    credits: STRIPE_PRODUCTS.credits.tour.credits,
+    price: STRIPE_PRODUCTS.credits.tour.price,
+    description: STRIPE_PRODUCTS.credits.tour.description!,
+    features: ['50 Credits', 'Never expires', 'Best long-term value', '$0.40 per credit'],
+    bestValue: true,
     type: 'credits',
-    stripeProductId: STRIPE_PRODUCTS.credits.studio.productId,
-    stripePriceId: STRIPE_PRODUCTS.credits.studio.priceId,
+    stripeProductId: STRIPE_PRODUCTS.credits.tour.productId,
+    stripePriceId: STRIPE_PRODUCTS.credits.tour.priceId,
   },
 ];
+
+const packIcons: Record<string, React.ReactNode> = {
+  single: <Disc3 className="w-5 h-5 text-pink-500" />,
+  album: <Music className="w-5 h-5 text-purple-500" />,
+  tour: <ShoppingBag className="w-5 h-5 text-indigo-500" />,
+};
 
 export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   isOpen,
@@ -93,7 +100,6 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
     setLoading(tier.id);
 
     try {
-      // Validate user data before proceeding
       if (!user?.email) {
         throw new Error("User email is required for checkout");
       }
@@ -103,15 +109,14 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
         description: "You'll be redirected to Stripe to complete your purchase securely.",
       });
 
-      // Call Stripe checkout function for one-time credit purchases
       const token = await getToken();
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' },
         body: {
           plan: tier.id,
           productType: 'credits',
-          stripePriceId: tier.stripePriceId
-        }
+          stripePriceId: tier.stripePriceId,
+        },
       });
 
       if (error) {
@@ -119,15 +124,12 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       }
 
       if (data?.url) {
-        // Open Stripe checkout in new tab
         window.open(data.url, '_blank');
       } else {
         throw new Error('No checkout URL received');
       }
     } catch (error) {
       console.error('Error opening checkout:', error);
-
-      // Show user-friendly error message
       const errorMessage = error instanceof Error
         ? error.message.includes('email')
           ? "Please ensure you're logged in with a valid email address."
@@ -144,26 +146,8 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
-  };
-
-  const getCreditText = (credits: number | null) => {
-    if (credits === null) return 'Unlimited';
-    return credits === 1 ? '1 Credit' : `${credits} Credits`;
-  };
-
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'subscription':
-        return <Crown className="w-5 h-5" />;
-      default:
-        return <Coins className="w-5 h-5" />;
-    }
-  };
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -171,60 +155,45 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl">
             <Zap className="w-5 h-5 mr-2" />
-            Purchase Credits & Subscriptions
+            Buy Credit Packs
           </DialogTitle>
           <DialogDescription>
             Current balance: <strong>{currentBalance} credits</strong>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           {pricingTiers.map((tier) => (
-            <Card 
-              key={tier.id} 
-              className={`relative ${tier.popular ? 'ring-2 ring-primary' : ''}`}
+            <Card
+              key={tier.id}
+              className={`relative ${tier.popular ? 'ring-2 ring-primary' : ''} ${tier.bestValue ? 'ring-2 ring-indigo-400' : ''}`}
             >
               {tier.popular && (
                 <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2">
                   Most Popular
                 </Badge>
               )}
-              
+              {tier.bestValue && (
+                <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-indigo-500">
+                  <Zap className="w-3 h-3 mr-1" /> Best Value
+                </Badge>
+              )}
+
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center">
-                    {getIcon(tier.type)}
+                    {packIcons[tier.id] || <Coins className="w-5 h-5" />}
                     <span className="ml-2">{tier.name}</span>
                   </div>
-                  {tier.type === 'subscription' && (
-                    <Crown className="w-4 h-4 text-yellow-500" />
-                  )}
                 </CardTitle>
-                
+
                 <div className="space-y-2">
-                  <div className="text-2xl font-bold">
-                    {formatPrice(tier.price)}
-                    {tier.type === 'subscription' && (
-                      <span className="text-sm font-normal text-muted-foreground">
-                        /{tier.billingCycle}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {tier.originalPrice && (
-                    <div className="text-sm text-muted-foreground">
-                      <span className="line-through">{formatPrice(tier.originalPrice)}</span>
-                      <span className="ml-2 text-green-600 font-medium">
-                        Save {Math.round((1 - tier.price / tier.originalPrice) * 100)}%
-                      </span>
-                    </div>
-                  )}
-                  
+                  <div className="text-2xl font-bold">{formatPrice(tier.price)}</div>
                   <div className="text-lg font-semibold text-primary">
-                    {getCreditText(tier.credits)}
+                    {tier.credits} Credits
                   </div>
                 </div>
-                
+
                 <CardDescription>{tier.description}</CardDescription>
               </CardHeader>
 
@@ -242,15 +211,15 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
                   onClick={() => handlePurchase(tier)}
                   disabled={!!loading}
                   className="w-full"
-                  variant={tier.popular ? 'default' : 'outline'}
+                  variant={tier.bestValue ? 'default' : tier.popular ? 'default' : 'outline'}
                 >
                   {loading === tier.id ? (
                     <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
                       Opening Checkout...
                     </div>
                   ) : (
-                    `Purchase ${tier.name}`
+                    `Buy ${tier.name}`
                   )}
                 </Button>
               </CardContent>
@@ -261,7 +230,6 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
         <div className="mt-6 p-4 bg-muted rounded-lg">
           <p className="text-sm text-muted-foreground">
             <strong>Note:</strong> Credits never expire and can be used anytime.
-            Subscriptions provide unlimited access and can be cancelled at any time.
             All purchases are processed securely through Stripe.
           </p>
         </div>

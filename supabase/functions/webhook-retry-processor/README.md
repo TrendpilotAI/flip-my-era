@@ -7,7 +7,7 @@ This Supabase Edge Function processes webhooks that have been queued for retry d
 The webhook retry processor:
 - Processes webhooks from the retry queue that are scheduled for execution
 - Implements exponential backoff for retry attempts
-- Handles different webhook types (currently supports Samcart webhooks)
+- Handles different webhook types (currently supports Stripe webhooks)
 - Updates webhook logs and credit transactions based on processing results
 
 ## Setup
@@ -39,7 +39,7 @@ curl -X POST https://your-project.supabase.co/functions/v1/webhook-retry-process
 
 ## Supported Webhook Types
 
-### Samcart Webhooks
+### Stripe Webhooks
 - `subscription_created`
 - `subscription_charged`
 - `order_completed`
@@ -50,7 +50,7 @@ curl -X POST https://your-project.supabase.co/functions/v1/webhook-retry-process
 
 The processor interacts with:
 - `webhook_retry_queue` - Queue of webhooks to retry
-- `samcart_webhook_logs` - Log of Samcart webhook events
+- `stripe_webhook_logs` - Log of Stripe webhook events
 - `credit_transactions` - User credit transactions
 - `users` - User information
 

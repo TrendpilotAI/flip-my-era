@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { calculateCreditCost, type CreditCostParams } from '@/modules/shared/utils/creditPricing';
-import { supabase, createSupabaseClientWithClerkToken } from '@/core/integrations/supabase/client';
+import { supabase } from "@/core/integrations/supabase/client";
 import { generateWithGroq } from "@/modules/shared/utils/groq";
 import { ChapterView } from "./ChapterView";
 import { StreamingChapterView } from "./StreamingChapterView";
@@ -21,7 +21,7 @@ import { generateEbookIllustration, generateTaylorSwiftIllustration } from "@/mo
 import { CreditBalance } from "@/modules/user/components/CreditBalance";
 import { CreditPurchaseModal } from "@/modules/user/components/CreditPurchaseModal";
 import { CreditWallModal } from "./CreditWallModal";
-import { useAuth } from "@clerk/clerk-react";
+import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
 import { Alert, AlertDescription } from '@/modules/shared/components/ui/alert';
 import { useStreamingGeneration } from "@/modules/story/hooks/useStreamingGeneration";
 import {
@@ -62,7 +62,7 @@ interface EbookGeneratorProps {
 
 export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat }: EbookGeneratorProps) => {
   const { toast } = useToast();
-  const { isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken } = useSupabaseAuth();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [isGeneratingChapters, setIsGeneratingChapters] = useState(false);
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
@@ -122,7 +122,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
 
     try {
 
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
 
       // Calculate total cost using new pricing system
       const costResult = operations.length === 1
@@ -239,7 +239,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
         if (creditValidation.transactionId) {
           try {
             const storyType = useTaylorSwiftThemes ? `taylor-swift-${selectedTheme}-${selectedFormat}` : 'ebook';
-            const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
+            const token = isSignedIn ? await getToken() : null;
             const userId = token ? extractUserIdFromToken(token) : null;
             
             if (!token || !userId) {
@@ -248,10 +248,10 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
             }
             
             // Create authenticated Supabase client
-            const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
+            
             
             // Save ebook generation record
-            const { data: ebookGeneration, error: ebookError } = await supabaseWithAuth
+            const { data: ebookGeneration, error: ebookError } = await supabase
               .from('ebook_generations')
               .insert({
                 user_id: userId,
@@ -273,7 +273,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
               console.error('Error creating ebook generation record:', ebookError);
             } else if (ebookGeneration) {
               // Save the actual book to memory_books table for user access
-              const { error: memoryBookError } = await supabaseWithAuth
+              const { error: memoryBookError } = await supabase
                 .from('memory_books')
                 .insert({
                   user_id: userId,
@@ -336,7 +336,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
     try {
       // Use streaming generation hook but wait for completion
       // This ensures we use Edge Functions instead of legacy client-side API calls
-      const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
+      const token = isSignedIn ? await getToken() : null;
       
       if (!token) {
         throw new Error('Authentication required. Please sign in to generate chapters.');
@@ -374,9 +374,9 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                   }
                   
                   // Create authenticated Supabase client
-                  const supabaseWithAuth = createSupabaseClientWithClerkToken(token);
                   
-                  const { data: ebookGeneration, error: ebookError } = await supabaseWithAuth
+                  
+                  const { data: ebookGeneration, error: ebookError } = await supabase
                     .from('ebook_generations')
                     .insert({
                       user_id: userId,
@@ -398,7 +398,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                     console.error('Error creating ebook generation record:', ebookError);
                   } else if (ebookGeneration) {
                     // Save the actual book to memory_books table for user access
-                    const { error: memoryBookError } = await supabaseWithAuth
+                    const { error: memoryBookError } = await supabase
                       .from('memory_books')
                       .insert({
                         user_id: userId,
@@ -489,7 +489,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
       const updatedChapters = [...chapters];
       
       // Get Clerk token for enhanced prompts if needed
-      const token = isSignedIn ? await getToken({ template: 'supabase' }) : null;
+      const token = isSignedIn ? await getToken() : null;
       
       for (let i = 0; i < chapters.length; i++) {
         setCurrentImageIndex(i);
@@ -657,7 +657,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
   const handleCreditBalanceRefresh = async () => {
     // Refresh credit balance after purchase
     try {
-      const token = await getToken({ template: 'supabase' });
+      const token = await getToken();
       const { data } = await supabase.functions.invoke('credits', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -992,13 +992,11 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
               size="lg"
               onClick={async () => {
                 try {
-                  const productId = import.meta.env.VITE_SAMCART_EBOOK_PRODUCT_ID || 'ebook-product-id';
-                  
-                  // Call Supabase Edge Function to get checkout URL
-                  const { data, error } = await supabase.functions.invoke('samcart-checkout', {
+                  // Call Supabase Edge Function to create Stripe checkout session
+                  const { data, error } = await supabase.functions.invoke('create-checkout', {
                     body: {
-                      productId,
-                      redirectUrl: `${window.location.origin}/checkout/success`,
+                      priceId: 'ebook',
+                      successUrl: `${window.location.origin}/checkout/success`,
                       cancelUrl: window.location.href
                     }
                   });
@@ -1019,7 +1017,7 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
                 }
               }}
             >
-              Buy this Ebook with SamCart
+              Buy this Ebook
             </Button>
           </div>
         </div>

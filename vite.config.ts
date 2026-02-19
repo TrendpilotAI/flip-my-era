@@ -142,10 +142,7 @@ export default defineConfig(({ mode }) => ({
   },
   assetsInclude: ['**/*.md'], // Include markdown files as assets
   build: {
-    // Let Vite handle chunk splitting automatically to avoid React loading order issues
-    // Manual chunking was causing "Cannot read properties of undefined (reading 'useState')" errors
-    // because vendor chunks were executing before React was loaded
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     sourcemap: mode === 'development',
     minify: 'esbuild',
     target: 'esnext',
@@ -155,6 +152,17 @@ export default defineConfig(({ mode }) => ({
     },
     modulePreload: {
       polyfill: true,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-sentry': ['@sentry/react'],
+          'vendor-framer': ['framer-motion'],
+          'vendor-radix': ['@radix-ui/react-dialog', '@radix-ui/react-slot', '@radix-ui/react-toast', '@radix-ui/react-tabs', '@radix-ui/react-select', '@radix-ui/react-dropdown-menu', '@radix-ui/react-accordion'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
     },
   },
 }));

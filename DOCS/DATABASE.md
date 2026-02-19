@@ -161,7 +161,7 @@ CREATE TABLE memory_books (
     -- Pricing and commerce
     price_cents INTEGER DEFAULT 0,
     is_free BOOLEAN DEFAULT true,
-    samcart_product_id VARCHAR(255),
+    stripe_product_id VARCHAR(255),
     
     -- Analytics and engagement
     view_count INTEGER DEFAULT 0,
@@ -327,8 +327,8 @@ CREATE TABLE subscriptions (
     status subscription_status DEFAULT 'active',
     
     -- Billing information
-    external_subscription_id VARCHAR(255), -- SamCart/Stripe subscription ID
-    external_customer_id VARCHAR(255), -- SamCart/Stripe customer ID
+    external_subscription_id VARCHAR(255), -- Stripe subscription ID
+    external_customer_id VARCHAR(255), -- Stripe customer ID
     
     -- Pricing
     price_cents INTEGER NOT NULL,
@@ -485,7 +485,7 @@ CREATE TABLE memory_books (
     images JSONB DEFAULT '[]',
     price_cents INTEGER DEFAULT 0,
     is_free BOOLEAN DEFAULT true,
-    samcart_product_id VARCHAR(255),
+    stripe_product_id VARCHAR(255),
     view_count INTEGER DEFAULT 0,
     download_count INTEGER DEFAULT 0,
     purchase_count INTEGER DEFAULT 0,

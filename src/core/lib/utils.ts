@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Utility function to extract user ID from Clerk JWT token
+// Utility function to extract user ID from JWT token
 export function extractUserIdFromToken(token: string): string | null {
   try {
     // Split the JWT token into parts

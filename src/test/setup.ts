@@ -176,7 +176,7 @@ const supabaseClientMock = {
   },
 };
 
-const createSupabaseClientWithClerkTokenMock = vi.fn(() => supabaseClientMock);
+const createSupabaseClientLegacyMock = vi.fn(() => supabaseClientMock);
 const getSupabaseSessionMock = vi.fn();
 const signOutFromSupabaseMock = vi.fn();
 
@@ -184,13 +184,13 @@ vi.mock('@/core/integrations/supabase/client', () => ({
   supabase: supabaseClientMock,
   getSupabaseSession: getSupabaseSessionMock,
   signOutFromSupabase: signOutFromSupabaseMock,
-  createSupabaseClientWithClerkToken: createSupabaseClientWithClerkTokenMock,
+  createSupabaseClientLegacy: createSupabaseClientLegacyMock,
 }));
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const __testSupabaseMocks__ = {
   supabase: supabaseClientMock,
-  createSupabaseClientWithClerkTokenMock,
+  createSupabaseClientLegacyMock,
   getSupabaseSessionMock,
   signOutFromSupabaseMock,
   supabaseAuthMock,

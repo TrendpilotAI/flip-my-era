@@ -1,81 +1,45 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Mock for Supabase Auth (replaces old Clerk mock)
+ * Provides mock implementations for auth context used in tests
+ */
 import { vi } from 'vitest';
 
-// Mock Clerk user object
-export const mockClerkUser = {
-  id: 'user_test123',
-  primaryEmailAddress: {
-    emailAddress: 'test@example.com',
+export const mockSupabaseAuth = {
+  user: {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    name: 'Test User',
+    avatar_url: '',
+    subscription_status: 'free' as const,
+    created_at: new Date().toISOString(),
+    credits: 3,
   },
-  fullName: 'Test User',
-  firstName: 'Test',
-  lastName: 'User',
-  imageUrl: 'https://example.com/avatar.jpg',
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-};
-
-// Mock Clerk auth object
-export const mockClerkAuth = {
-  userId: 'user_test123',
-  sessionId: 'session_test123',
-  getToken: vi.fn().mockResolvedValue('mock-jwt-token'),
-  signOut: vi.fn().mockResolvedValue(undefined),
-};
-
-// Mock useUser hook
-export const mockUseUser = {
-  user: mockClerkUser,
-  isLoaded: true,
+  session: null,
+  isLoading: false,
+  isAuthenticated: true,
   isSignedIn: true,
+  signIn: vi.fn().mockResolvedValue({ error: null }),
+  signUp: vi.fn().mockResolvedValue({ error: null }),
+  signOut: vi.fn().mockResolvedValue({ error: null }),
+  signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
+  refreshUser: vi.fn().mockResolvedValue(undefined),
+  fetchCreditBalance: vi.fn().mockResolvedValue(3),
+  getToken: vi.fn().mockResolvedValue('mock-token'),
+  isNewUser: false,
+  setIsNewUser: vi.fn(),
 };
 
-// Mock useAuth hook
-export const mockUseAuth = {
-  ...mockClerkAuth,
-  isLoaded: true,
-  isSignedIn: true,
-};
+// Mock the auth module
+vi.mock('@/core/integrations/supabase/auth', () => ({
+  useSupabaseAuth: () => mockSupabaseAuth,
+  useAuth: () => mockSupabaseAuth,
+  SupabaseAuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  AuthContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
+}));
 
-// Create mock Clerk provider
-export const createMockClerkProvider = (overrides = {}) => {
-  return {
-    user: { ...mockClerkUser, ...overrides.user },
-    auth: { ...mockClerkAuth, ...overrides.auth },
-    isLoaded: overrides.isLoaded ?? true,
-    isSignedIn: overrides.isSignedIn ?? true,
-  };
-};
-
-// Mock Clerk components
-export const MockSignInButton = ({ children, ...props }: any) => (
-  <button data-testid="sign-in-button" {...props}>
-    {children || 'Sign In'}
-  </button>
-);
-
-export const MockSignUpButton = ({ children, ...props }: any) => (
-  <button data-testid="sign-up-button" {...props}>
-    {children || 'Sign Up'}
-  </button>
-);
-
-export const MockUserButton = (props: any) => (
-  <button data-testid="user-button" {...props}>
-    User Menu
-  </button>
-);
-
-// Setup Clerk mocks for tests
-export const setupClerkMocks = () => {
-  vi.mock('@clerk/clerk-react', () => ({
-    useUser: () => mockUseUser,
-    useAuth: () => mockUseAuth,
-    SignInButton: MockSignInButton,
-    SignUpButton: MockSignUpButton,
-    UserButton: MockUserButton,
-    ClerkProvider: ({ children }: any) => children,
-    SignedIn: ({ children }: any) => (mockUseAuth.isSignedIn ? children : null),
-    SignedOut: ({ children }: any) => (!mockUseAuth.isSignedIn ? children : null),
-  }));
-};
+// Also mock the re-export paths
+vi.mock('@/modules/auth/contexts', () => ({
+  useClerkAuth: () => mockSupabaseAuth,
+  ClerkAuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  AuthContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
+}));

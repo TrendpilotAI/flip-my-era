@@ -36,6 +36,7 @@ class SentryService {
     // Initialize Sentry SDK
     Sentry.init({
       dsn: config.dsn,
+      release: 'flip-my-era@1.0.0',
       environment: config.environment,
       tracesSampleRate: config.tracesSampleRate || 0.1,
       sendDefaultPii: config.sendDefaultPii ?? false, // Default to false for privacy

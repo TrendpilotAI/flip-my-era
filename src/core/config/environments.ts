@@ -14,9 +14,6 @@ interface EnvironmentConfig {
       publishableKey: string
       secretKey: string // Add secret key for server-side operations if needed
     }
-    clerk?: {
-      publishableKey: string
-    }
   }
 }
 

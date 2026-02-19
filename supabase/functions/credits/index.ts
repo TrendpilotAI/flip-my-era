@@ -40,7 +40,7 @@ interface CreditTransaction {
   amount: number;
   description: string;
   transaction_date: string;
-  samcart_order_id?: string;
+  stripe_payment_id?: string;
 }
 
 interface ApiResponse {
@@ -151,7 +151,7 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
       amount: number;
       description: string;
       created_at: string;
-      samcart_order_id?: string;
+      stripe_payment_id?: string;
     }
     
     const formattedTransactions: CreditTransaction[] = (transactions || []).map((tx: TransactionRow) => ({
@@ -160,7 +160,7 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
       amount: Math.abs(tx.amount),
       description: tx.description,
       transaction_date: tx.created_at,
-      samcart_order_id: tx.samcart_order_id
+      stripe_payment_id: tx.stripe_payment_id
     }));
     
     return { balance, transactions: formattedTransactions };
@@ -201,8 +201,8 @@ serve(async (req: Request) => {
       const url = new URL(req.url);
       const includeTransactions = url.searchParams.get('include_transactions') === 'true';
       
-      // Try to get real data from Supabase first
-      let creditData = await getCreditDataFromSupabase(userId);
+      // Get credit data from Supabase
+      const creditData = await getCreditDataFromSupabase(userId);
       
       if (!creditData) {
         return new Response(
