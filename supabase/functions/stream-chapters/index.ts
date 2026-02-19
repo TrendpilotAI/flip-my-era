@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 // @ts-expect-error -- Deno Edge Function imports
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @ts-expect-error -- Deno Edge Function imports
+import { verifyAuth } from '../_shared/utils.ts'
 
 const ALLOWED_ORIGINS = [
   'http://localhost:8081',
@@ -21,16 +23,7 @@ function getCorsHeaders(req: Request) {
   };
 }
 
-// Helper: decode JWT payload (no verify, for dev only)
-function decodeJwtPayload(token: string): unknown {
-  try {
-    const payload = token.split('.')[1];
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded);
-  } catch (e) {
-    return null;
-  }
-}
+// verifyAuth is imported from _shared/utils.ts — cryptographically verifies JWT
 
 // Groq API types
 interface GroqChatMessage {
@@ -380,26 +373,27 @@ serve(async (req: Request) => {
     });
   }
 
-  // Parse and verify Authorization header
-  const authHeader = req.headers.get('authorization');
-  let userId: string | null = null;
-  
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.slice(7);
-    const jwtPayload = decodeJwtPayload(token);
-    
-    if (jwtPayload && typeof jwtPayload === 'object' && jwtPayload !== null && 'sub' in jwtPayload && typeof (jwtPayload as { sub?: unknown }).sub === 'string' && String((jwtPayload as { sub: string }).sub).startsWith('user_')) {
-      userId = jwtPayload.sub;
-    }
+  // Verify JWT cryptographically — reject unauthenticated callers
+  const userId = await verifyAuth(req);
+
+  if (!userId) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized - Invalid or missing token' }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 
-  // Create Supabase client with user's auth context for RLS
+  // Create Supabase client with user's verified auth context for RLS
+  const authHeader = req.headers.get('authorization');
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_ANON_KEY')!,
     {
       global: {
-        headers: userId ? { Authorization: `Bearer ${authHeader?.slice(7)}` } : {},
+        headers: { Authorization: authHeader! },
       },
     }
   );

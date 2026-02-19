@@ -33,10 +33,28 @@ jobs:
       - name: Push migrations
         run: supabase db push
 
-      - name: Deploy Edge Functions
-        run: supabase functions deploy --no-verify-jwt
+      - name: Deploy Edge Functions (with JWT verification)
+        run: |
+          supabase functions deploy credits
+          supabase functions deploy credits-validate
+          supabase functions deploy admin-credits
+          supabase functions deploy stream-chapters
+          supabase functions deploy groq-storyline
+          supabase functions deploy groq-api
+          supabase functions deploy runware-proxy
+          supabase functions deploy ebook-generation
+          supabase functions deploy create-checkout
+          supabase functions deploy customer-portal
+          supabase functions deploy check-subscription
+          supabase functions deploy brevo-email
+          supabase functions deploy stripe-portal
         env:
           GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+
+      - name: Deploy webhook functions (no JWT - receives external callbacks)
+        run: |
+          supabase functions deploy stripe-webhook --no-verify-jwt
+          supabase functions deploy webhook-retry-processor --no-verify-jwt
 
   deploy-production:
     name: Deploy to Production
@@ -60,7 +78,25 @@ jobs:
       - name: Push migrations
         run: supabase db push
 
-      - name: Deploy Edge Functions
-        run: supabase functions deploy --no-verify-jwt
+      - name: Deploy Edge Functions (with JWT verification)
+        run: |
+          supabase functions deploy credits
+          supabase functions deploy credits-validate
+          supabase functions deploy admin-credits
+          supabase functions deploy stream-chapters
+          supabase functions deploy groq-storyline
+          supabase functions deploy groq-api
+          supabase functions deploy runware-proxy
+          supabase functions deploy ebook-generation
+          supabase functions deploy create-checkout
+          supabase functions deploy customer-portal
+          supabase functions deploy check-subscription
+          supabase functions deploy brevo-email
+          supabase functions deploy stripe-portal
         env:
           GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+
+      - name: Deploy webhook functions (no JWT - receives external callbacks)
+        run: |
+          supabase functions deploy stripe-webhook --no-verify-jwt
+          supabase functions deploy webhook-retry-processor --no-verify-jwt

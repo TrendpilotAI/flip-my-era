@@ -7,6 +7,8 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 // @ts-expect-error - HTTPS imports are supported in Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-expect-error -- Deno Edge Function imports
+import { verifyAuth } from "../_shared/utils.ts";
 
 const ALLOWED_ORIGINS = [
   'http://localhost:8081',
@@ -50,32 +52,7 @@ interface ApiResponse {
   error?: string;
 }
 
-// Function to extract user ID from Clerk JWT token
-const extractUserIdFromClerkToken = (req: Request): string | null => {
-  try {
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    const parts = token.split('.');
-    if (parts.length < 2) {
-      return null;
-    }
-
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
-    const json = atob(padded);
-    const payload = JSON.parse(json);
-
-    const userId = payload?.sub || payload?.user_id || payload?.uid || null;
-    return typeof userId === 'string' ? userId : null;
-  } catch (error) {
-    console.error('Error extracting user ID from token:', error);
-    return null;
-  }
-};
+// verifyAuth is imported from _shared/utils.ts — cryptographically verifies JWT
 
 // Function to get real credit data from Supabase
 const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: CreditBalance; transactions: CreditTransaction[] } | null> => {
@@ -203,8 +180,8 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Extract user ID from Clerk token
-    const userId = extractUserIdFromClerkToken(req);
+    // Verify JWT and extract authenticated user ID
+    const userId = await verifyAuth(req);
 
     if (!userId) {
       return new Response(

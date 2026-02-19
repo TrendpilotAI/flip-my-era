@@ -47,6 +47,42 @@ export function initSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
+/**
+ * Verify the caller's JWT and extract the authenticated user ID.
+ *
+ * Uses Supabase's auth.getUser() which cryptographically verifies the token
+ * signature against the project's JWT secret — NOT raw base64 decoding.
+ *
+ * Returns the user ID string on success, or null on failure.
+ */
+export async function verifyAuth(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+
+    const { data: { user }, error } = await authClient.auth.getUser(token);
+    if (error || !user) return null;
+
+    // user.id is the Supabase auth.uid(); for Clerk-synced users the 'sub'
+    // claim is mapped to this field by the Clerk ↔ Supabase integration.
+    return user.id;
+  } catch {
+    return null;
+  }
+}
+
 // Standard error response formatter
 export function formatErrorResponse(error: Error, status = 500) {
   // Log error details for debugging (avoid logging sensitive data)
