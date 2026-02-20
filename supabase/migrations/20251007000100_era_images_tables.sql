@@ -1,5 +1,8 @@
 -- Create tables for storing published era images
 
+-- Ensure profiles has role column (needed for admin policies below)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
+
 -- Staging environment images
 CREATE TABLE IF NOT EXISTS public.era_images_staging (
   id TEXT PRIMARY KEY,
@@ -74,14 +77,14 @@ CREATE POLICY "Only admins can manage production images"
   USING (
     EXISTS (
       SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.id = auth.jwt() ->> 'sub'
       AND profiles.role = 'admin'
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
+      WHERE profiles.id = auth.jwt() ->> 'sub'
       AND profiles.role = 'admin'
     )
   );
@@ -131,7 +134,7 @@ SELECT
   END as collection_order
 FROM public.era_images e
 WHERE e.approved_at IS NOT NULL
-ORDER BY e.collection_order, e.section_index;
+ORDER BY collection_order, e.section_index;
 
 -- Grant access to the view
 GRANT SELECT ON public.latest_era_images TO anon, authenticated;

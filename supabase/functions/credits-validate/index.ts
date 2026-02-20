@@ -6,6 +6,8 @@
 // Using Deno's built-in HTTP server API
 // @ts-expect-error -- HTTPS imports are supported in Deno Edge Functions runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-expect-error -- Deno Edge Function imports
+import { verifyAuth } from "../_shared/utils.ts";
 
 // Import credit pricing logic (inlined for Edge Function compatibility)
 const CREDIT_PRICING = {
@@ -82,30 +84,17 @@ function calculateCreditCost(operation: Operation): number {
   return Math.max(0.1, Math.round(baseCost * 100) / 100);
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',  // More permissive for development
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'https://flip-my-era.netlify.app',
+  'https://flipmyera.com',
+  'https://www.flipmyera.com',
+];
 
-// For production, we'll determine the correct origin
 const getCorsHeaders = (req: Request) => {
-  const origin = req.headers.get('Origin') || '*';
-  const allowedOrigins = [
-    'http://localhost:8080',
-    'http://localhost:8081',
-    'http://localhost:8082',
-    'http://localhost:8083',
-    'http://localhost:8084',
-    'http://localhost:3000',
-    'https://flip-my-era.netlify.app',
-    'https://flipmyera.com',
-    'https://www.flipmyera.com'
-  ];
-  
+  const origin = req.headers.get('Origin') || '';
   return {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
@@ -143,126 +132,82 @@ interface ValidationResponse {
   error?: string;
 }
 
-// Function to extract user ID from Clerk JWT token
-const extractUserIdFromClerkToken = (req: Request): string | null => {
-  try {
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
+// verifyAuth is imported from _shared/utils.ts — cryptographically verifies JWT
 
-    const token = authHeader.substring(7);
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-
-    // Base64URL decode JWT payload and return 'sub'
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
-    const json = atob(padded);
-    const payload = JSON.parse(json);
-
-    const userId = payload?.sub || payload?.user_id || payload?.uid || null;
-    return typeof userId === 'string' ? userId : null;
-  } catch (error) {
-    console.error('Error extracting user ID from token:', error);
-    return null;
-  }
-};
-
-// Function to validate credits using real Supabase data
+// Validate and atomically deduct credits using a database function.
+// This eliminates the TOCTOU race condition from the previous read-then-write pattern.
 const validateCreditsWithSupabase = async (userId: string, creditsRequired: number): Promise<ValidationResponse['data'] | null> => {
   try {
-    // Create Supabase client with service role key for edge function
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Query user_credits table using Clerk user ID (TEXT field)
+
+    // First check current balance (read-only, for the response)
     const { data: creditData, error: creditError } = await supabase
       .from('user_credits')
-      .select('*')
-      .eq('user_id', userId) // Using TEXT field, not UUID
+      .select('balance, subscription_type')
+      .eq('user_id', userId)
       .single();
-    
+
     if (creditError) {
       console.error('Error fetching credit data:', creditError);
       return null;
     }
-    
+
     const currentBalance = creditData?.balance || 0;
-    const hasSufficientCredits = currentBalance >= creditsRequired;
-    
-    if (hasSufficientCredits) {
-      // Deduct credits and create transaction
-      const newBalance = currentBalance - creditsRequired;
-      
-      // Update user credits
-      const { error: updateError } = await supabase
-        .from('user_credits')
-        .update({ 
-          balance: newBalance,
-          total_spent: (creditData.total_spent || 0) + creditsRequired,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-      
-      if (updateError) {
-        console.error('Error updating credits:', updateError);
-        return null;
-      }
-      
-      // Create transaction record
-      const { data: transaction, error: transactionError } = await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: userId,
-          amount: -creditsRequired, // Negative for spending
-          transaction_type: 'ebook_generation',
-          description: `Ebook generation - ${creditsRequired} credits`,
-          balance_after_transaction: newBalance,
-          metadata: { story_type: 'ebook_generation' }
-        })
-        .select()
-        .single();
-      
-      if (transactionError) {
-        console.error('Error creating transaction:', transactionError);
-      }
-      
-      return {
-        has_sufficient_credits: true,
-        current_balance: newBalance,
-        subscription_type: creditData.subscription_type,
-        transaction_id: transaction?.id,
-        bypass_credits: false
-      };
-    } else {
+
+    if (currentBalance < creditsRequired) {
       return {
         has_sufficient_credits: false,
         current_balance: currentBalance,
-        subscription_type: creditData.subscription_type,
+        subscription_type: creditData?.subscription_type,
         bypass_credits: false
       };
     }
+
+    // Atomic deduction via database function — prevents double-spend
+    const { data: result, error: rpcError } = await supabase
+      .rpc('deduct_credits', {
+        p_user_id: userId,
+        p_amount: creditsRequired,
+        p_description: `Ebook generation - ${creditsRequired} credits`,
+        p_metadata: { story_type: 'ebook_generation' }
+      })
+      .single();
+
+    if (rpcError) {
+      console.error('Error in atomic credit deduction:', rpcError);
+      return null;
+    }
+
+    if (!result?.success) {
+      // Race condition caught — balance was deducted by another request
+      // Re-read the actual current balance
+      const { data: refreshed } = await supabase
+        .from('user_credits')
+        .select('balance, subscription_type')
+        .eq('user_id', userId)
+        .single();
+
+      return {
+        has_sufficient_credits: false,
+        current_balance: refreshed?.balance || 0,
+        subscription_type: refreshed?.subscription_type,
+        bypass_credits: false
+      };
+    }
+
+    return {
+      has_sufficient_credits: true,
+      current_balance: result.new_balance,
+      subscription_type: creditData?.subscription_type,
+      transaction_id: result.transaction_id,
+      bypass_credits: false
+    };
   } catch (error) {
     console.error('Error in validateCreditsWithSupabase:', error);
     return null;
   }
-};
-
-// Mock validation data for testing (fallback)
-const getMockValidationData = (creditsRequired: number = 1): ValidationResponse['data'] => {
-  const mockBalance = 10; // Mock balance
-  const hasSufficientCredits = mockBalance >= creditsRequired;
-  
-  return {
-    has_sufficient_credits: hasSufficientCredits,
-    current_balance: hasSufficientCredits ? mockBalance - creditsRequired : mockBalance,
-    subscription_type: 'monthly',
-    transaction_id: hasSufficientCredits ? 'mock-transaction-123' : undefined,
-    bypass_credits: false
-  };
 };
 
 // @ts-expect-error -- Deno.serve is available in Supabase Edge Functions runtime
@@ -276,8 +221,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Extract user ID from Clerk token
-    const userId = extractUserIdFromClerkToken(req);
+    // Verify JWT and extract authenticated user ID
+    const userId = await verifyAuth(req);
     
     if (!userId) {
       return new Response(
@@ -343,14 +288,13 @@ Deno.serve(async (req: Request) => {
       const validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);
 
       if (!validationData) {
-        console.error('Failed to validate credits for user:', userId);
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Failed to validate credits. Please try again.'
+            error: 'Unable to validate credits'
           }),
           {
-            status: 500,
+            status: 503,
             headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
           }
         );

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { TaylorSwiftTheme, StoryFormat } from "@/modules/story/utils/storyPrompts";
@@ -68,14 +68,14 @@ export const useStreamingGeneration = () => {
     imageGenerationProgress: {}
   });
 
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [imageGenerationQueue, setImageGenerationQueue] = useState<Set<number>>(new Set());
 
   // Mock image generation function - this would be replaced with actual image generation API
   const generateImageForChapter = useCallback(async (chapterIndex: number, imagePrompt: ImagePrompt) => {
     try {
       // Check if aborted before starting
-      if (abortController?.signal.aborted) {
+      if (abortControllerRef.current?.signal.aborted) {
         throw new Error('Image generation aborted');
       }
 
@@ -95,14 +95,14 @@ export const useStreamingGeneration = () => {
       // Simulate image generation progress
       for (let progress = 0; progress <= 100; progress += 20) {
         // Check abort signal before each progress update
-        if (abortController?.signal.aborted) {
+        if (abortControllerRef.current?.signal.aborted) {
           throw new Error('Image generation aborted');
         }
         
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate processing time
         
         // Check abort signal after waiting
-        if (abortController?.signal.aborted) {
+        if (abortControllerRef.current?.signal.aborted) {
           throw new Error('Image generation aborted');
         }
         
@@ -116,7 +116,7 @@ export const useStreamingGeneration = () => {
       }
 
       // Check abort signal before final operations
-      if (abortController?.signal.aborted) {
+      if (abortControllerRef.current?.signal.aborted) {
         throw new Error('Image generation aborted');
       }
 
@@ -150,7 +150,7 @@ export const useStreamingGeneration = () => {
       
       throw error;
     }
-  }, [abortController]);
+  }, []);
 
   const startGeneration = useCallback(async (options: StreamingGenerationOptions) => {
     const {
@@ -224,7 +224,7 @@ export const useStreamingGeneration = () => {
       
       // Create a new AbortController for this request
       const controller = new AbortController();
-      setAbortController(controller);
+      abortControllerRef.current = controller;
       
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -563,31 +563,31 @@ export const useStreamingGeneration = () => {
 
   const stopGeneration = useCallback(() => {
     // Abort the fetch request if it's in progress
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
-    
+
     setState(prev => ({
       ...prev,
       isGenerating: false,
       message: "Generation stopped"
     }));
-    
+
     toast({
       title: "Generation Stopped",
       description: "Chapter generation has been cancelled.",
       variant: "destructive",
     });
-  }, [abortController, toast]);
+  }, [toast]);
 
   const resetGeneration = useCallback(() => {
     // Abort any ongoing request when resetting
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
-    
+
     setState({
       isGenerating: false,
       currentChapter: 0,
@@ -599,16 +599,16 @@ export const useStreamingGeneration = () => {
       imageGenerationStatus: {},
       imageGenerationProgress: {}
     });
-  }, [abortController]);
+  }, []);
 
   // Cleanup effect to abort request on unmount
   useEffect(() => {
     return () => {
-      if (abortController) {
-        abortController.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
-  }, [abortController]);
+  }, []);
 
   return {
     ...state,

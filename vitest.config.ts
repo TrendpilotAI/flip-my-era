@@ -46,8 +46,10 @@ export default defineConfig({
         '*.config.{ts,js}',
         'src/vite-env.d.ts',
         'supabase/**',
+        'scripts/**',
+        'e2e/**',
       ],
-      // Coverage thresholds — set to current baseline; increase as tests are added
+      // Coverage thresholds — raise as tests are added
       thresholds: {
         lines: 10,
         functions: 20,
@@ -75,6 +77,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@core': path.resolve(__dirname, './src/core'),
     },
   },
 }); 

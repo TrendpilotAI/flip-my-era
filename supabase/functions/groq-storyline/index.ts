@@ -1,12 +1,25 @@
 // @ts-ignore -- Deno Edge Function imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-ignore -- Deno Edge Function imports
+import { verifyAuth } from "../_shared/utils.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'https://flip-my-era.netlify.app',
+  'https://flipmyera.com',
+  'https://www.flipmyera.com',
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || '';
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
 
 // Import rate limiting utility
 // @ts-ignore -- Deno import
@@ -19,24 +32,7 @@ const RATE_LIMIT = {
 
 const REQUEST_TIMEOUT_MS = 60000; // 60 seconds (longer for storyline generation)
 
-/**
- * Decode a JWT payload without verification.
- * Clerk session tokens are JWTs; we only use this to extract the `sub` claim.
- * NOTE: This is not cryptographic verification; the Edge Function gateway + RLS
- * should be the real enforcement layer when needed.
- */
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-    const payload = parts[1];
-    const padded = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
-    const json = atob(padded);
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
+// verifyAuth is imported from _shared/utils.ts — cryptographically verifies JWT
 
 // Debug logging removed for security - was sending to hardcoded localhost endpoint
 
@@ -81,6 +77,7 @@ interface Storyline {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -100,22 +97,8 @@ serve(async (req) => {
       );
     }
 
-    // Verify Clerk JWT token (frontend sends Clerk session token as Bearer)
-    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'UNAUTHORIZED', message: 'Missing or invalid authorization header' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    const token = authHeader.slice(7);
-    const jwtPayload = decodeJwtPayload(token);
-    const sub = jwtPayload && typeof jwtPayload === 'object' ? (jwtPayload as { sub?: unknown }).sub : undefined;
-    const userId = typeof sub === 'string' && sub.startsWith('user_') ? sub : null;
+    // Verify JWT cryptographically via Supabase auth.getUser()
+    const userId = await verifyAuth(req);
 
     if (!userId) {
       return new Response(

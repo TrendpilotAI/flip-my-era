@@ -3,11 +3,15 @@
 
 BEGIN;
 
--- First, drop all RLS policies that depend on user_id
+-- First, drop all RLS policies that depend on user_id (both naming variants)
 DROP POLICY IF EXISTS "Users can view their own ebook generations" ON ebook_generations;
 DROP POLICY IF EXISTS "Users can insert their own ebook generations" ON ebook_generations;
 DROP POLICY IF EXISTS "Users can update their own ebook generations" ON ebook_generations;
 DROP POLICY IF EXISTS "Users can delete their own ebook generations" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can view own ebooks" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can insert own ebooks" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can update own ebooks" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can delete own ebooks" ON ebook_generations;
 
 -- Drop the existing foreign key constraint and index
 ALTER TABLE ebook_generations DROP CONSTRAINT IF EXISTS ebook_generations_user_id_fkey;

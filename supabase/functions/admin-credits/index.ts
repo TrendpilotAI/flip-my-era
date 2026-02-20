@@ -4,6 +4,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-expect-error -- Deno Edge Function imports
+import { verifyAuth } from "../_shared/utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -81,102 +83,56 @@ serve(async (req) => {
       }
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.error('Missing or invalid Authorization header');
+    // Verify JWT cryptographically via Supabase auth.getUser()
+    const adminUserId = await verifyAuth(req);
+
+    if (!adminUserId) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Unauthorized - Missing authorization header' 
+        JSON.stringify({
+          success: false,
+          error: 'Unauthorized - Invalid or missing token'
         }),
-        { 
-          status: 401, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 401,
+          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    let adminUserId: string;
-    
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      
-      const payload = JSON.parse(jsonPayload);
-      console.log('JWT Payload:', JSON.stringify(payload));
-      
-      adminUserId = payload.sub || payload.user_id || payload.userId;
-      
-      if (!adminUserId) {
-        console.error('No user ID found in JWT payload');
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Unauthorized - No user ID in token' 
-          }),
-          { 
-            status: 401, 
-            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-      
-      console.log('Admin user ID from JWT:', adminUserId);
-    } catch (decodeError) {
-      console.error('Error decoding JWT:', decodeError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Unauthorized - Invalid token format' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Verify admin status
+    // Verify admin status using role column (set via migration 20251007000100)
     const { data: adminProfile, error: adminError } = await supabaseClient
       .from('profiles')
-      .select('email')
+      .select('email, role')
       .eq('id', adminUserId)
       .single();
 
     if (adminError || !adminProfile) {
       console.error('Error fetching admin profile:', adminError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Unauthorized - Admin profile not found' 
+        JSON.stringify({
+          success: false,
+          error: 'Unauthorized - Admin profile not found'
         }),
-        { 
-          status: 401, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 401,
+          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    // Check if user is admin
-    const isAdmin = adminProfile.email === "admin@flipmyera.com" || 
-                    adminProfile.email === "danny.ijdo@gmail.com" ||
-                    adminProfile.email === "trendpilot.ai@gmail.com" ||
-                    adminProfile.email?.includes("trendpilot");
+    // Check admin via database role column — NOT email substring matching
+    const isAdmin = adminProfile.role === 'admin';
 
     if (!isAdmin) {
       console.error('Non-admin user attempted to access admin credits function:', adminProfile.email);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Forbidden - Admin access required' 
+        JSON.stringify({
+          success: false,
+          error: 'Forbidden - Admin access required'
         }),
-        { 
-          status: 403, 
-          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 403,
+          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }

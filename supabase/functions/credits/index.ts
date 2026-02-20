@@ -7,34 +7,20 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 // @ts-expect-error - HTTPS imports are supported in Deno runtime
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-expect-error -- Deno Edge Function imports
+import { verifyAuth } from "../_shared/utils.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',  // More permissive for development
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
+const ALLOWED_ORIGINS = [
+  'http://localhost:8081',
+  'https://flip-my-era.netlify.app',
+  'https://flipmyera.com',
+  'https://www.flipmyera.com',
+];
 
-// For production, we'll determine the correct origin
 const getCorsHeaders = (req: Request) => {
-  const origin = req.headers.get('Origin') || '*';
-  const allowedOrigins = [
-    'http://localhost:8080',
-    'http://localhost:8081',
-    'http://localhost:8082',
-    'http://localhost:8083',
-    'http://localhost:8084',
-    'http://localhost:8085',
-    'http://localhost:8086',
-    'http://localhost:8087',
-    'http://localhost:3000',
-    'https://flip-my-era.netlify.app',
-    'https://flipmyera.com',
-    'https://www.flipmyera.com'
-  ];
-  
+  const origin = req.headers.get('Origin') || '';
   return {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
@@ -66,52 +52,7 @@ interface ApiResponse {
   error?: string;
 }
 
-// Function to extract user ID from Clerk JWT token
-const extractUserIdFromClerkToken = (req: Request): string | null => {
-  try {
-    console.log('🔍 Edge Function: Extracting user ID from Clerk token...');
-
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-    console.log('🔍 Edge Function: Auth header present:', !!authHeader);
-    console.log('🔍 Edge Function: Auth header starts with Bearer:', authHeader?.startsWith('Bearer '));
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('🔍 Edge Function: No valid auth header found');
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    console.log('🔍 Edge Function: Token extracted, length:', token.length);
-    console.log('🔍 Edge Function: Token preview:', token.substring(0, 20) + '...');
-
-    const parts = token.split('.');
-    console.log('🔍 Edge Function: Token parts:', parts.length);
-
-    if (parts.length < 2) {
-      console.log('🔍 Edge Function: Invalid JWT format');
-      return null;
-    }
-
-    // Base64URL decode the payload without verifying signature (sufficient to read 'sub')
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
-    const json = atob(padded);
-    const payload = JSON.parse(json);
-
-    console.log('🔍 Edge Function: Decoded payload keys:', Object.keys(payload));
-    console.log('🔍 Edge Function: Payload sub:', payload?.sub);
-    console.log('🔍 Edge Function: Payload user_id:', payload?.user_id);
-    console.log('🔍 Edge Function: Payload uid:', payload?.uid);
-
-    const userId = payload?.sub || payload?.user_id || payload?.uid || null;
-    console.log('🔍 Edge Function: Extracted userId:', userId);
-
-    return typeof userId === 'string' ? userId : null;
-  } catch (error) {
-    console.error('🔍 Edge Function: Error extracting user ID from token:', error);
-    return null;
-  }
-};
+// verifyAuth is imported from _shared/utils.ts — cryptographically verifies JWT
 
 // Function to get real credit data from Supabase
 const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: CreditBalance; transactions: CreditTransaction[] } | null> => {
@@ -229,29 +170,6 @@ const getCreditDataFromSupabase = async (userId: string): Promise<{ balance: Cre
   }
 };
 
-// Mock credit data for testing (fallback)
-const getMockCreditData = (): { balance: CreditBalance; transactions: CreditTransaction[] } => {
-  const now = new Date().toISOString();
-  
-  return {
-    balance: {
-      balance: 10, // Give user 10 credits for testing
-      subscription_type: 'monthly',
-      last_updated: now
-    },
-    transactions: [
-      {
-        id: 'mock-tx-1',
-        type: 'purchase',
-        amount: 10,
-        description: 'Welcome credits for testing',
-        transaction_date: now,
-        stripe_payment_id: 'mock-payment-123'
-      }
-    ]
-  };
-};
-
 serve(async (req: Request) => {
   // Get dynamic CORS headers based on request
   const dynamicCorsHeaders = getCorsHeaders(req);
@@ -262,18 +180,10 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log('🔍 Edge Function: Received request');
-    console.log('🔍 Edge Function: Method:', req.method);
-    console.log('🔍 Edge Function: URL:', req.url);
-    console.log('🔍 Edge Function: Authorization header present:', !!req.headers.get('authorization'));
-    console.log('🔍 Edge Function: Authorization header value:', req.headers.get('authorization')?.substring(0, 20) + '...');
-    console.log('🔍 Edge Function: Content-Type header:', req.headers.get('content-type'));
-
-    // Extract user ID from Clerk token
-    const userId = extractUserIdFromClerkToken(req);
+    // Verify JWT and extract authenticated user ID
+    const userId = await verifyAuth(req);
 
     if (!userId) {
-      console.log('🔍 Edge Function: No userId extracted, returning 401');
       return new Response(
         JSON.stringify({
           success: false,
@@ -286,8 +196,6 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log(`🔍 Edge Function: Processing request for Clerk user: ${userId}`);
-
     if (req.method === 'GET' || req.method === 'POST') {
       // Parse query parameters
       const url = new URL(req.url);
@@ -297,14 +205,13 @@ serve(async (req: Request) => {
       const creditData = await getCreditDataFromSupabase(userId);
       
       if (!creditData) {
-        console.error('Failed to fetch credit data for user:', userId);
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Failed to fetch credit data. Please try again.'
+            error: 'Unable to fetch credit data'
           }),
           {
-            status: 500,
+            status: 503,
             headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' }
           }
         );

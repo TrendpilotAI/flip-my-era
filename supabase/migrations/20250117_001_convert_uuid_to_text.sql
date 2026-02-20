@@ -25,14 +25,23 @@ END $$;
 DROP POLICY IF EXISTS "Allow users to view their own shares" ON tiktok_shares;
 DROP POLICY IF EXISTS "Allow authenticated users to create shares" ON tiktok_shares;
 
--- Drop ebook_generations policies if they exist
+-- Drop ebook_generations policies if they exist (both naming variants)
 DROP POLICY IF EXISTS "Users can view own ebooks" ON ebook_generations;
 DROP POLICY IF EXISTS "Users can insert own ebooks" ON ebook_generations;
 DROP POLICY IF EXISTS "Users can update own ebooks" ON ebook_generations;
 DROP POLICY IF EXISTS "Users can delete own ebooks" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can view their own ebook generations" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can insert their own ebook generations" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can update their own ebook generations" ON ebook_generations;
+DROP POLICY IF EXISTS "Users can delete their own ebook generations" ON ebook_generations;
 
--- Drop credit_transactions policies if they exist
-DROP POLICY IF EXISTS "Users can view own credit transactions" ON credit_transactions;
+-- Drop credit_transactions policies if table exists
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'credit_transactions') THEN
+        DROP POLICY IF EXISTS "Users can view own credit transactions" ON credit_transactions;
+    END IF;
+END $$;
 
 -- STEP 2: Drop foreign key constraints
 ALTER TABLE IF EXISTS stories DROP CONSTRAINT IF EXISTS stories_user_id_fkey;
