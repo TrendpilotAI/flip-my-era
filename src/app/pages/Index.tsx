@@ -28,8 +28,9 @@ const Index = () => {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-blue-50/80 dark:from-gray-900/90 dark:via-purple-950/90 dark:to-gray-900/90">
       <SEO
+        title="Taylor Swift Eras Tour Personalized Storybook Creator"
         url="/"
-        description="Create stunning AI-generated personalized storybooks inspired by Taylor Swift's eras. Upload your photo, pick an era, and get a beautifully illustrated story in minutes. Free to start!"
+        description="Create a personalized Taylor Swift Eras Tour storybook starring YOU. Upload your photo, pick your era, and get a beautifully illustrated AI storybook in under 60 seconds. Free to start!"
       />
       {/* First-time user onboarding flow */}
       <OnboardingFlow />

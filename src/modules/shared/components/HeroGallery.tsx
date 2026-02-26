@@ -207,12 +207,13 @@ export const HeroGallery = ({
       </p>
       
       <h1 className="z-20 mx-auto max-w-4xl justify-center bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text py-3 text-center text-4xl text-transparent dark:bg-gradient-to-r dark:from-purple-100 dark:via-pink-200 dark:to-blue-100 md:text-7xl font-bold">
-        Flip My <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text"> Era</span>
+        Flip My <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text">Era</span>
       </h1>
       
-      <p className="text-center text-gray-600 dark:text-gray-400 mt-4 text-lg max-w-2xl mx-auto px-4">
-        Upload your photo. Pick your era. Get a beautifully illustrated personalized storybook in under 60 seconds.
-      </p>
+      {/* h2 for SEO keyword hierarchy — targets "personalized Taylor Swift eras tour storybook" */}
+      <h2 className="text-center text-gray-600 dark:text-gray-400 mt-4 text-lg max-w-2xl mx-auto px-4 font-normal">
+        Create your personalized Taylor Swift Eras Tour storybook — upload your photo, pick your era, and get a beautifully illustrated story in under 60 seconds.
+      </h2>
 
       <div className="relative mb-10 h-[460px] w-full items-center justify-center lg:flex">
         <motion.div

@@ -52,6 +52,9 @@ const ChapterIllustrations = lazy(() => import("@/modules/images/ChapterIllustra
 const ImageEditor = lazy(() => import("@/modules/images/ImageEditor"));
 const AssetLibrary = lazy(() => import("@/modules/images/AssetLibrary"));
 
+// Pricing page (public, no auth required)
+const PricingPage = lazy(() => import("@/modules/shared/components/PricingPage"));
+
 // SEO Content Pages
 const ErasTourEbook = lazy(() => import("@/app/pages/seo/ErasTourEbook"));
 const CustomTaylorSwiftGifts = lazy(() => import("@/app/pages/seo/CustomTaylorSwiftGifts"));
@@ -370,6 +373,13 @@ function App() {
                   </Suspense>
                 </ProtectedRoute>
               </FeatureGate>
+            } />
+
+            {/* Pricing page — public marketing page */}
+            <Route path="/pricing" element={
+              <Suspense fallback={<PageLoader />}>
+                <PricingPage />
+              </Suspense>
             } />
 
             {/* Legal pages */}
