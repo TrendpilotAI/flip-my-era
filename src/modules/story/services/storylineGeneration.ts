@@ -179,6 +179,8 @@ Ensure the storyline:
         throw new Error('UNAUTHORIZED');
       } else if (error.message?.includes('GROQ_API_KEY_MISSING')) {
         throw new Error('GROQ_API_KEY_MISSING');
+      } else if (error.message?.includes('INSUFFICIENT_CREDITS') || error.message?.includes('402')) {
+        throw new Error('INSUFFICIENT_CREDITS');
       } else if (error.message?.includes('INVALID_STORYLINE')) {
         throw new Error('Invalid storyline structure returned from AI');
       } else {
@@ -187,6 +189,9 @@ Ensure the storyline:
     }
 
     if (!data || data.error) {
+      if (data?.error === 'INSUFFICIENT_CREDITS') {
+        throw new Error('INSUFFICIENT_CREDITS');
+      }
       const errorMessage = data?.message || data?.error || 'Failed to generate storyline';
       sentryService.addBreadcrumb({
         category: 'storyline',
