@@ -23,12 +23,9 @@ interface ImportMetaEnv {
   readonly VITE_PUBLIC_POSTHOG_KEY: string;
   readonly VITE_PUBLIC_POSTHOG_HOST: string;
   
-  // Deprecated secret keys - should NOT be set in production
-  // These are only for local development/testing. In production, use Edge Functions instead.
-  // @deprecated Use Edge Functions (groq-api, groq-storyline, stream-chapters) instead
-  readonly VITE_GROQ_API_KEY?: string;
-  // @deprecated Use Edge Functions instead
-  readonly VITE_OPENAI_API_KEY?: string;
+  // SECURITY: GROQ_API_KEY and OPENAI_API_KEY must NEVER be exposed as VITE_ variables.
+  // They are server-side secrets set only in Supabase Edge Function environment.
+  // All AI calls go through Edge Functions: groq-api, groq-storyline, stream-chapters.
   // @deprecated Use runware-proxy Edge Function instead
   readonly VITE_RUNWARE_API_KEY?: string;
   

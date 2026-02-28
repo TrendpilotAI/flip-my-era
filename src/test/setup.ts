@@ -122,11 +122,11 @@ Object.defineProperty(global, 'WebSocket', {
 // Tests that need a direct fetch mock should use vi.spyOn(global, 'fetch') locally.
 
 // Mock environment variables
-vi.stubEnv('VITE_GROQ_API_KEY', 'gsk_test123456789');
+// SECURITY: VITE_GROQ_API_KEY and VITE_OPENAI_API_KEY must NOT be set here.
+// These keys are server-side secrets; all AI calls go through Supabase Edge Functions.
 vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
 vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
 vi.stubEnv('VITE_RUNWARE_PROXY_URL', '/api/functions/runware-proxy');
-vi.stubEnv('VITE_OPENAI_API_KEY', 'test-openai-key');
 
 const supabaseAuthMock = {
   getUser: vi.fn(),

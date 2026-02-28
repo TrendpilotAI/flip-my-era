@@ -12,21 +12,20 @@ vi.mock('@/modules/shared/utils/env', () => ({
 describe('EnvironmentValidator', () => {
   beforeEach(() => {
     envValues.clear();
+    // SECURITY: VITE_GROQ_API_KEY and VITE_OPENAI_API_KEY are intentionally NOT set here.
+    // These are server-side secrets accessed only via Supabase Edge Functions.
   });
 
   it('shows missing alerts when required envs are absent', () => {
-    envValues.set('VITE_GROQ_API_KEY', undefined);
     envValues.set('VITE_SUPABASE_URL', undefined);
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', undefined);
 
     render(<EnvironmentValidator />);
 
     expect(screen.getByText(/Configuration Required/i)).toBeInTheDocument();
-    expect(screen.getByText(/Story generation will not work/i)).toBeInTheDocument();
   });
 
   it('flags invalid configurations when keys have wrong format', () => {
-    envValues.set('VITE_GROQ_API_KEY', 'invalid');
     envValues.set('VITE_SUPABASE_URL', 'http://example.com');
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'anon');
 
@@ -37,10 +36,8 @@ describe('EnvironmentValidator', () => {
   });
 
   it('confirms configuration when all values are valid', () => {
-    envValues.set('VITE_GROQ_API_KEY', 'gsk_valid');
     envValues.set('VITE_SUPABASE_URL', 'https://example.supabase.co');
     envValues.set('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-key');
-    envValues.set('VITE_OPENAI_API_KEY', 'sk_test');
 
     render(<EnvironmentValidator />);
 
@@ -67,4 +64,3 @@ describe('EnvironmentValidator', () => {
     expect(screen.getByText(/Configuration Required/i)).toBeInTheDocument();
   });
 });
-

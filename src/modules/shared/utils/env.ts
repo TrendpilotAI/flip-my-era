@@ -4,37 +4,36 @@ export function getEnvVar(key: string): string | undefined {
 }
 
 /**
- * Get Groq API Key - DEPRECATED: This function should not be used in client-side code.
- * All Groq API calls should go through Supabase Edge Functions to avoid exposing secrets.
+ * Get Groq API Key
  * 
- * @deprecated Use Edge Functions (groq-api, groq-storyline, stream-chapters) instead
- * @returns undefined in production builds to prevent secret exposure
+ * @deprecated REMOVED — Groq API keys must never be exposed in client-side code.
+ * All Groq calls go through Edge Functions: groq-api, groq-storyline, stream-chapters.
+ * @returns always undefined — use Edge Functions instead
  */
 export function getGroqApiKey(): string | undefined {
-  // In production builds, return undefined to prevent secret keys from being bundled
-  // This ensures secrets are not exposed in client-side code
-  if (import.meta.env.PROD) {
-    console.warn('getGroqApiKey() called in production - this should use Edge Functions instead');
-    return undefined;
+  // SECURITY: This function intentionally returns undefined.
+  // GROQ_API_KEY is a server-side secret stored only in Supabase Edge Function environment.
+  // Setting VITE_GROQ_API_KEY would bundle the key into client JS — exposing it to anyone.
+  if (import.meta.env.DEV) {
+    console.warn('[Security] getGroqApiKey() is deprecated. Use Edge Functions (groq-api, stream-chapters) instead.');
   }
-  return getEnvVar('VITE_GROQ_API_KEY');
+  return undefined;
 }
 
 /**
- * Get OpenAI API Key - DEPRECATED: This function should not be used in client-side code.
- * All OpenAI API calls should go through Supabase Edge Functions to avoid exposing secrets.
+ * Get OpenAI API Key
  * 
- * @deprecated Use Edge Functions instead. This function returns undefined in production builds.
- * @returns undefined in production builds to prevent secret exposure
+ * @deprecated REMOVED — OpenAI API keys must never be exposed in client-side code.
+ * All OpenAI calls go through Supabase Edge Functions.
+ * @returns always undefined — use Edge Functions instead
  */
 export function getOpenAiApiKey(): string | undefined {
-  // In production builds, return undefined to prevent secret keys from being bundled
-  // This ensures secrets are not exposed in client-side code
-  if (import.meta.env.PROD) {
-    console.warn('getOpenAiApiKey() called in production - this should use Edge Functions instead');
-    return undefined;
+  // SECURITY: This function intentionally returns undefined.
+  // OPENAI_API_KEY is a server-side secret stored only in Supabase Edge Function environment.
+  if (import.meta.env.DEV) {
+    console.warn('[Security] getOpenAiApiKey() is deprecated. Use Edge Functions instead.');
   }
-  return getEnvVar('VITE_OPENAI_API_KEY');
+  return undefined;
 }
 
 export function getSupabaseUrl(): string | undefined {
