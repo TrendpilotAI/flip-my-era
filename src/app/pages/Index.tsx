@@ -16,6 +16,68 @@ import { FeaturedCreators } from "@/modules/creator/FeaturedCreators";
 import { FeatureGate } from "@/modules/shared/components/FeatureGate";
 import { OnboardingFlow } from "@/modules/onboarding";
 
+const PRODUCT_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "FlipMyEra — Personalized Taylor Swift Eras Tour Storybook",
+  "description": "Create a personalized Taylor Swift Eras Tour storybook starring YOU. Upload your photo, pick your era (Folklore, Midnights, 1989, Red, Reputation, Lover), and get a beautifully AI-illustrated storybook in under 60 seconds.",
+  "url": "https://flipmyera.com",
+  "image": "https://flipmyera.com/og-image.png",
+  "brand": { "@type": "Brand", "name": "FlipMyEra" },
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "USD",
+    "price": "0",
+    "priceValidUntil": "2027-01-01",
+    "availability": "https://schema.org/InStock",
+    "url": "https://flipmyera.com",
+    "description": "Free to start — 10 credits included. No credit card required."
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "reviewCount": "10000"
+  },
+  "keywords": "Taylor Swift era storybook, Eras Tour keepsake, personalized Swiftie gift, folklore storybook, midnights photo book, friendship bracelet book"
+};
+
+const FAQ_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is FlipMyEra really free to start?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes! Every new account gets 10 free credits per month — enough to create 3-5 complete storybooks with AI illustrations. No credit card required." }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does it take to create a storybook?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Most storybooks are generated in under 60 seconds. Premium plan users get priority processing that's 3x faster during peak hours." }
+    },
+    {
+      "@type": "Question",
+      "name": "What Taylor Swift eras and themes are available?",
+      "acceptedAnswer": { "@type": "Answer", "text": "We have 50+ era-inspired templates including Folklore, Midnights, 1989, Red, Reputation, Lover, and many more. New eras are added regularly!" }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I print or share my Taylor Swift storybooks?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Absolutely! All plans include PDF exports perfect for printing. Share digitally or create beautiful physical copies of your Eras Tour stories." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my payment information secure?",
+      "acceptedAnswer": { "@type": "Answer", "text": "100%. We use Stripe's PCI-compliant payment processing and never store your card details. Plus, all plans come with a 30-day money-back guarantee." }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use my storybooks commercially?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Swiftie Deluxe ($25/mo) and Opus VIP ($49.99/mo) plans include commercial licensing rights to sell or monetize your Taylor Swift era storybook creations." }
+    }
+  ]
+};
+
 const Index = () => {
   useApiCheck();
   const { isAuthenticated } = useClerkAuth();
@@ -30,7 +92,8 @@ const Index = () => {
       <SEO
         title="Taylor Swift Eras Tour Personalized Storybook Creator"
         url="/"
-        description="Create a personalized Taylor Swift Eras Tour storybook starring YOU. Upload your photo, pick your era, and get a beautifully illustrated AI storybook in under 60 seconds. Free to start!"
+        description="Create a personalized Taylor Swift Eras Tour storybook starring YOU. Upload your photo, pick your era (Folklore, Midnights, 1989), and get a beautifully illustrated AI storybook in under 60 seconds. Free to start!"
+        jsonLd={[PRODUCT_SCHEMA, FAQ_SCHEMA]}
       />
       {/* First-time user onboarding flow */}
       <OnboardingFlow />

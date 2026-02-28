@@ -1,0 +1,105 @@
+{
+  "tests": [
+    {
+      "name": "Homepage loads",
+      "pass": true,
+      "details": "Title: \"FlipMyEra — AI-Powered Personalized Storybooks\""
+    },
+    {
+      "name": "Hero section visible",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "CTA button visible",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "Auth page loads with email input",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "Submit button found",
+      "pass": false,
+      "details": ""
+    },
+    {
+      "name": "Story generation test",
+      "pass": false,
+      "details": "Not logged in — skipping"
+    },
+    {
+      "name": "Story wizard on homepage",
+      "pass": false,
+      "details": ""
+    },
+    {
+      "name": "Plans/pricing page loads",
+      "pass": false,
+      "details": ""
+    },
+    {
+      "name": "Stripe checkout button visible",
+      "pass": false,
+      "details": ""
+    },
+    {
+      "name": "Credits page accessible",
+      "pass": true,
+      "details": "Redirected to: https://flipmyera.com/auth"
+    },
+    {
+      "name": "Stripe.js loaded on page",
+      "pass": false,
+      "details": ""
+    },
+    {
+      "name": "Meta description present",
+      "pass": false,
+      "details": ""
+    },
+    {
+      "name": "OG title present",
+      "pass": false,
+      "details": ""
+    },
+    {
+      "name": "SEO page loads",
+      "pass": true,
+      "details": "/taylor-swift-eras-tour-ebook"
+    },
+    {
+      "name": "/marketplace hidden",
+      "pass": true,
+      "details": "404 shown"
+    },
+    {
+      "name": "/affiliates hidden",
+      "pass": true,
+      "details": "404 shown"
+    },
+    {
+      "name": "/gift-cards hidden",
+      "pass": true,
+      "details": "404 shown"
+    },
+    {
+      "name": "/images/cover-generator hidden",
+      "pass": true,
+      "details": "404 shown"
+    },
+    {
+      "name": "/terms loads",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "/privacy loads",
+      "pass": true,
+      "details": ""
+    }
+  ],
+  "errors": []
+}

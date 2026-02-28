@@ -1,7 +1,12 @@
 // @ts-ignore -- Deno Edge Function imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore -- Deno Edge Function imports
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// @ts-ignore -- Deno Edge Function imports
 import { verifyAuth } from "../_shared/utils.ts";
+
+// Credits charged per storyline generation
+const STORYLINE_GENERATION_CREDITS = 2;
 
 const ALLOWED_ORIGINS = [
   'http://localhost:8081',
@@ -45,6 +50,7 @@ interface GenerateStorylineRequest {
   promptDescription: string;
   customPrompt?: string;
   systemPrompt: string;
+  idempotency_key?: string; // Client-generated UUID to prevent double-charging
 }
 
 interface Storyline {
@@ -145,7 +151,110 @@ serve(async (req) => {
       promptDescription,
       customPrompt,
       systemPrompt,
+      idempotency_key,
     } = params;
+
+    // --- SERVER-SIDE CREDIT SYSTEM ---
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const adminClient = createClient(supabaseUrl, serviceKey);
+
+    // 1. Idempotency check — return cached response if already processed
+    if (idempotency_key) {
+      const { data: existingRequest } = await adminClient
+        .from('generation_requests')
+        .select('status, response_cache')
+        .eq('idempotency_key', idempotency_key)
+        .eq('user_id', userId)
+        .single();
+
+      if (existingRequest) {
+        if (existingRequest.status === 'completed' && existingRequest.response_cache) {
+          console.log(`Idempotent replay for storyline key ${idempotency_key}, user ${userId}`);
+          return new Response(
+            JSON.stringify(existingRequest.response_cache),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Idempotent-Replay': 'true' },
+            }
+          );
+        }
+        if (existingRequest.status === 'pending') {
+          return new Response(
+            JSON.stringify({ error: 'REQUEST_IN_PROGRESS', message: 'A storyline generation with this key is already in progress.' }),
+            {
+              status: 409,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+      }
+    }
+
+    // 2. Atomically deduct credits BEFORE generation (server-side, not client-side)
+    const { data: deductResult, error: deductError } = await adminClient
+      .rpc('deduct_credits', {
+        p_user_id: userId,
+        p_amount: STORYLINE_GENERATION_CREDITS,
+        p_description: 'Storyline generation',
+        p_metadata: {
+          operation_type: 'storyline_generation',
+          idempotency_key: idempotency_key || null,
+        },
+      })
+      .single();
+
+    if (deductError) {
+      console.error('Credit deduction error for storyline:', deductError);
+      return new Response(
+        JSON.stringify({ error: 'CREDIT_SERVICE_ERROR', message: 'Unable to process credits. Please try again.' }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    if (!deductResult?.success) {
+      const { data: balanceData } = await adminClient
+        .from('user_credits')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+
+      return new Response(
+        JSON.stringify({
+          error: 'INSUFFICIENT_CREDITS',
+          message: 'You do not have enough credits to generate a storyline.',
+          current_balance: balanceData?.balance ?? 0,
+          required: STORYLINE_GENERATION_CREDITS,
+        }),
+        {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const transactionId = deductResult.transaction_id;
+
+    // 3. Register idempotency record as 'pending'
+    let generationRequestId: string | null = null;
+    if (idempotency_key) {
+      const { data: genReq } = await adminClient
+        .from('generation_requests')
+        .insert({
+          idempotency_key,
+          user_id: userId,
+          operation_type: 'storyline_generation',
+          credits_charged: STORYLINE_GENERATION_CREDITS,
+          transaction_id: transactionId,
+          status: 'pending',
+        })
+        .select('id')
+        .single();
+      generationRequestId = genReq?.id ?? null;
+    }
 
     // Input validation
     if (!era || typeof era !== 'string') {
@@ -370,8 +479,22 @@ Ensure the storyline:
         );
       }
 
+      const responsePayload = { storyline };
+
+      // Mark idempotency record as completed and cache response
+      if (generationRequestId) {
+        await adminClient
+          .from('generation_requests')
+          .update({
+            status: 'completed',
+            response_cache: responsePayload,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', generationRequestId);
+      }
+
       return new Response(
-        JSON.stringify({ storyline }),
+        JSON.stringify(responsePayload),
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -381,6 +504,12 @@ Ensure the storyline:
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
         console.error('Groq request timeout');
+        if (generationRequestId) {
+          await adminClient
+            .from('generation_requests')
+            .update({ status: 'failed', completed_at: new Date().toISOString() })
+            .eq('id', generationRequestId);
+        }
         return new Response(
           JSON.stringify({
             error: 'REQUEST_TIMEOUT',

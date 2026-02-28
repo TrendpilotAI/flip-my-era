@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Personalized Eras Tour Photo Book — But Better Than Photos",
+  "description": "Create a personalized Eras Tour photo book with AI-generated artwork. Better than photos — unique illustrations that capture the feeling of Taylor Swift's historic tour.",
+  "url": "https://flipmyera.com/personalized-eras-tour-photo-book",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/personalized-eras-tour-photo-book" }
+};
+
 const PersonalizedErasTourPhotoBook = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const PersonalizedErasTourPhotoBook = () => {
         description="Create a personalized Eras Tour photo book with AI-generated artwork. Better than photos — unique illustrations that capture the feeling of Taylor Swift's historic tour."
         url="/personalized-eras-tour-photo-book"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

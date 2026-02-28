@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Eras Tour Memories Book: Your Concert Story, Beautifully Preserved",
+  "description": "Create a personalized Eras Tour memories book with AI-generated illustrations. Capture every magical moment from Taylor Swift's historic tour in a beautiful keepsake.",
+  "url": "https://flipmyera.com/eras-tour-memories-book",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/eras-tour-memories-book" }
+};
+
 const ErasTourMemoriesBook = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const ErasTourMemoriesBook = () => {
         description="Create a personalized Eras Tour memories book with AI-generated illustrations. Capture every magical moment from Taylor Swift's historic tour in a beautiful keepsake."
         url="/eras-tour-memories-book"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

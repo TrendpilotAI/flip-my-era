@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Swiftie Graduation Gift Ideas: \"Long Story Short, I Survived\"",
+  "description": "Find the perfect graduation gift for a Swiftie. Personalized Taylor Swift-inspired storybooks, era-themed keepsakes, and unique gifts they'll treasure forever.",
+  "url": "https://flipmyera.com/swiftie-graduation-gift-ideas",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/swiftie-graduation-gift-ideas" }
+};
+
 const SwiftieGraduationGift = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const SwiftieGraduationGift = () => {
         description="Find the perfect graduation gift for a Swiftie. Personalized Taylor Swift-inspired storybooks, era-themed keepsakes, and unique gifts they'll treasure forever."
         url="/swiftie-graduation-gift-ideas"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

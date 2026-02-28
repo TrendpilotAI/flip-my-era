@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Eras Tour Digital Scrapbook: All the Memories, None of the Glue",
+  "description": "Create a digital Eras Tour scrapbook with AI-generated illustrations. No scissors or glue needed — just your memories and our AI to create a stunning digital keepsake.",
+  "url": "https://flipmyera.com/eras-tour-scrapbook-digital",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/eras-tour-scrapbook-digital" }
+};
+
 const ErasTourScrapbook = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const ErasTourScrapbook = () => {
         description="Create a digital Eras Tour scrapbook with AI-generated illustrations. No scissors or glue needed — just your memories and our AI to create a stunning digital keepsake."
         url="/eras-tour-scrapbook-digital"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

@@ -1,0 +1,89 @@
+{
+  "results": [
+    {
+      "name": "Homepage loads",
+      "pass": true,
+      "detail": "FlipMyEra — AI-Powered Personalized Storybooks"
+    },
+    {
+      "name": "Welcome modal CTA visible",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Meta description",
+      "pass": false,
+      "detail": "MISSING"
+    },
+    {
+      "name": "OG title",
+      "pass": false,
+      "detail": "MISSING"
+    },
+    {
+      "name": "Register tab visible",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Register submit button visible",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "Successfully logged in",
+      "pass": false,
+      "detail": "https://flipmyera.com/auth"
+    },
+    {
+      "name": "Sign-in successful",
+      "pass": false,
+      "detail": "https://flipmyera.com/auth"
+    },
+    {
+      "name": "Story generation (requires auth)",
+      "pass": false,
+      "detail": "Not logged in"
+    },
+    {
+      "name": "Plans redirects to auth",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "/marketplace flagged off",
+      "pass": true,
+      "detail": "404"
+    },
+    {
+      "name": "/affiliates flagged off",
+      "pass": true,
+      "detail": "404"
+    },
+    {
+      "name": "/gift-cards flagged off",
+      "pass": true,
+      "detail": "404"
+    },
+    {
+      "name": "/terms loads",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "/privacy loads",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "/taylor-swift-eras-tour-ebook loads",
+      "pass": true,
+      "detail": ""
+    }
+  ],
+  "consoleErrors": [
+    "404 Error: User attempted to access non-existent route: /marketplace",
+    "404 Error: User attempted to access non-existent route: /affiliates",
+    "404 Error: User attempted to access non-existent route: /gift-cards"
+  ]
+}

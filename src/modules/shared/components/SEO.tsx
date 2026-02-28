@@ -6,6 +6,7 @@ interface SEOProps {
   url?: string;
   image?: string;
   type?: string;
+  jsonLd?: object | object[];
 }
 
 const DEFAULTS = {
@@ -16,11 +17,17 @@ const DEFAULTS = {
   image: 'https://flipmyera.com/og-image.png',
 };
 
-export function SEO({ title, description, url, image, type = 'website' }: SEOProps) {
+export function SEO({ title, description, url, image, type = 'website', jsonLd }: SEOProps) {
   const t = title ? `${title} | FlipMyEra` : DEFAULTS.title;
   const d = description || DEFAULTS.description;
   const u = url ? `${DEFAULTS.url}${url}` : DEFAULTS.url;
   const img = image || DEFAULTS.image;
+
+  const schemas = jsonLd
+    ? Array.isArray(jsonLd)
+      ? jsonLd
+      : [jsonLd]
+    : [];
 
   return (
     <Helmet>
@@ -32,9 +39,15 @@ export function SEO({ title, description, url, image, type = 'website' }: SEOPro
       <meta property="og:url" content={u} />
       <meta property="og:image" content={img} />
       <meta property="og:type" content={type} />
+      <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={t} />
       <meta name="twitter:description" content={d} />
       <meta name="twitter:image" content={img} />
+      {schemas.map((schema, i) => (
+        <script key={i} type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      ))}
     </Helmet>
   );
 }

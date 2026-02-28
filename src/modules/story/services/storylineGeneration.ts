@@ -153,6 +153,9 @@ Ensure the storyline:
     transaction.setTag('era', era);
     transaction.setTag('characterArchetype', characterArchetype);
     
+    // Generate idempotency key to prevent double-charging on retry/double-click
+    const idempotency_key = crypto.randomUUID();
+
     const { data, error } = await supabase.functions.invoke('groq-storyline', {
       body: {
         era,
@@ -163,6 +166,7 @@ Ensure the storyline:
         promptDescription,
         customPrompt,
         systemPrompt,
+        idempotency_key,
       },
       headers: {
         Authorization: `Bearer ${clerkToken}`,

@@ -107,6 +107,8 @@ export const useStoryGeneration = () => {
   };
 
   const handleSubmit = async () => {
+    if (loading) return; // Prevent double-submission
+
     if (result && storyId) {
       setPreviousStory({ content: result, id: storyId });
     }
@@ -138,7 +140,9 @@ export const useStoryGeneration = () => {
 
       // Get Clerk token for authentication
       const clerkToken = await getToken();
-      const story = await generateWithGroq(prompt, clerkToken);
+      // Generate idempotency key once per submit — prevents double-charging on retry
+      const idempotencyKey = crypto.randomUUID();
+      const story = await generateWithGroq(prompt, clerkToken, { idempotencyKey });
       loadingToast.dismiss();
       
       if (story) {
@@ -165,7 +169,13 @@ export const useStoryGeneration = () => {
       
       // Handle specific API errors
       if (error instanceof Error) {
-        if (error.message === 'GROQ_API_KEY_MISSING') {
+        if (error.message === 'INSUFFICIENT_CREDITS') {
+          toast({
+            title: "Not Enough Credits",
+            description: "You need more credits to generate a story. Visit the Credits page to top up.",
+            variant: "destructive",
+          });
+        } else if (error.message === 'GROQ_API_KEY_MISSING') {
           toast({
             title: "Service Unavailable",
             description: "Story generation service is currently unavailable. Please try again later.",

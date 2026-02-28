@@ -1,0 +1,67 @@
+[
+  {
+    "n": "Homepage",
+    "p": true,
+    "d": "FlipMyEra — AI-Powered Personalized Storybooks"
+  },
+  {
+    "n": "Meta description",
+    "p": true,
+    "d": "Create AI-generated personalized storybooks inspired by Tayl"
+  },
+  {
+    "n": "OG title",
+    "p": true,
+    "d": "FlipMyEra — Create Personalized Era Storybooks in 60 Seconds"
+  },
+  {
+    "n": "Registration form filled",
+    "p": true,
+    "d": ""
+  },
+  {
+    "n": "Registration response",
+    "p": false,
+    "d": "Sign Up Failed\ncaptcha verification process failed"
+  },
+  {
+    "n": "Sign-in",
+    "p": false,
+    "d": "https://flipmyera.com/auth"
+  },
+  {
+    "n": "Story gen (needs auth)",
+    "p": false,
+    "d": "Not logged in"
+  },
+  {
+    "n": "Billing (needs auth)",
+    "p": false,
+    "d": "Not logged in"
+  },
+  {
+    "n": "/marketplace hidden",
+    "p": true,
+    "d": ""
+  },
+  {
+    "n": "/affiliates hidden",
+    "p": true,
+    "d": ""
+  },
+  {
+    "n": "/gift-cards hidden",
+    "p": true,
+    "d": ""
+  },
+  {
+    "n": "/terms",
+    "p": true,
+    "d": ""
+  },
+  {
+    "n": "/privacy",
+    "p": true,
+    "d": ""
+  }
+]

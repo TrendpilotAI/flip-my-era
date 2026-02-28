@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Taylor Swift Friendship Bracelet Book: The Stories Behind Every Bead",
+  "description": "Create a personalized friendship bracelet book celebrating Swiftie connections. AI-illustrated stories of the friendships, trades, and memories behind every bracelet.",
+  "url": "https://flipmyera.com/taylor-swift-friendship-bracelet-book",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-friendship-bracelet-book" }
+};
+
 const FriendshipBraceletBook = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const FriendshipBraceletBook = () => {
         description="Create a personalized friendship bracelet book celebrating Swiftie connections. AI-illustrated stories of the friendships, trades, and memories behind every bracelet."
         url="/taylor-swift-friendship-bracelet-book"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

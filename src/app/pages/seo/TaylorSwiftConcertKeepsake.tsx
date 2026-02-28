@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Taylor Swift Concert Keepsake Gift: A Memento Worth Treasuring",
+  "description": "The perfect Taylor Swift concert keepsake gift. Create a personalized AI-illustrated storybook capturing their Eras Tour or any Taylor Swift concert experience.",
+  "url": "https://flipmyera.com/taylor-swift-concert-keepsake-gift",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-concert-keepsake-gift" }
+};
+
 const TaylorSwiftConcertKeepsake = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const TaylorSwiftConcertKeepsake = () => {
         description="The perfect Taylor Swift concert keepsake gift. Create a personalized AI-illustrated storybook capturing their Eras Tour or any Taylor Swift concert experience."
         url="/taylor-swift-concert-keepsake-gift"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

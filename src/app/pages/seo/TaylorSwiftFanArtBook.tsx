@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Taylor Swift Fan Art Book: AI-Powered Illustrations for Every Era",
+  "description": "Create a stunning Taylor Swift fan art book with AI-generated illustrations for every era. Beautiful, unique artwork personalized to your vision. Start free today!",
+  "url": "https://flipmyera.com/taylor-swift-fan-art-book",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-fan-art-book" }
+};
+
 const TaylorSwiftFanArtBook = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const TaylorSwiftFanArtBook = () => {
         description="Create a stunning Taylor Swift fan art book with AI-generated illustrations for every era. Beautiful, unique artwork personalized to your vision. Start free today!"
         url="/taylor-swift-fan-art-book"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

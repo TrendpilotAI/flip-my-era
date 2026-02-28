@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Swiftie Birthday Present Ideas They'll Absolutely Love",
+  "description": "Looking for the perfect Swiftie birthday present? Discover unique Taylor Swift gift ideas including personalized AI storybooks, era-themed keepsakes, and more.",
+  "url": "https://flipmyera.com/swiftie-birthday-present-ideas",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/swiftie-birthday-present-ideas" }
+};
+
 const SwiftieBirthdayPresents = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const SwiftieBirthdayPresents = () => {
         description="Looking for the perfect Swiftie birthday present? Discover unique Taylor Swift gift ideas including personalized AI storybooks, era-themed keepsakes, and more."
         url="/swiftie-birthday-present-ideas"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

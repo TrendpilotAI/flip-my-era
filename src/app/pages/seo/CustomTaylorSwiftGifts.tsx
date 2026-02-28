@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Custom Taylor Swift Gifts That Swifties Actually Want",
+  "description": "Create unique custom Taylor Swift gifts with AI-generated personalized storybooks. The perfect gift for any Swiftie — birthdays, holidays, or just because. Start free!",
+  "url": "https://flipmyera.com/custom-taylor-swift-gifts",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/custom-taylor-swift-gifts" }
+};
+
 const CustomTaylorSwiftGifts = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const CustomTaylorSwiftGifts = () => {
         description="Create unique custom Taylor Swift gifts with AI-generated personalized storybooks. The perfect gift for any Swiftie — birthdays, holidays, or just because. Start free!"
         url="/custom-taylor-swift-gifts"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">

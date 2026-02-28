@@ -1,6 +1,22 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
 
+const ARTICLE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Taylor Swift Eras Tour Ebook: Your Story, Beautifully Told",
+  "description": "Turn your Eras Tour memories into a stunning AI-generated ebook. Personalized Taylor Swift stories with beautiful illustrations for every era. Start free today!",
+  "url": "https://flipmyera.com/taylor-swift-eras-tour-ebook",
+  "image": "https://flipmyera.com/og-image.png",
+  "author": { "@type": "Organization", "name": "FlipMyEra" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-eras-tour-ebook" }
+};
+
 const ErasTourEbook = () => {
   return (
     <div className="container py-12 max-w-4xl mx-auto">
@@ -9,6 +25,7 @@ const ErasTourEbook = () => {
         description="Turn your Eras Tour memories into a stunning AI-generated ebook. Personalized Taylor Swift stories with beautiful illustrations for every era. Start free today!"
         url="/taylor-swift-eras-tour-ebook"
         type="article"
+        jsonLd={ARTICLE_SCHEMA}
       />
 
       <article className="prose prose-lg max-w-none">
