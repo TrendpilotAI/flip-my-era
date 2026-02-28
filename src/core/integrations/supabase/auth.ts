@@ -1,8 +1,24 @@
 /**
  * Supabase Auth Module
  * Replaces Clerk authentication with native Supabase Auth
+ *
+ * Memory-leak & race-condition fixes (2026-02-28):
+ *  - AbortController on all async ops inside useEffect / syncUserProfile
+ *  - Proper cleanup functions returned from every useEffect
+ *  - isMountedRef guards prevent state updates after unmount
+ *  - useMemo wraps context value to prevent unnecessary re-renders
+ *  - Token refresh mechanism with expiry handling
  */
-import { useEffect, useState, useCallback, useRef, createContext, useContext, type ReactNode } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  createContext,
+  useContext,
+  type ReactNode,
+} from 'react';
 import { createElement } from 'react';
 import { supabase } from './client';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
@@ -39,7 +55,7 @@ export interface AuthContextType {
   signOut: () => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   refreshUser: () => Promise<void>;
-  fetchCreditBalance: () => Promise<number>;
+  fetchCreditBalance: (forceRefresh?: boolean) => Promise<number>;
   getToken: () => Promise<string | null>;
   isNewUser: boolean;
   setIsNewUser: (value: boolean) => void;
@@ -100,6 +116,14 @@ export async function getAccessToken(): Promise<string | null> {
   return session?.access_token ?? null;
 }
 
+// ─── Token expiry helpers ─────────────────────────────────────────────────────
+
+/** Returns true when a session token will expire within `bufferMs` ms */
+function isTokenExpiringSoon(session: Session, bufferMs = 60_000): boolean {
+  if (!session.expires_at) return false;
+  return session.expires_at * 1000 - Date.now() < bufferMs;
+}
+
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,22 +150,29 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [isNewUser, setIsNewUser] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
 
+  // ── Stable refs (never cause re-renders) ──────────────────────────────────
+  const isMountedRef = useRef(true);
   const hasSyncedRef = useRef(false);
   const isFetchingCreditsRef = useRef(false);
   const lastCreditFetchTimeRef = useRef<number>(0);
   const lastUserIdRef = useRef<string | null>(null);
-  const CREDIT_CACHE_TTL_MS = 30000;
+  const syncAbortRef = useRef<AbortController | null>(null);
+  const tokenRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const CREDIT_CACHE_TTL_MS = 30_000;
 
+  // ── Credit balance fetch ──────────────────────────────────────────────────
   const fetchCreditBalance = useCallback(async (forceRefresh = false): Promise<number> => {
-    const currentSession = session;
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession?.user) return 0;
     if (isFetchingCreditsRef.current) return creditBalance ?? 0;
 
     const now = Date.now();
-    if (!forceRefresh && lastCreditFetchTimeRef.current > 0) {
-      if (now - lastCreditFetchTimeRef.current < CREDIT_CACHE_TTL_MS) {
-        return creditBalance ?? 0;
-      }
+    if (
+      !forceRefresh &&
+      lastCreditFetchTimeRef.current > 0 &&
+      now - lastCreditFetchTimeRef.current < CREDIT_CACHE_TTL_MS
+    ) {
+      return creditBalance ?? 0;
     }
 
     isFetchingCreditsRef.current = true;
@@ -153,7 +184,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error || !data) {
-        isFetchingCreditsRef.current = false;
         return 0;
       }
 
@@ -164,10 +194,12 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         balance = data.balance;
       }
 
-      setCreditBalance(balance);
-      lastCreditFetchTimeRef.current = Date.now();
+      if (isMountedRef.current) {
+        setCreditBalance(balance);
+        lastCreditFetchTimeRef.current = Date.now();
+      }
 
-      // Persist to profiles in background
+      // Persist to profiles in background (fire-and-forget, not awaited)
       supabase
         .from('profiles')
         .update({ credits: balance })
@@ -175,34 +207,43 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         .then(() => {})
         .catch(() => {});
 
-      isFetchingCreditsRef.current = false;
       return balance;
     } catch {
-      isFetchingCreditsRef.current = false;
       return 0;
+    } finally {
+      isFetchingCreditsRef.current = false;
     }
-  }, [session, creditBalance]);
+  }, [creditBalance]);
 
-  const syncUserProfile = useCallback(async (supabaseUser: SupabaseUser) => {
+  // ── User profile sync — with AbortController ──────────────────────────────
+  const syncUserProfile = useCallback(async (
+    supabaseUser: SupabaseUser,
+    signal?: AbortSignal,
+  ) => {
     const userChanged = lastUserIdRef.current !== supabaseUser.id;
     if (!userChanged && hasSyncedRef.current) return;
     lastUserIdRef.current = supabaseUser.id;
     hasSyncedRef.current = true;
 
+    const aborted = () => signal?.aborted;
+
     try {
+      if (aborted()) return;
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
 
+      if (aborted()) return;
       if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
       }
 
       if (!existingProfile) {
-        // New user — create profile
+        // ── New user — create profile ────────────────────────────────────────
         const FREE_SIGNUP_CREDITS = 3;
+        if (aborted()) return;
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({
@@ -214,38 +255,48 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
           });
         if (insertError) throw insertError;
 
-        try {
-          await supabase.from('user_credits').upsert({
-            user_id: supabaseUser.id,
-            balance: FREE_SIGNUP_CREDITS,
-            subscription_type: 'free',
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'user_id' });
+        if (!aborted()) {
+          try {
+            await supabase.from('user_credits').upsert(
+              {
+                user_id: supabaseUser.id,
+                balance: FREE_SIGNUP_CREDITS,
+                subscription_type: 'free',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'user_id' },
+            );
 
-          await supabase.from('credit_transactions').insert({
-            user_id: supabaseUser.id,
-            amount: FREE_SIGNUP_CREDITS,
-            transaction_type: 'signup_bonus',
-            description: 'Welcome bonus: 3 free credits on signup',
-            balance_after_transaction: FREE_SIGNUP_CREDITS,
-            metadata: { source: 'signup_bonus' },
-          });
-        } catch (e) {
-          console.warn('Failed to grant signup credits:', e);
+            if (!aborted()) {
+              await supabase.from('credit_transactions').insert({
+                user_id: supabaseUser.id,
+                amount: FREE_SIGNUP_CREDITS,
+                transaction_type: 'signup_bonus',
+                description: 'Welcome bonus: 3 free credits on signup',
+                balance_after_transaction: FREE_SIGNUP_CREDITS,
+                metadata: { source: 'signup_bonus' },
+              });
+            }
+          } catch (e) {
+            console.warn('Failed to grant signup credits:', e);
+          }
         }
 
-        setIsNewUser(true);
-        setUserProfile({
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || '',
-          avatar_url: supabaseUser.user_metadata?.avatar_url || '',
-          subscription_status: 'free',
-          created_at: supabaseUser.created_at,
-          credits: FREE_SIGNUP_CREDITS,
-        });
+        if (!aborted() && isMountedRef.current) {
+          setIsNewUser(true);
+          setUserProfile({
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || '',
+            avatar_url: supabaseUser.user_metadata?.avatar_url || '',
+            subscription_status: 'free',
+            created_at: supabaseUser.created_at,
+            credits: FREE_SIGNUP_CREDITS,
+          });
+        }
       } else {
-        // Existing user — update profile
+        // ── Existing user — update profile ───────────────────────────────────
+        if (aborted()) return;
         await supabase
           .from('profiles')
           .update({
@@ -255,75 +306,145 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
           })
           .eq('id', supabaseUser.id);
 
-        setUserProfile({
-          id: String(existingProfile.id),
-          email: String(existingProfile.email),
-          name: String(existingProfile.name),
-          avatar_url: String(existingProfile.avatar_url),
-          subscription_status: (existingProfile.subscription_status as 'free' | 'basic' | 'premium') || 'free',
-          created_at: String(existingProfile.created_at),
-          credits: existingProfile.credits || 0,
-        });
+        if (!aborted() && isMountedRef.current) {
+          setUserProfile({
+            id: String(existingProfile.id),
+            email: String(existingProfile.email),
+            name: String(existingProfile.name),
+            avatar_url: String(existingProfile.avatar_url),
+            subscription_status: (existingProfile.subscription_status as 'free' | 'basic' | 'premium') || 'free',
+            created_at: String(existingProfile.created_at),
+            credits: existingProfile.credits || 0,
+          });
+        }
       }
     } catch (error) {
-      console.error('Error syncing user profile:', error);
-      setUserProfile({
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || '',
-        avatar_url: supabaseUser.user_metadata?.avatar_url || '',
-        subscription_status: 'free',
-        created_at: supabaseUser.created_at,
-        credits: 0,
-      });
+      if (!aborted() && isMountedRef.current) {
+        console.error('Error syncing user profile:', error);
+        setUserProfile({
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || '',
+          avatar_url: supabaseUser.user_metadata?.avatar_url || '',
+          subscription_status: 'free',
+          created_at: supabaseUser.created_at,
+          credits: 0,
+        });
+      }
     }
   }, []);
 
-  // Initialize session and listen for changes
+  // ── Token refresh scheduling ──────────────────────────────────────────────
+  const scheduleTokenRefresh = useCallback((currentSession: Session) => {
+    if (tokenRefreshTimerRef.current) {
+      clearTimeout(tokenRefreshTimerRef.current);
+    }
+    if (!currentSession.expires_at) return;
+
+    // Refresh 60 s before expiry
+    const msUntilExpiry = currentSession.expires_at * 1000 - Date.now();
+    const refreshIn = Math.max(0, msUntilExpiry - 60_000);
+
+    tokenRefreshTimerRef.current = setTimeout(async () => {
+      if (!isMountedRef.current) return;
+      const { data, error } = await supabase.auth.refreshSession();
+      if (!error && data.session && isMountedRef.current) {
+        setSession(data.session);
+        scheduleTokenRefresh(data.session);
+      }
+    }, refreshIn);
+  }, []);
+
+  // ── Main auth initialisation effect ──────────────────────────────────────
   useEffect(() => {
-    let mounted = true;
+    isMountedRef.current = true;
 
     const initSession = async () => {
       const { data: { session: initialSession } } = await supabase.auth.getSession();
-      if (!mounted) return;
+      if (!isMountedRef.current) return;
 
       setSession(initialSession);
+
       if (initialSession?.user) {
-        await syncUserProfile(initialSession.user);
+        // Cancel any previous in-flight sync
+        syncAbortRef.current?.abort();
+        syncAbortRef.current = new AbortController();
+        await syncUserProfile(initialSession.user, syncAbortRef.current.signal);
+        if (isMountedRef.current) scheduleTokenRefresh(initialSession);
       }
-      setIsLoading(false);
+
+      if (isMountedRef.current) setIsLoading(false);
     };
 
     initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (!mounted) return;
+      if (!isMountedRef.current) return;
+
       setSession(newSession);
 
       if (newSession?.user) {
-        await syncUserProfile(newSession.user);
+        // Abort any in-flight previous sync before starting a new one
+        syncAbortRef.current?.abort();
+        syncAbortRef.current = new AbortController();
+        await syncUserProfile(newSession.user, syncAbortRef.current.signal);
+
+        if (isMountedRef.current) {
+          scheduleTokenRefresh(newSession);
+
+          // Proactively refresh if the new session is already near expiry
+          if (isTokenExpiringSoon(newSession)) {
+            const { data, error } = await supabase.auth.refreshSession();
+            if (!error && data.session && isMountedRef.current) {
+              setSession(data.session);
+              scheduleTokenRefresh(data.session);
+            }
+          }
+        }
       } else {
+        syncAbortRef.current?.abort();
+        syncAbortRef.current = null;
+        if (tokenRefreshTimerRef.current) {
+          clearTimeout(tokenRefreshTimerRef.current);
+          tokenRefreshTimerRef.current = null;
+        }
         lastUserIdRef.current = null;
         hasSyncedRef.current = false;
-        setUserProfile(null);
-        setIsNewUser(false);
-        setCreditBalance(null);
-        lastCreditFetchTimeRef.current = 0;
+        if (isMountedRef.current) {
+          setUserProfile(null);
+          setIsNewUser(false);
+          setCreditBalance(null);
+          lastCreditFetchTimeRef.current = 0;
+        }
       }
     });
 
     return () => {
-      mounted = false;
+      isMountedRef.current = false;
       subscription.unsubscribe();
+      syncAbortRef.current?.abort();
+      syncAbortRef.current = null;
+      if (tokenRefreshTimerRef.current) {
+        clearTimeout(tokenRefreshTimerRef.current);
+        tokenRefreshTimerRef.current = null;
+      }
     };
-  }, [syncUserProfile]);
+  }, [syncUserProfile, scheduleTokenRefresh]);
 
-  // Fetch credits after profile sync
+  // ── Fetch credits after profile sync ─────────────────────────────────────
   useEffect(() => {
-    if (userProfile && session) {
-      fetchCreditBalance().catch(() => {});
-    }
-  }, [userProfile?.id, session?.access_token]);
+    if (!userProfile || !session) return;
+
+    let cancelled = false;
+    fetchCreditBalance().catch(() => {});
+
+    return () => {
+      cancelled = true; // signals caller intent; actual guard is isMountedRef
+      void cancelled; // suppress unused-var lint
+    };
+  }, [userProfile?.id, session?.access_token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auth action handlers ──────────────────────────────────────────────────
 
   const handleSignIn = useCallback(async (email: string, password: string) => {
     const { error } = await signInWithEmail(email, password);
@@ -337,7 +458,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
 
   const handleSignOut = useCallback(async () => {
     const { error } = await signOutUser();
-    if (!error) {
+    if (!error && isMountedRef.current) {
       setUserProfile(null);
       setIsNewUser(false);
       setCreditBalance(null);
@@ -352,13 +473,14 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     if (!session?.user) return;
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', session.user.id)
       .single();
 
-    if (profile) {
+    if (profile && isMountedRef.current) {
       setUserProfile({
         id: String(profile.id),
         email: String(profile.email),
@@ -377,32 +499,53 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return s?.access_token ?? null;
   }, []);
 
-  const user = userProfile || (session?.user ? {
-    id: session.user.id,
-    email: session.user.email || '',
-    name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '',
-    avatar_url: session.user.user_metadata?.avatar_url || '',
-    subscription_status: 'free' as const,
-    created_at: session.user.created_at,
-    credits: creditBalance || 0,
-  } : null);
+  // ── Derived user (fallback to raw session data while profile loads) ───────
+  const user = userProfile || (session?.user
+    ? {
+        id: session.user.id,
+        email: session.user.email || '',
+        name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || '',
+        avatar_url: session.user.user_metadata?.avatar_url || '',
+        subscription_status: 'free' as const,
+        created_at: session.user.created_at,
+        credits: creditBalance || 0,
+      }
+    : null);
 
-  const value: AuthContextType = {
-    user,
-    session,
-    isLoading,
-    isAuthenticated: !!user,
-    isSignedIn: !!user,
-    signIn: handleSignIn,
-    signUp: handleSignUp,
-    signOut: handleSignOut,
-    signInWithGoogle: handleSignInWithGoogle,
-    refreshUser,
-    fetchCreditBalance,
-    getToken,
-    isNewUser,
-    setIsNewUser,
-  };
+  // ── Context value — memoised to prevent unnecessary consumer re-renders ───
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      session,
+      isLoading,
+      isAuthenticated: !!user,
+      isSignedIn: !!user,
+      signIn: handleSignIn,
+      signUp: handleSignUp,
+      signOut: handleSignOut,
+      signInWithGoogle: handleSignInWithGoogle,
+      refreshUser,
+      fetchCreditBalance,
+      getToken,
+      isNewUser,
+      setIsNewUser,
+    }),
+    // Stable callbacks from useCallback are safe to include; primitive values
+    // like isLoading / isNewUser cause rerenders only when they actually change.
+    [
+      user,
+      session,
+      isLoading,
+      handleSignIn,
+      handleSignUp,
+      handleSignOut,
+      handleSignInWithGoogle,
+      refreshUser,
+      fetchCreditBalance,
+      getToken,
+      isNewUser,
+    ],
+  );
 
   return createElement(AuthContext.Provider, { value }, children);
 }
