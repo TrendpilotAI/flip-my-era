@@ -20,7 +20,9 @@ const AuthCallback = () => {
         const parsed = JSON.parse(state);
         returnPath = parsed.returnTo || '/';
         sessionStorage.removeItem('auth_return_path');
-      } catch {}
+      } catch {
+        // Ignore malformed state JSON
+      }
     }
 
     if (isAuthenticated) {

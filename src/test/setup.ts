@@ -2,47 +2,26 @@ import '@testing-library/jest-dom';
 import { expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
-// import * as axeMatchers from 'vitest-axe/matchers';
-
-// Add toHaveNoViolations placeholder
-const axeMatchers = {
-  toHaveNoViolations: () => true,
-};
-
-// Mock MSW since it's not installed
-const mockServer = {
-  listen: vi.fn(),
-  close: vi.fn(),
-  resetHandlers: vi.fn(),
-};
+import * as axeMatchers from 'vitest-axe/matchers';
+import { server } from './msw/server';
 
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
 
-// Add toHaveNoViolations matcher (vitest-axe not installed)
-expect.extend({
-  toHaveNoViolations(this: any) {
-    return {
-      pass: true,
-      message: () => 'toHaveNoViolations (skipped - vitest-axe not installed)',
-    };
-  },
-});
+// Add accessibility matchers from vitest-axe
+expect.extend(axeMatchers);
 
-// MSW server lifecycle - mock since msw not installed
+// MSW server lifecycle
 beforeAll(() => {
-  // server.listen({ onUnhandledRequest: 'bypass' });
-  mockServer.listen({ onUnhandledRequest: 'bypass' });
+  server.listen({ onUnhandledRequest: 'bypass' });
 });
 afterAll(() => {
-  // server.close();
-  mockServer.close();
+  server.close();
 });
 
 // Cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {
-  // server.resetHandlers();
-  mockServer.resetHandlers();
+  server.resetHandlers();
   cleanup();
   vi.clearAllMocks();
   vi.clearAllTimers();

@@ -6,6 +6,7 @@ import React from 'react';
 const mockUseClerkAuth = vi.fn();
 
 vi.mock('@/modules/auth/contexts', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useClerkAuth: (...args: any[]) => mockUseClerkAuth(...args),
 }));
 

@@ -82,7 +82,9 @@ describe('BookReader', () => {
   });
 
   it('shows lock overlay and triggers unlock callback', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    // Use real timers for userEvent click interactions to avoid deadlocks
+    vi.useRealTimers();
+    const user = userEvent.setup();
     const onRequestUnlock = vi.fn();
 
     render(
@@ -96,15 +98,17 @@ describe('BookReader', () => {
 
     expect(screen.getByText(/unlock your story to continue reading/i)).toBeInTheDocument();
 
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /unlock full story/i }));
-    });
+    await user.click(screen.getByRole('button', { name: /unlock full story/i }));
 
     expect(onRequestUnlock).toHaveBeenCalledTimes(1);
+    // Restore fake timers for afterEach cleanup
+    vi.useFakeTimers();
   });
 
   it('calls onClose when the reader is closed via overlay action', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    // Use real timers for userEvent click interactions to avoid deadlocks
+    vi.useRealTimers();
+    const user = userEvent.setup();
     const onClose = vi.fn();
 
     render(
@@ -116,10 +120,10 @@ describe('BookReader', () => {
       />
     );
 
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: /close reader/i }));
-    });
+    await user.click(screen.getByRole('button', { name: /close reader/i }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
+    // Restore fake timers for afterEach cleanup
+    vi.useFakeTimers();
   });
 });
