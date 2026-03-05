@@ -53,9 +53,9 @@ export function initOpenTelemetry(): void {
     
     const traceExporter = new OTLPTraceExporter({
       url: tracesUrl,
-      headers: import.meta.env.VITE_SENTRY_AUTH_TOKEN
-        ? { Authorization: `Bearer ${import.meta.env.VITE_SENTRY_AUTH_TOKEN}` }
-        : undefined,
+      // Note: Sentry OTLP auth is handled via DSN-based routing in the endpoint URL.
+      // SENTRY_AUTH_TOKEN is a privileged server-side token and must NEVER be sent
+      // from the client bundle. Do not add an Authorization header here.
       // Compression is recommended for production
       compression: 'gzip',
     });
