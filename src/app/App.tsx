@@ -8,6 +8,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { performanceMonitor } from "@/core/utils/performance";
 import { ErrorBoundary } from "@/modules/shared/components/ErrorBoundary";
 import { DashboardSkeleton, CheckoutSkeleton } from "@/modules/shared/components/Skeleton";
+import { CreditExhaustionModal } from "@/modules/credits";
 import { FeatureGate } from "@/modules/shared/components/FeatureGate";
 
 // Public components (eagerly loaded)
@@ -484,6 +485,8 @@ function App() {
             </Routes>
         </Layout>
         <Toaster />
+        {/* Global credit exhaustion upsell — listens for credits:exhausted event */}
+        <CreditExhaustionModal />
       </Router>
     </SupabaseAuthProvider>
     </HelmetProvider>

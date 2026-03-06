@@ -164,8 +164,13 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
           }
           return { success: true, transactionId: transaction_id, bypassCredits: bypass_credits, totalCost: costResult.totalCost };
         } else {
-          // Show credit purchase modal
-          setShowCreditModal(true);
+          // Fire credits:exhausted event so the global upsell modal opens.
+          // Fall back to the legacy credit purchase modal for non-zero balances.
+          if (current_balance === 0) {
+            window.dispatchEvent(new CustomEvent('credits:exhausted', { detail: { balance: current_balance } }));
+          } else {
+            setShowCreditModal(true);
+          }
           toast({
             title: "Insufficient Credits",
             description: `You need ${costResult.totalCost} credit(s) to generate this ebook. Current balance: ${current_balance}`,

@@ -5,8 +5,9 @@
  * Credit Packs: Single (5) / Album (20) / Tour (50)
  */
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useToast } from '@/modules/shared/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
@@ -228,7 +229,23 @@ const cardVariants = {
 export const PricingPage: React.FC = () => {
   const [annual, setAnnual] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
   const { user } = useClerkAuth();
+
+  // Show toast when user returns from a cancelled Stripe checkout
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('cancelled') === 'true') {
+      toast({
+        title: 'Checkout cancelled',
+        description: 'No worries — take your time. Upgrade whenever you\'re ready! 🎶',
+      });
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete('cancelled');
+      window.history.replaceState({}, '', clean.toString());
+    }
+  }, [location.search, toast]);
 
   const handleSelectTier = (tierKey: string) => {
     if (tierKey === 'debut') {

@@ -1,5 +1,26 @@
 # flip-my-era — Code Quality Audit
-*Generated: 2026-02-27*
+*Generated: 2026-03-05 (updated by Judge Agent v2)*
+
+---
+
+## ⚠️ NEW P0 SECURITY FINDING (2026-03-05)
+
+### 🔴 VITE_SENTRY_AUTH_TOKEN exposed in client bundle
+**File:** `src/core/integrations/opentelemetry.ts`
+
+```ts
+headers: import.meta.env.VITE_SENTRY_AUTH_TOKEN
+  ? { Authorization: `Bearer ${import.meta.env.VITE_SENTRY_AUTH_TOKEN}` }
+  : undefined,
+```
+
+**VITE_SENTRY_AUTH_TOKEN is compiled into the client-side JS bundle.** Unlike the Sentry DSN (which is intentionally public), auth tokens grant **write access** to your Sentry project and should NEVER be in client code.
+
+**Immediate action:**
+1. Rotate the Sentry auth token in Sentry → Settings → Auth Tokens
+2. Remove `VITE_SENTRY_AUTH_TOKEN` from all env files and client source
+3. The Sentry browser SDK only needs `VITE_SENTRY_DSN` — no auth token needed
+4. If OTLP export with auth is required, proxy through a Supabase edge function
 
 ---
 
@@ -7,7 +28,7 @@
 
 | Category | Severity | Issue Count |
 |---|---|---|
-| Security | 🔴 High | 2 |
+| Security | 🔴 Critical | 3 (+1 new P0) |
 | Dead Code / Stubs | 🟠 Medium | 4 |
 | DRY Violations | 🔴 High | 1 (major — duplicate module) |
 | Test Coverage | 🟠 Medium | 15+ untested edge functions/pages |

@@ -48,14 +48,37 @@ const UserDashboard = () => {
     }
   }, [user?.id]);
 
-  // Handle URL parameters for direct tab access
+  // Handle URL parameters for direct tab access + upgrade/cancel toasts
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     if (tabParam && ['overview', 'stories', 'books', 'analytics', 'account', 'billing'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
-  }, [location.search]);
+
+    // Post-checkout feedback
+    if (params.get('upgrade') === 'success') {
+      toast({
+        title: '🎉 Upgrade successful!',
+        description: "Your plan is now active. Enjoy your new credits and features!",
+      });
+      // Remove the query param without reloading
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete('upgrade');
+      window.history.replaceState({}, '', clean.toString());
+    }
+
+    if (params.get('cancelled') === 'true') {
+      toast({
+        title: 'Checkout cancelled',
+        description: 'No worries — your plan is unchanged. Upgrade anytime from the pricing page.',
+        variant: 'destructive',
+      });
+      const clean = new URL(window.location.href);
+      clean.searchParams.delete('cancelled');
+      window.history.replaceState({}, '', clean.toString());
+    }
+  }, [location.search, toast]);
 
   const loadStories = async () => {
     try {

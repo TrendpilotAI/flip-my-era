@@ -102,8 +102,8 @@ serve(async (req) => {
       // Subscription plan
       priceId = subscriptionPriceIds[plan];
       checkoutMode = "subscription";
-      successUrl = `${origin}/checkout/success?plan=${encodeURIComponent(plan)}`;
-      cancelUrl = `${origin}/checkout?plan=${encodeURIComponent(plan)}`;
+      successUrl = `${origin}/dashboard?upgrade=success`;
+      cancelUrl = `${origin}/pricing?cancelled=true`;
       logStep("Using subscription plan", { plan, priceId, mode: checkoutMode });
     } else {
       throw new Error(`Invalid plan or price ID: ${plan || stripePriceId}`);
