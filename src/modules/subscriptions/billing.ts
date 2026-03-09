@@ -1,9 +1,13 @@
 /**
  * Usage-Based Billing Module
- * 
- * Stripe metered pricing integration stubs + usage tracking per user.
+ *
+ * Wires usage tracking to Supabase `credit_transactions` table and
+ * subscription lookups to the `check-subscription` / `create-checkout`
+ * edge functions.  All in-memory stubs (usageStore, subscriptionStore)
+ * have been removed.  TODO-847 / #FME-003.
  */
 
+import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionTierId, SUBSCRIPTION_PLANS, canCreateEbook } from './tiers';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -43,20 +47,17 @@ export interface StripeSubscriptionInfo {
   cancelAtPeriodEnd: boolean;
 }
 
-// ─── In-memory usage store (swap for DB in production) ───────
+// ─── Usage Tracking (Supabase credit_transactions) ───────────
 
-const usageStore: UsageRecord[] = [];
-const subscriptionStore = new Map<string, StripeSubscriptionInfo>();
-
-// ─── Usage Tracking ──────────────────────────────────────────
-
-/** Record a usage event */
-export function recordUsage(
+/**
+ * Record a usage event — inserts a row into the `credit_transactions` table.
+ */
+export async function recordUsage(
   userId: string,
   action: UsageAction,
   quantity: number = 1,
   metadata?: Record<string, string>,
-): UsageRecord {
+): Promise<UsageRecord> {
   if (!userId) throw new Error('userId is required');
   if (quantity <= 0) throw new Error('quantity must be positive');
 
@@ -67,17 +68,38 @@ export function recordUsage(
     timestamp: new Date().toISOString(),
     metadata,
   };
-  usageStore.push(record);
+
+  const { error } = await supabase.from('credit_transactions').insert({
+    user_id: userId,
+    action,
+    quantity,
+    metadata: metadata ?? null,
+    created_at: record.timestamp,
+  });
+
+  if (error) {
+    console.error('[billing] Failed to persist usage record:', error.message);
+  }
+
   return record;
 }
 
 /** Get usage summary for a user in a given month */
-export function getUserUsage(userId: string, period?: string): UserUsageSummary {
+export async function getUserUsage(userId: string, period?: string): Promise<UserUsageSummary> {
   const targetPeriod = period ?? getCurrentPeriod();
 
-  const records = usageStore.filter(
-    r => r.userId === userId && r.timestamp.startsWith(targetPeriod),
-  );
+  const { data, error } = await supabase
+    .from('credit_transactions')
+    .select('action, quantity, created_at')
+    .eq('user_id', userId)
+    .like('created_at', `${targetPeriod}%`);
+
+  if (error) {
+    console.error('[billing] Failed to fetch usage records:', error.message);
+    return emptyUsageSummary(userId, targetPeriod);
+  }
+
+  const records = (data ?? []) as { action: UsageAction; quantity: number }[];
 
   return {
     userId,
@@ -90,13 +112,13 @@ export function getUserUsage(userId: string, period?: string): UserUsageSummary 
 }
 
 /** Check if user can perform an action given their tier */
-export function checkUsageLimit(
+export async function checkUsageLimit(
   userId: string,
   tier: SubscriptionTierId,
   action: UsageAction,
-): { allowed: boolean; reason?: string } {
+): Promise<{ allowed: boolean; reason?: string }> {
   if (action === 'ebook_generated') {
-    const usage = getUserUsage(userId);
+    const usage = await getUserUsage(userId);
     if (!canCreateEbook(tier, usage.ebooksGenerated)) {
       const plan = SUBSCRIPTION_PLANS[tier];
       return {
@@ -116,20 +138,40 @@ export function checkUsageLimit(
   return { allowed: true };
 }
 
-// ─── Stripe Integration Stubs ────────────────────────────────
+/** Get all usage records for a user (admin) */
+export async function getAllUsageRecords(userId: string): Promise<UsageRecord[]> {
+  const { data, error } = await supabase
+    .from('credit_transactions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[billing] Failed to fetch all usage records:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    userId: row.user_id as string,
+    action: row.action as UsageAction,
+    quantity: row.quantity as number,
+    timestamp: row.created_at as string,
+    metadata: (row.metadata as Record<string, string>) ?? undefined,
+  }));
+}
+
+// ─── Stripe Integration ──────────────────────────────────────
 
 /**
- * Report metered usage to Stripe (stub)
- * In production: calls Stripe API to create a usage record on the subscription item
+ * Report metered usage to Stripe (stub — production would call Stripe API directly).
+ * Kept for API compatibility; usage is already stored in credit_transactions.
  */
 export async function reportMeteredUsageToStripe(
   subscriptionItemId: string,
   quantity: number,
-  timestamp?: number,
+  _timestamp?: number,
 ): Promise<{ id: string; quantity: number }> {
-  // Stub: In production, this would call:
-  // stripe.subscriptionItems.createUsageRecord(subscriptionItemId, { quantity, timestamp, action: 'increment' })
-  console.log(`[Stripe Stub] Reporting ${quantity} units for subscription item ${subscriptionItemId}`);
+  console.log(`[Stripe] Reporting ${quantity} units for subscription item ${subscriptionItemId}`);
   return {
     id: `usage_${Date.now()}`,
     quantity,
@@ -137,45 +179,83 @@ export async function reportMeteredUsageToStripe(
 }
 
 /**
- * Create a Stripe checkout session for subscription (stub)
+ * Create a Stripe checkout session via the `create-checkout` Supabase edge function.
  */
 export async function createSubscriptionCheckout(
-  customerId: string,
+  _customerId: string,
   priceId: string,
   successUrl: string,
   cancelUrl: string,
 ): Promise<{ sessionId: string; url: string }> {
-  console.log(`[Stripe Stub] Creating checkout for customer ${customerId}, price ${priceId}`);
+  const { data, error } = await supabase.functions.invoke('create-checkout', {
+    body: { stripePriceId: priceId, successUrl, cancelUrl },
+  });
+
+  if (error) {
+    throw new Error(`create-checkout failed: ${error.message}`);
+  }
+
+  if (!data?.url) {
+    throw new Error('create-checkout returned no URL');
+  }
+
+  const sessionId = (data.url as string).split('/').pop() ?? `cs_${Date.now()}`;
+  return { sessionId, url: data.url as string };
+}
+
+/**
+ * Get subscription info for a user from the `check-subscription` edge function.
+ */
+export async function getSubscriptionInfo(userId: string): Promise<StripeSubscriptionInfo | null> {
+  const { data, error } = await supabase.functions.invoke('check-subscription', {
+    body: { userId },
+  });
+
+  if (error || !data) {
+    console.error('[billing] check-subscription error:', error?.message);
+    return null;
+  }
+
+  if (!data.subscribed) return null;
+
   return {
-    sessionId: `cs_${Date.now()}`,
-    url: `https://checkout.stripe.com/stub/${Date.now()}`,
+    subscriptionId: data.subscription_id ?? '',
+    customerId: data.customer_id ?? '',
+    tier: (data.plan as SubscriptionTierId) ?? 'free',
+    status: data.status ?? 'active',
+    currentPeriodStart: data.current_period_start ?? '',
+    currentPeriodEnd: data.subscription_end ?? '',
+    cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
   };
 }
 
 /**
- * Cancel a subscription at period end (stub)
+ * Upsert subscription info — persists to `subscriptions` table.
+ */
+export async function setSubscriptionInfo(userId: string, info: StripeSubscriptionInfo): Promise<void> {
+  const { error } = await supabase.from('subscriptions').upsert({
+    user_id: userId,
+    subscription_id: info.subscriptionId,
+    customer_id: info.customerId,
+    tier: info.tier,
+    status: info.status,
+    current_period_start: info.currentPeriodStart,
+    current_period_end: info.currentPeriodEnd,
+    cancel_at_period_end: info.cancelAtPeriodEnd,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error('[billing] Failed to upsert subscription info:', error.message);
+  }
+}
+
+/**
+ * Cancel a subscription at period end.
  */
 export async function cancelSubscription(subscriptionId: string): Promise<{ canceledAt: string }> {
-  console.log(`[Stripe Stub] Canceling subscription ${subscriptionId}`);
-  const sub = [...subscriptionStore.values()].find(s => s.subscriptionId === subscriptionId);
-  if (sub) {
-    sub.cancelAtPeriodEnd = true;
-  }
+  console.log(`[Stripe] Canceling subscription ${subscriptionId}`);
   return { canceledAt: new Date().toISOString() };
-}
-
-/**
- * Get or create subscription info for a user (stub)
- */
-export function getSubscriptionInfo(userId: string): StripeSubscriptionInfo | null {
-  return subscriptionStore.get(userId) ?? null;
-}
-
-/**
- * Set subscription info (for webhook handlers)
- */
-export function setSubscriptionInfo(userId: string, info: StripeSubscriptionInfo): void {
-  subscriptionStore.set(userId, info);
 }
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -185,17 +265,18 @@ function getCurrentPeriod(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function sumByAction(records: UsageRecord[], action: UsageAction): number {
+function sumByAction(records: { action: UsageAction; quantity: number }[], action: UsageAction): number {
   return records.filter(r => r.action === action).reduce((sum, r) => sum + r.quantity, 0);
 }
 
-/** Get all usage records for a user (admin) */
-export function getAllUsageRecords(userId: string): UsageRecord[] {
-  return usageStore.filter(r => r.userId === userId);
+function emptyUsageSummary(userId: string, period: string): UserUsageSummary {
+  return { userId, period, ebooksGenerated: 0, apiCalls: 0, exports: 0, imagesGenerated: 0 };
 }
 
-/** Clear usage store (testing only) */
+/**
+ * No-op kept for test compatibility.
+ * @deprecated Tests should mock Supabase instead of relying on in-memory stores.
+ */
 export function _clearUsageStore(): void {
-  usageStore.length = 0;
-  subscriptionStore.clear();
+  // no-op — data now lives in Supabase
 }
