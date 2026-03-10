@@ -7,10 +7,17 @@
  */
 import { createAuthClient } from 'better-auth/react';
 
+function getBaseURL(): string {
+  // In test environments window.location.origin may be empty or 'null'
+  if (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null') {
+    return window.location.origin;
+  }
+  // Fallback for SSR, tests, or environments without a DOM
+  return import.meta.env?.VITE_APP_URL ?? 'https://flipmyera.com';
+}
+
 export const authClient = createAuthClient({
-  baseURL: typeof window !== 'undefined'
-    ? window.location.origin          // works for any deployment (local / prod)
-    : (import.meta.env.VITE_APP_URL ?? 'https://flipmyera.com'),
+  baseURL: getBaseURL(),
 });
 
 // Convenience re-exports so consumers only need one import
