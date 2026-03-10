@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/swiftie-birthday-present-ideas" }
 };
 
@@ -26,6 +28,7 @@ const SwiftieBirthdayPresents = () => {
         url="/swiftie-birthday-present-ideas"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Swiftie birthday presents, Taylor Swift birthday gift ideas, personalized Swiftie gift, fan gift ideas 2025"
       />
 
       <article className="prose prose-lg max-w-none">

@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/personalized-eras-tour-photo-book" }
 };
 
@@ -26,6 +28,7 @@ const PersonalizedErasTourPhotoBook = () => {
         url="/personalized-eras-tour-photo-book"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="personalized Eras Tour photo book, Taylor Swift photo book, custom Swiftie album, AI illustrated photo book"
       />
 
       <article className="prose prose-lg max-w-none">

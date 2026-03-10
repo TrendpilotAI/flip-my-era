@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/swiftie-graduation-gift-ideas" }
 };
 
@@ -26,6 +28,7 @@ const SwiftieGraduationGift = () => {
         url="/swiftie-graduation-gift-ideas"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Swiftie graduation gift, Taylor Swift graduation present, personalized graduation gift for Swifties, era-themed graduation"
       />
 
       <article className="prose prose-lg max-w-none">

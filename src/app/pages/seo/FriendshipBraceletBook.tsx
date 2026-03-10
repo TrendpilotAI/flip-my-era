@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-friendship-bracelet-book" }
 };
 
@@ -26,6 +28,7 @@ const FriendshipBraceletBook = () => {
         url="/taylor-swift-friendship-bracelet-book"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Taylor Swift friendship bracelet book, Swiftie friendship bracelet stories, Eras Tour bracelet keepsake, Swiftie trade stories"
       />
 
       <article className="prose prose-lg max-w-none">

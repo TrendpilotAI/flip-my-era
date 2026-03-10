@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-concert-keepsake-gift" }
 };
 
@@ -26,6 +28,7 @@ const TaylorSwiftConcertKeepsake = () => {
         url="/taylor-swift-concert-keepsake-gift"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Taylor Swift concert keepsake, Eras Tour souvenir, personalized concert gift, Swiftie keepsake gift"
       />
 
       <article className="prose prose-lg max-w-none">
