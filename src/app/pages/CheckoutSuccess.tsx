@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { posthogEvents } from '@/core/integrations/posthog';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
@@ -36,6 +37,14 @@ const CheckoutSuccess = () => {
         const type = params.get("type");
         const amount = params.get("amount");
         const plan = params.get("plan");
+
+        // Track checkout completion
+        posthogEvents.checkoutCompleted({
+          session_id: sessionId,
+          type: type || 'subscription',
+          plan: plan || undefined,
+          amount: amount ? Number(amount) : undefined,
+        });
 
         // Helper to refresh user data if needed
         const refreshUserData = async () => {

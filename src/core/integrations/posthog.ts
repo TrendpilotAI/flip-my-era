@@ -274,12 +274,28 @@ export const posthogEvents = {
     posthogService.capture('ebook_downloaded', properties);
   },
 
+  // Checkout / conversion events
+  checkoutInitiated: (properties?: Record<string, unknown>) => {
+    posthogService.capture('checkout_initiated', properties);
+  },
+  checkoutCompleted: (properties?: Record<string, unknown>) => {
+    posthogService.capture('checkout_completed', properties);
+  },
+
   // Credit events
   creditsPurchased: (amount: number, credits: number, properties?: Record<string, unknown>) => {
     posthogService.capture('credits_purchased', { amount, credits, ...properties });
   },
   creditsUsed: (credits: number, purpose: string, properties?: Record<string, unknown>) => {
     posthogService.capture('credits_used', { credits, purpose, ...properties });
+  },
+  creditExhausted: (balance: number, properties?: Record<string, unknown>) => {
+    posthogService.capture('credit_exhausted', { balance, ...properties });
+  },
+
+  // Gallery events
+  galleryViewed: (properties?: Record<string, unknown>) => {
+    posthogService.capture('gallery_viewed', properties);
   },
 
   // Page view events (for SPA tracking)

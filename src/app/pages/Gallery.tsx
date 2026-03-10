@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { posthogEvents } from '@/core/integrations/posthog';
 import { Card, CardContent } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { Input } from '@/modules/shared/components/ui/input';
@@ -50,6 +51,10 @@ function getGradient(era: string) {
 export function Gallery() {
   const [search, setSearch] = useState('');
   const [filterArtist, setFilterArtist] = useState<string | null>(null);
+
+  useEffect(() => {
+    posthogEvents.galleryViewed();
+  }, []);
 
   const artists = useMemo(() => [...new Set(SAMPLE_EBOOKS.map((e) => e.artist))], []);
 
