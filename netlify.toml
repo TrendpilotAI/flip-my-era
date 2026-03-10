@@ -57,6 +57,14 @@
     # Staging uses same Clerk dev key (set in Netlify UI env vars):
     # VITE_CLERK_PUBLISHABLE_KEY
 
+# BetterAuth — all /api/auth/* routes handled by Netlify Function
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true
+
+# SPA fallback — must come LAST
 [[redirects]]
   from = "/*"
   to = "/index.html"

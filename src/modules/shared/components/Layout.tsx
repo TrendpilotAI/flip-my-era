@@ -3,7 +3,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/modules/shared/components/ui/dropdown-menu';
 import { BookOpen, LogOut, Settings, User, Crown } from "lucide-react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { Footer } from './Footer';
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {

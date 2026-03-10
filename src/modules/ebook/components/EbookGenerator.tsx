@@ -21,7 +21,7 @@ import { generateEbookIllustration, generateTaylorSwiftIllustration } from "@/mo
 import { CreditBalance } from "@/modules/user/components/CreditBalance";
 import { CreditPurchaseModal } from "@/modules/user/components/CreditPurchaseModal";
 import { CreditWallModal } from "./CreditWallModal";
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { Alert, AlertDescription } from '@/modules/shared/components/ui/alert';
 import { useStreamingGeneration } from "@/modules/story/hooks/useStreamingGeneration";
 import {
