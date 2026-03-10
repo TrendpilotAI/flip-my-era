@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { STRIPE_PRODUCTS } from '@/config/stripe-products';
+import { posthogEvents } from '@/core/integrations/posthog';
 
 interface CreditPurchaseModalProps {
   isOpen: boolean;
@@ -98,6 +99,15 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
 
   const handlePurchase = async (tier: PricingTier) => {
     setLoading(tier.id);
+
+    // Track checkout initiation
+    posthogEvents.checkoutInitiated({
+      plan: tier.id,
+      plan_name: tier.name,
+      credits: tier.credits,
+      price: tier.price,
+      type: 'credits',
+    });
 
     try {
       if (!user?.email) {

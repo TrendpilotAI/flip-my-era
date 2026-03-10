@@ -31,6 +31,7 @@ import {
   storyFormats
 } from "@/modules/story/utils/storyPrompts";
 import { downloadEbook } from '@/modules/shared/utils/downloadUtils';
+import { posthogEvents } from '@/core/integrations/posthog';
 import { Pencil } from 'lucide-react';
 import type { Json } from '@/integrations/supabase/types';
 
@@ -588,6 +589,11 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
         },
         storyId
       );
+      posthogEvents.ebookDownloaded({
+        format: 'pdf',
+        chapter_count: chapters.length,
+        story_id: storyId,
+      });
       toast({
         title: "PDF Ready",
         description: "Your illustrated story has been saved as a PDF.",

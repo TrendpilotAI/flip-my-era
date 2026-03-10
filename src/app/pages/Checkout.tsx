@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { SEO } from '@/modules/shared/components/SEO';
 import { useNavigate, useLocation } from "react-router-dom";
+import { posthogEvents } from '@/core/integrations/posthog';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/modules/shared/components/ui/button';
@@ -104,6 +105,14 @@ const Checkout = () => {
       if (!selectedPlanOption) {
         throw new Error("Invalid plan selected");
       }
+
+      // Track checkout initiation
+      posthogEvents.checkoutInitiated({
+        plan: selectedPlan,
+        plan_name: selectedPlanOption.name,
+        price: selectedPlanOption.price,
+        type: 'subscription',
+      });
 
       // Validate user data before proceeding
       if (!user?.email) {
