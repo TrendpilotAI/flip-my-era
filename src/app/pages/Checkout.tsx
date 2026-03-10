@@ -11,8 +11,8 @@ import { Input } from '@/modules/shared/components/ui/input';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Loader2, CheckCircle, Shield, CreditCard } from "lucide-react";
 import { STRIPE_PRODUCTS } from '@/config/stripe-products';
+import { posthogEvents } from '@/core/integrations/posthog';
 
- 
 
 interface PlanOption {
   id: string;
@@ -97,6 +97,12 @@ const Checkout = () => {
 
   const handleProceedToCheckout = async () => {
     setIsProcessing(true);
+
+    // Track checkout initiation
+    posthogEvents.checkoutInitiated({
+      plan: selectedPlan,
+      source: 'checkout_page',
+    });
     
     try {
       const selectedPlanOption = planOptions.find(plan => plan.id === selectedPlan);

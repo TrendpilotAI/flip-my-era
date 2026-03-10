@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/core/integrations/supabase/client';
 import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { posthogEvents } from '@/core/integrations/posthog';
 
 export interface CreditsState {
   balance: number;
@@ -63,6 +64,7 @@ export function useCredits(): CreditsState {
   const checkBeforeGenerate = useCallback((): boolean => {
     if (isExhausted) {
       window.dispatchEvent(new CustomEvent(CREDITS_EXHAUSTED_EVENT, { detail: { balance } }));
+      posthogEvents.creditExhausted(balance);
       return false;
     }
     return true;
