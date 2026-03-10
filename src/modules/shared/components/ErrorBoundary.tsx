@@ -10,10 +10,44 @@ interface Props {
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
+interface RouteErrorFallbackProps {
+  title?: string;
+  description?: string;
+}
+
 interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+}
+
+export function RouteErrorFallback({
+  title = 'This page hit a snag',
+  description = "The page couldn't load properly. Try again, refresh, or head back home.",
+}: RouteErrorFallbackProps) {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-4 py-12 bg-gradient-to-b from-background to-secondary/20">
+      <Card className="max-w-xl w-full">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <CardTitle>{title}</CardTitle>
+          </div>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-2">
+          <Button onClick={() => window.location.reload()} className="flex-1">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh this page
+          </Button>
+          <Button onClick={() => (window.location.href = '/')} variant="outline" className="flex-1">
+            <Home className="mr-2 h-4 w-4" />
+            Back to home
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -35,18 +69,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Call onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
 
-    // Update state with error info
     this.setState({
       error,
       errorInfo,
     });
 
-    // Send to error tracking service
     try {
       sentryService.captureException(error, {
         component: 'ErrorBoundary',
@@ -66,7 +97,6 @@ export class ErrorBoundary extends Component<Props, State> {
         },
       });
     } catch {
-      // Sentry not available or not initialized, log to console
       if (import.meta.env.DEV) {
         console.error('ErrorBoundary caught an error:', error, errorInfo);
       }
@@ -91,12 +121,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      // Use custom fallback if provided
       if (this.props.fallback) {
         return <>{this.props.fallback}</>;
       }
 
-      // Default error UI
       return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-secondary/20">
           <Card className="max-w-lg w-full">
@@ -110,15 +138,10 @@ export class ErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Show error details in development */}
               {import.meta.env.DEV && this.state.error && (
                 <div className="p-4 bg-destructive/10 rounded-lg space-y-2">
-                  <p className="text-sm font-semibold text-destructive">
-                    Error Details (Development Only):
-                  </p>
-                  <p className="text-xs font-mono text-destructive/80">
-                    {this.state.error.toString()}
-                  </p>
+                  <p className="text-sm font-semibold text-destructive">Error Details (Development Only):</p>
+                  <p className="text-xs font-mono text-destructive/80">{this.state.error.toString()}</p>
                   {this.state.errorInfo?.componentStack && (
                     <details className="text-xs">
                       <summary className="cursor-pointer text-destructive/60 hover:text-destructive/80">
@@ -133,27 +156,15 @@ export class ErrorBoundary extends Component<Props, State> {
               )}
 
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={this.handleReset}
-                  variant="default"
-                  className="flex-1"
-                >
+                <Button onClick={this.handleReset} variant="default" className="flex-1">
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Try Again
                 </Button>
-                <Button
-                  onClick={this.handleReload}
-                  variant="outline"
-                  className="flex-1"
-                >
+                <Button onClick={this.handleReload} variant="outline" className="flex-1">
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Reload Page
                 </Button>
-                <Button
-                  onClick={this.handleGoHome}
-                  variant="outline"
-                  className="flex-1"
-                >
+                <Button onClick={this.handleGoHome} variant="outline" className="flex-1">
                   <Home className="mr-2 h-4 w-4" />
                   Go Home
                 </Button>
@@ -168,30 +179,28 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-// Higher-order component for functional components
 export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
+  WrappedComponent: React.ComponentType<P>,
   errorBoundaryProps?: Omit<Props, 'children'>
 ) {
-  const WrappedComponent = (props: P) => (
+  const ComponentWithBoundary = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
+      <WrappedComponent {...props} />
     </ErrorBoundary>
   );
 
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name || 'Component'})`;
+  ComponentWithBoundary.displayName = `withErrorBoundary(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
 
-  return WrappedComponent;
+  return ComponentWithBoundary;
 }
 
-// Hook to trigger error boundary (for testing or manual error triggering)
 export function useErrorHandler() {
   const [error, setError] = useState<Error | null>(null);
-  
+
   if (error) {
     throw error;
   }
-  
+
   return (errorToThrow: Error) => {
     setError(errorToThrow);
   };
