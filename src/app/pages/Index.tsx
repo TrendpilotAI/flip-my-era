@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/modules/shared/components/SEO';
 import { useApiCheck } from '@/modules/shared/hooks/useApiCheck';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { Button } from "@/modules/shared/components/ui/button";
 import { Card, CardContent } from "@/modules/shared/components/ui/card";
 import { AuthDialog } from "@/modules/shared/components/AuthDialog";
@@ -80,7 +80,7 @@ const FAQ_SCHEMA = {
 
 const Index = () => {
   useApiCheck();
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated } = useAuth();
   const wizardRef = useRef<HTMLDivElement>(null);
 
   const scrollToWizard = () => {

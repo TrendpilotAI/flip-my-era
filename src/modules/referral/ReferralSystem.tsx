@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/core/integrations/supabase/client';
-import { useClerkAuth } from '@/modules/auth';
+import { useAuth } from '@/modules/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Copy, Check, Users, Gift, TrendingUp } from 'lucide-react';
@@ -23,7 +23,7 @@ export const generateReferralCode = (userId: string): string => {
 };
 
 export const useReferral = () => {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const [stats, setStats] = useState<ReferralStats>({ totalReferrals: 0, earnedCredits: 0, pendingReferrals: 0 });
   const [loading, setLoading] = useState(true);
 

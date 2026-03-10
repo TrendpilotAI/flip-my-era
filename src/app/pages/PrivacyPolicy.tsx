@@ -27,7 +27,7 @@ const PrivacyPolicy = () => {
             <h2 className="text-xl font-semibold mt-8 mb-3">2. Information We Collect</h2>
             <h3 className="text-lg font-medium mt-4 mb-2">Information you provide:</h3>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Account information:</strong> Name, email address, profile picture (via Clerk authentication).</li>
+              <li><strong>Account information:</strong> Name, email address, profile picture (via Supabase authentication).</li>
               <li><strong>Story inputs:</strong> Personal details, life events, and preferences you provide to generate stories.</li>
               <li><strong>Payment information:</strong> Processed by Stripe — we do not store credit card numbers.</li>
             </ul>
@@ -56,7 +56,7 @@ const PrivacyPolicy = () => {
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Supabase</strong> — Database and backend infrastructure. <a href="https://supabase.com/privacy" className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
               <li><strong>Stripe</strong> — Payment processing. <a href="https://stripe.com/privacy" className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
-              <li><strong>Clerk</strong> — Authentication and user management. <a href="https://clerk.com/privacy" className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
+              <li><strong>Supabase Auth</strong> — Authentication and user management. <a href="https://supabase.com/privacy" className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
               <li><strong>PostHog</strong> — Product analytics. <a href="https://posthog.com/privacy" className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
               <li><strong>Sentry</strong> — Error tracking and performance monitoring. <a href="https://sentry.io/privacy/" className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
               <li><strong>Cloudflare</strong> — Security (Turnstile CAPTCHA). <a href="https://www.cloudflare.com/privacypolicy/" className="text-purple-600 hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a></li>
@@ -67,7 +67,7 @@ const PrivacyPolicy = () => {
             <h2 className="text-xl font-semibold mt-8 mb-3">5. Cookies and Tracking</h2>
             <p>We use cookies and similar technologies for:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Essential cookies:</strong> Authentication session management (Clerk).</li>
+              <li><strong>Essential cookies:</strong> Authentication session management (Supabase).</li>
               <li><strong>Analytics cookies:</strong> Understanding usage patterns (PostHog).</li>
               <li><strong>Performance cookies:</strong> Error tracking and performance monitoring (Sentry).</li>
             </ul>
@@ -104,7 +104,7 @@ const PrivacyPolicy = () => {
             <ul className="list-disc pl-6 space-y-2">
               <li>Encryption in transit (TLS/SSL) and at rest.</li>
               <li>Row-Level Security (RLS) policies on all database tables.</li>
-              <li>Secure authentication via Clerk.</li>
+              <li>Secure authentication via Supabase.</li>
               <li>Regular security audits.</li>
             </ul>
           </section>

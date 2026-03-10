@@ -1,5 +1,5 @@
 import { Button } from '@/modules/shared/components/ui/button';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
@@ -17,7 +17,7 @@ export const GoogleSignInButton = ({
 }: GoogleSignInButtonProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { signInWithGoogle } = useClerkAuth();
+  const { signInWithGoogle } = useAuth();
 
   const handleGoogleSignIn = async () => {
     // Prevent multiple clicks

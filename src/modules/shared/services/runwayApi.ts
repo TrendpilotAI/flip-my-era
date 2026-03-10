@@ -7,7 +7,7 @@ import { runwareService, type GeneratedImage } from '@/modules/shared/utils/runw
 import { generateWithGroq } from '@/modules/shared/utils/groq';
 
 // Note: analyzeAndSelectBestImage now requires a Clerk token
-// This function should be called from a component that has access to useClerkAuth
+// This function should be called from a component that has access to useAuth
 
 export interface ImageVariation {
   url: string;

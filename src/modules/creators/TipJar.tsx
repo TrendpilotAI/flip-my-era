@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Heart, DollarSign, Send, Clock } from 'lucide-react';
 import { supabase } from '@/core/integrations/supabase/client';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { TIP_PRESETS, type Tip } from './types';
 
 interface TipJarProps {
@@ -11,7 +11,7 @@ interface TipJarProps {
 }
 
 export const TipJar = ({ creatorId, creatorName }: TipJarProps) => {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const [amount, setAmount] = useState<number>(5);
   const [customAmount, setCustomAmount] = useState('');
   const [message, setMessage] = useState('');

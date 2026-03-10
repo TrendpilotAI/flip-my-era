@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { supabase } from '@/core/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Eye, Share2, DollarSign, TrendingUp, BookOpen } from 'lucide-react';
@@ -20,7 +20,7 @@ interface DailyViews {
 }
 
 export const CreatorAnalytics = () => {
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const [ebooks, setEbooks] = useState<EbookStats[]>([]);
   const [dailyViews, setDailyViews] = useState<DailyViews[]>([]);
   const [loading, setLoading] = useState(true);

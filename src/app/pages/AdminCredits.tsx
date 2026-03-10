@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/modules/shared/components/ui/textarea';
 import { Label } from '@/modules/shared/components/ui/label';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { supabase } from '@/core/integrations/supabase/client';
 import AdminNav from '@/modules/shared/components/AdminNav';
 import { 
@@ -51,7 +51,7 @@ interface CreditTransaction {
 const AdminCredits = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getToken } = useClerkAuth();
+  const { getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<User[]>([]);

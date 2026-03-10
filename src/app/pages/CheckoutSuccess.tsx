@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
 import { useToast } from '@/modules/shared/hooks/use-toast';
@@ -9,7 +9,7 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 const CheckoutSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, refreshUser } = useClerkAuth();
+  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(true);
   const [planName, setPlanName] = useState("");
