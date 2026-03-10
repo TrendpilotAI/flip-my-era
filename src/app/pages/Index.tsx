@@ -12,7 +12,7 @@ import { StoryWizardProvider } from "@/modules/story/contexts/StoryWizardContext
 import { AnimatedShaderBackground } from "@/modules/shared/components/AnimatedShaderBackground";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/modules/shared/components/ui/accordion";
 import { BookOpen, Sparkles, User, Star, Shield, Clock, Zap, Heart, CheckCircle, ArrowRight } from "lucide-react";
-import { FeaturedCreators } from "@/modules/creator/FeaturedCreators";
+import { FeaturedCreators } from "@/modules/creators/FeaturedCreators";
 import { FeatureGate } from "@/modules/shared/components/FeatureGate";
 import { OnboardingFlow } from "@/modules/onboarding";
 
