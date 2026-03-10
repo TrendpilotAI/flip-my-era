@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { supabase } from "@/core/integrations/supabase/client";
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Button } from '@/modules/shared/components/ui/button';
