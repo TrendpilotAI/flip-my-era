@@ -89,12 +89,12 @@ function App() {
         <Layout>
             <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<ErrorBoundary><Index /></ErrorBoundary>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/image-review" element={<ImageReview />} />
-            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/gallery" element={<ErrorBoundary><Gallery /></ErrorBoundary>} />
             <Route path="/ebook/:id/preview" element={
               <Suspense fallback={<PageLoader />}>
                 <ShareablePreview />
@@ -378,9 +378,11 @@ function App() {
 
             {/* Pricing page — public marketing page */}
             <Route path="/pricing" element={
-              <Suspense fallback={<PageLoader />}>
-                <PricingPage />
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <PricingPage />
+                </Suspense>
+              </ErrorBoundary>
             } />
 
             {/* Legal pages */}
@@ -469,16 +471,16 @@ function App() {
             />
             
             {/* SEO Content Pages */}
-            <Route path="/taylor-swift-eras-tour-ebook" element={<Suspense fallback={<PageLoader />}><ErasTourEbook /></Suspense>} />
-            <Route path="/custom-taylor-swift-gifts" element={<Suspense fallback={<PageLoader />}><CustomTaylorSwiftGifts /></Suspense>} />
-            <Route path="/swiftie-birthday-present-ideas" element={<Suspense fallback={<PageLoader />}><SwiftieBirthdayPresents /></Suspense>} />
-            <Route path="/taylor-swift-fan-art-book" element={<Suspense fallback={<PageLoader />}><TaylorSwiftFanArtBook /></Suspense>} />
-            <Route path="/eras-tour-memories-book" element={<Suspense fallback={<PageLoader />}><ErasTourMemoriesBook /></Suspense>} />
-            <Route path="/personalized-eras-tour-photo-book" element={<Suspense fallback={<PageLoader />}><PersonalizedErasTourPhotoBook /></Suspense>} />
-            <Route path="/taylor-swift-concert-keepsake-gift" element={<Suspense fallback={<PageLoader />}><TaylorSwiftConcertKeepsake /></Suspense>} />
-            <Route path="/swiftie-graduation-gift-ideas" element={<Suspense fallback={<PageLoader />}><SwiftieGraduationGift /></Suspense>} />
-            <Route path="/taylor-swift-friendship-bracelet-book" element={<Suspense fallback={<PageLoader />}><FriendshipBraceletBook /></Suspense>} />
-            <Route path="/eras-tour-scrapbook-digital" element={<Suspense fallback={<PageLoader />}><ErasTourScrapbook /></Suspense>} />
+            <Route path="/taylor-swift-eras-tour-ebook" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><ErasTourEbook /></Suspense></ErrorBoundary>} />
+            <Route path="/custom-taylor-swift-gifts" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><CustomTaylorSwiftGifts /></Suspense></ErrorBoundary>} />
+            <Route path="/swiftie-birthday-present-ideas" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><SwiftieBirthdayPresents /></Suspense></ErrorBoundary>} />
+            <Route path="/taylor-swift-fan-art-book" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><TaylorSwiftFanArtBook /></Suspense></ErrorBoundary>} />
+            <Route path="/eras-tour-memories-book" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><ErasTourMemoriesBook /></Suspense></ErrorBoundary>} />
+            <Route path="/personalized-eras-tour-photo-book" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><PersonalizedErasTourPhotoBook /></Suspense></ErrorBoundary>} />
+            <Route path="/taylor-swift-concert-keepsake-gift" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><TaylorSwiftConcertKeepsake /></Suspense></ErrorBoundary>} />
+            <Route path="/swiftie-graduation-gift-ideas" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><SwiftieGraduationGift /></Suspense></ErrorBoundary>} />
+            <Route path="/taylor-swift-friendship-bracelet-book" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><FriendshipBraceletBook /></Suspense></ErrorBoundary>} />
+            <Route path="/eras-tour-scrapbook-digital" element={<ErrorBoundary><Suspense fallback={<PageLoader />}><ErasTourScrapbook /></Suspense></ErrorBoundary>} />
 
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />

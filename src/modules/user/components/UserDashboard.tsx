@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { UserBooks } from '@/modules/ebook/components/UserBooks';
-import { CreatorAnalytics } from '@/modules/creator/CreatorAnalytics';
+import { CreatorAnalytics } from '@/modules/creators/CreatorAnalytics';
 import { withErrorBoundary } from '@/modules/shared/components/ErrorBoundary';
 
 interface Story {
