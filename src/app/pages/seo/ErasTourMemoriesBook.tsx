@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/eras-tour-memories-book" }
 };
 
@@ -26,6 +28,7 @@ const ErasTourMemoriesBook = () => {
         url="/eras-tour-memories-book"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Eras Tour memories book, Taylor Swift concert memories, personalized tour keepsake, Swiftie memory book"
       />
 
       <article className="prose prose-lg max-w-none">

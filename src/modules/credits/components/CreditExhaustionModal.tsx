@@ -28,6 +28,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { CREDITS_EXHAUSTED_EVENT } from '../hooks/useCredits';
+import { posthogEvents } from '@/core/integrations/posthog';
 
 // ─── Next-plan upsell configs ──────────────────────────────────────────────
 
@@ -119,7 +120,10 @@ export const CreditExhaustionModal: React.FC<CreditExhaustionModalProps> = ({
   // Listen for the exhaustion event if not controlled externally
   useEffect(() => {
     if (openProp !== undefined) return; // controlled mode — skip listener
-    const handler = () => setOpen(true);
+    const handler = () => {
+      setOpen(true);
+      posthogEvents.creditExhausted();
+    };
     window.addEventListener(CREDITS_EXHAUSTED_EVENT, handler);
     return () => window.removeEventListener(CREDITS_EXHAUSTED_EVENT, handler);
   }, [openProp]);

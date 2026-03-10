@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts';
+import { posthogEvents } from '@/core/integrations/posthog';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/modules/shared/components/ui/card";
 import { Button } from "@/modules/shared/components/ui/button";
 import { useToast } from '@/modules/shared/hooks/use-toast';
@@ -50,6 +51,7 @@ const CheckoutSuccess = () => {
           
           if (type === 'credits') {
             setPlanName(`${amount} Credits`);
+            posthogEvents.checkoutCompleted({ type: 'credits', amount, session_id: sessionId });
             toast({
               title: "Credits Added!",
               description: `${amount} credits have been added to your account.`,
@@ -59,6 +61,7 @@ const CheckoutSuccess = () => {
           
           // Subscription with session
           setPlanName(plan || 'Subscription');
+          posthogEvents.checkoutCompleted({ type: 'subscription', plan, session_id: sessionId });
           toast({
             title: "Subscription Activated!",
             description: `Your ${plan} subscription is now active.`,
@@ -70,6 +73,7 @@ const CheckoutSuccess = () => {
         if (type === 'credits' && amount) {
           setPlanName(`${amount} Credits`);
           await refreshUserData();
+          posthogEvents.checkoutCompleted({ type: 'credits', amount });
           toast({
             title: "Purchase Complete!",
             description: `Your credits will be added to your account shortly.`,
@@ -80,6 +84,7 @@ const CheckoutSuccess = () => {
         if (type === 'subscription' && plan) {
           setPlanName(plan);
           await refreshUserData();
+          posthogEvents.checkoutCompleted({ type: 'subscription', plan });
           toast({
             title: "Subscription Active!",
             description: `Your ${plan} subscription is being activated.`,
@@ -93,6 +98,7 @@ const CheckoutSuccess = () => {
           const planDisplayName = getLegacyPlanDisplayName(legacyPlan);
           setPlanName(planDisplayName);
           await refreshUserData();
+          posthogEvents.checkoutCompleted({ type: 'subscription', plan: legacyPlan, plan_display: planDisplayName });
           toast({
             title: "Purchase Processing",
             description: `Your ${planDisplayName} purchase is being processed and will be activated shortly.`,

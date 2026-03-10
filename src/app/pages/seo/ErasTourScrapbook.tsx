@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/eras-tour-scrapbook-digital" }
 };
 
@@ -26,6 +28,7 @@ const ErasTourScrapbook = () => {
         url="/eras-tour-scrapbook-digital"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Eras Tour digital scrapbook, Taylor Swift digital scrapbook, AI Swiftie scrapbook, Eras Tour memory book"
       />
 
       <article className="prose prose-lg max-w-none">

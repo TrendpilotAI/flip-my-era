@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 interface SEOProps {
   title?: string;
   description?: string;
+  keywords?: string;
   url?: string;
   image?: string;
   type?: string;
@@ -17,7 +18,7 @@ const DEFAULTS = {
   image: 'https://flipmyera.com/og-image.png',
 };
 
-export function SEO({ title, description, url, image, type = 'website', jsonLd }: SEOProps) {
+export function SEO({ title, description, keywords, url, image, type = 'website', jsonLd }: SEOProps) {
   const t = title ? `${title} | FlipMyEra` : DEFAULTS.title;
   const d = description || DEFAULTS.description;
   const u = url ? `${DEFAULTS.url}${url}` : DEFAULTS.url;
@@ -33,6 +34,7 @@ export function SEO({ title, description, url, image, type = 'website', jsonLd }
     <Helmet>
       <title>{t}</title>
       <meta name="description" content={d} />
+      {keywords && <meta name="keywords" content={keywords} />}
       <link rel="canonical" href={u} />
       <meta property="og:title" content={t} />
       <meta property="og:description" content={d} />

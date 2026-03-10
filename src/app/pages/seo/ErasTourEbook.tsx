@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-eras-tour-ebook" }
 };
 
@@ -26,6 +28,7 @@ const ErasTourEbook = () => {
         url="/taylor-swift-eras-tour-ebook"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Taylor Swift Eras Tour ebook, personalized Swiftie storybook, AI ebook generator, Eras Tour keepsake"
       />
 
       <article className="prose prose-lg max-w-none">

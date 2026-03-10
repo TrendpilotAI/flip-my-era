@@ -14,6 +14,8 @@ const ARTICLE_SCHEMA = {
     "name": "FlipMyEra",
     "logo": { "@type": "ImageObject", "url": "https://flipmyera.com/logo.png" }
   },
+  "datePublished": "2025-11-01",
+  "dateModified": "2026-01-15",
   "mainEntityOfPage": { "@type": "WebPage", "@id": "https://flipmyera.com/taylor-swift-fan-art-book" }
 };
 
@@ -26,6 +28,7 @@ const TaylorSwiftFanArtBook = () => {
         url="/taylor-swift-fan-art-book"
         type="article"
         jsonLd={ARTICLE_SCHEMA}
+        keywords="Taylor Swift fan art book, AI illustrated Swiftie book, Taylor Swift era artwork, fan art storybook"
       />
 
       <article className="prose prose-lg max-w-none">
