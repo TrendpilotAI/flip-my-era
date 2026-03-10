@@ -51,6 +51,7 @@ interface GenerateStorylineRequest {
   customPrompt?: string;
   systemPrompt: string;
   idempotency_key?: string; // Client-generated UUID to prevent double-charging
+  pre_authorized_transaction_id?: string; // If provided, credits were already deducted by credits-validate — skip deduction here
 }
 
 interface Storyline {
@@ -141,7 +142,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const params: GenerateStorylineRequest = await req.json();
+    const params: GenerateStorylineRequest & { pre_authorized_transaction_id?: string } = await req.json();
     const {
       era,
       characterName,
@@ -152,6 +153,7 @@ serve(async (req) => {
       customPrompt,
       systemPrompt,
       idempotency_key,
+      pre_authorized_transaction_id,
     } = params;
 
     // --- SERVER-SIDE CREDIT SYSTEM ---
@@ -191,52 +193,81 @@ serve(async (req) => {
       }
     }
 
-    // 2. Atomically deduct credits BEFORE generation (server-side, not client-side)
-    const { data: deductResult, error: deductError } = await adminClient
-      .rpc('deduct_credits', {
-        p_user_id: userId,
-        p_amount: STORYLINE_GENERATION_CREDITS,
-        p_description: 'Storyline generation',
-        p_metadata: {
-          operation_type: 'storyline_generation',
-          idempotency_key: idempotency_key || null,
-        },
-      })
-      .single();
+    // 2. Credit handling — either verify pre-authorization or deduct now
+    let transactionId: string | null = null;
 
-    if (deductError) {
-      console.error('Credit deduction error for storyline:', deductError);
-      return new Response(
-        JSON.stringify({ error: 'CREDIT_SERVICE_ERROR', message: 'Unable to process credits. Please try again.' }),
-        {
-          status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (!deductResult?.success) {
-      const { data: balanceData } = await adminClient
-        .from('user_credits')
-        .select('balance')
+    if (pre_authorized_transaction_id) {
+      // Credits were already deducted by credits-validate. Verify the transaction exists and belongs to this user.
+      const { data: existingTx, error: txLookupError } = await adminClient
+        .from('credit_transactions')
+        .select('id, user_id, amount')
+        .eq('id', pre_authorized_transaction_id)
         .eq('user_id', userId)
         .single();
 
-      return new Response(
-        JSON.stringify({
-          error: 'INSUFFICIENT_CREDITS',
-          message: 'You do not have enough credits to generate a storyline.',
-          current_balance: balanceData?.balance ?? 0,
-          required: STORYLINE_GENERATION_CREDITS,
-        }),
-        {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+      if (txLookupError || !existingTx) {
+        console.error('Pre-authorized transaction not found or does not belong to user:', {
+          pre_authorized_transaction_id, userId, error: txLookupError?.message
+        });
+        return new Response(
+          JSON.stringify({ error: 'INVALID_TRANSACTION', message: 'Pre-authorized transaction is invalid. Please try again.' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
 
-    const transactionId = deductResult.transaction_id;
+      transactionId = pre_authorized_transaction_id;
+      console.log(`Using pre-authorized transaction ${transactionId} for user ${userId} — skipping deduction`);
+    } else {
+      // No pre-authorization — this is a direct call, deduct credits now
+      const { data: deductResult, error: deductError } = await adminClient
+        .rpc('deduct_credits', {
+          p_user_id: userId,
+          p_amount: STORYLINE_GENERATION_CREDITS,
+          p_description: 'Storyline generation',
+          p_metadata: {
+            operation_type: 'storyline_generation',
+            idempotency_key: idempotency_key || null,
+          },
+        })
+        .single();
+
+      if (deductError) {
+        console.error('Credit deduction error for storyline:', deductError);
+        return new Response(
+          JSON.stringify({ error: 'CREDIT_SERVICE_ERROR', message: 'Unable to process credits. Please try again.' }),
+          {
+            status: 503,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      if (!deductResult?.success) {
+        const { data: balanceData } = await adminClient
+          .from('user_credits')
+          .select('balance')
+          .eq('user_id', userId)
+          .single();
+
+        return new Response(
+          JSON.stringify({
+            error: 'INSUFFICIENT_CREDITS',
+            message: 'You do not have enough credits to generate a storyline.',
+            current_balance: balanceData?.balance ?? 0,
+            required: STORYLINE_GENERATION_CREDITS,
+          }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      transactionId = deductResult.transaction_id;
+    }
 
     // 3. Register idempotency record as 'pending'
     let generationRequestId: string | null = null;

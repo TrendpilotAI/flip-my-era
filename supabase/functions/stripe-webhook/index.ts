@@ -2,9 +2,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+// Webhook endpoints are called server-to-server by Stripe — CORS is not needed.
+// We include minimal headers for error responses only.
+const responseHeaders = {
+  "Content-Type": "application/json",
 };
 
 // TypeScript interfaces for Stripe objects
@@ -31,8 +32,10 @@ interface Profile {
 }
 
 serve(async (req) => {
+  // Stripe webhooks are server-to-server — no CORS preflight needed.
+  // But handle OPTIONS gracefully in case of misconfigured proxy.
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { status: 204 });
   }
 
   const supabase = createClient(
@@ -58,7 +61,7 @@ serve(async (req) => {
     if (!signature) {
       return new Response(JSON.stringify({ error: "Missing Stripe-Signature header" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: responseHeaders,
       });
     }
 
@@ -68,7 +71,7 @@ serve(async (req) => {
     } catch (err) {
       return new Response(JSON.stringify({ error: "Invalid webhook signature" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: responseHeaders,
       });
     }
 
@@ -83,7 +86,7 @@ serve(async (req) => {
       console.log(`Event ${event.id} already processed, skipping (idempotent)`);
       return new Response(JSON.stringify({ received: true, duplicate: true }), {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: responseHeaders,
       });
     }
 
@@ -102,7 +105,7 @@ serve(async (req) => {
         console.log(`Event ${event.id} claimed by another instance, skipping`);
         return new Response(JSON.stringify({ received: true, duplicate: true }), {
           status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: responseHeaders,
         });
       }
       console.error('Error recording webhook event:', insertEventError);
@@ -140,14 +143,14 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: responseHeaders,
     });
   } catch (error) {
     console.error("Stripe webhook error:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: responseHeaders,
     });
   }
 });

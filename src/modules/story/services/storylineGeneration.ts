@@ -51,7 +51,7 @@ export interface GenerateStorylineParams {
 /**
  * Generate a structured storyline using Groq AI via Edge Function
  */
-export async function generateStoryline(params: GenerateStorylineParams, clerkToken: string | null): Promise<Storyline> {
+export async function generateStoryline(params: GenerateStorylineParams, clerkToken: string | null, preAuthorizedTransactionId?: string): Promise<Storyline> {
   const {
     era,
     characterName,
@@ -167,6 +167,9 @@ Ensure the storyline:
         customPrompt,
         systemPrompt,
         idempotency_key,
+        // Pass pre-authorized transaction ID to prevent double-charging.
+        // If credits-validate already deducted credits, groq-storyline will skip its own deduction.
+        ...(preAuthorizedTransactionId ? { pre_authorized_transaction_id: preAuthorizedTransactionId } : {}),
       },
       headers: {
         Authorization: `Bearer ${clerkToken}`,
