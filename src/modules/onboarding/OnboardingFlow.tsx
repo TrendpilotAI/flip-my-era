@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type EraType } from '@/modules/story/types/eras';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { WelcomeModal } from './WelcomeModal';
 import { TemplatePicker } from './TemplatePicker';
 import { SamplePreview } from './SamplePreview';
@@ -24,7 +24,7 @@ type OnboardingStep = 'welcome' | 'pick-era' | 'preview';
  * After completion, navigates to the story wizard or auth.
  */
 export function OnboardingFlow() {
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<OnboardingStep>('welcome');

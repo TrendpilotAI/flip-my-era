@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from '@/modules/shared/components/ui/button';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { useNavigate } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { ArrowLeft, CheckCircle } from "lucide-react";
 
 const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useClerkAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading) {

@@ -14,14 +14,14 @@ import { generateStoryline } from '../services/storylineGeneration';
 import { EbookGenerator } from '@/modules/ebook/components/EbookGenerator';
 import { StoryAutoGeneration } from './StoryAutoGeneration';
 import { AuthDialog } from '@/modules/shared/components/AuthDialog';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { sentryService } from '@/core/integrations/sentry';
 import { posthogEvents } from '@/core/integrations/posthog';
 
 export const StoryWizard: React.FC = () => {
   const { toast } = useToast();
   const { state, selectEra, selectPrompt, selectCustomPrompt, selectArchetype, setCharacterName, setGender, setLocation, setCustomPrompt, setStoryline, selectFormat, goToStep } = useStoryWizard();
-  const { isAuthenticated, refreshUser, fetchCreditBalance, getToken } = useClerkAuth();
+  const { isAuthenticated, refreshUser, fetchCreditBalance, getToken } = useAuth();
   
   const [isGeneratingStoryline, setIsGeneratingStoryline] = useState(false);
   const [isRegeneratingStoryline, setIsRegeneratingStoryline] = useState(false);

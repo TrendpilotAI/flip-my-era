@@ -8,7 +8,7 @@ import { Textarea } from '@/modules/shared/components/ui/textarea';
 import { Loader2, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from '@/modules/shared/components/ui/avatar';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 
 type Profile = {
   id: string;
@@ -25,7 +25,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading } = useClerkAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isLoading) {

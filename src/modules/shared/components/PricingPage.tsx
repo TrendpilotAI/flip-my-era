@@ -14,7 +14,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { Switch } from '@/modules/shared/components/ui/switch';
 import { Separator } from '@/modules/shared/components/ui/separator';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { STRIPE_PRODUCTS } from '@/config/stripe-products';
 import {
   CheckCircle,
@@ -231,7 +231,7 @@ export const PricingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
 
   // Show toast when user returns from a cancelled Stripe checkout
   useEffect(() => {

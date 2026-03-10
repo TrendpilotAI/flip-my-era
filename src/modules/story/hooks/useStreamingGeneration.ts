@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { TaylorSwiftTheme, StoryFormat } from "@/modules/story/utils/storyPrompts";
 import { extractImagePromptFromStream, ImagePrompt } from "@/modules/story/utils/imagePromptExtraction";
 import { handleStreamingGenerationError, GenerationErrorContext, normalizeError } from '@/modules/shared/utils/errorHandlingUtils';
@@ -54,7 +54,7 @@ interface StreamingGenerationOptions {
 
 export const useStreamingGeneration = () => {
   const { toast } = useToast();
-  const { getToken } = useClerkAuth();
+  const { getToken } = useAuth();
   
   const [state, setState] = useState<StreamingState>({
     isGenerating: false,

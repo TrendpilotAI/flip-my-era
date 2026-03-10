@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { SEO } from '@/modules/shared/components/SEO';
 import { useNavigate, useLocation } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
@@ -80,7 +80,7 @@ const planOptions: PlanOption[] = [
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string>("premium");
   const [couponCode, setCouponCode] = useState<string>("");

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { generateWithGroq } from '@/modules/shared/utils/groq';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { getStarSign } from '@/modules/user/utils/starSigns';
 import type { PersonalityTypeKey } from '@/modules/story/types/personality';
 import { personalityTypes } from '@/modules/story/types/personality';
@@ -25,7 +25,7 @@ interface SavedStory {
 }
 
 export const useStoryGeneration = () => {
-  const { isAuthenticated, getToken } = useClerkAuth();
+  const { isAuthenticated, getToken } = useAuth();
   const [name, setName] = useState("");
   const [transformedName, setTransformedName] = useState("");
   const [date, setDate] = useState<Date>();

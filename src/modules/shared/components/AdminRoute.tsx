@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { Loader2 } from "lucide-react";
 
 interface AdminRouteProps {
@@ -8,7 +8,7 @@ interface AdminRouteProps {
 }
 
 export const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { user, isLoading, isAuthenticated } = useClerkAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
 
   // Show loading spinner while checking authentication
   if (isLoading) {

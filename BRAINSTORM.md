@@ -1,165 +1,150 @@
 # FlipMyEra — Engineering & Growth Brainstorm
-> Generated: 2026-03-06 | Judge Agent v2 (compound-engineering) | Refreshed
+> Updated: 2026-03-08 | Judge Agent v2 (compound-engineering) | Post subscription-upsell sprint
 
 ---
 
-## 🚨 P0 — IMMEDIATE ACTIONS
+## 🚨 P0 — IMMEDIATE ACTIONS (Blocking Revenue)
 
-### 1. Subscription Upsell Flow Missing
-The pricing strategy (Free → $12.99 → $25 → $49.99) is documented but NOT implemented as an in-app upgrade path. Users on free credits hit a wall with no smooth conversion. This is a direct revenue blocker.
+### 1. API Keys in Client Bundle — CRITICAL SECURITY
+`VITE_OPENAI_API_KEY` and `VITE_GROQ_API_KEY` are embedded in the client-side JS bundle. Any browser visitor can extract these keys.
 
-**Fix:** Add credit exhaustion modal → pricing page CTA → Stripe checkout for subscription tiers.
+**Fix:** Remove both from Vite env entirely. The `groq-api` and `groq-storyline` edge functions already exist — frontend should call those exclusively. Route remaining OpenAI calls through a new `openai-proxy` edge function.
 
-### 2. Gallery/Sharing Not Wired to Real Data
-The gallery/sharing UI exists but pulls from mock/static data instead of real Supabase records. Users can't browse their own ebook history or share to social.
+**Files to change:** `src/modules/shared/utils/env.ts`, `src/vite-env.d.ts`, any component calling OpenAI/Groq directly.
 
-**Fix:** Wire `ebooks` table to gallery component; add Supabase query for user's story history.
+### 2. Billing.ts Stub Not Wired to Real Checkout
+`src/modules/subscriptions/billing.ts` likely returns fake checkout URLs. The `create-checkout` Supabase edge function exists but the frontend may still be calling a stub.
+
+**Fix:** Audit `billing.ts` — ensure `createCheckoutSession()` calls `supabase.functions.invoke('create-checkout', ...)`, not a hardcoded URL. Without this, no subscription revenue flows.
+
+### 3. Gallery Not Showing Real User Data
+Gallery page renders mock/static data. Users can't see their ebook history → destroys retention.
+
+**Fix:** Wire gallery to `ebooks` Supabase table with RLS-filtered query, add pagination (20/page), lazy-load thumbnails.
 
 ---
 
 ## 1. 💰 NEW FEATURES (Revenue Impact)
 
-### HIGH PRIORITY
-| Feature | Revenue Impact | Effort | Notes |
+| Feature | Revenue Impact | Effort | Priority |
 |---|---|---|---|
-| Subscription upsell flow | 🔴 Critical | Medium | Stripe subscription creation on upgrade |
-| Social sharing (TikTok/Instagram) | High | Medium | Shareable ebook preview cards |
-| User ebook history/gallery | High | Low | Wire to Supabase data |
-| Era prompt completion (all 13 eras) | Medium | Low | Incomplete era templates |
-| Gift credits system | Medium | Medium | Viral gifting mechanic |
-| Referral program | Medium | High | Friend invites = bonus credits |
+| Referral credits (invite friends = +1 credit each) | Very High | Medium | P1 |
+| Gift an ebook / gifting flow | High | Medium | P1 |
+| Social sharing cards for TikTok/IG reels | Very High | Medium | P1 |
+| All 13 Taylor Swift eras as prompt templates | Medium | Low | P2 |
+| ePub download (in addition to PDF) | Medium | Medium | P2 |
+| A/B test: $2.99 vs $4.99 per ebook | High | Low | P2 |
+| Public story pages (SEO + viral) | High | High | P2 |
+| Subscription tier: unlimited monthly plan | High | Medium | P2 |
+| Creator marketplace (share/sell templates) | Very High | XL | P3 |
 
-### MEDIUM PRIORITY
-| Feature | Revenue Impact | Effort |
-|---|---|---|
-| ePub download (not just PDF) | Medium | Medium |
-| Animated page turns for TikTok | High | High |
-| Batch generation (multiple eras at once) | Low | Medium |
-| Community story feed (opt-in) | Medium | High |
+### Referral Program (Highest ROI)
+Teen audiences respond strongly to invite mechanics. "Give your friend a free story, you get a free story" → low CAC, high virality. Implement with `referral_code` column in `profiles` table + credit grant on first purchase.
+
+### Social Sharing
+Primary growth channel for 13-19 audience is TikTok → IG → Pinterest. Each ebook should generate:
+1. A shareable cover image (1080×1920 TikTok format)
+2. A public URL: `flipmyera.com/story/{slug}`
+3. Open Graph meta tags for rich previews
 
 ---
 
 ## 2. 🔧 CODE QUALITY
 
 ### Dead Code / Cleanup
-- **25 `console.log` statements** throughout production code — strip before deploy
-- `image-manager.html`, `image-manager-pro.html`, `image-manager-ultimate.html`, `debug-image-viewer.html`, `debug-ultimate.html` — debug HTML files at repo root, should be removed
-- `test-auth.html`, `test-image-load.html` — test files at repo root
-- `e2e-test.mjs`, `e2e-test-v2.mjs`, `e2e-test-v3.mjs` — multiple test script versions; consolidate
+- 25 `console.log` statements in production bundle (performance + info leakage)
+- Debug HTML files in root: `debug-image-viewer.html`, `debug-ultimate.html`, `image-manager*.html`, `test-*.html` — should not be deployed
+- `TestCredits` page publicly routed in production (`/test-credits`) — major abuse vector
+- Multiple `.mjs` test scripts in root (`e2e-test.mjs`, `e2e-test-v2.mjs`, `e2e-test-v3.mjs`) — dead test runners
 
 ### DRY Violations
-- Error handling patterns repeated across API calls — extract to `useApiCall` hook
-- Loading state UI duplicated in 5+ components — centralize with `<AsyncWrapper>`
-- Supabase query patterns copy-pasted — create typed repository layer
+- Auth token extraction pattern repeated across 8+ components — extract to `useAuth()` hook
+- Error toast pattern (`toast({ variant: "destructive", ... })`) duplicated 15+ times — create `useErrorToast()` helper
+- Supabase query patterns for story fetching duplicated across Gallery, Dashboard, Admin
 
 ### Type Safety
-- Multiple `as unknown as X` casts in env.ts and API layer — tighten with proper generics
-- Missing return type annotations on ~40% of exported functions
+- Several `any` casts in edge function response handlers — add proper response types
+- `env.ts` returns `string | undefined` without narrowing — add runtime validation with Zod
 
 ---
 
 ## 3. 🧪 TESTING
 
-### Missing Coverage
-| Gap | Priority | Effort |
-|---|---|---|
-| E2E tests NOT in CI pipeline | High | Low (config only) |
-| Supabase Edge Function unit tests | High | Medium |
-| Stripe webhook handler tests | High | Medium |
-| Credit deduction idempotency tests | High | Low |
-| Story streaming error recovery tests | Medium | Medium |
-| Payment failure flow E2E | High | Medium |
+### What's Missing
+- E2E test for full checkout flow (credit purchase → story generation → download)
+- Edge function integration tests (currently 0 Deno test coverage on create-checkout, stripe-webhook)
+- Visual regression tests for ebook PDF output
+- Load test for stream-chapters edge function (concurrent streaming sessions)
 
-### Quick Wins
-- Add `playwright` to CI GitHub Actions workflow (already configured locally)
-- Add `vitest --coverage` threshold enforcement (currently runs but no threshold gate)
+### Current State: 471 unit tests passing ✅
+Good foundation. Need to extend to integration + E2E layers.
 
 ---
 
 ## 4. 🔗 INTEGRATIONS
 
-### High Value
-| Integration | Value | Effort |
+| Integration | Value | Status |
 |---|---|---|
-| Email (Resend/SendGrid) — welcome + story ready | High | Low |
-| PostHog / Mixpanel — user behavior analytics | High | Low |
-| TikTok share API — native sharing | Very High | Medium |
-| Instagram share API | High | Medium |
-| Discord community (Swiftie server) | Medium | Low |
+| Brevo transactional email | High — purchase confirm, ebook delivery | Stubbed frontend, EF exists |
+| TikTok OAuth + sharing | Very High — primary growth channel | EF exists, needs frontend wire-up |
+| PostHog funnel analytics | High — understand drop-off in generation flow | Integrated but undertested |
+| Stripe Customer Portal | Medium — self-serve plan management | EF exists (`stripe-portal`) |
+| Apple/Google Pay | Medium — reduce checkout friction for teens | Not started |
 
-### Already Integrated (Health Check)
-- ✅ Stripe (payments)
-- ✅ Supabase (auth + db)
-- ✅ Groq (story generation via edge functions)
-- ✅ Runware (image generation via proxy)
-- ✅ OpenTelemetry / Sentry (observability)
-- ✅ Netlify (deployment)
+### Brevo Email Flow (Quick Win)
+The `brevo-email` edge function exists. Frontend just needs to call it after:
+1. Successful checkout → "Your subscription is active" email
+2. Ebook generation complete → "Your story is ready, download here" email
+3. Sign-up → Welcome + first story prompt email
 
 ---
 
 ## 5. ⚙️ WORKFLOWS
 
 ### CI/CD Improvements
-- Add E2E (Playwright) to GitHub Actions — currently only unit tests run in CI
-- Add `pnpm audit` to CI — catch dependency vulnerabilities automatically  
-- Add Lighthouse CI score gating (lighthouserc.js exists but not in CI)
-- Pre-commit hook: `eslint --fix` + `tsc --noEmit` (currently manual)
-- Automated Netlify preview URLs for PRs
+- Add Lighthouse CI score gates (currently `lighthouserc.js` exists but unclear if in CI)
+- Add `pnpm audit` for CVE scanning in GitHub Actions
+- Pre-commit: enforce no `console.log` in src/ (eslint rule)
+- Auto-deploy to Netlify preview on PR + auto-comment with preview URL
 
-### Deployment
-- Environment variable validation on startup (fail fast vs. silent undefined)
-- Supabase migration versioning with automatic rollback on deploy failure
+### Missing: Staging Environment
+All development likely happening against production Supabase + Stripe test mode. Add:
+- `VITE_ENV=staging` mode with staging Supabase project
+- Supabase branch databases for PR previews
 
 ---
 
 ## 6. ⚡ PERFORMANCE
 
-### Bundle Size
-- **4 pages eagerly loaded** — convert to `React.lazy()` + `Suspense`
-- Review heavy deps: `@opentelemetry/*` (14 packages) — consider lighter alternative
-- Tree-shake Radix UI: import only used primitives
-
-### Runtime
-- Image lazy loading on gallery pages
-- Story streaming buffer optimization — reduce TTFB
-- Supabase query optimization — add indexes on `user_id`, `created_at` for ebooks table
-
-### Caching
-- Cache generated story assets in Supabase Storage (currently regenerated on re-view)
-- Add `stale-while-revalidate` headers for static assets on Netlify
+| Issue | Impact | Fix |
+|---|---|---|
+| Gallery + AdminUsers not lazy-loaded | Bundle size | Add `React.lazy()` wrappers |
+| AI-generated images not CDN-cached | Slow repeats | Add Cloudflare R2 or Supabase Storage CDN |
+| Stream-chapters: no backpressure handling | UX jitter | Add ReadableStream with proper buffering |
+| No service worker / offline support | Mobile UX | Add PWA manifest + cache shell |
 
 ---
 
-## 7. 🔒 SECURITY (Remaining)
+## 7. 🔒 SECURITY
 
-### Current Status
-- ✅ VITE_SENTRY_AUTH_TOKEN fixed (commit 5074c28)
-- ✅ Groq/OpenAI keys moved to edge functions
-- ✅ Credits deducted server-side with idempotency
-- ⚠️ CORS: verify edge functions restrict origins to production domain only
-- ⚠️ Rate limiting: no per-user rate limit on story generation (cost risk)
-- ⚠️ Input validation: story submission inputs should be sanitized server-side
-
-### Add Rate Limiting
-Implement per-user daily generation limits at the edge function level to prevent abuse and runaway costs. Even paid users should have reasonable limits (e.g., 50/day).
+| Issue | Severity | Status |
+|---|---|---|
+| VITE_OPENAI_API_KEY in client bundle | 🔴 Critical | Open |
+| VITE_GROQ_API_KEY in client bundle | 🔴 Critical | Open |
+| TestCredits page publicly routed | 🔴 High | Open |
+| No rate limiting on generation EFs | 🟠 Medium | Open |
+| Missing CSRF protection on webhooks | 🟠 Medium | Stripe sig verified ✅, others unclear |
+| Dependency vulnerabilities | 🟡 Low | Run `pnpm audit` |
 
 ---
 
-## Prioritized Recommendations Summary
+## Prioritized Execution Order
 
-| # | Item | Impact | Effort | Priority |
-|---|---|---|---|---|
-| 1 | Subscription upsell flow | Revenue | Medium | P0 |
-| 2 | Wire gallery to real data | UX/Retention | Low | P0 |
-| 3 | E2E tests in CI | Quality | Low | P1 |
-| 4 | Social sharing (TikTok/IG) | Growth | Medium | P1 |
-| 5 | Email notifications | Retention | Low | P1 |
-| 6 | Rate limiting on edge functions | Security/Cost | Low | P1 |
-| 7 | Remove debug HTML files | Cleanliness | XS | P2 |
-| 8 | Strip console.logs | Cleanliness | XS | P2 |
-| 9 | Lazy-load 4 pages | Performance | Low | P2 |
-| 10 | Complete all era prompts | Completeness | Low | P2 |
-| 11 | PostHog analytics | Insight | Low | P2 |
-| 12 | ePub download support | Features | Medium | P3 |
-| 13 | Referral program | Growth | High | P3 |
-| 14 | Community feed | Engagement | High | P4 |
+1. 🔴 Remove API keys from client bundle (#FME-001, #FME-002)
+2. 🔴 Fix billing.ts → real checkout (#FME-003)
+3. 🟠 Wire Gallery to real data (#FME-004)
+4. 🟠 Guard TestCredits page (#FME-006)
+5. 🟠 Social sharing cards (#FME-005)
+6. 🟡 Brevo email flows (#FME-013)
+7. 🟡 Referral/gifting (#FME-008)
+8. 🟢 Console.log cleanup + debug file removal (#FME-009, #FME-010)

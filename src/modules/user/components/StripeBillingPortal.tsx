@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { CreditCard, Settings, ExternalLink, Loader2 } from 'lucide-react';
 import { stripeClient } from '@/core/integrations/stripe/client';
 
@@ -17,7 +17,7 @@ export const StripeBillingPortal: React.FC<StripeBillingPortalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { user } = useClerkAuth();
+  const { user } = useAuth();
 
   const handleOpenBillingPortal = async () => {
     if (!user) {

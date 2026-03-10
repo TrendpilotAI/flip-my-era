@@ -4,7 +4,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { StripeCreditPurchaseModal } from '@/modules/user/components/StripeCreditPurchaseModal';
 import { 
   BookOpen, 
@@ -39,7 +39,7 @@ export const CreditWallModal: React.FC<CreditWallModalProps> = ({
   onBalanceRefresh,
 }) => {
   const { toast } = useToast();
-  const { getToken } = useClerkAuth();
+  const { getToken } = useAuth();
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   const handleUnlockWithCredits = async () => {

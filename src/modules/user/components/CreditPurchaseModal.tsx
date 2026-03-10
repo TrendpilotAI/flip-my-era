@@ -14,7 +14,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { STRIPE_PRODUCTS } from '@/config/stripe-products';
 
@@ -93,7 +93,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
   currentBalance,
 }) => {
   const [loading, setLoading] = useState<string | null>(null);
-  const { user, getToken } = useClerkAuth();
+  const { user, getToken } = useAuth();
   const { toast } = useToast();
 
   const handlePurchase = async (tier: PricingTier) => {

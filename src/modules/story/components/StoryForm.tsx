@@ -10,7 +10,7 @@ import { Label } from '@/modules/shared/components/ui/label';
 import type { PersonalityTypeKey } from '@/modules/story/types/personality';
 import { supabase } from '@/core/integrations/supabase/client';
 import { useEffect, useState } from "react";
-import { useClerkAuth } from '@/modules/auth/contexts';
+import { useAuth } from '@/modules/auth/contexts';
 import { withErrorBoundary } from '@/modules/shared/components/ErrorBoundary';
 
 type GenderType = "same" | "flip" | "neutral";
@@ -48,7 +48,7 @@ const StoryFormComponent = ({
   location,
   setLocation
 }: StoryFormProps) => {
-  const { isAuthenticated } = useClerkAuth();
+  const { isAuthenticated } = useAuth();
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDate = e.target.valueAsDate;
