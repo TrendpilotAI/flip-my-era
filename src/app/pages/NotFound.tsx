@@ -1,5 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
+import { SEO } from "@/modules/shared/components/SEO";
 import { Button } from '@/modules/shared/components/ui/button';
 import { ArrowLeft, Home } from "lucide-react";
 
@@ -17,6 +18,12 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
+    <>
+      <SEO
+        title="404 — Page Not Found"
+        description="Sorry, this page doesn't exist on FlipMyEra. Return home to create your personalized Taylor Swift era storybook."
+        url="/404"
+      />
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md">
         <h1 className="text-6xl font-bold mb-4 text-primary">404</h1>
@@ -44,6 +51,7 @@ const NotFound = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

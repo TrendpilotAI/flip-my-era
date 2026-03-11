@@ -1,14 +1,29 @@
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/modules/shared/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+
+const TERMS_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Terms of Service — FlipMyEra",
+  "description": "FlipMyEra Terms of Service. Read our terms and conditions for using the AI-powered personalized storybook platform.",
+  "url": "https://flipmyera.com/terms",
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "url": "https://flipmyera.com"
+  }
+};
 
 const TermsOfService = () => {
   return (
     <>
-      <Helmet>
-        <title>Terms of Service — FlipMyEra</title>
-        <meta name="description" content="FlipMyEra Terms of Service" />
-      </Helmet>
+      <SEO
+        title="Terms of Service"
+        description="FlipMyEra Terms of Service — read our terms and conditions for using the AI-powered personalized storybook platform."
+        url="/terms"
+        jsonLd={TERMS_SCHEMA}
+      />
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <Link to="/" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-8">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Home

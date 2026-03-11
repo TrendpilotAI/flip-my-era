@@ -1,11 +1,37 @@
+# FlipMyEra robots.txt
+# https://flipmyera.com
+
 User-agent: *
 Allow: /
 
-Sitemap: https://flipmyera.com/sitemap.xml
-
 # Disallow admin and protected routes
+Disallow: /admin/
 Disallow: /admin/*
 Disallow: /dashboard
 Disallow: /settings
+Disallow: /settings-dashboard
 Disallow: /checkout
+Disallow: /checkout/
+Disallow: /auth/
 Disallow: /auth/callback
+Disallow: /test-credits
+
+# Allow crawling of all public content pages
+Allow: /gallery
+Allow: /plans
+Allow: /pricing
+Allow: /marketplace
+Allow: /terms
+Allow: /privacy
+Allow: /taylor-swift-eras-tour-ebook
+Allow: /custom-taylor-swift-gifts
+Allow: /swiftie-birthday-present-ideas
+Allow: /taylor-swift-fan-art-book
+Allow: /eras-tour-memories-book
+Allow: /personalized-eras-tour-photo-book
+Allow: /taylor-swift-concert-keepsake-gift
+Allow: /swiftie-graduation-gift-ideas
+Allow: /taylor-swift-friendship-bracelet-book
+Allow: /eras-tour-scrapbook-digital
+
+Sitemap: https://flipmyera.com/sitemap.xml

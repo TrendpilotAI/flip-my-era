@@ -1,14 +1,29 @@
-import { Helmet } from "react-helmet-async";
+import { SEO } from "@/modules/shared/components/SEO";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+
+const PRIVACY_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Privacy Policy — FlipMyEra",
+  "description": "FlipMyEra Privacy Policy — how we collect, use, and protect your personal data.",
+  "url": "https://flipmyera.com/privacy",
+  "publisher": {
+    "@type": "Organization",
+    "name": "FlipMyEra",
+    "url": "https://flipmyera.com"
+  }
+};
 
 const PrivacyPolicy = () => {
   return (
     <>
-      <Helmet>
-        <title>Privacy Policy — FlipMyEra</title>
-        <meta name="description" content="FlipMyEra Privacy Policy — how we collect, use, and protect your data." />
-      </Helmet>
+      <SEO
+        title="Privacy Policy"
+        description="FlipMyEra Privacy Policy — how we collect, use, and protect your personal data. We take your privacy seriously."
+        url="/privacy"
+        jsonLd={PRIVACY_SCHEMA}
+      />
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <Link to="/" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-8">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Home

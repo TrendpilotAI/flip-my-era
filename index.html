@@ -30,7 +30,7 @@
     <meta name="twitter:image" content="https://flipmyera.com/og-image.png" />
     <meta name="twitter:image:alt" content="FlipMyEra — AI-Powered Personalized Era Storybooks" />
 
-    <!-- Structured Data -->
+    <!-- Structured Data: WebApplication -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -44,7 +44,7 @@
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "USD",
-        "description": "Free plan with 10 credits per month"
+        "description": "Free plan with 10 credits per month. No credit card required."
       },
       "aggregateRating": {
         "@type": "AggregateRating",
@@ -52,6 +52,39 @@
         "ratingCount": "1200",
         "bestRating": "5"
       }
+    }
+    </script>
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "FlipMyEra",
+      "url": "https://flipmyera.com",
+      "logo": "https://flipmyera.com/favicon.ico",
+      "image": "https://flipmyera.com/og-image.png",
+      "description": "AI-powered personalized storybook platform inspired by Taylor Swift's eras.",
+      "sameAs": [],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "url": "https://flipmyera.com"
+      }
+    }
+    </script>
+    <!-- Structured Data: BreadcrumbList (home) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://flipmyera.com/"
+        }
+      ]
     }
     </script>
     <!-- Google Tag Manager -->

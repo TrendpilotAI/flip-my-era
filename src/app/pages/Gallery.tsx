@@ -1,9 +1,25 @@
 import React, { useState, useMemo } from 'react';
+import { SEO } from '@/modules/shared/components/SEO';
 import { Card, CardContent } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { Input } from '@/modules/shared/components/ui/input';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Search, Star, BookOpen } from 'lucide-react';
+
+const GALLERY_SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'FlipMyEra Ebook Gallery',
+  description:
+    'Browse fan-created Taylor Swift era storybooks. Explore Folklore, Midnights, 1989, Red, Reputation, Lover and more — personalized with your photo.',
+  url: 'https://flipmyera.com/gallery',
+  image: 'https://flipmyera.com/og-image.png',
+  publisher: {
+    '@type': 'Organization',
+    name: 'FlipMyEra',
+    url: 'https://flipmyera.com',
+  },
+};
 
 // ── Types ──────────────────────────────────────────────
 
@@ -68,6 +84,13 @@ export function Gallery() {
   const rest = filtered.filter((e) => !e.featured);
 
   return (
+    <>
+      <SEO
+        title="Ebook Gallery"
+        description="Browse fan-created Taylor Swift era storybooks. Explore Folklore, Midnights, 1989, Red, Reputation, Lover and more — each personalized with your photo."
+        url="/gallery"
+        jsonLd={GALLERY_SCHEMA}
+      />
     <div className="container py-8 space-y-8 max-w-6xl mx-auto">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
@@ -140,6 +163,7 @@ export function Gallery() {
         <p className="text-center text-muted-foreground py-12">No ebooks found</p>
       )}
     </div>
+    </>
   );
 }
 
