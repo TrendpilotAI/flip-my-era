@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/modules/shared/components/ui/dialog';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/modules/shared/components/ui/tabs';

@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/core/integrations/supabase/client';
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 
 export interface CreditsState {
   balance: number;

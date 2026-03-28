@@ -48,10 +48,14 @@ export function initSupabaseClient() {
 }
 
 /**
- * Verify the caller's JWT and extract the authenticated user ID.
+ * Verify the caller's session token and extract the authenticated user ID.
  *
- * Uses Supabase's auth.getUser() which cryptographically verifies the token
- * signature against the project's JWT secret — NOT raw base64 decoding.
+ * BetterAuth stores sessions in the `session` Postgres table and issues an
+ * opaque token (not a JWT).  We look up the token directly in the database
+ * via the Supabase service-role client.
+ *
+ * Falls back to legacy Supabase JWT verification so that any in-flight
+ * Supabase-Auth sessions continue to work during the migration window.
  *
  * Returns the user ID string on success, or null on failure.
  */
@@ -62,7 +66,30 @@ export async function verifyAuth(req: Request): Promise<string | null> {
   }
 
   const token = authHeader.substring(7);
+  if (!token) return null;
 
+  // ── 1. Try BetterAuth session lookup (opaque token in `session` table) ───
+  try {
+    const supabase = initSupabaseClient();
+    const { data: session, error } = await (supabase as any)
+      .from('session')
+      .select('"userId", "expiresAt"')
+      .eq('token', token)
+      .single();
+
+    if (!error && session) {
+      const expiresAt = new Date(session.expiresAt).getTime();
+      if (expiresAt > Date.now()) {
+        return session.userId;
+      }
+      // Token expired
+      return null;
+    }
+  } catch {
+    // fall through to legacy path
+  }
+
+  // ── 2. Legacy: Supabase Auth JWT (migration compatibility) ────────────────
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
@@ -75,8 +102,6 @@ export async function verifyAuth(req: Request): Promise<string | null> {
     const { data: { user }, error } = await authClient.auth.getUser(token);
     if (error || !user) return null;
 
-    // user.id is the Supabase auth.uid(); for Clerk-synced users the 'sub'
-    // claim is mapped to this field by the Clerk ↔ Supabase integration.
     return user.id;
   } catch {
     return null;

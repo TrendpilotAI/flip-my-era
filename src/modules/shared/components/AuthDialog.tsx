@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import {
   Dialog,
   DialogContent,

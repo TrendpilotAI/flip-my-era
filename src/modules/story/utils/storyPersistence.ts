@@ -1,4 +1,5 @@
 import { supabase } from '@/core/integrations/supabase/client';
+import { getSession } from '@/lib/auth-client';
 
 // Local storage keys
 const STORY_DATA_KEY = 'flip_my_era_story_data';
@@ -37,11 +38,13 @@ interface AdditionalStoryData {
 export const saveStory = async (story: string, name: string, date?: Date, prompt?: string, additionalData?: AdditionalStoryData) => {
   try {
     // First try to save to Supabase if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const sessionResult = await getSession();
+    const baSession = (sessionResult as any)?.data;
+    const userId = baSession?.user?.id ?? null;
+
     let savedData;
-    
-    if (session) {
+
+    if (userId) {
       // User is authenticated, save to Supabase
       const { data, error } = await supabase
         .from('stories')
@@ -50,7 +53,7 @@ export const saveStory = async (story: string, name: string, date?: Date, prompt
           birth_date: date?.toISOString(),
           initial_story: story,
           prompt: prompt,
-          user_id: session.user.id,
+          user_id: userId,
           ...additionalData
         })
         .select()
@@ -132,18 +135,20 @@ export const getUserPreferences = (): UserPreferences | null => {
 // Get all user stories from Supabase
 export const getUserStories = async () => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
+    const sessionResult = await getSession();
+    const baSession = (sessionResult as any)?.data;
+    const userId = baSession?.user?.id ?? null;
+
+    if (!userId) {
       console.log("No active session, returning local story only");
       const localStory = getLocalStory();
       return localStory ? [localStory] : [];
     }
-    
+
     const { data, error } = await supabase
       .from('stories')
       .select('*')
-      .eq('user_id', session.user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
       
     if (error) {

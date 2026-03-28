@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>FlipMyEra Blog</title>
+    <link>https://flipmyera.com/</link>
+    <description>Product updates, inspiration, and Taylor Swift fan gift ideas from FlipMyEra.</description>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 10 Mar 2026 11:04:00 GMT</lastBuildDate>
+    <item>
+      <title>FlipMyEra</title>
+      <link>https://flipmyera.com/</link>
+      <guid>https://flipmyera.com/</guid>
+      <description>AI-powered personalized storybooks for Swifties and Taylor-inspired keepsakes.</description>
+    </item>
+  </channel>
+</rss>

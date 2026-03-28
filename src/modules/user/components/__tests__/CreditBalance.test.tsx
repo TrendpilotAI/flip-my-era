@@ -19,6 +19,17 @@ vi.mock('@/core/integrations/supabase/auth', () => ({
   }),
 }));
 
+vi.mock('@/core/integrations/better-auth/AuthProvider', () => ({
+  useSupabaseAuth: () => ({
+    isSignedIn: mockIsSignedIn,
+    getToken: mockGetToken,
+  }),
+  useAuth: () => ({
+    isSignedIn: mockIsSignedIn,
+    getToken: mockGetToken,
+  }),
+}));
+
 vi.mock('@/core/integrations/supabase/client', () => ({
   supabase: {
     functions: {

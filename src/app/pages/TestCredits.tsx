@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';

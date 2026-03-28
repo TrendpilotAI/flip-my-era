@@ -1,6 +1,29 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { resetPassword, updatePassword } from '@/core/integrations/supabase/auth';
+import { authClient } from '@/lib/auth-client';
+
+// BetterAuth password helpers
+async function resetPassword(email: string) {
+  try {
+    await (authClient as any).requestPasswordReset({
+      email,
+      redirectTo: `${window.location.origin}/reset-password?type=recovery`,
+    });
+    return { data: null, error: null };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('Reset failed') };
+  }
+}
+
+async function updatePassword(newPassword: string) {
+  try {
+    const token = new URLSearchParams(window.location.search).get('token') || '';
+    await (authClient as any).resetPassword({ newPassword, token });
+    return { data: null, error: null };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('Update failed') };
+  }
+}
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Input } from '@/modules/shared/components/ui/input';

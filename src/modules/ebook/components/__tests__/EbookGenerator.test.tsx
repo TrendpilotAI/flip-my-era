@@ -35,6 +35,17 @@ vi.mock('@/core/integrations/supabase/auth', () => ({
   }),
 }));
 
+vi.mock('@/core/integrations/better-auth/AuthProvider', () => ({
+  useSupabaseAuth: () => ({
+    isSignedIn: true,
+    getToken: vi.fn(async () => 'test-token'),
+  }),
+  useAuth: () => ({
+    isSignedIn: true,
+    getToken: vi.fn(async () => 'test-token'),
+  }),
+}));
+
 vi.mock('@/modules/story/utils/storyPrompts', () => ({
   taylorSwiftThemes: {
     'coming-of-age': {

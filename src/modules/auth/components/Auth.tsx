@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Input } from '@/modules/shared/components/ui/input';

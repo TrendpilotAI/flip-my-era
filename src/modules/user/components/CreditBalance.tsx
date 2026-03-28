@@ -8,7 +8,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { supabase } from '@/core/integrations/supabase/client';
-import { useSupabaseAuth } from '@/core/integrations/supabase/auth';
+import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { CreditPurchaseModal } from './CreditPurchaseModal';
 
 interface CreditBalance {
