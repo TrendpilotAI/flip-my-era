@@ -118,7 +118,7 @@
     "dotenv": "^17.2.2",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
-    "eslint-plugin-react-refresh": "^0.4.9",
+    "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^15.9.0",
     "jsdom": "^24.0.0",
     "lovable-tagger": "^1.1.13",
