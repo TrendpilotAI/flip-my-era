@@ -5,6 +5,63 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 import * as axeMatchers from 'vitest-axe/matchers';
 import { server } from './msw/server';
 
+const createMemoryStorage = (): Storage => {
+  const store = new Map<string, string>();
+
+  return {
+    get length() {
+      return store.size;
+    },
+    clear() {
+      store.clear();
+    },
+    getItem(key: string) {
+      return store.get(key) ?? null;
+    },
+    key(index: number) {
+      return Array.from(store.keys())[index] ?? null;
+    },
+    removeItem(key: string) {
+      store.delete(key);
+    },
+    setItem(key: string, value: string) {
+      store.set(key, value);
+    },
+  };
+};
+
+const installStorage = (name: 'localStorage' | 'sessionStorage') => {
+  let storage: Storage | undefined;
+
+  try {
+    storage = window[name];
+  } catch {
+    storage = undefined;
+  }
+
+  if (
+    !storage ||
+    typeof storage.clear !== 'function' ||
+    typeof storage.getItem !== 'function' ||
+    typeof storage.setItem !== 'function'
+  ) {
+    storage = createMemoryStorage();
+  }
+
+  Object.defineProperty(window, name, {
+    configurable: true,
+    value: storage,
+  });
+
+  Object.defineProperty(globalThis, name, {
+    configurable: true,
+    value: storage,
+  });
+};
+
+installStorage('localStorage');
+installStorage('sessionStorage');
+
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
 

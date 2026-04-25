@@ -132,6 +132,7 @@ describe('BetterAuthProvider', () => {
 
     expect(ctx.user?.id).toBe('user-123');
     expect(ctx.user?.email).toBe('test@example.com');
+    expect(ctx.session?.access_token).toBe('tok');
   });
 
   it('signIn delegates to authClient.signIn.email', async () => {

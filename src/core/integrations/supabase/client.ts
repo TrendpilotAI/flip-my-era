@@ -34,10 +34,10 @@ export const supabase = (() => {
   if (supabaseUrl && supabaseAnonKey) {
     supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce',
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+        flowType: 'implicit',
       },
     });
     return supabaseInstance;

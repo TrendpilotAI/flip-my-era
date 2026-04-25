@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { verifyAuth } from "../_shared/utils.ts";
 
 // ─── CORS: Origin allowlist (no more wildcard) ─────────────
 const ALLOWED_ORIGINS = [
@@ -82,41 +83,12 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
     logStep("Stripe key verified");
 
-    // ─── Auth: Use Supabase auth.getUser() for cryptographic JWT verification ───
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new Error("No authorization header provided");
+    // ─── Auth: shared BetterAuth/Supabase verification ─────────────────────
+    const authenticatedUserId = await verifyAuth(req);
+    if (!authenticatedUserId) {
+      throw new Error("Invalid or expired token");
     }
-
-    const token = authHeader.replace("Bearer ", "");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    const authClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      supabaseAnonKey,
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
-    );
-    const { data: { user: authUser }, error: authError } = await authClient.auth.getUser(token);
-
-    if (authError || !authUser) {
-      // Fallback: decode JWT manually for Clerk-synced tokens
-      let userId: string | null = null;
-      try {
-        const parts = token.split(".");
-        if (parts.length >= 2) {
-          const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-          const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-          const payload = JSON.parse(atob(padded));
-          userId = payload?.sub ?? payload?.user_id ?? payload?.uid ?? null;
-        }
-      } catch (_e) { /* ignore */ }
-      if (!userId) throw new Error("Invalid token: authentication failed");
-      logStep("Auth via JWT decode fallback", { userId });
-      // Continue with userId from JWT
-      var authenticatedUserId = userId;
-    } else {
-      logStep("Auth via Supabase getUser", { userId: authUser.id });
-      var authenticatedUserId = authUser.id;
-    }
+    logStep("Auth via shared verifyAuth", { userId: authenticatedUserId });
 
     // Lookup user email from profiles table
     const { data: profile, error: profileErr } = await supabaseServiceClient

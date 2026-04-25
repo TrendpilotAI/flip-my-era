@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from '@/modules/shared/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/modules/shared/components/ui/dropdown-menu';
 import { BookOpen, LogOut, Settings, User, Crown } from "lucide-react";
@@ -9,10 +9,12 @@ import { Footer } from './Footer';
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, user, signOut } = useSupabaseAuth();
   const { toast } = useToast();
+  const location = useLocation();
 
   const isAdmin = user?.email === "admin@flipmyera.com" || 
                   user?.email === "danny.ijdo@gmail.com" ||
                   user?.email?.includes("trendpilot");
+  const isAuthPage = location.pathname === "/auth" || location.pathname === "/reset-password";
 
   const handleSignOut = async () => {
     try {
@@ -89,7 +91,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
+        ) : isAuthPage ? null : (
           <Link to="/auth">
             <Button variant="outline" className="bg-white/80 backdrop-blur-sm gap-2">
               <User className="h-5 w-5" />

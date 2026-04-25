@@ -13,7 +13,7 @@ FlipMyEra is closer to production than the previous audit suggested. Several "cr
 | API keys in client bundle | ✅ **FIXED** | `env.ts` returns `undefined`, `vite-env.d.ts` cleaned. No VITE_OPENAI/GROQ declared. |
 | Billing stubs not wired | ⚠️ **PARTIALLY FIXED** | `Checkout.tsx` and `CreditPurchaseModal.tsx` call `create-checkout` edge function correctly. BUT `billing.ts` still has dead in-memory stubs that nothing imports (except barrel export). |
 | TestCredits page exposed | ✅ **FIXED** | Behind `FeatureGate flag="test_credits"` (default: false) + `ProtectedRoute`. |
-| Clerk auth confusion | ✅ **RESOLVED** | `useClerkAuth` is aliased to `useSupabaseAuth` — no actual Clerk dependency. Naming is legacy but functional. |
+| Clerk auth confusion | ✅ **RESOLVED** | `useClerkAuth` and `useSupabaseAuth` are compatibility aliases for BetterAuth — no actual Clerk dependency. Naming is legacy but functional. |
 
 **Real remaining blockers: 7 items across 3 categories.**
 
@@ -135,15 +135,15 @@ Add: pagination, empty state ("No ebooks yet — create your first!"), link to g
 
 ---
 
-### 2.3 🟡 Rename Clerk references to Supabase
+### 2.3 🟡 Rename legacy auth aliases to BetterAuth-neutral names
 
-**The issue:** `useClerkAuth`, `ClerkAuthProvider`, `ClerkAuthContext.tsx` — all are aliases to Supabase Auth. This confuses every agent and developer who touches the code.
+**The issue:** `useClerkAuth`, `useSupabaseAuth`, `ClerkAuthProvider`, `SupabaseAuthProvider`, and `ClerkAuthContext.tsx` are compatibility aliases around BetterAuth. They work, but they make the current auth path look like legacy providers instead of BetterAuth.
 
 **Fix:**
 ```bash
 # Global rename (careful, staged commits):
-# useClerkAuth → useAuth
-# ClerkAuthProvider → AuthProvider  
+# useClerkAuth/useSupabaseAuth → useAuth
+# ClerkAuthProvider/SupabaseAuthProvider → AuthProvider
 # Delete src/modules/auth/contexts/ClerkAuthContext.tsx (1-line re-export)
 # Update all 20+ import sites
 ```
@@ -163,7 +163,7 @@ Add: pagination, empty state ("No ebooks yet — create your first!"), link to g
 ```bash
 # 1. Remove import from main.tsx
 # 2. Delete src/core/integrations/opentelemetry.ts
-# 3. npm uninstall @opentelemetry/api @opentelemetry/exporter-logs-otlp-http ...
+# 3. bun remove @opentelemetry/api @opentelemetry/exporter-logs-otlp-http ...
 ```
 
 Use PostHog (already configured) for product analytics. If you need real APM later, add Sentry Performance (already in deps).
@@ -230,10 +230,10 @@ Use the existing `payment-edge-cases.test.ts` as a template — it already mocks
 
 ### 4.2 Build Pipeline Fix
 
-**The issue:** `npx vite build --mode production` fails with "Class extends value undefined is not a constructor or null" — likely a dependency version conflict. The app builds on Netlify (different node/env) but local builds are broken.
+**The issue:** `bun run build -- --mode production` fails with "Class extends value undefined is not a constructor or null" — likely a dependency version conflict. The app builds on Netlify (different node/env) but local builds are broken.
 
 **Fix:**
-1. Delete `node_modules` + `package-lock.json`, fresh `npm install`
+1. Delete `node_modules` and any stale non-Bun lockfile, then run `bun install`
 2. If persists, likely OpenTelemetry SDK version mismatch (common issue with their ESM exports)
 3. May resolve itself after removing OpenTelemetry (Phase 3.1)
 
@@ -311,10 +311,10 @@ Wire key funnel events:
 ### Naming Cleanup
 | Current | Target |
 |---|---|
-| `useClerkAuth` | `useAuth` |
-| `ClerkAuthProvider` | `AuthProvider` |
+| `useClerkAuth` / `useSupabaseAuth` | `useAuth` |
+| `ClerkAuthProvider` / `SupabaseAuthProvider` | `AuthProvider` |
 | `ClerkAuthContext.tsx` | Delete |
-| `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | `VITE_SUPABASE_ANON_KEY` (matches Supabase docs) |
+| `VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY` | `VITE_SUPABASE_PUBLISHABLE_KEY` |
 
 ---
 

@@ -39,6 +39,15 @@ test-results.xml
 playwright-report/
 test-results/
 
+# Local agent/runtime artifacts
+.agents/
+.claude/
+.claude-flow/
+.codex/
+.swarm/
+agentdb.rvf
+ruvector.db
+
 # Supabase
 .supabase
 supabase/.temp/

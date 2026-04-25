@@ -30,7 +30,7 @@ export const EnvironmentValidator = () => {
       required: true,
       description: 'Required for database access'
     },
-    // Clerk removed — using Supabase Auth (no additional key needed)
+    // BetterAuth owns browser session state; no separate public auth key is needed.
     {
       name: 'Runware Proxy Endpoint',
       key: 'VITE_RUNWARE_PROXY_URL',
@@ -53,8 +53,6 @@ export const EnvironmentValidator = () => {
         // Note: Secret API keys (Groq, OpenAI, etc.) are not checked here as they should
         // only be used server-side via Edge Functions, not in client-side code
         if (check.key === 'VITE_SUPABASE_URL' && !value.startsWith('https://')) {
-          status = 'invalid';
-        } else if (check.key === 'VITE_CLERK_PUBLISHABLE_KEY' && !value.startsWith('pk_')) {
           status = 'invalid';
         }
       }
@@ -203,5 +201,4 @@ export const EnvironmentValidator = () => {
     </Card>
   );
 };
-
 
