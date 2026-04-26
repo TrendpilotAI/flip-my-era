@@ -42,11 +42,8 @@ const betterAuthUrl = getBetterAuthUrl();
 // ---------------------------------------------------------------------------
 
 export const auth = betterAuth({
-  database: {
-    // BetterAuth's built-in Postgres adapter (no Drizzle/Prisma needed)
-    type: 'pg',
-    pool: createPool(),
-  },
+  // BetterAuth's built-in Postgres adapter (no Drizzle/Prisma needed)
+  database: createPool(),
 
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: betterAuthUrl,
