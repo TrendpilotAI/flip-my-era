@@ -37,10 +37,18 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen flex flex-col">
       <nav className="fixed top-0 right-0 p-4 z-50 flex gap-2">
+        {!isAuthPage && (
+          <Link to="/gallery">
+            <Button variant="outline" className="bg-background/80 backdrop-blur-sm gap-2">
+              <BookOpen className="h-5 w-5" />
+              <span>Gallery</span>
+            </Button>
+          </Link>
+        )}
         {isAuthenticated ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="bg-white/80 backdrop-blur-sm">
+              <Button variant="outline" size="icon" className="bg-background/80 backdrop-blur-sm">
                 <User className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
@@ -93,7 +101,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           </DropdownMenu>
         ) : isAuthPage ? null : (
           <Link to="/auth">
-            <Button variant="outline" className="bg-white/80 backdrop-blur-sm gap-2">
+            <Button variant="outline" className="bg-background/80 backdrop-blur-sm gap-2">
               <User className="h-5 w-5" />
               <span>Sign In</span>
             </Button>

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+import { authClient } from '@/lib/auth-client';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -49,6 +50,31 @@ export const supabase = (() => {
 export async function getSupabaseSession() {
   const { data: { session } } = await supabase.auth.getSession();
   return session;
+}
+
+export async function getBetterAuthToken(): Promise<string | null> {
+  try {
+    const { data } = await authClient.getSession();
+    return data?.session?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function invokeAuthenticatedFunction<T = unknown>(
+  functionName: string,
+  options: Parameters<typeof supabase.functions.invoke>[1] = {},
+) {
+  const token = await getBetterAuthToken();
+  const headers = {
+    ...(options.headers ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  return supabase.functions.invoke<T>(functionName, {
+    ...options,
+    headers,
+  });
 }
 
 export async function signOutFromSupabase() {

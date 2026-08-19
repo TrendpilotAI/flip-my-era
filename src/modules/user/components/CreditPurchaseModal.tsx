@@ -38,7 +38,6 @@ export interface PricingTier {
   type: 'credits' | 'subscription';
   billingCycle?: string;
   stripeProductId: string;
-  stripePriceId: string;
 }
 
 // À la carte credit packs from centralized config
@@ -52,7 +51,6 @@ export const pricingTiers: PricingTier[] = [
     features: ['5 Credits', 'Never expires', 'Use anytime', '$0.60 per credit'],
     type: 'credits',
     stripeProductId: STRIPE_PRODUCTS.credits.single.productId,
-    stripePriceId: STRIPE_PRODUCTS.credits.single.priceId,
   },
   {
     id: 'album',
@@ -64,7 +62,6 @@ export const pricingTiers: PricingTier[] = [
     popular: true,
     type: 'credits',
     stripeProductId: STRIPE_PRODUCTS.credits.album.productId,
-    stripePriceId: STRIPE_PRODUCTS.credits.album.priceId,
   },
   {
     id: 'tour',
@@ -76,7 +73,6 @@ export const pricingTiers: PricingTier[] = [
     bestValue: true,
     type: 'credits',
     stripeProductId: STRIPE_PRODUCTS.credits.tour.productId,
-    stripePriceId: STRIPE_PRODUCTS.credits.tour.priceId,
   },
 ];
 
@@ -115,7 +111,6 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
         body: {
           plan: tier.id,
           productType: 'credits',
-          stripePriceId: tier.stripePriceId,
         },
       });
 

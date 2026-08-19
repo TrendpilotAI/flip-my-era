@@ -54,26 +54,34 @@ if (fs.existsSync(sentryFile)) {
   allChecksPassed = false;
 }
 
-// Check 3: App.tsx initializes Sentry
-console.log('\n3. Checking App.tsx initialization...');
-const appFile = 'src/App.tsx';
+// Check 3: app entrypoint initializes Sentry
+console.log('\n3. Checking app entrypoint initialization...');
+const appFile = 'src/app/App.tsx';
+const mainFile = 'src/app/main.tsx';
 if (fs.existsSync(appFile)) {
-  const appCode = fs.readFileSync(appFile, 'utf8');
-  
-  if (appCode.includes('initSentry()')) {
-    console.log('   ✅ App.tsx calls initSentry()');
+  console.log('   ✅ App.tsx exists');
+} else {
+  console.log('   ❌ App.tsx not found');
+  allChecksPassed = false;
+}
+
+if (fs.existsSync(mainFile)) {
+  const mainCode = fs.readFileSync(mainFile, 'utf8');
+
+  if (mainCode.includes('initSentry()')) {
+    console.log('   ✅ main.tsx calls initSentry()');
   } else {
-    console.log('   ❌ App.tsx does NOT call initSentry()');
+    console.log('   ❌ main.tsx does NOT call initSentry()');
     allChecksPassed = false;
   }
-  
-  if (appCode.includes('from "@/core/integrations/sentry"')) {
+
+  if (mainCode.includes('from "@/core/integrations/sentry"')) {
     console.log('   ✅ Sentry is imported correctly');
   } else {
     console.log('   ⚠️  Check Sentry import statement');
   }
 } else {
-  console.log('   ❌ App.tsx not found');
+  console.log('   ❌ main.tsx not found');
   allChecksPassed = false;
 }
 
@@ -136,7 +144,6 @@ if (fs.existsSync(appFile)) {
 
 // Check 7: Main.tsx PostHog initialization
 console.log('\n7. Checking main.tsx PostHog initialization...');
-const mainFile = 'src/app/main.tsx';
 if (fs.existsSync(mainFile)) {
   const mainCode = fs.readFileSync(mainFile, 'utf8');
   
@@ -179,4 +186,3 @@ if (allChecksPassed) {
 }
 
 console.log('\n');
-

@@ -38,6 +38,9 @@ dist-ssr
 test-results.xml
 playwright-report/
 test-results/
+.playwright-mcp/
+workflow-*.md
+workflow-*.png
 
 # Local agent/runtime artifacts
 .agents/

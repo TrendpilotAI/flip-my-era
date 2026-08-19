@@ -88,7 +88,7 @@ const Index = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-blue-50/80 dark:from-gray-900/90 dark:via-purple-950/90 dark:to-gray-900/90">
+    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-blue-50/80 dark:from-gray-900/90 dark:via-purple-950/90 dark:to-gray-900/90">
       <SEO
         title="Taylor Swift Eras Tour Personalized Storybook Creator"
         url="/"

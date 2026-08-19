@@ -102,12 +102,11 @@ interface ProfileRow {
   credits?: number | null;
 }
 
-interface ProfileInsertPayload {
+interface ProfileProvisionPayload {
   id: string;
   email: string;
   name: string;
   avatar_url: string;
-  subscription_status: SubscriptionStatus;
 }
 
 function getBetterAuthUserName(user: BetterAuthClientUser): string {
@@ -300,35 +299,31 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
         if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
         if (!existingProfile) {
-          // New user — create profile + grant credits
+          // New user — create profile + grant credits through a service-role Edge Function.
           const FREE_SIGNUP_CREDITS = 3;
-          const profileInsert: ProfileInsertPayload = {
+          const provisionPayload: ProfileProvisionPayload = {
             id: u.id,
             email: u.email || '',
             name: getBetterAuthUserName(u),
             avatar_url: getBetterAuthAvatarUrl(u),
-            subscription_status: 'free',
           };
-          await supabase.from('profiles').insert(profileInsert);
 
-          await supabase.from('user_credits').upsert(
-            { user_id: u.id, balance: FREE_SIGNUP_CREDITS, subscription_type: 'free', updated_at: new Date().toISOString() },
-            { onConflict: 'user_id' },
-          );
+          const token = baSession.session?.token ?? await getToken();
+          if (!token) throw new Error('Unable to provision profile without an auth token');
 
-          await supabase.from('credit_transactions').insert({
-            user_id: u.id,
-            amount: FREE_SIGNUP_CREDITS,
-            transaction_type: 'signup_bonus',
-            description: 'Welcome bonus: 3 free credits on signup',
-            balance_after_transaction: FREE_SIGNUP_CREDITS,
-            metadata: { source: 'signup_bonus' },
+          const { data: provisionedProfile, error: provisionError } = await supabase.functions.invoke('provision-profile', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: provisionPayload,
           });
+
+          if (provisionError) throw provisionError;
 
           if (!cancelled && isMountedRef.current) {
             setIsNewUser(true);
-            setUserProfile(betterAuthUserToAuthUser(u, FREE_SIGNUP_CREDITS));
-            setCreditBalance(FREE_SIGNUP_CREDITS);
+            const provisioned = ((provisionedProfile as { profile?: ProfileRow; credits?: number } | null)?.profile);
+            setUserProfile(provisioned ? profileRowToAuthUser(provisioned) : betterAuthUserToAuthUser(u, FREE_SIGNUP_CREDITS));
+            setCreditBalance((provisionedProfile as { credits?: number } | null)?.credits ?? FREE_SIGNUP_CREDITS);
           }
         } else {
           if (!cancelled && isMountedRef.current) {

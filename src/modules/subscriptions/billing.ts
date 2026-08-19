@@ -7,7 +7,7 @@
  * have been removed.  TODO-847 / #FME-003.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { invokeAuthenticatedFunction, supabase } from '@/integrations/supabase/client';
 import { SubscriptionTierId, SUBSCRIPTION_PLANS, canCreateEbook } from './tiers';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -183,12 +183,12 @@ export async function reportMeteredUsageToStripe(
  */
 export async function createSubscriptionCheckout(
   _customerId: string,
-  priceId: string,
+  plan: string,
   successUrl: string,
   cancelUrl: string,
 ): Promise<{ sessionId: string; url: string }> {
-  const { data, error } = await supabase.functions.invoke('create-checkout', {
-    body: { stripePriceId: priceId, successUrl, cancelUrl },
+  const { data, error } = await invokeAuthenticatedFunction('create-checkout', {
+    body: { plan, successUrl, cancelUrl },
   });
 
   if (error) {
@@ -207,7 +207,7 @@ export async function createSubscriptionCheckout(
  * Get subscription info for a user from the `check-subscription` edge function.
  */
 export async function getSubscriptionInfo(userId: string): Promise<StripeSubscriptionInfo | null> {
-  const { data, error } = await supabase.functions.invoke('check-subscription', {
+  const { data, error } = await invokeAuthenticatedFunction('check-subscription', {
     body: { userId },
   });
 

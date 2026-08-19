@@ -21,7 +21,6 @@ interface PlanOption {
   description: string;
   features: string[];
   stripeProductId: string;
-  stripePriceId: string;  
 }
 
 // Use centralized Stripe product configuration
@@ -39,7 +38,6 @@ const planOptions: PlanOption[] = [
       "Priority support"
     ],
     stripeProductId: STRIPE_PRODUCTS.subscriptions.starter.productId,
-    stripePriceId: STRIPE_PRODUCTS.subscriptions.starter.priceId
   },
   {
     id: "deluxe",
@@ -56,7 +54,6 @@ const planOptions: PlanOption[] = [
       "30% off extra credits"
     ],
     stripeProductId: STRIPE_PRODUCTS.subscriptions.deluxe.productId,
-    stripePriceId: STRIPE_PRODUCTS.subscriptions.deluxe.priceId
   },
   {
     id: "vip",
@@ -73,14 +70,13 @@ const planOptions: PlanOption[] = [
       "Custom creator features"
     ],
     stripeProductId: STRIPE_PRODUCTS.subscriptions.vip.productId,
-    stripePriceId: STRIPE_PRODUCTS.subscriptions.vip.priceId
   }
 ];
 
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useClerkAuth();
+  const { user, getToken } = useClerkAuth();
   const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string>("premium");
   const [couponCode, setCouponCode] = useState<string>("");
@@ -116,7 +112,11 @@ const Checkout = () => {
       });
 
       // Call Stripe checkout function
+      const token = await getToken();
+      if (!token) throw new Error("Please sign in again before checkout");
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
+        headers: { Authorization: `Bearer ${token}` },
         body: { plan: selectedPlan }
       });
 
@@ -282,4 +282,4 @@ const Checkout = () => {
   );
 };
 
-export default Checkout; 
+export default Checkout;
