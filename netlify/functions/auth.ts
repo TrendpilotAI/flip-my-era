@@ -15,7 +15,10 @@ export const handler: Handler = async (
   _context: HandlerContext,
 ) => {
   // Reconstruct the full URL so BetterAuth can parse the path / query params
-  const baseUrl = process.env.BETTER_AUTH_URL || 'https://flipmyera.com';
+  const baseUrl = process.env.BETTER_AUTH_URL
+    || process.env.DEPLOY_PRIME_URL
+    || process.env.URL
+    || 'https://flipmyera.com';
   const url = new URL(event.path + (event.rawQuery ? `?${event.rawQuery}` : ''), baseUrl);
 
   const request = new Request(url.toString(), {

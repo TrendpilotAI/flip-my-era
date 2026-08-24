@@ -81,15 +81,15 @@ interface AuthResult {
   error?: string;
 }
 
-function validateAuthHeader(authHeader: string | null): AuthResult {
+function verifyAuthForTest(authHeader: string | null, verifiedUserId: string | null = 'user-abc'): AuthResult {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { userId: null, error: 'No authorization header provided' };
+    return { userId: null, error: 'Invalid or expired token' };
   }
   const token = authHeader.replace('Bearer ', '').trim();
-  if (!token) {
-    return { userId: null, error: 'Empty bearer token' };
+  if (!token || !verifiedUserId) {
+    return { userId: null, error: 'Invalid or expired token' };
   }
-  return { userId: 'extracted-from-token' }; // Actual extraction happens via Supabase
+  return { userId: verifiedUserId };
 }
 
 // ─── Stripe session creation mock ────────────────────────────────────────────
@@ -148,11 +148,14 @@ async function handleCreateCheckout(
     plan,
     productType,
     stripeSecretKey,
+    verifiedUserId = 'user-abc',
   }: {
     authHeader: string | null;
     plan: string;
     productType?: string;
     stripeSecretKey?: string;
+    clientStripePriceId?: string;
+    verifiedUserId?: string | null;
   }
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   // 1. Check STRIPE_SECRET_KEY
@@ -161,7 +164,7 @@ async function handleCreateCheckout(
   }
 
   // 2. Auth check
-  const auth = validateAuthHeader(authHeader);
+  const auth = verifyAuthForTest(authHeader, verifiedUserId);
   if (!auth.userId) {
     return { status: 500, body: { error: auth.error } }; // edge fn returns 500 for throw
   }
@@ -170,14 +173,14 @@ async function handleCreateCheckout(
   const { data: profile, error: profileErr } = await supabase
     .from('profiles')
     .select('email')
-    .eq('id', 'user-abc')
+    .eq('id', auth.userId)
     .single();
 
   if (profileErr || !profile?.email) {
     return { status: 500, body: { error: 'User profile not found or missing email' } };
   }
 
-  const user = { id: 'user-abc', email: profile.email as string };
+  const user = { id: auth.userId, email: profile.email as string };
 
   // 4. Resolve price ID
   const resolved = resolvePriceId(plan, productType);
@@ -333,25 +336,26 @@ describe('create-checkout Edge Function', () => {
 
   describe('auth validation', () => {
     it('returns error when Authorization header is missing', () => {
-      const result = validateAuthHeader(null);
+      const result = verifyAuthForTest(null);
       expect(result.userId).toBeNull();
-      expect(result.error).toContain('authorization');
+      expect(result.error).toContain('Invalid or expired token');
     });
 
     it('returns error when header does not start with Bearer', () => {
-      const result = validateAuthHeader('Basic dXNlcjpwYXNz');
+      const result = verifyAuthForTest('Basic dXNlcjpwYXNz');
       expect(result.userId).toBeNull();
-      expect(result.error).toContain('authorization');
+      expect(result.error).toContain('Invalid or expired token');
     });
 
     it('returns error when Bearer token is empty', () => {
-      const result = validateAuthHeader('Bearer ');
+      const result = verifyAuthForTest('Bearer ');
       expect(result.userId).toBeNull();
     });
 
     it('accepts valid Bearer token', () => {
-      const result = validateAuthHeader('Bearer eyJhbGciOiJIUzI1NiJ9.test.sig');
+      const result = verifyAuthForTest('Bearer opaque-session-token');
       expect(result.error).toBeUndefined();
+      expect(result.userId).toBe('user-abc');
     });
 
     it('handler returns 500 (thrown error) for missing auth header', async () => {
@@ -361,7 +365,18 @@ describe('create-checkout Edge Function', () => {
         stripeSecretKey: 'sk_test_123',
       });
       expect(result.status).toBe(500);
-      expect(result.body.error).toContain('authorization');
+      expect(result.body.error).toContain('Invalid or expired token');
+    });
+
+    it('handler returns 500 when shared verifyAuth rejects the token', async () => {
+      const result = await handleCreateCheckout(supabase, {
+        authHeader: 'Bearer invalid-token',
+        plan: 'speakNow',
+        stripeSecretKey: 'sk_test_123',
+        verifiedUserId: null,
+      });
+      expect(result.status).toBe(500);
+      expect(result.body.error).toContain('Invalid or expired token');
     });
   });
 
@@ -498,6 +513,28 @@ describe('create-checkout Edge Function', () => {
         expect.objectContaining({
           mode: 'subscription',
           metadata: expect.objectContaining({ type: 'subscription' }),
+        }),
+        expect.any(Object)
+      );
+    });
+
+    it('uses only the server-resolved price even if the client sends a price ID', async () => {
+      await handleCreateCheckout(supabase, {
+        authHeader: 'Bearer valid-token',
+        plan: 'single',
+        stripeSecretKey: 'sk_test_123',
+        clientStripePriceId: 'price_client_supplied_malicious',
+      });
+
+      expect(mockCreateSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          line_items: [{ price: 'price_1S9zK25U03MNTw3qMH90DnC1', quantity: 1 }],
+        }),
+        expect.any(Object)
+      );
+      expect(mockCreateSession).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          line_items: [{ price: 'price_client_supplied_malicious', quantity: 1 }],
         }),
         expect.any(Object)
       );

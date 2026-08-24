@@ -5,12 +5,14 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { Separator } from '@/modules/shared/components/ui/separator';
 import { ArrowLeft, User, BookOpen, CreditCard } from "lucide-react";
 import { supabase } from "@/core/integrations/supabase/client";
+import { useClerkAuth } from '@/modules/auth/contexts';
 
 type SettingsSection = "profile" | "stories" | "billing";
 
 const SettingsDashboard = () => {
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
   const navigate = useNavigate();
+  const { getToken } = useClerkAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 py-12 px-4">
@@ -78,8 +80,11 @@ const SettingsDashboard = () => {
                     <Button
                       onClick={async () => {
                         try {
+                          const token = await getToken();
+                          if (!token) throw new Error('Missing auth token');
                           const { data, error } = await supabase.functions.invoke('stripe-portal', {
                             method: 'POST',
+                            headers: { Authorization: `Bearer ${token}` },
                           });
                           if (error || !data?.url) throw new Error('Failed to open billing portal');
                           window.location.href = data.url;

@@ -59,9 +59,9 @@ vi.mock('@/integrations/supabase/client', () => {
   const mockFunctions = {
     invoke: async (fn: string, opts?: { body?: Record<string, unknown> }) => {
       if (fn === 'create-checkout') {
-        const { stripePriceId } = opts?.body ?? {};
+        const { plan } = opts?.body ?? {};
         return {
-          data: { url: `https://checkout.stripe.com/pay/cs_test_${stripePriceId}` },
+          data: { url: `https://checkout.stripe.com/pay/cs_test_${plan}` },
           error: null,
         };
       }
@@ -92,6 +92,7 @@ vi.mock('@/integrations/supabase/client', () => {
       from: mockFrom,
       functions: mockFunctions,
     },
+    invokeAuthenticatedFunction: mockFunctions.invoke,
   };
 });
 
@@ -183,8 +184,9 @@ describe('Usage-Based Billing', () => {
     });
 
     it('createSubscriptionCheckout calls create-checkout edge function', async () => {
-      const result = await createSubscriptionCheckout('cus_1', 'price_test_123', '/success', '/cancel');
+      const result = await createSubscriptionCheckout('cus_1', 'starter', '/success', '/cancel');
       expect(result.url).toContain('checkout.stripe.com');
+      expect(result.url).toContain('starter');
       expect(result.sessionId).toBeTruthy();
     });
 

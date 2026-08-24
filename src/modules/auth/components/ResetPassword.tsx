@@ -2,10 +2,28 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authClient } from '@/lib/auth-client';
 
+interface AuthClientResult {
+  data?: unknown;
+  error?: { message?: string } | null;
+}
+
+interface PasswordResetAuthClient {
+  requestPasswordReset: (params: {
+    email: string;
+    redirectTo?: string;
+  }) => Promise<AuthClientResult>;
+  resetPassword: (params: {
+    newPassword: string;
+    token: string;
+  }) => Promise<AuthClientResult>;
+}
+
+const passwordAuthClient = authClient as typeof authClient & PasswordResetAuthClient;
+
 // BetterAuth password helpers
 async function resetPassword(email: string) {
   try {
-    await (authClient as any).requestPasswordReset({
+    await passwordAuthClient.requestPasswordReset({
       email,
       redirectTo: `${window.location.origin}/reset-password?type=recovery`,
     });
@@ -18,7 +36,7 @@ async function resetPassword(email: string) {
 async function updatePassword(newPassword: string) {
   try {
     const token = new URLSearchParams(window.location.search).get('token') || '';
-    await (authClient as any).resetPassword({ newPassword, token });
+    await passwordAuthClient.resetPassword({ newPassword, token });
     return { data: null, error: null };
   } catch (err) {
     return { data: null, error: err instanceof Error ? err : new Error('Update failed') };

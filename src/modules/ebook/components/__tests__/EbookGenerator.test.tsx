@@ -286,4 +286,32 @@ describe('EbookGenerator', () => {
     expect(actionButtonsCalls.at(-1)?.isLocked).toBe(true);
     expect(creditWallCalls.at(-1)?.isOpen).toBe(true);
   });
+
+  it('does not expose the removed direct ebook checkout path', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <EbookGenerator
+        originalStory="Once upon a time"
+        storyId="story-123"
+      />
+    );
+
+    await act(async () => {
+      await user.click(screen.getByTestId('generate-chapters'));
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByRole('button', { name: /buy this ebook/i })).not.toBeInTheDocument();
+    const checkoutCalls = __testSupabaseMocks__.supabase.functions.invoke.mock.calls.filter(
+      ([functionName]) => functionName === 'create-checkout',
+    );
+    expect(checkoutCalls).toHaveLength(0);
+    expect(__testSupabaseMocks__.supabase.functions.invoke).not.toHaveBeenCalledWith(
+      'create-checkout',
+      expect.objectContaining({
+        body: expect.objectContaining({ priceId: 'ebook' }),
+      }),
+    );
+  });
 });

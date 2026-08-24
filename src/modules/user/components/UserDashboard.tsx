@@ -33,7 +33,7 @@ interface Story {
 }
 
 const UserDashboard = () => {
-  const { user } = useClerkAuth();
+  const { user, getToken } = useClerkAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -418,8 +418,11 @@ const UserDashboard = () => {
                     onClick={async () => {
                       try {
                         setLoading(true);
+                        const token = await getToken();
+                        if (!token) throw new Error('Missing auth token');
                         const { data, error } = await supabase.functions.invoke('stripe-portal', {
                           method: 'POST',
+                          headers: { Authorization: `Bearer ${token}` },
                         });
                         if (error || !data?.url) throw new Error('Failed to open billing portal');
                         window.location.href = data.url;
@@ -455,4 +458,4 @@ export default withErrorBoundary(UserDashboard, {
   onError: (error, errorInfo) => {
     console.error('UserDashboard error:', error, errorInfo);
   }
-}); 
+});

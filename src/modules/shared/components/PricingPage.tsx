@@ -264,7 +264,7 @@ export const PricingPage: React.FC = () => {
     price === 0 ? 'Free' : `$${price.toFixed(2)}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/50 to-background px-4 pb-12 pt-24 sm:py-12">
       <div className="max-w-6xl mx-auto">
         {/* ── Header ── */}
         <motion.div
@@ -273,24 +273,24 @@ export const PricingPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600">
+          <h1 className="text-4xl md:text-5xl font-bold mb-3 text-primary">
             Choose Your Era
           </h1>
-          <p className="text-gray-600 text-lg max-w-xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             Every great story starts somewhere. Pick the era that matches your creative journey.
           </p>
 
           {/* ── Billing Toggle ── */}
           <div className="flex items-center justify-center gap-3 mt-8">
-            <span className={`text-sm font-medium ${!annual ? 'text-gray-900' : 'text-gray-400'}`}>
+            <span className={`text-sm font-medium ${!annual ? 'text-foreground' : 'text-muted-foreground'}`}>
               Monthly
             </span>
             <Switch checked={annual} onCheckedChange={setAnnual} />
-            <span className={`text-sm font-medium ${annual ? 'text-gray-900' : 'text-gray-400'}`}>
+            <span className={`text-sm font-medium ${annual ? 'text-foreground' : 'text-muted-foreground'}`}>
               Annual
             </span>
             {annual && (
-              <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 text-xs">
+              <Badge variant="secondary" className="ml-2 text-xs">
                 2 months free ✨
               </Badge>
             )}
@@ -319,7 +319,7 @@ export const PricingPage: React.FC = () => {
                   {/* Popular badge */}
                   {tier.popular && (
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                      <Badge className="bg-purple-500 text-white px-4 py-1 shadow-md">
+                      <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-md">
                         <Sparkles className="h-3 w-3 mr-1" /> MOST POPULAR
                       </Badge>
                     </div>
@@ -341,12 +341,12 @@ export const PricingPage: React.FC = () => {
                         {formatPrice(price)}
                       </motion.span>
                       {price > 0 && (
-                        <span className="text-gray-500 text-sm ml-1">/month</span>
+                        <span className="text-muted-foreground text-sm ml-1">/month</span>
                       )}
                     </div>
 
                     {annual && tier.annualTotal > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Billed ${tier.annualTotal.toFixed(2)}/year
                       </p>
                     )}
@@ -361,9 +361,9 @@ export const PricingPage: React.FC = () => {
                           {f.included ? (
                             <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 shrink-0" />
                           ) : (
-                            <X className="h-4 w-4 text-gray-300 mr-2 mt-0.5 shrink-0" />
+                            <X className="h-4 w-4 text-muted-foreground/40 mr-2 mt-0.5 shrink-0" />
                           )}
-                          <span className={f.included ? '' : 'text-gray-400'}>{f.label}</span>
+                          <span className={f.included ? '' : 'text-muted-foreground/70'}>{f.label}</span>
                         </li>
                       ))}
                     </ul>

@@ -3,7 +3,7 @@ import {
   handleCors, 
   formatErrorResponse, 
   formatSuccessResponse 
-} from "../_shared/utils.js"
+} from "../_shared/utils.ts"
 
 interface TikTokAuthRequest {
   action: 'get_client_key' | 'handle_callback'

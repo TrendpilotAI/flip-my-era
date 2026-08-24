@@ -294,6 +294,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "memory_books_ebook_generation_id_fkey"
+            columns: ["ebook_generation_id"]
+            isOneToOne: false
+            referencedRelation: "ebook_generations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "memory_books_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false

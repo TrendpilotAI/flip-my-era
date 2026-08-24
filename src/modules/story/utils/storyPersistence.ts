@@ -34,13 +34,22 @@ interface AdditionalStoryData {
   [key: string]: string | number | boolean | undefined; // More specific types for additional properties
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getBetterAuthUserId(sessionResult: unknown): string | null {
+  if (!isRecord(sessionResult) || !isRecord(sessionResult.data)) return null;
+  if (!isRecord(sessionResult.data.user)) return null;
+  return typeof sessionResult.data.user.id === 'string' ? sessionResult.data.user.id : null;
+}
+
 // Save story to Supabase and localStorage
 export const saveStory = async (story: string, name: string, date?: Date, prompt?: string, additionalData?: AdditionalStoryData) => {
   try {
     // First try to save to Supabase if user is authenticated
     const sessionResult = await getSession();
-    const baSession = (sessionResult as any)?.data;
-    const userId = baSession?.user?.id ?? null;
+    const userId = getBetterAuthUserId(sessionResult);
 
     let savedData;
 
@@ -136,8 +145,7 @@ export const getUserPreferences = (): UserPreferences | null => {
 export const getUserStories = async () => {
   try {
     const sessionResult = await getSession();
-    const baSession = (sessionResult as any)?.data;
-    const userId = baSession?.user?.id ?? null;
+    const userId = getBetterAuthUserId(sessionResult);
 
     if (!userId) {
       console.log("No active session, returning local story only");

@@ -2,8 +2,8 @@
  * BetterAuth AuthProvider
  *
  * Implements the exact same `AuthContextType` interface that was provided by the
- * Supabase Auth provider so that all 25+ consumer files continue to work without
- * any changes.  The context shape, hook names, and export names are kept identical.
+ * Supabase Auth provider so that all 25+ consumer files continue to work
+ * unchanged. The context shape, hook names, and export names are kept identical.
  *
  * What changed vs. Supabase Auth:
  *  - Session & user data come from BetterAuth's `useSession()` hook.
@@ -50,7 +50,7 @@ export interface ProfileType {
 // `session` in BetterAuth is an object, not a Supabase Session.
 // We expose a minimal compatible shape that satisfies existing consumers.
 export interface BetterAuthSession {
-  access_token: string;        // maps to BetterAuth JWT (for Edge Function calls)
+  access_token: string;        // maps to BetterAuth auth token for Edge Function calls
   user: {
     id: string;
     email: string;
@@ -75,6 +75,88 @@ export interface AuthContextType {
   setIsNewUser: (value: boolean) => void;
 }
 
+type BetterAuthClientSessionData = typeof authClient.$Infer.Session;
+type BetterAuthClientUser = BetterAuthClientSessionData['user'];
+type BetterAuthClientSessionRecord = BetterAuthClientSessionData['session'];
+type SubscriptionStatus = NonNullable<AuthUser['subscription_status']>;
+
+interface BetterAuthClientError {
+  message?: string;
+  status?: number;
+  statusText?: string;
+  code?: string;
+}
+
+interface BetterAuthActionResult {
+  error?: BetterAuthClientError | null;
+}
+
+interface ProfileRow {
+  id: string | number;
+  email?: string | null;
+  full_name?: string | null;
+  name?: string | null;
+  avatar_url?: string | null;
+  subscription_status?: string | null;
+  created_at?: string | null;
+  credits?: number | null;
+}
+
+interface ProfileProvisionPayload {
+  id: string;
+  email: string;
+  name: string;
+  avatar_url: string;
+}
+
+function getBetterAuthUserName(user: BetterAuthClientUser): string {
+  return user.name || user.email?.split('@')[0] || '';
+}
+
+function getBetterAuthAvatarUrl(user: BetterAuthClientUser): string {
+  return user.image ?? '';
+}
+
+function getBetterAuthCreatedAt(user: BetterAuthClientUser): string {
+  return user.createdAt?.toString() || new Date().toISOString();
+}
+
+function toUnixSeconds(date?: BetterAuthClientSessionRecord['expiresAt']): number | undefined {
+  return date ? Math.floor(new Date(date).getTime() / 1000) : undefined;
+}
+
+function normalizeSubscriptionStatus(status: ProfileRow['subscription_status']): SubscriptionStatus {
+  return status === 'basic' || status === 'premium' || status === 'free' ? status : 'free';
+}
+
+function profileRowToAuthUser(profile: ProfileRow): AuthUser {
+  return {
+    id: String(profile.id),
+    email: String(profile.email ?? ''),
+    name: String(profile.full_name ?? profile.name ?? ''),
+    avatar_url: String(profile.avatar_url ?? ''),
+    subscription_status: normalizeSubscriptionStatus(profile.subscription_status),
+    created_at: String(profile.created_at ?? ''),
+    credits: profile.credits ?? 0,
+  };
+}
+
+function betterAuthUserToAuthUser(user: BetterAuthClientUser, credits = 0): AuthUser {
+  return {
+    id: user.id,
+    email: user.email || '',
+    name: getBetterAuthUserName(user),
+    avatar_url: getBetterAuthAvatarUrl(user),
+    subscription_status: 'free',
+    created_at: getBetterAuthCreatedAt(user),
+    credits,
+  };
+}
+
+function getActionError(result: BetterAuthActionResult, fallbackMessage: string): Error | null {
+  return result.error ? new Error(result.error.message || fallbackMessage) : null;
+}
+
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,6 +173,7 @@ export function useBetterAuth(): AuthContextType {
 
 /** Backward-compatible alias */
 export const useSupabaseAuth = useBetterAuth;
+export const useClerkAuth = useBetterAuth;
 export const useAuth = useBetterAuth;
 
 // ─── Provider ────────────────────────────────────────────────────────────────
@@ -115,17 +198,14 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ── Build a compatible session object ─────────────────────────────────────
-  // BetterAuth stores the token in an HttpOnly cookie; there is no JS-readable
-  // access_token by default.  We call `getSession()` to obtain a short-lived
-  // token representation we can forward to Supabase Edge Functions.
+  // BetterAuth exposes the auth token as `session.token`; the context keeps the
+  // old `access_token` name for existing Edge Function callers.
   const getToken = useCallback(async (): Promise<string | null> => {
     try {
       const session = await authClient.getSession();
-      // BetterAuth getSession returns { data, error }
-      const data = (session as any)?.data;
+      const data = session.data;
       if (!data) return null;
-      // The session token is stored as `data.session.token`
-      return (data.session as any)?.token ?? null;
+      return data.session.token ?? null;
     } catch {
       return null;
     }
@@ -134,14 +214,13 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
   // Build a minimal session-like object so consumers that access `session.access_token` work
   const session = useMemo<BetterAuthSession | null>(() => {
     if (!baSession?.user) return null;
-    // We lazily populate access_token; most consumers call getToken() which is async.
-    // For synchronous access_token usage in headers, consumers should call getToken().
     return {
-      access_token: '', // placeholder — use getToken() for actual bearer token
+      access_token: baSession.session?.token ?? '',
       user: {
         id: baSession.user.id,
         email: baSession.user.email,
       },
+      expires_at: toUnixSeconds(baSession.session?.expiresAt),
     };
   }, [baSession]);
 
@@ -220,68 +299,41 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
         if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
         if (!existingProfile) {
-          // New user — create profile + grant credits
+          // New user — create profile + grant credits through a service-role Edge Function.
           const FREE_SIGNUP_CREDITS = 3;
-          await supabase.from('profiles').insert({
+          const provisionPayload: ProfileProvisionPayload = {
             id: u.id,
             email: u.email || '',
-            name: (u as any).name || u.email?.split('@')[0] || '',
-            avatar_url: (u as any).image || '',
-            subscription_status: 'free',
+            name: getBetterAuthUserName(u),
+            avatar_url: getBetterAuthAvatarUrl(u),
+          };
+
+          const token = baSession.session?.token ?? await getToken();
+          if (!token) throw new Error('Unable to provision profile without an auth token');
+
+          const { data: provisionedProfile, error: provisionError } = await supabase.functions.invoke('provision-profile', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: provisionPayload,
           });
 
-          await supabase.from('user_credits').upsert(
-            { user_id: u.id, balance: FREE_SIGNUP_CREDITS, subscription_type: 'free', updated_at: new Date().toISOString() },
-            { onConflict: 'user_id' },
-          );
-
-          await supabase.from('credit_transactions').insert({
-            user_id: u.id,
-            amount: FREE_SIGNUP_CREDITS,
-            transaction_type: 'signup_bonus',
-            description: 'Welcome bonus: 3 free credits on signup',
-            balance_after_transaction: FREE_SIGNUP_CREDITS,
-            metadata: { source: 'signup_bonus' },
-          });
+          if (provisionError) throw provisionError;
 
           if (!cancelled && isMountedRef.current) {
             setIsNewUser(true);
-            setUserProfile({
-              id: u.id,
-              email: u.email || '',
-              name: (u as any).name || u.email?.split('@')[0] || '',
-              avatar_url: (u as any).image || '',
-              subscription_status: 'free',
-              created_at: (u as any).createdAt?.toString() || new Date().toISOString(),
-              credits: FREE_SIGNUP_CREDITS,
-            });
-            setCreditBalance(FREE_SIGNUP_CREDITS);
+            const provisioned = ((provisionedProfile as { profile?: ProfileRow; credits?: number } | null)?.profile);
+            setUserProfile(provisioned ? profileRowToAuthUser(provisioned) : betterAuthUserToAuthUser(u, FREE_SIGNUP_CREDITS));
+            setCreditBalance((provisionedProfile as { credits?: number } | null)?.credits ?? FREE_SIGNUP_CREDITS);
           }
         } else {
           if (!cancelled && isMountedRef.current) {
-            setUserProfile({
-              id: String(existingProfile.id),
-              email: String(existingProfile.email),
-              name: String(existingProfile.name),
-              avatar_url: String(existingProfile.avatar_url),
-              subscription_status: (existingProfile.subscription_status as 'free' | 'basic' | 'premium') || 'free',
-              created_at: String(existingProfile.created_at),
-              credits: existingProfile.credits || 0,
-            });
+            setUserProfile(profileRowToAuthUser(existingProfile as ProfileRow));
           }
         }
       } catch (err) {
         if (!cancelled && isMountedRef.current) {
           console.error('[BetterAuth] Error syncing user profile:', err);
-          setUserProfile({
-            id: u.id,
-            email: u.email || '',
-            name: (u as any).name || u.email?.split('@')[0] || '',
-            avatar_url: (u as any).image || '',
-            subscription_status: 'free',
-            created_at: (u as any).createdAt?.toString() || new Date().toISOString(),
-            credits: 0,
-          });
+          setUserProfile(betterAuthUserToAuthUser(u));
         }
       }
     })();
@@ -299,15 +351,7 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
   const user = useMemo<AuthUser | null>(() => {
     if (userProfile) return userProfile;
     if (!baSession?.user) return null;
-    return {
-      id: baSession.user.id,
-      email: baSession.user.email,
-      name: (baSession.user as any).name || baSession.user.email?.split('@')[0] || '',
-      avatar_url: (baSession.user as any).image || '',
-      subscription_status: 'free',
-      created_at: (baSession.user as any).createdAt?.toString() || new Date().toISOString(),
-      credits: creditBalance || 0,
-    };
+    return betterAuthUserToAuthUser(baSession.user, creditBalance || 0);
   }, [baSession, userProfile, creditBalance]);
 
   // ── Auth action handlers ──────────────────────────────────────────────────
@@ -315,10 +359,7 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
   const handleSignIn = useCallback(async (email: string, password: string) => {
     try {
       const result = await authClient.signIn.email({ email, password });
-      if ((result as any)?.error) {
-        return { error: new Error((result as any).error.message || 'Sign in failed') };
-      }
-      return { error: null };
+      return { error: getActionError(result, 'Sign in failed') };
     } catch (err) {
       return { error: err instanceof Error ? err : new Error('Sign in failed') };
     }
@@ -327,10 +368,7 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
   const handleSignUp = useCallback(async (email: string, password: string, name?: string) => {
     try {
       const result = await authClient.signUp.email({ email, password, name: name || '' });
-      if ((result as any)?.error) {
-        return { error: new Error((result as any).error.message || 'Sign up failed') };
-      }
-      return { error: null };
+      return { error: getActionError(result, 'Sign up failed') };
     } catch (err) {
       return { error: err instanceof Error ? err : new Error('Sign up failed') };
     }
@@ -366,15 +404,7 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (profile && isMountedRef.current) {
-      setUserProfile({
-        id: String(profile.id),
-        email: String(profile.email),
-        name: String(profile.full_name || profile.name),
-        avatar_url: String(profile.avatar_url),
-        subscription_status: (profile.subscription_status as 'free' | 'basic' | 'premium') || 'free',
-        created_at: String(profile.created_at),
-        credits: profile.credits || 0,
-      });
+      setUserProfile(profileRowToAuthUser(profile as ProfileRow));
     }
     fetchCreditBalance().catch(() => {});
   }, [baSession, fetchCreditBalance]);
@@ -416,6 +446,6 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
   return createElement(AuthContext.Provider, { value }, children);
 }
 
-/** Backward-compatible alias — used in App.tsx and auth/index.ts */
+/** Backward-compatible provider aliases retained for older auth imports */
 export { BetterAuthProvider as SupabaseAuthProvider };
 export { BetterAuthProvider as ClerkAuthProvider };

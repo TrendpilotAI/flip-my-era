@@ -25,7 +25,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading } = useClerkAuth();
+  const { user, isAuthenticated, isLoading, getToken } = useClerkAuth();
 
   useEffect(() => {
     if (!isLoading) {
@@ -142,7 +142,12 @@ const Profile = () => {
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500"
               onClick={async () => {
                 try {
-                  const { data, error } = await supabase.functions.invoke('stripe-portal', { method: 'POST' });
+                  const token = await getToken();
+                  if (!token) throw new Error('Missing auth token');
+                  const { data, error } = await supabase.functions.invoke('stripe-portal', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
                   if (error) throw error as unknown;
                   if (data && typeof (data as { url?: unknown }).url === 'string') {
                     window.location.href = (data as { url: string }).url;

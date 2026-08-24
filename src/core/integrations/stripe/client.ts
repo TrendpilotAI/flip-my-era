@@ -1,14 +1,10 @@
-import { loadStripe, Stripe } from '@stripe/stripe-js';
-import { supabase } from '@/core/integrations/supabase/client';
-
-// Initialize Stripe with your publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
 
 export interface StripeCheckoutOptions {
-  priceId: string;
+  plan: string;
   successUrl: string;
   cancelUrl: string;
-  customerEmail?: string;
+  productType?: 'credits' | 'subscription';
 }
 
 export interface StripeBillingPortalOptions {
@@ -17,7 +13,6 @@ export interface StripeBillingPortalOptions {
 
 export class StripeClient {
   private static instance: StripeClient;
-  private stripe: Stripe | null = null;
 
   private constructor() {}
 
@@ -28,57 +23,30 @@ export class StripeClient {
     return StripeClient.instance;
   }
 
-  async initialize(): Promise<Stripe | null> {
-    if (!this.stripe) {
-      const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-      
-      if (!publishableKey) {
-        console.error('Stripe publishable key is not configured');
-        throw new Error('Stripe is not properly configured. Please contact support.');
-      }
-      
-      if (!publishableKey.startsWith('pk_')) {
-        console.error('Invalid Stripe publishable key format');
-        throw new Error('Invalid Stripe configuration. Please contact support.');
-      }
-      
-      this.stripe = await loadStripe(publishableKey);
-      
-      if (!this.stripe) {
-        throw new Error('Failed to load Stripe. Please check your internet connection.');
-      }
-    }
-    return this.stripe;
-  }
-
   async redirectToCheckout(options: StripeCheckoutOptions): Promise<void> {
-    const stripe = await this.initialize();
-    
-    if (!stripe) {
-      throw new Error('Stripe failed to initialize');
-    }
-
-    const { error } = await stripe.redirectToCheckout({
-      lineItems: [
-        {
-          price: options.priceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      successUrl: options.successUrl,
-      cancelUrl: options.cancelUrl,
-      customerEmail: options.customerEmail,
+    const { data, error } = await invokeAuthenticatedFunction('create-checkout', {
+      body: {
+        plan: options.plan,
+        productType: options.productType,
+        successUrl: options.successUrl,
+        cancelUrl: options.cancelUrl,
+      },
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw new Error(error.message || 'Failed to create checkout session');
+    }
+
+    if (data?.url) {
+      window.location.href = data.url as string;
+    } else {
+      throw new Error('No checkout URL returned');
     }
   }
 
   async redirectToBillingPortal(options: StripeBillingPortalOptions): Promise<void> {
     // Call the Supabase edge function to create a billing portal session
-    const { data, error } = await supabase.functions.invoke('stripe-portal', {
+    const { data, error } = await invokeAuthenticatedFunction('stripe-portal', {
       method: 'POST',
       body: JSON.stringify({
         returnUrl: options.returnUrl,
@@ -98,33 +66,15 @@ export class StripeClient {
   }
 
   async createSubscription(options: {
-    priceId: string;
-    customerEmail: string;
+    plan: string;
     successUrl: string;
     cancelUrl: string;
   }): Promise<void> {
-    const stripe = await this.initialize();
-    
-    if (!stripe) {
-      throw new Error('Stripe failed to initialize');
-    }
-
-    const { error } = await stripe.redirectToCheckout({
-      lineItems: [
-        {
-          price: options.priceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
+    await this.redirectToCheckout({
+      plan: options.plan,
       successUrl: options.successUrl,
       cancelUrl: options.cancelUrl,
-      customerEmail: options.customerEmail,
     });
-
-    if (error) {
-      throw new Error(error.message);
-    }
   }
 }
 

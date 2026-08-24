@@ -16,6 +16,52 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
+export function RouteErrorFallback() {
+  const handleReload = () => {
+    window.location.reload();
+  };
+
+  const handleGoHome = () => {
+    window.location.href = '/';
+  };
+
+  return (
+    <div className="container py-8 flex min-h-[60vh] items-center justify-center">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <CardTitle>We couldn't load this page</CardTitle>
+          </div>
+          <CardDescription>
+            Something went wrong while loading this route. Reload the page or return home to continue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              onClick={handleReload}
+              variant="default"
+              className="flex-1"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Reload Page
+            </Button>
+            <Button
+              onClick={handleGoHome}
+              variant="outline"
+              className="flex-1"
+            >
+              <Home className="mr-2 h-4 w-4" />
+              Go Home
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);

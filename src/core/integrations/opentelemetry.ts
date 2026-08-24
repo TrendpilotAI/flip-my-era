@@ -20,7 +20,13 @@ import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-u
 export function initOpenTelemetry(): void {
   // Check if OpenTelemetry should be enabled
   const otlpEndpoint = import.meta.env.VITE_OTLP_ENDPOINT;
-  const enabled = import.meta.env.VITE_OTLP_ENABLED === 'true' || (import.meta.env.PROD && !!otlpEndpoint);
+  const hostname = typeof window === 'undefined' ? '' : window.location.hostname;
+  const isLocalOrigin =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname.endsWith('.localhost');
+  const enabled = !isLocalOrigin && (import.meta.env.VITE_OTLP_ENABLED === 'true' || (import.meta.env.PROD && !!otlpEndpoint));
 
   if (!enabled || !otlpEndpoint) {
     // OpenTelemetry not configured, skip initialization
@@ -63,16 +69,14 @@ export function initOpenTelemetry(): void {
     // Create tracer provider
     const tracerProvider = new WebTracerProvider({
       resource,
+      spanProcessors: [
+        new BatchSpanProcessor(traceExporter, {
+          maxExportBatchSize: 512,
+          exportTimeoutMillis: 30000,
+          scheduledDelayMillis: 5000,
+        }),
+      ],
     });
-
-    // Add span processor (batch processing for better performance)
-    tracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(traceExporter, {
-        maxExportBatchSize: 512,
-        exportTimeoutMillis: 30000,
-        scheduledDelayMillis: 5000,
-      })
-    );
 
     // Register the provider globally
     tracerProvider.register();

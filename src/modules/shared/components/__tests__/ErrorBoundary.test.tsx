@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ErrorBoundary, withErrorBoundary, useErrorHandler } from '../ErrorBoundary';
+import { ErrorBoundary, RouteErrorFallback, withErrorBoundary, useErrorHandler } from '../ErrorBoundary';
 import React from 'react';
 
 // Component that throws an error
@@ -111,6 +111,26 @@ describe('ErrorBoundary', () => {
 
       expect(screen.getByText('Custom error message')).toBeInTheDocument();
       expect(screen.queryByText(/Oops! Something went wrong/i)).not.toBeInTheDocument();
+    });
+
+    it('should support the route error fallback as a custom fallback', () => {
+      render(
+        <ErrorBoundary fallback={<RouteErrorFallback />}>
+          <ThrowError shouldThrow={true} />
+        </ErrorBoundary>
+      );
+
+      expect(screen.getByRole('heading', { name: /We couldn't load this page/i })).toBeInTheDocument();
+      expect(screen.getByText(/Something went wrong while loading this route/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Oops! Something went wrong/i)).not.toBeInTheDocument();
+    });
+
+    it('should render route fallback actions', () => {
+      render(<RouteErrorFallback />);
+
+      expect(screen.getByRole('heading', { name: /We couldn't load this page/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Reload Page/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Go Home/i })).toBeInTheDocument();
     });
 
     it('should call onError callback when error occurs', () => {

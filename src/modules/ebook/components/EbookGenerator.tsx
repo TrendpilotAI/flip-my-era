@@ -992,38 +992,6 @@ export const EbookGenerator = ({ originalStory, storyId, storyline, storyFormat 
               isLocked={!isContentUnlocked}
               onLockedAction={() => setShowCreditWall(true)}
             />
-            <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-semibold py-4"
-              size="lg"
-              onClick={async () => {
-                try {
-                  // Call Supabase Edge Function to create Stripe checkout session
-                  const { data, error } = await supabase.functions.invoke('create-checkout', {
-                    body: {
-                      priceId: 'ebook',
-                      successUrl: `${window.location.origin}/checkout/success`,
-                      cancelUrl: window.location.href
-                    }
-                  });
-
-                  if (error || !data?.url) {
-                    throw new Error(error?.message || 'Failed to create checkout session');
-                  }
-
-                  // Redirect to checkout URL
-                  window.location.href = data.url;
-                } catch (error) {
-                  console.error('Failed to redirect to checkout:', error);
-                  toast({
-                    title: "Checkout Error",
-                    description: "Unable to proceed to checkout. Please try again.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            >
-              Buy this Ebook
-            </Button>
           </div>
         </div>
       )}
