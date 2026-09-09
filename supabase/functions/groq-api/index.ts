@@ -1,26 +1,14 @@
 // @ts-ignore -- Deno Edge Function imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// @ts-ignore -- Deno Edge Function imports
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
+// @ts-ignore -- Deno Edge Function imports
+import { getCorsHeaders, handleCors, verifyAuth } from "../_shared/utils.ts";
+// @ts-ignore -- Deno Edge Function imports
+import { getRateLimitRecord } from "../_shared/rateLimitStorage.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
-
-// Import rate limiting utility
-// @ts-ignore -- Deno import
-import { getRateLimitRecord } from '../_shared/rateLimitStorage.ts';
-
-const RATE_LIMIT = {
-  maxRequests: 60,
-  windowMs: 60000, // 1 minute
-};
-
-const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
-
-// Credits charged per story generation
+const RATE_LIMIT = { maxRequests: 60, windowMs: 60000 };
+const REQUEST_TIMEOUT_MS = 30000;
 const STORY_GENERATION_CREDITS = 1;
 
 interface GroqRequest {
@@ -29,284 +17,216 @@ interface GroqRequest {
   temperature?: number;
   maxTokens?: number;
   systemPrompt?: string;
-  idempotency_key?: string; // Client-generated UUID to prevent double-charging
-}
-
-interface GroqChatMessage {
-  role: string;
-  content: string;
-}
-
-interface GroqChatChoice {
-  message: GroqChatMessage;
-  index: number;
-  finish_reason: string;
+  idempotency_key?: string;
 }
 
 interface GroqChatResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: GroqChatChoice[];
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
+  choices: Array<{ message: { content: string } }>;
+}
+
+interface GenerationClaim {
+  request_id: string | null;
+  outcome: 'claimed' | 'replay' | 'in_progress' | 'insufficient' | 'failed';
+  transaction_id: string | null;
+  credits_charged: number | string;
+  current_balance: number | string | null;
+  response_cache: Record<string, unknown> | null;
+  lease_token: string | null;
+  lease_expires_at: string | null;
+}
+
+function createJsonResponse(corsHeaders: Record<string, string>) {
+  return (
+    body: Record<string, unknown>,
+    status: number,
+    idempotencyKey?: string,
+    headers: Record<string, string> = {},
+  ): Response => {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        ...(idempotencyKey ? { 'X-Idempotency-Key': idempotencyKey } : {}),
+        ...headers,
+      },
+    });
   };
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const jsonResponse = createJsonResponse(getCorsHeaders(req));
+
+  if (req.method !== 'POST') {
+    return jsonResponse({ error: 'METHOD_NOT_ALLOWED', message: 'Only POST is supported' }, 405);
   }
 
+  let userId: string | null = null;
+  let idempotencyKey: string | null = null;
+  let leaseToken: string | null = null;
+  let claimWasCharged = false;
+  let adminClient: SupabaseClient<any> | null = null;
+
+  const failClaim = async (errorCode: string, errorMessage: string): Promise<boolean> => {
+    if (!claimWasCharged || !adminClient || !userId || !idempotencyKey || !leaseToken) {
+      return true;
+    }
+
+    const { data, error } = await adminClient
+      .rpc('fail_generation_request', {
+        p_user_id: userId,
+        p_idempotency_key: idempotencyKey,
+        p_lease_token: leaseToken,
+        p_error_code: errorCode,
+        p_error_message: errorMessage,
+      })
+      .single();
+
+    const failureResult = data as { success?: boolean } | null;
+    if (error || !failureResult?.success) {
+      console.error('Unable to finalize failed generation request:', error ?? data);
+      return false;
+    }
+
+    claimWasCharged = false;
+    return true;
+  };
+
   try {
-    // Get Groq API key from environment
+    userId = await verifyAuth(req);
+    if (!userId) {
+      return jsonResponse({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' }, 401);
+    }
+
     const groqApiKey = Deno.env.get('GROQ_API_KEY');
     if (!groqApiKey) {
-      return new Response(
-        JSON.stringify({ error: 'GROQ_API_KEY_MISSING', message: 'Groq API key not configured' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      return jsonResponse({ error: 'GROQ_API_KEY_MISSING', message: 'Groq API key not configured' }, 500);
     }
 
-    // Verify JWT token
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'UNAUTHORIZED', message: 'Missing authorization header' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    let requestData: GroqRequest;
+    try {
+      requestData = await req.json();
+    } catch {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Request body must be valid JSON' }, 400);
     }
 
-    // Create Supabase client to verify token
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    const userId = user.id;
-
-    // Rate limiting check
-    const rateLimitKey = `groq-api:${userId}`;
-    const rateLimitRecord = await getRateLimitRecord(rateLimitKey, RATE_LIMIT);
-    if (!rateLimitRecord.allowed) {
-      return new Response(
-        JSON.stringify({
-          error: 'RATE_LIMIT_EXCEEDED',
-          message: 'Too many requests. Please try again later.',
-          retryAfter: Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000),
-        }),
-        {
-          status: 429,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Retry-After': String(Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000)),
-            'X-RateLimit-Limit': String(RATE_LIMIT.maxRequests),
-            'X-RateLimit-Remaining': String(rateLimitRecord.remaining),
-            'X-RateLimit-Reset': String(rateLimitRecord.resetAt),
-          },
-        }
-      );
-    }
-
-    // Parse request body
-    const requestData: GroqRequest = await req.json();
     const {
       prompt,
       model = 'llama-3.3-70b-versatile',
       temperature = 0.7,
       maxTokens = 4096,
       systemPrompt,
-      idempotency_key,
     } = requestData;
 
-    // Input validation
-    if (!prompt || typeof prompt !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Prompt is required and must be a string' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Prompt is required and cannot be empty' }, 400);
     }
-
     const sanitizedPrompt = prompt.trim();
-    if (sanitizedPrompt.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Prompt cannot be empty' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
     if (sanitizedPrompt.length > 50000) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Prompt exceeds maximum length of 50,000 characters' }),
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Prompt exceeds maximum length of 50,000 characters' }, 400);
+    }
+    if (typeof model !== 'string' || model.trim().length === 0 || model.length > 200) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Model must be a non-empty string of at most 200 characters' }, 400);
+    }
+    if (typeof temperature !== 'number' || !Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Temperature must be a number between 0 and 2' }, 400);
+    }
+    if (typeof maxTokens !== 'number' || !Number.isInteger(maxTokens) || maxTokens < 1 || maxTokens > 8192) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'maxTokens must be an integer between 1 and 8192' }, 400);
+    }
+    if (systemPrompt !== undefined && typeof systemPrompt !== 'string') {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'systemPrompt must be a string' }, 400);
+    }
+
+    idempotencyKey = (
+      requestData.idempotency_key
+      ?? req.headers.get('Idempotency-Key')
+      ?? crypto.randomUUID()
+    ).trim();
+    if (!idempotencyKey || idempotencyKey.length > 200) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Idempotency key must contain 1 to 200 characters' }, 400);
+    }
+
+    const rateLimitRecord = await getRateLimitRecord(`groq-api:${userId}`, RATE_LIMIT);
+    if (!rateLimitRecord.allowed) {
+      const retryAfter = Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000);
+      return jsonResponse(
+        { error: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests. Please try again later.', retryAfter },
+        429,
+        idempotencyKey,
         {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (typeof temperature !== 'number' || isNaN(temperature) || temperature < 0 || temperature > 2) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Temperature must be a number between 0 and 2' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (typeof maxTokens !== 'number' || isNaN(maxTokens) || maxTokens < 1 || maxTokens > 8192) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'maxTokens must be a number between 1 and 8192' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // --- SERVER-SIDE CREDIT SYSTEM ---
-    // Use service role client for credit operations (bypasses RLS)
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const adminClient = createClient(supabaseUrl, serviceKey);
-
-    // 1. Idempotency check — if this key was already processed, return cached response
-    if (idempotency_key) {
-      const { data: existingRequest } = await adminClient
-        .from('generation_requests')
-        .select('status, response_cache')
-        .eq('idempotency_key', idempotency_key)
-        .eq('user_id', userId)
-        .single();
-
-      if (existingRequest) {
-        if (existingRequest.status === 'completed' && existingRequest.response_cache) {
-          // Return cached response — no double charge
-          console.log(`Idempotent replay for key ${idempotency_key}, user ${userId}`);
-          return new Response(
-            JSON.stringify(existingRequest.response_cache),
-            {
-              status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Idempotent-Replay': 'true' },
-            }
-          );
-        }
-        if (existingRequest.status === 'pending') {
-          // Request in-flight — reject to prevent concurrent double-spend
-          return new Response(
-            JSON.stringify({ error: 'REQUEST_IN_PROGRESS', message: 'A generation request with this key is already in progress. Please wait.' }),
-            {
-              status: 409,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
-          );
-        }
-      }
-    }
-
-    // 2. Verify credit balance and atomically deduct BEFORE generation
-    const { data: deductResult, error: deductError } = await adminClient
-      .rpc('deduct_credits', {
-        p_user_id: userId,
-        p_amount: STORY_GENERATION_CREDITS,
-        p_description: 'Story generation',
-        p_metadata: {
-          operation_type: 'story_generation',
-          idempotency_key: idempotency_key || null,
+          'Retry-After': String(retryAfter),
+          'X-RateLimit-Limit': String(RATE_LIMIT.maxRequests),
+          'X-RateLimit-Remaining': String(rateLimitRecord.remaining),
+          'X-RateLimit-Reset': String(rateLimitRecord.resetAt),
         },
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceKey) {
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Credit service is not configured' }, 503, idempotencyKey);
+    }
+    adminClient = createClient<any>(supabaseUrl, serviceKey);
+
+    const { data: claimData, error: claimError } = await adminClient
+      .rpc('claim_generation_request', {
+        p_user_id: userId,
+        p_idempotency_key: idempotencyKey,
+        p_operation_type: 'story_generation',
+        p_credits: STORY_GENERATION_CREDITS,
+        p_metadata: { model: model.trim() },
       })
       .single();
 
-    if (deductError) {
-      console.error('Credit deduction error:', deductError);
-      return new Response(
-        JSON.stringify({ error: 'CREDIT_SERVICE_ERROR', message: 'Unable to process credits. Please try again.' }),
-        {
-          status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+    if (claimError || !claimData) {
+      console.error('Generation claim failed:', claimError);
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Unable to process credits. Please try again.' }, 503, idempotencyKey);
+    }
+
+    const claim = claimData as GenerationClaim;
+    if (claim.outcome === 'replay' && claim.response_cache) {
+      return jsonResponse(claim.response_cache, 200, idempotencyKey, { 'X-Idempotent-Replay': 'true' });
+    }
+    if (claim.outcome === 'in_progress') {
+      return jsonResponse(
+        { error: 'REQUEST_IN_PROGRESS', message: 'A generation request with this key is already in progress.' },
+        409,
+        idempotencyKey,
       );
     }
-
-    if (!deductResult?.success) {
-      // Insufficient credits
-      const { data: balanceData } = await adminClient
-        .from('user_credits')
-        .select('balance')
-        .eq('user_id', userId)
-        .single();
-
-      return new Response(
-        JSON.stringify({
-          error: 'INSUFFICIENT_CREDITS',
-          message: 'You do not have enough credits to generate a story.',
-          current_balance: balanceData?.balance ?? 0,
-          required: STORY_GENERATION_CREDITS,
-        }),
-        {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+    if (claim.outcome === 'insufficient') {
+      return jsonResponse({
+        error: 'INSUFFICIENT_CREDITS',
+        message: 'You do not have enough credits to generate a story.',
+        current_balance: Number(claim.current_balance ?? 0),
+        required: STORY_GENERATION_CREDITS,
+      }, 402, idempotencyKey);
+    }
+    if (claim.outcome === 'failed') {
+      return jsonResponse(
+        { error: 'REQUEST_PREVIOUSLY_FAILED', message: 'This generation attempt failed. Retry with a new idempotency key.' },
+        409,
+        idempotencyKey,
       );
     }
-
-    const transactionId = deductResult.transaction_id;
-
-    // 3. Register idempotency record as 'pending' (after deduction, before generation)
-    let generationRequestId: string | null = null;
-    if (idempotency_key) {
-      const { data: genReq } = await adminClient
-        .from('generation_requests')
-        .insert({
-          idempotency_key,
-          user_id: userId,
-          operation_type: 'story_generation',
-          credits_charged: STORY_GENERATION_CREDITS,
-          transaction_id: transactionId,
-          status: 'pending',
-        })
-        .select('id')
-        .single();
-      generationRequestId = genReq?.id ?? null;
+    if (claim.outcome !== 'claimed') {
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Unexpected generation claim state' }, 503, idempotencyKey);
     }
+    if (!claim.lease_token) {
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Generation claim did not provide a lease' }, 503, idempotencyKey);
+    }
+    leaseToken = claim.lease_token;
+    claimWasCharged = true;
 
-    // --- GENERATION ---
-    const messages: GroqChatMessage[] = [];
-    if (systemPrompt && typeof systemPrompt === 'string') {
-      const sanitizedSystemPrompt = systemPrompt.trim().substring(0, 10000);
-      if (sanitizedSystemPrompt.length > 0) {
-        messages.push({ role: 'system', content: sanitizedSystemPrompt });
-      }
+    const messages: Array<{ role: string; content: string }> = [];
+    const sanitizedSystemPrompt = systemPrompt?.trim().substring(0, 10000);
+    if (sanitizedSystemPrompt) {
+      messages.push({ role: 'system', content: sanitizedSystemPrompt });
     }
     messages.push({ role: 'user', content: sanitizedPrompt });
 
@@ -320,114 +240,73 @@ serve(async (req) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${groqApiKey}`,
         },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-          max_tokens: maxTokens,
-        }),
+        body: JSON.stringify({ model: model.trim(), messages, temperature, max_tokens: maxTokens }),
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
       if (!groqResponse.ok) {
         const errorData = await groqResponse.json().catch(() => ({}));
-        const errorMessage = errorData.error?.message || 'Groq API request failed';
-
-        // Mark idempotency record as failed
-        if (generationRequestId) {
-          await adminClient
-            .from('generation_requests')
-            .update({ status: 'failed', completed_at: new Date().toISOString() })
-            .eq('id', generationRequestId);
+        const message = errorData.error?.message || 'Groq API request failed';
+        const refunded = await failClaim('GROQ_API_ERROR', message);
+        if (!refunded) {
+          return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'Generation failed and its credit refund could not be confirmed.' }, 503, idempotencyKey);
         }
-
-        return new Response(
-          JSON.stringify({
-            error: 'GROQ_API_ERROR',
-            message: errorMessage,
-            status: groqResponse.status,
-          }),
-          {
-            status: groqResponse.status >= 500 ? 500 : groqResponse.status,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
+        return jsonResponse(
+          { error: 'GROQ_API_ERROR', message, status: groqResponse.status },
+          groqResponse.status >= 500 ? 500 : groqResponse.status,
+          idempotencyKey,
         );
       }
 
       const data: GroqChatResponse = await groqResponse.json();
       const content = data.choices[0]?.message?.content;
-
       if (!content) {
-        if (generationRequestId) {
-          await adminClient
-            .from('generation_requests')
-            .update({ status: 'failed', completed_at: new Date().toISOString() })
-            .eq('id', generationRequestId);
+        const refunded = await failClaim('INVALID_RESPONSE', 'No content in Groq response');
+        if (!refunded) {
+          return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'Invalid generation response and its credit refund could not be confirmed.' }, 503, idempotencyKey);
         }
-        return new Response(
-          JSON.stringify({ error: 'INVALID_RESPONSE', message: 'No content in Groq response' }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+        return jsonResponse({ error: 'INVALID_RESPONSE', message: 'No content in Groq response' }, 500, idempotencyKey);
       }
 
       const responsePayload = { content };
+      const { data: completed, error: completeError } = await adminClient
+        .rpc('complete_generation_request', {
+          p_user_id: userId,
+          p_idempotency_key: idempotencyKey,
+          p_response_cache: responsePayload,
+          p_lease_token: leaseToken,
+        })
+        .single();
 
-      // Mark idempotency record as completed and cache the response
-      if (generationRequestId) {
-        await adminClient
-          .from('generation_requests')
-          .update({
-            status: 'completed',
-            response_cache: responsePayload,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', generationRequestId);
+      const completeResult = completed as { success?: boolean } | null;
+      if (completeError || !completeResult?.success) {
+        console.error('Unable to complete generation request:', completeError ?? completed);
+        await failClaim('COMPLETION_ERROR', 'Unable to persist completed generation response');
+        return jsonResponse({ error: 'GENERATION_STATE_ERROR', message: 'Generation completed but its result could not be finalized. Retry with the same key.' }, 503, idempotencyKey);
       }
 
-      return new Response(
-        JSON.stringify(responsePayload),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      claimWasCharged = false;
+      return jsonResponse(responsePayload, 200, idempotencyKey);
     } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        if (generationRequestId) {
-          await adminClient
-            .from('generation_requests')
-            .update({ status: 'failed', completed_at: new Date().toISOString() })
-            .eq('id', generationRequestId);
-        }
-        return new Response(
-          JSON.stringify({
-            error: 'REQUEST_TIMEOUT',
-            message: 'Request took too long to complete. Please try again.',
-          }),
-          {
-            status: 408,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+      const isTimeout = error instanceof Error && error.name === 'AbortError';
+      const code = isTimeout ? 'REQUEST_TIMEOUT' : 'GENERATION_ERROR';
+      const message = isTimeout
+        ? 'Request took too long to complete. Please try again.'
+        : error instanceof Error ? error.message : 'Generation failed';
+      const refunded = await failClaim(code, message);
+      if (!refunded) {
+        return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'Generation failed and its credit refund could not be confirmed.' }, 503, idempotencyKey);
       }
-      throw error;
+      return jsonResponse({ error: code, message }, isTimeout ? 408 : 500, idempotencyKey);
+    } finally {
+      clearTimeout(timeoutId);
     }
   } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const refunded = await failClaim('INTERNAL_ERROR', message);
+    if (!refunded) {
+      return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'The request failed and its credit refund could not be confirmed.' }, 503, idempotencyKey ?? undefined);
+    }
+    return jsonResponse({ error: 'INTERNAL_ERROR', message }, 500, idempotencyKey ?? undefined);
   }
 });

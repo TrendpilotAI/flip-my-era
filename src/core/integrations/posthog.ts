@@ -3,7 +3,7 @@
  * Comprehensive product analytics and user behavior tracking
  */
 
-import posthog from 'posthog-js';
+import posthog, { type PostHog } from 'posthog-js';
 
 interface PostHogConfig {
   apiKey: string;
@@ -13,7 +13,7 @@ interface PostHogConfig {
   autocapture?: boolean;
   capturePageview?: boolean;
   capturePageleave?: boolean;
-  loaded?: (posthog: typeof posthog) => void;
+  loaded?: (client: PostHog) => void;
 }
 
 class PostHogService {
@@ -49,15 +49,10 @@ class PostHogService {
         // Privacy settings
         respect_dnt: true, // Respect Do Not Track
         opt_out_capturing_by_default: false,
-        // Performance settings
-        batch_size: 20,
-        batch_flush_interval_ms: 10000,
         // Session recording (optional, can be enabled later)
         disable_session_recording: true, // Disable by default for privacy
         // Feature flags
         advanced_disable_decide: false,
-        // Environment
-        environment: config.environment || 'production',
       });
 
       this.initialized = true;
@@ -308,4 +303,3 @@ export const posthogEvents = {
     posthogService.capture('error_occurred', { error, component, ...properties });
   },
 };
-

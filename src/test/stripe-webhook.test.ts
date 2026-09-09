@@ -1,338 +1,290 @@
-/**
- * Stripe Webhook Handler Tests
- * Tests the logic of webhook event processing (checkout.session.completed, subscription events)
- * Since the actual handler runs as a Deno edge function, we test the logic patterns here.
- */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock Supabase responses
-const mockSingle = vi.fn();
-const mockEq = vi.fn(() => ({ single: mockSingle }));
-const mockSelect = vi.fn(() => ({ eq: mockEq }));
-const mockInsert = vi.fn(() => ({ select: vi.fn(() => ({ single: vi.fn() })) }));
-const mockUpdate = vi.fn(() => ({ eq: vi.fn() }));
-const mockUpsert = vi.fn();
-const mockFrom = vi.fn(() => ({
-  select: mockSelect,
-  insert: mockInsert,
-  update: mockUpdate,
-  upsert: mockUpsert,
-}));
-
-const mockSupabase = { from: mockFrom };
-
-// Re-implement handler logic for testing (mirrors supabase/functions/stripe-webhook/index.ts)
-async function handleCheckoutCompleted(
-  supabase: typeof mockSupabase,
-  session: {
-    id: string;
-    customer: string | null;
-    customer_email: string | null;
-    metadata: Record<string, string>;
-    payment_intent: string | null;
-    amount_total: number | null;
-    currency: string | null;
-  }
-) {
-  const { customer_email, metadata } = session;
-
-  let profile: { id: string; stripe_customer_id: string | null } | null = null;
-
-  if (customer_email) {
-    const result = supabase.from('profiles');
-    result.select('id, stripe_customer_id');
-    const eqResult = mockEq('email', customer_email);
-    profile = await eqResult.single();
-  }
-
-  if (!profile && session.customer) {
-    const result = supabase.from('profiles');
-    result.select('id, stripe_customer_id');
-    const eqResult = mockEq('stripe_customer_id', session.customer);
-    profile = await eqResult.single();
-  }
-
-  if (!profile) {
-    throw new Error('User not found');
-  }
-
-  if (metadata.type === 'credits') {
-    const credits = parseInt(metadata.credits || '0');
-    if (credits > 0) {
-      supabase.from('credit_transactions');
-      mockInsert({
-        user_id: profile.id,
-        amount: credits,
-        transaction_type: 'purchase',
-        description: `Credit purchase via Stripe - ${credits} credits`,
-        stripe_session_id: session.id,
-        stripe_payment_intent_id: session.payment_intent,
-      });
-      return { success: true, credits, userId: profile.id };
-    }
-  }
-  return { success: false };
+interface WebhookRecord {
+  eventId: string;
+  eventType: string;
+  status: 'processing' | 'completed' | 'failed';
+  attemptCount: number;
+  lastError: string | null;
+  payloadDigest: string;
+  startedAt: number;
 }
 
-async function handleSubscriptionChange(
-  supabase: typeof mockSupabase,
-  subscription: {
-    id: string;
-    customer: string;
-    status: string;
-    metadata: Record<string, string> | null;
-  }
-) {
-  const { customer, status, metadata } = subscription;
-
-  supabase.from('profiles');
-  mockSelect('id');
-  const profile = await mockEq('stripe_customer_id', customer).single();
-
-  if (!profile) {
-    throw new Error('User not found for subscription');
-  }
-
-  let subscriptionStatus = 'none';
-  if (status === 'active') subscriptionStatus = 'active';
-  else if (status === 'canceled') subscriptionStatus = 'cancelled';
-  else if (status === 'past_due') subscriptionStatus = 'past_due';
-
-  supabase.from('user_credits');
-  mockUpsert({
-    user_id: profile.id,
-    subscription_status: subscriptionStatus,
-    stripe_subscription_id: subscription.id,
-    subscription_type: metadata?.plan === 'annual' ? 'annual' : 'monthly',
-  });
-
-  if (status === 'active' && metadata?.credits) {
-    const monthlyCredits = parseInt(metadata.credits);
-    if (monthlyCredits > 0) {
-      supabase.from('credit_transactions');
-      mockInsert({
-        user_id: profile.id,
-        amount: monthlyCredits,
-        transaction_type: 'monthly_allocation',
-      });
-      return { success: true, credits: monthlyCredits, status: subscriptionStatus };
-    }
-  }
-
-  return { success: true, status: subscriptionStatus };
+interface ClaimResult {
+  claimed: boolean;
+  eventStatus: WebhookRecord['status'];
+  attemptCount: number;
 }
 
-describe('Stripe Webhook Handlers', () => {
+class WebhookStateStore {
+  static readonly leaseMs = 15 * 60 * 1000;
+  readonly events = new Map<string, WebhookRecord>();
+
+  claim(
+    eventId: string,
+    eventType: string,
+    options: { now?: number; payloadDigest?: string } = {},
+  ): ClaimResult {
+    const now = options.now ?? Date.now();
+    const payloadDigest = options.payloadDigest ?? `digest:${eventId}`;
+    const existing = this.events.get(eventId);
+    if (!existing) {
+      const created: WebhookRecord = {
+        eventId,
+        eventType,
+        status: 'processing',
+        attemptCount: 1,
+        lastError: null,
+        payloadDigest,
+        startedAt: now,
+      };
+      this.events.set(eventId, created);
+      return { claimed: true, eventStatus: created.status, attemptCount: created.attemptCount };
+    }
+
+    if (existing.eventType !== eventType) {
+      throw new Error('event type mismatch');
+    }
+    if (existing.payloadDigest !== payloadDigest) {
+      throw new Error('payload digest mismatch');
+    }
+
+    const leaseExpired =
+      existing.status === 'processing' &&
+      now - existing.startedAt >= WebhookStateStore.leaseMs;
+    if (existing.status === 'failed' || leaseExpired) {
+      existing.status = 'processing';
+      existing.attemptCount += 1;
+      existing.lastError = null;
+      existing.startedAt = now;
+      return { claimed: true, eventStatus: existing.status, attemptCount: existing.attemptCount };
+    }
+
+    return {
+      claimed: false,
+      eventStatus: existing.status,
+      attemptCount: existing.attemptCount,
+    };
+  }
+
+  complete(eventId: string): boolean {
+    const event = this.events.get(eventId);
+    if (!event) return false;
+    if (event.status === 'completed') return true;
+    if (event.status !== 'processing') return false;
+    event.status = 'completed';
+    return true;
+  }
+
+  fail(eventId: string, message: string): boolean {
+    const event = this.events.get(eventId);
+    if (!event || event.status !== 'processing') return false;
+    event.status = 'failed';
+    event.lastError = message;
+    return true;
+  }
+}
+
+interface CreditEntry {
+  userId: string;
+  amount: number;
+  transactionType: string;
+  idempotencyKey: string;
+}
+
+class CreditLedger {
+  balance = 0;
+  readonly entries = new Map<string, CreditEntry>();
+
+  apply(entry: CreditEntry): { isReplay: boolean } {
+    const existing = this.entries.get(entry.idempotencyKey);
+    if (existing) {
+      if (
+        existing.userId !== entry.userId ||
+        existing.amount !== entry.amount ||
+        existing.transactionType !== entry.transactionType
+      ) {
+        throw new Error('idempotency key reused for a different transaction');
+      }
+      return { isReplay: true };
+    }
+
+    const nextBalance = this.balance + entry.amount;
+    if (nextBalance < 0) throw new Error('insufficient balance');
+    this.balance = nextBalance;
+    this.entries.set(entry.idempotencyKey, entry);
+    return { isReplay: false };
+  }
+}
+
+interface WorkflowResponse {
+  status: number;
+  duplicate?: boolean;
+  inFlight?: boolean;
+}
+
+async function runWebhook(
+  store: WebhookStateStore,
+  eventId: string,
+  eventType: string,
+  sideEffect: () => Promise<void>,
+): Promise<WorkflowResponse> {
+  const claim = store.claim(eventId, eventType);
+  if (!claim.claimed) {
+    return {
+      status: 200,
+      duplicate: claim.eventStatus === 'completed',
+      inFlight: claim.eventStatus === 'processing',
+    };
+  }
+
+  try {
+    await sideEffect();
+    if (!store.complete(eventId)) throw new Error('completion rejected');
+    return { status: 200 };
+  } catch (error) {
+    store.fail(eventId, error instanceof Error ? error.message : String(error));
+    return { status: 500 };
+  }
+}
+
+describe('Stripe webhook state machine', () => {
+  let store: WebhookStateStore;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    store = new WebhookStateStore();
   });
 
-  describe('checkout.session.completed', () => {
-    it('should grant credits on successful credit purchase', async () => {
-      const mockProfile = { id: 'user-123', stripe_customer_id: 'cus_abc' };
-      mockSingle.mockResolvedValue(mockProfile);
+  it('acknowledges a duplicate completed event without rerunning side effects', async () => {
+    const sideEffect = vi.fn(async () => undefined);
 
-      const session = {
-        id: 'cs_test_123',
-        customer: 'cus_abc',
-        customer_email: 'test@example.com',
-        metadata: { type: 'credits', credits: '5' },
-        payment_intent: 'pi_test_123',
-        amount_total: 999,
-        currency: 'usd',
-      };
+    expect((await runWebhook(store, 'evt_complete', 'checkout.session.completed', sideEffect)).status).toBe(200);
+    const duplicate = await runWebhook(store, 'evt_complete', 'checkout.session.completed', sideEffect);
 
-      const result = await handleCheckoutCompleted(mockSupabase, session);
+    expect(duplicate).toEqual({ status: 200, duplicate: true, inFlight: false });
+    expect(sideEffect).toHaveBeenCalledTimes(1);
+    expect(store.events.get('evt_complete')).toMatchObject({ status: 'completed', attemptCount: 1 });
+  });
 
-      expect(result.success).toBe(true);
-      expect(result.credits).toBe(5);
-      expect(result.userId).toBe('user-123');
-      expect(mockFrom).toHaveBeenCalledWith('credit_transactions');
-      expect(mockInsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: 'user-123',
-          amount: 5,
-          transaction_type: 'purchase',
-        })
-      );
-    });
+  it('acknowledges an in-flight event without concurrently reprocessing it', async () => {
+    store.claim('evt_processing', 'customer.subscription.updated');
+    const sideEffect = vi.fn(async () => undefined);
 
-    it('should fail gracefully when user not found', async () => {
-      mockSingle.mockResolvedValue(null);
+    const response = await runWebhook(store, 'evt_processing', 'customer.subscription.updated', sideEffect);
 
-      const session = {
-        id: 'cs_test_456',
-        customer: null,
-        customer_email: 'unknown@example.com',
-        metadata: { type: 'credits', credits: '3' },
-        payment_intent: 'pi_test_456',
-        amount_total: 599,
-        currency: 'usd',
-      };
+    expect(response).toEqual({ status: 200, duplicate: false, inFlight: true });
+    expect(sideEffect).not.toHaveBeenCalled();
+    expect(store.events.get('evt_processing')?.attemptCount).toBe(1);
+  });
 
-      await expect(handleCheckoutCompleted(mockSupabase, session)).rejects.toThrow('User not found');
-    });
+  it('reclaims a processing event after its 15-minute lease expires', async () => {
+    const expiredStart = Date.now() - WebhookStateStore.leaseMs - 1;
+    store.claim('evt_abandoned', 'checkout.session.completed', { now: expiredStart });
+    const sideEffect = vi.fn(async () => undefined);
 
-    it('should not grant credits when metadata type is not credits', async () => {
-      const mockProfile = { id: 'user-123', stripe_customer_id: 'cus_abc' };
-      mockSingle.mockResolvedValue(mockProfile);
+    const response = await runWebhook(store, 'evt_abandoned', 'checkout.session.completed', sideEffect);
 
-      const session = {
-        id: 'cs_test_789',
-        customer: 'cus_abc',
-        customer_email: 'test@example.com',
-        metadata: { type: 'subscription' },
-        payment_intent: 'pi_test_789',
-        amount_total: 1999,
-        currency: 'usd',
-      };
-
-      const result = await handleCheckoutCompleted(mockSupabase, session);
-      expect(result.success).toBe(false);
-    });
-
-    it('should not grant credits when credits amount is 0', async () => {
-      const mockProfile = { id: 'user-123', stripe_customer_id: 'cus_abc' };
-      mockSingle.mockResolvedValue(mockProfile);
-
-      const session = {
-        id: 'cs_test_000',
-        customer: 'cus_abc',
-        customer_email: 'test@example.com',
-        metadata: { type: 'credits', credits: '0' },
-        payment_intent: 'pi_test_000',
-        amount_total: 0,
-        currency: 'usd',
-      };
-
-      const result = await handleCheckoutCompleted(mockSupabase, session);
-      expect(result.success).toBe(false);
-    });
-
-    it('should lookup by customer_email first, then by stripe customer ID', async () => {
-      mockSingle.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'user-456', stripe_customer_id: 'cus_def' });
-
-      const session = {
-        id: 'cs_test_fallback',
-        customer: 'cus_def',
-        customer_email: 'test@example.com',
-        metadata: { type: 'credits', credits: '2' },
-        payment_intent: 'pi_test_fallback',
-        amount_total: 499,
-        currency: 'usd',
-      };
-
-      const result = await handleCheckoutCompleted(mockSupabase, session);
-      expect(result.success).toBe(true);
-      expect(result.userId).toBe('user-456');
+    expect(response.status).toBe(200);
+    expect(sideEffect).toHaveBeenCalledOnce();
+    expect(store.events.get('evt_abandoned')).toMatchObject({
+      status: 'completed',
+      attemptCount: 2,
     });
   });
 
-  describe('subscription events', () => {
-    it('should update subscription status on active subscription', async () => {
-      const mockProfile = { id: 'user-123' };
-      mockSingle.mockResolvedValue(mockProfile);
+  it('never reclaims a completed event, even after the lease duration', () => {
+    const oldStart = Date.now() - WebhookStateStore.leaseMs - 1;
+    store.claim('evt_immutable', 'checkout.session.completed', { now: oldStart });
+    store.complete('evt_immutable');
 
-      const subscription = {
-        id: 'sub_test_123',
-        customer: 'cus_abc',
-        status: 'active',
-        metadata: { plan: 'monthly', credits: '10' },
-      };
+    const claim = store.claim('evt_immutable', 'checkout.session.completed');
 
-      const result = await handleSubscriptionChange(mockSupabase, subscription);
+    expect(claim).toMatchObject({ claimed: false, eventStatus: 'completed', attemptCount: 1 });
+  });
 
-      expect(result.success).toBe(true);
-      expect(result.status).toBe('active');
-      expect(result.credits).toBe(10);
-      expect(mockUpsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: 'user-123',
-          subscription_status: 'active',
-          subscription_type: 'monthly',
-        })
-      );
+  it('rejects a changed payload digest before considering a retry claim', () => {
+    store.claim('evt_digest', 'checkout.session.completed', { payloadDigest: 'a'.repeat(64) });
+    store.fail('evt_digest', 'first attempt failed');
+
+    expect(() => store.claim(
+      'evt_digest',
+      'checkout.session.completed',
+      { payloadDigest: 'b'.repeat(64) },
+    )).toThrow('payload digest mismatch');
+    expect(store.events.get('evt_digest')).toMatchObject({ status: 'failed', attemptCount: 1 });
+  });
+
+  it('reclaims a failed event and completes it on retry', async () => {
+    const first = await runWebhook(store, 'evt_retry', 'invoice.payment_failed', async () => {
+      throw new Error('temporary database failure');
     });
+    const second = await runWebhook(store, 'evt_retry', 'invoice.payment_failed', async () => undefined);
 
-    it('should handle canceled subscription', async () => {
-      const mockProfile = { id: 'user-123' };
-      mockSingle.mockResolvedValue(mockProfile);
-
-      const subscription = {
-        id: 'sub_test_cancel',
-        customer: 'cus_abc',
-        status: 'canceled',
-        metadata: null,
-      };
-
-      const result = await handleSubscriptionChange(mockSupabase, subscription);
-      expect(result.success).toBe(true);
-      expect(result.status).toBe('cancelled');
-    });
-
-    it('should handle past_due subscription', async () => {
-      const mockProfile = { id: 'user-123' };
-      mockSingle.mockResolvedValue(mockProfile);
-
-      const subscription = {
-        id: 'sub_test_pastdue',
-        customer: 'cus_abc',
-        status: 'past_due',
-        metadata: null,
-      };
-
-      const result = await handleSubscriptionChange(mockSupabase, subscription);
-      expect(result.success).toBe(true);
-      expect(result.status).toBe('past_due');
-    });
-
-    it('should set annual subscription type when plan is annual', async () => {
-      const mockProfile = { id: 'user-123' };
-      mockSingle.mockResolvedValue(mockProfile);
-
-      const subscription = {
-        id: 'sub_test_annual',
-        customer: 'cus_abc',
-        status: 'active',
-        metadata: { plan: 'annual', credits: '120' },
-      };
-
-      const result = await handleSubscriptionChange(mockSupabase, subscription);
-      expect(result.success).toBe(true);
-      expect(mockUpsert).toHaveBeenCalledWith(
-        expect.objectContaining({ subscription_type: 'annual' })
-      );
-    });
-
-    it('should fail when user not found for subscription', async () => {
-      mockSingle.mockResolvedValue(null);
-
-      const subscription = {
-        id: 'sub_test_nouser',
-        customer: 'cus_unknown',
-        status: 'active',
-        metadata: null,
-      };
-
-      await expect(handleSubscriptionChange(mockSupabase, subscription)).rejects.toThrow('User not found');
+    expect(first.status).toBe(500);
+    expect(second.status).toBe(200);
+    expect(store.events.get('evt_retry')).toMatchObject({
+      status: 'completed',
+      attemptCount: 2,
+      lastError: null,
     });
   });
 
-  describe('webhook signature verification', () => {
-    it('should reject requests without stripe-signature header', () => {
-      // This tests the pattern from the edge function
-      const signature = null;
-      expect(signature).toBeNull();
-      // In the actual handler, this returns 400
-    });
-
-    it('should handle invalid webhook signature gracefully', () => {
-      // Mock constructEvent throwing
-      const mockConstructEvent = vi.fn(() => {
-        throw new Error('Invalid signature');
+  it('does not grant a purchase twice when a failed event retries after the credit commit', async () => {
+    const ledger = new CreditLedger();
+    let failAfterCredit = true;
+    const purchase = async () => {
+      ledger.apply({
+        userId: 'user-1',
+        amount: 20,
+        transactionType: 'purchase',
+        idempotencyKey: 'stripe:event:evt_purchase:purchase',
       });
+      if (failAfterCredit) {
+        failAfterCredit = false;
+        throw new Error('response lost after credit commit');
+      }
+    };
 
-      expect(() => mockConstructEvent('body', 'invalid-sig', 'whsec_test')).toThrow('Invalid signature');
+    expect((await runWebhook(store, 'evt_purchase', 'checkout.session.completed', purchase)).status).toBe(500);
+    expect((await runWebhook(store, 'evt_purchase', 'checkout.session.completed', purchase)).status).toBe(200);
+    expect(ledger.balance).toBe(20);
+    expect(ledger.entries.size).toBe(1);
+  });
+
+  it('applies a refund as one debit and never performs a second balance mutation', async () => {
+    const ledger = new CreditLedger();
+    ledger.apply({
+      userId: 'user-1',
+      amount: 10,
+      transactionType: 'purchase',
+      idempotencyKey: 'stripe:event:evt_purchase_seed:purchase',
+    });
+    const refund = vi.fn(async () => {
+      ledger.apply({
+        userId: 'user-1',
+        amount: -10,
+        transactionType: 'refund',
+        idempotencyKey: 'stripe:event:evt_refund:refund',
+      });
+    });
+
+    expect((await runWebhook(store, 'evt_refund', 'charge.refunded', refund)).status).toBe(200);
+    expect((await runWebhook(store, 'evt_refund', 'charge.refunded', refund)).duplicate).toBe(true);
+    expect(ledger.balance).toBe(0);
+    expect(refund).toHaveBeenCalledTimes(1);
+    expect([...ledger.entries.values()].filter((entry) => entry.transactionType === 'refund')).toHaveLength(1);
+  });
+
+  it('records a side-effect failure and returns 500 so Stripe retries', async () => {
+    const response = await runWebhook(store, 'evt_failed', 'checkout.session.completed', async () => {
+      throw new Error('profile update failed');
+    });
+
+    expect(response.status).toBe(500);
+    expect(store.events.get('evt_failed')).toMatchObject({
+      status: 'failed',
+      attemptCount: 1,
+      lastError: 'profile update failed',
     });
   });
 });

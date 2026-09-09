@@ -1,0 +1,39 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "bun install --frozen-lockfile",
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "regions": ["iad1"],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com; script-src-elem 'self' 'unsafe-inline' https://js.stripe.com https://js.sentry-cdn.com https://browser.sentry-cdn.com https://www.googletagmanager.com https://challenges.cloudflare.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://*.sentry.io https://o450795b1c31933c205555ef8ca0565d0bd7.ingest.us.sentry.io; frame-src https://js.stripe.com https://hooks.stripe.com https://challenges.cloudflare.com https://www.googletagmanager.com; worker-src 'self' blob:;"
+      },
+      "continue": true
+    },
+    {
+      "src": "/assets/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      },
+      "continue": true
+    },
+    {
+      "src": "/api/auth/(.*)",
+      "dest": "/api/auth/[...path]"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}

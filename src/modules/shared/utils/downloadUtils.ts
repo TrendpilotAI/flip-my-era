@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { saveAs } from 'file-saver';
-import { supabase } from '@/core/integrations/supabase/client';
+import { recordUserActivity } from '@/core/integrations/supabase/userData';
 
 export interface Chapter {
   title: string;
@@ -27,6 +27,7 @@ export interface DownloadOptions {
 }
 
 export interface DownloadAnalytics {
+  /** @deprecated Identity is derived from the BetterAuth session. */
   userId?: string;
   contentType: 'story' | 'ebook';
   contentId: string;
@@ -37,35 +38,15 @@ export interface DownloadAnalytics {
 // Track download analytics
 export const trackDownload = async (analytics: DownloadAnalytics) => {
   try {
-    const { error } = await supabase
-      .from('user_activities')
-      .insert({
-        user_id: analytics.userId,
-        activity_type: 'download',
-        activity_data: {
-          content_type: analytics.contentType,
-          content_id: analytics.contentId,
-          format: analytics.format,
-          downloaded_at: analytics.downloadedAt
-        },
-        resource_type: analytics.contentType,
-        resource_id: analytics.contentId,
-        created_at: new Date().toISOString()
-      });
-
-    if (error) {
-      console.error('Error tracking download:', error);
-    }
-
-    // Update download count in the respective table
-    if (analytics.contentType === 'ebook') {
-      await supabase
-        .from('ebook_generations')
-        .update({ 
-          download_count: supabase.raw('download_count + 1') 
-        })
-        .eq('id', analytics.contentId);
-    }
+    await recordUserActivity({
+      activityType: 'download',
+      contentType: analytics.contentType,
+      contentId: analytics.contentId,
+      metadata: {
+        format: analytics.format,
+        downloaded_at: analytics.downloadedAt,
+      },
+    });
   } catch (error) {
     console.error('Error tracking download analytics:', error);
   }
@@ -449,4 +430,4 @@ export const downloadEbook = async (
       downloadedAt: new Date().toISOString()
     }
   );
-}; 
+};

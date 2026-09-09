@@ -24,7 +24,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
 
 // ─── Re-exported types ────────────────────────────────────────────────────────
 
@@ -102,11 +102,28 @@ interface ProfileRow {
   credits?: number | null;
 }
 
-interface ProfileProvisionPayload {
-  id: string;
-  email: string;
-  name: string;
-  avatar_url: string;
+interface ProfileProvisionResponse {
+  profile?: ProfileRow | null;
+  credits?: number;
+  created?: boolean;
+}
+
+interface CreditBalanceResponse {
+  success?: boolean;
+  data?: {
+    balance?: number | { balance?: number };
+  };
+  balance?: number;
+}
+
+async function provisionCurrentProfile(): Promise<ProfileProvisionResponse> {
+  const { data, error } = await invokeAuthenticatedFunction<ProfileProvisionResponse>(
+    'provision-profile',
+    { method: 'POST' },
+  );
+  if (error) throw error;
+  if (!data?.profile) throw new Error('Profile provisioning returned no profile');
+  return data;
 }
 
 function getBetterAuthUserName(user: BetterAuthClientUser): string {
@@ -243,9 +260,8 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
       const token = await getToken();
       if (!token) return 0;
 
-      const { data, error } = await supabase.functions.invoke('credits', {
+      const { data, error } = await invokeAuthenticatedFunction<CreditBalanceResponse>('credits', {
         method: 'GET',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
       if (error || !data) return 0;
@@ -288,47 +304,18 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const { data: existingProfile, error: fetchError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', u.id)
-          .single();
+        const provisionedProfile = await provisionCurrentProfile();
 
         if (cancelled) return;
+        const provisioned = provisionedProfile.profile;
+        if (!provisioned || String(provisioned.id) !== u.id) {
+          throw new Error('Profile provisioning returned an invalid profile');
+        }
 
-        if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
-
-        if (!existingProfile) {
-          // New user — create profile + grant credits through a service-role Edge Function.
-          const FREE_SIGNUP_CREDITS = 3;
-          const provisionPayload: ProfileProvisionPayload = {
-            id: u.id,
-            email: u.email || '',
-            name: getBetterAuthUserName(u),
-            avatar_url: getBetterAuthAvatarUrl(u),
-          };
-
-          const token = baSession.session?.token ?? await getToken();
-          if (!token) throw new Error('Unable to provision profile without an auth token');
-
-          const { data: provisionedProfile, error: provisionError } = await supabase.functions.invoke('provision-profile', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: provisionPayload,
-          });
-
-          if (provisionError) throw provisionError;
-
-          if (!cancelled && isMountedRef.current) {
-            setIsNewUser(true);
-            const provisioned = ((provisionedProfile as { profile?: ProfileRow; credits?: number } | null)?.profile);
-            setUserProfile(provisioned ? profileRowToAuthUser(provisioned) : betterAuthUserToAuthUser(u, FREE_SIGNUP_CREDITS));
-            setCreditBalance((provisionedProfile as { credits?: number } | null)?.credits ?? FREE_SIGNUP_CREDITS);
-          }
-        } else {
-          if (!cancelled && isMountedRef.current) {
-            setUserProfile(profileRowToAuthUser(existingProfile as ProfileRow));
-          }
+        if (isMountedRef.current) {
+          setIsNewUser(provisionedProfile.created === true);
+          setUserProfile(profileRowToAuthUser(provisioned));
+          setCreditBalance(provisionedProfile.credits ?? provisioned.credits ?? 0);
         }
       } catch (err) {
         if (!cancelled && isMountedRef.current) {
@@ -397,14 +384,15 @@ export function BetterAuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = useCallback(async () => {
     if (!baSession?.user) return;
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', baSession.user.id)
-      .single();
+    const data = await provisionCurrentProfile();
+    if (!data.profile || String(data.profile.id) !== baSession.user.id) {
+      throw new Error('Profile provisioning returned an invalid profile');
+    }
 
-    if (profile && isMountedRef.current) {
-      setUserProfile(profileRowToAuthUser(profile as ProfileRow));
+    if (isMountedRef.current) {
+      setUserProfile(profileRowToAuthUser(data.profile));
+      if (data.credits !== undefined) setCreditBalance(data.credits);
+      if (data.created !== undefined) setIsNewUser(data.created);
     }
     fetchCreditBalance().catch(() => {});
   }, [baSession, fetchCreditBalance]);

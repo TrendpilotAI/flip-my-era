@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { createClient, SupabaseClient } from 'npm:@supabase/supabase-js@2.57.2';
 import RetryQueue, { RetryQueueItem } from '../_shared/retryQueue.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

@@ -8,14 +8,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Badge } from '@/modules/shared/components/ui/badge';
 import { Switch } from '@/modules/shared/components/ui/switch';
 import { Separator } from '@/modules/shared/components/ui/separator';
 import { useClerkAuth } from '@/modules/auth/contexts';
-import { STRIPE_PRODUCTS } from '@/config/stripe-products';
+import { FREE_SIGNUP_CREDITS, STRIPE_PRODUCTS } from '@/config/stripe-products';
 import {
   CheckCircle,
   Sparkles,
@@ -41,6 +41,8 @@ interface TierConfig {
   annualPricePerMonth: number;
   annualTotal: number;
   credits: string;
+  annualCredits?: string;
+  annualCreditFeature?: string;
   gradient: string;
   borderColor: string;
   badgeColor: string;
@@ -61,23 +63,18 @@ const tiers: TierConfig[] = [
     monthlyPrice: 0,
     annualPricePerMonth: 0,
     annualTotal: 0,
-    credits: '3 credits on signup',
+    credits: `${FREE_SIGNUP_CREDITS} credits on signup`,
     gradient: 'from-emerald-50 to-teal-50',
     borderColor: 'border-emerald-200',
     badgeColor: 'bg-emerald-100 text-emerald-800',
     ctaLabel: 'Start Free',
     ctaVariant: 'outline',
     features: [
-      { label: '3 free credits on signup', included: true },
-      { label: '1 era theme unlocked', included: true },
-      { label: 'Basic story generation', included: true },
-      { label: 'Community access', included: true },
-      { label: 'Watermarked exports', included: true },
-      { label: 'All era themes', included: false },
-      { label: 'No watermark', included: false },
-      { label: 'Premium templates', included: false },
-      { label: 'Priority generation', included: false },
-      { label: 'API access', included: false },
+      { label: `${FREE_SIGNUP_CREDITS} free credits on signup`, included: true },
+      { label: 'Story and ebook creation', included: true },
+      { label: 'Personal ebook library', included: true },
+      { label: 'Community gallery access', included: true },
+      { label: 'Publish controls for your ebooks', included: true },
     ],
   },
   {
@@ -88,23 +85,20 @@ const tiers: TierConfig[] = [
     monthlyPrice: 9.99,
     annualPricePerMonth: 7.99,
     annualTotal: 95.88,
-    credits: '3 ebooks/mo',
+    credits: '30 credits/mo',
+    annualCredits: '360 credits/yr',
+    annualCreditFeature: '360 credits granted annually',
     gradient: 'from-purple-50 to-violet-50',
     borderColor: 'border-purple-200',
     badgeColor: 'bg-purple-100 text-purple-800',
     ctaLabel: 'Go Speak Now',
     ctaVariant: 'default',
     features: [
-      { label: '3 ebooks per month', included: true },
-      { label: 'Standard templates', included: true },
-      { label: 'Email support', included: true },
-      { label: 'All era themes unlocked', included: true },
-      { label: 'No watermark on exports', included: true },
-      { label: 'Custom templates', included: false },
-      { label: 'Priority support', included: false },
-      { label: 'Priority generation queue', included: false },
-      { label: 'API access', included: false },
-      { label: 'Team accounts', included: false },
+      { label: '30 credits per month', included: true },
+      { label: 'Story and ebook creation', included: true },
+      { label: 'Personal ebook library', included: true },
+      { label: 'Community gallery publishing', included: true },
+      { label: 'Extra credit packs available anytime', included: true },
     ],
   },
   {
@@ -115,7 +109,9 @@ const tiers: TierConfig[] = [
     monthlyPrice: 19.99,
     annualPricePerMonth: 15.99,
     annualTotal: 191.88,
-    credits: 'Unlimited ebooks',
+    credits: '75 credits/mo',
+    annualCredits: '900 credits/yr',
+    annualCreditFeature: '900 credits granted annually',
     gradient: 'from-indigo-50 to-blue-50',
     borderColor: 'border-indigo-200',
     badgeColor: 'bg-indigo-100 text-indigo-800',
@@ -123,43 +119,35 @@ const tiers: TierConfig[] = [
     ctaVariant: 'default',
     popular: true,
     features: [
-      { label: 'Unlimited ebooks', included: true },
-      { label: 'All templates + custom', included: true },
-      { label: 'Priority support', included: true },
-      { label: 'No watermark on exports', included: true },
-      { label: 'Priority generation queue', included: true },
-      { label: 'Early access to features', included: true },
-      { label: 'Print-ready exports', included: true },
-      { label: 'AI layout suggestions', included: true },
-      { label: 'API access', included: false },
-      { label: 'Team accounts & white-label', included: false },
+      { label: '75 credits per month', included: true },
+      { label: 'Story and ebook creation', included: true },
+      { label: 'Personal ebook library', included: true },
+      { label: 'Community gallery publishing', included: true },
+      { label: 'Extra credit packs available anytime', included: true },
     ],
   },
   {
     key: 'erasTour',
     name: 'The Eras Tour',
-    tagline: 'For teams and brands',
+    tagline: 'Our highest credit allowance',
     icon: <Crown className="h-8 w-8 text-amber-500" />,
     monthlyPrice: 49.99,
     annualPricePerMonth: 39.99,
     annualTotal: 479.88,
-    credits: 'Unlimited + API',
+    credits: '150 credits/mo',
+    annualCredits: '1,800 credits/yr',
+    annualCreditFeature: '1,800 credits granted annually',
     gradient: 'from-amber-50 to-yellow-50',
     borderColor: 'border-amber-200',
     badgeColor: 'bg-amber-100 text-amber-800',
-    ctaLabel: 'Go Enterprise',
+    ctaLabel: 'Go Eras Tour',
     ctaVariant: 'default',
     features: [
-      { label: 'Everything in Midnights', included: true },
-      { label: 'API access', included: true },
-      { label: 'Team accounts (up to 25)', included: true },
-      { label: 'White-label branding', included: true },
-      { label: 'Dedicated account manager', included: true },
-      { label: 'Custom integrations', included: true },
-      { label: 'SLA guarantee', included: true },
-      { label: 'Bulk generation', included: true },
-      { label: 'Analytics dashboard', included: true },
-      { label: 'Priority everything', included: true },
+      { label: '150 credits per month', included: true },
+      { label: 'Story and ebook creation', included: true },
+      { label: 'Personal ebook library', included: true },
+      { label: 'Community gallery publishing', included: true },
+      { label: 'Extra credit packs available anytime', included: true },
     ],
   },
 ];
@@ -206,7 +194,7 @@ const creditPacks: CreditPack[] = [
 
 // ─── Animations ──────────────────────────────────────────────
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -214,7 +202,7 @@ const containerVariants = {
   },
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 40, scale: 0.95 },
   visible: {
     opacity: 1,
@@ -239,7 +227,7 @@ export const PricingPage: React.FC = () => {
     if (params.get('cancelled') === 'true') {
       toast({
         title: 'Checkout cancelled',
-        description: 'No worries — take your time. Upgrade whenever you\'re ready! 🎶',
+        description: 'No worries. Upgrade whenever you are ready.',
       });
       const clean = new URL(window.location.href);
       clean.searchParams.delete('cancelled');
@@ -285,13 +273,17 @@ export const PricingPage: React.FC = () => {
             <span className={`text-sm font-medium ${!annual ? 'text-foreground' : 'text-muted-foreground'}`}>
               Monthly
             </span>
-            <Switch checked={annual} onCheckedChange={setAnnual} />
+            <Switch
+              aria-label="Use annual billing"
+              checked={annual}
+              onCheckedChange={setAnnual}
+            />
             <span className={`text-sm font-medium ${annual ? 'text-foreground' : 'text-muted-foreground'}`}>
               Annual
             </span>
             {annual && (
               <Badge variant="secondary" className="ml-2 text-xs">
-                2 months free ✨
+                Save 20%
               </Badge>
             )}
           </div>
@@ -318,7 +310,7 @@ export const PricingPage: React.FC = () => {
                 >
                   {/* Popular badge */}
                   {tier.popular && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <div className="absolute left-1/2 top-3 -translate-x-1/2">
                       <Badge className="bg-primary text-primary-foreground px-4 py-1 shadow-md">
                         <Sparkles className="h-3 w-3 mr-1" /> MOST POPULAR
                       </Badge>
@@ -351,7 +343,9 @@ export const PricingPage: React.FC = () => {
                       </p>
                     )}
 
-                    <Badge className={`mt-3 ${tier.badgeColor}`}>{tier.credits}</Badge>
+                    <Badge className={`mt-3 ${tier.badgeColor}`}>
+                      {annual && tier.annualCredits ? tier.annualCredits : tier.credits}
+                    </Badge>
                   </CardHeader>
 
                   <CardContent className="pt-0">
@@ -363,7 +357,11 @@ export const PricingPage: React.FC = () => {
                           ) : (
                             <X className="h-4 w-4 text-muted-foreground/40 mr-2 mt-0.5 shrink-0" />
                           )}
-                          <span className={f.included ? '' : 'text-muted-foreground/70'}>{f.label}</span>
+                          <span className={f.included ? '' : 'text-muted-foreground/70'}>
+                            {annual && i === 0 && tier.annualCreditFeature
+                              ? tier.annualCreditFeature
+                              : f.label}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -457,7 +455,7 @@ export const PricingPage: React.FC = () => {
           viewport={{ once: true }}
         >
           <p className="text-sm text-gray-500">
-            All plans include 30-day money-back guarantee · Credits never expire · Cancel anytime
+            Secure checkout via Stripe · Credits never expire · Manage subscriptions anytime
           </p>
           <Button variant="link" className="mt-2" onClick={() => navigate('/faq')}>
             View Pricing FAQ →

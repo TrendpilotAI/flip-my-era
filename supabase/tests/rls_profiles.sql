@@ -1,42 +1,84 @@
--- pgTAP tests: RLS policies for profiles table
--- Run with: supabase test db
-
 BEGIN;
-SELECT plan(8);
 
--- ============================================================================
--- RLS IS ENABLED
--- ============================================================================
+SELECT plan(12);
 
-SELECT row_security_active('public.profiles');
+SELECT has_table('public', 'profiles', 'profiles table exists');
 
--- ============================================================================
--- POLICY EXISTENCE
--- ============================================================================
-
-SELECT policies_are(
-  'public', 'profiles',
-  ARRAY[
-    'Users can view own profile',
-    'Users can insert own profile',
-    'Users can update own profile',
-    'Service role can manage all profiles'
-  ],
-  'profiles has expected RLS policies'
+SELECT ok(
+  (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.profiles'::REGCLASS),
+  'profiles has row-level security enabled'
 );
 
--- ============================================================================
--- POLICY DETAILS
--- ============================================================================
+SELECT ok(
+  (SELECT relforcerowsecurity FROM pg_class WHERE oid = 'public.profiles'::REGCLASS),
+  'profiles forces row-level security for table owners'
+);
 
-SELECT policy_roles_are('public', 'profiles', 'Users can view own profile', ARRAY['authenticated']);
-SELECT policy_cmd_is('public', 'profiles', 'Users can view own profile', 'select');
+SELECT is(
+  (
+    SELECT ARRAY_AGG(policyname::TEXT ORDER BY policyname::TEXT)
+    FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'profiles'
+  ),
+  ARRAY['service_role_all']::TEXT[],
+  'profiles has only the service-role policy'
+);
 
-SELECT policy_roles_are('public', 'profiles', 'Users can insert own profile', ARRAY['authenticated']);
-SELECT policy_cmd_is('public', 'profiles', 'Users can insert own profile', 'insert');
+SELECT is(
+  (
+    SELECT roles::TEXT
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'profiles'
+      AND policyname = 'service_role_all'
+  ),
+  '{service_role}',
+  'profiles policy is scoped to service_role'
+);
 
-SELECT policy_roles_are('public', 'profiles', 'Users can update own profile', ARRAY['authenticated']);
-SELECT policy_cmd_is('public', 'profiles', 'Users can update own profile', 'update');
+SELECT is(
+  (
+    SELECT cmd
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'profiles'
+      AND policyname = 'service_role_all'
+  ),
+  'ALL',
+  'profiles service-role policy covers every command'
+);
+
+SELECT ok(
+  NOT has_table_privilege('anon', 'public.profiles', 'SELECT'),
+  'anon cannot read profiles'
+);
+
+SELECT ok(
+  NOT has_table_privilege('authenticated', 'public.profiles', 'SELECT'),
+  'authenticated cannot read profiles directly'
+);
+
+SELECT ok(
+  NOT has_table_privilege('authenticated', 'public.profiles', 'UPDATE'),
+  'authenticated cannot mutate profiles directly'
+);
+
+SELECT ok(
+  has_table_privilege('service_role', 'public.profiles', 'SELECT'),
+  'service_role can read profiles'
+);
+
+SELECT ok(
+  has_table_privilege('service_role', 'public.profiles', 'INSERT')
+  AND has_table_privilege('service_role', 'public.profiles', 'UPDATE')
+  AND has_table_privilege('service_role', 'public.profiles', 'DELETE'),
+  'service_role can manage profiles'
+);
+
+SELECT ok(
+  NOT has_table_privilege('betterauth_app', 'public.profiles', 'SELECT'),
+  'betterauth_app has no access to legacy profiles'
+);
 
 SELECT * FROM finish();
 ROLLBACK;

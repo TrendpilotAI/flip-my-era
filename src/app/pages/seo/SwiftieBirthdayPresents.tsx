@@ -1,5 +1,6 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
+import { FREE_SIGNUP_CREDITS } from '@/config/stripe-products';
 
 const ARTICLE_SCHEMA = {
   "@context": "https://schema.org",
@@ -114,7 +115,7 @@ const SwiftieBirthdayPresents = () => {
         <div className="bg-gradient-to-r from-violet-600 to-pink-500 text-white rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold mb-3 text-white">Create the Perfect Swiftie Birthday Gift</h2>
           <p className="text-lg mb-6 text-white/90">
-            10 free credits. 5-minute creation time. Infinite happy tears from the birthday Swiftie.
+            Start with {FREE_SIGNUP_CREDITS} free credits at signup and make a personalized birthday keepsake.
           </p>
           <Link
             to="/auth"

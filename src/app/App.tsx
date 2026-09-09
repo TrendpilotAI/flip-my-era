@@ -36,10 +36,9 @@ const OnboardingWizard = lazy(() => import('@/modules/onboarding/OnboardingWizar
 const AdminConversion = lazy(() => import('@/app/pages/AdminConversion'));
 const AdminRevenue = lazy(() => import('@/app/pages/AdminRevenue'));
 const AdminAnalyticsDashboard = lazy(() => import('@/app/pages/AdminAnalyticsDashboard'));
+const FAQ = lazy(() => import('@/app/pages/FAQ'));
 const TermsOfService = lazy(() => import('@/app/pages/TermsOfService'));
 const PrivacyPolicy = lazy(() => import('@/app/pages/PrivacyPolicy'));
-const CreatorProfile = lazy(() => import('@/modules/creators/CreatorProfile'));
-const CreatorAnalytics = lazy(() => import('@/modules/creators/CreatorAnalytics'));
 const MarketplacePage = lazy(() => import('@/modules/marketplace/Marketplace'));
 const GiftCardPage = lazy(() => import('@/modules/gifting/GiftCard'));
 const AffiliateSystem = lazy(() => import('@/modules/affiliates/AffiliateSystem'));
@@ -341,24 +340,8 @@ function App() {
                     </FeatureGate>
                   }
                 />
-                <Route
-                  path="/creator/:id"
-                  element={
-                    <FeatureGate flag="creator_profiles" fallback="notfound">
-                      {lazyRoute(<CreatorProfile />)}
-                    </FeatureGate>
-                  }
-                />
-                <Route
-                  path="/creator/analytics"
-                  element={
-                    <FeatureGate flag="creator_profiles" fallback="notfound">
-                      <ProtectedRoute>{lazyRoute(<CreatorAnalytics />)}</ProtectedRoute>
-                    </FeatureGate>
-                  }
-                />
-
                 <Route path="/pricing" element={lazyRoute(<PricingPage />)} />
+                <Route path="/faq" element={lazyRoute(<FAQ />)} />
                 <Route path="/terms" element={lazyRoute(<TermsOfService />)} />
                 <Route path="/privacy" element={lazyRoute(<PrivacyPolicy />)} />
 

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { supabase } from '@/core/integrations/supabase/client';
+import { listOwnStories } from '@/core/integrations/supabase/userData';
 import { Loader2, BookOpen, Calendar, UserCircle } from "lucide-react";
 import { Button } from '@/modules/shared/components/ui/button';
 import { useNavigate } from "react-router-dom";
@@ -29,13 +29,15 @@ const Stories = () => {
 
   const loadStories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setStories(data || []);
+      const data = await listOwnStories();
+      setStories(data.map((story) => ({
+        id: story.id,
+        title: story.title || 'Untitled Story',
+        name: story.name || '',
+        birth_date: story.birth_date,
+        initial_story: story.initial_story,
+        created_at: story.created_at,
+      })));
     } catch (error: unknown) {
       toast({
         title: "Error loading stories",

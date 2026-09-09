@@ -4,7 +4,7 @@ import { Button } from '@/modules/shared/components/ui/button';
 import { ScrollArea } from '@/modules/shared/components/ui/scroll-area';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Loader2 } from "lucide-react";
-import { supabase } from '@/core/integrations/supabase/client';
+import { listOwnStories } from '@/core/integrations/supabase/userData';
 
 interface Story {
   id: string;
@@ -28,13 +28,13 @@ export const StoriesList = ({ onStorySelect }: StoriesListProps) => {
 
   const loadStories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setStories((data || []) as unknown as Story[]);
+      const data = await listOwnStories();
+      setStories(data.map((story) => ({
+        id: story.id,
+        title: story.title || 'Untitled Story',
+        initial_story: story.initial_story,
+        created_at: story.created_at,
+      })));
     } catch (error: unknown) {
       toast({
         title: "Error loading stories",

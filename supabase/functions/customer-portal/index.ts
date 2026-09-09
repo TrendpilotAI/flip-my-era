@@ -1,12 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { resolveStripeSecretKey } from "../_shared/stripe.ts";
+import { formatErrorResponse, getCorsHeaders, handleCors, verifyAuth } from "../_shared/utils.ts";
 
 // Helper logging function for debugging
 const logStep = (step: string, details?: any) => {
@@ -15,42 +12,53 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     logStep("Function started");
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
-
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
+    const userId = await verifyAuth(req);
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
+    const stripeKey = resolveStripeSecretKey(
+      Deno.env.get("STRIPE_SECRET_KEY"),
+      Deno.env.get("STRIPE_API_KEY"),
+    );
+    logStep("Stripe key verified");
+
+    const { data: profile, error: profileError } = await supabaseClient
+      .from("profiles")
+      .select("email, stripe_customer_id")
+      .eq("id", userId)
+      .single();
+    if (profileError || !profile?.email) throw new Error("User profile not found or missing email");
+    logStep("User authenticated", { userId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found for this user");
+    let customerId = profile.stripe_customer_id as string | null;
+    if (!customerId) {
+      const customers = await stripe.customers.list({ email: profile.email, limit: 1 });
+      if (customers.data.length === 0) throw new Error("No Stripe customer found for this user");
+      customerId = customers.data[0].id;
     }
-    const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || "http://localhost:8080";
+    const origin = req.headers.get("Origin")
+      ?? Deno.env.get("STRIPE_PORTAL_RETURN_URL")
+      ?? "https://flipmyera.com";
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/`,
@@ -64,9 +72,6 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in customer-portal", { message: errorMessage });
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return formatErrorResponse(error, 500, req);
   }
 });

@@ -3,7 +3,7 @@
  *
  * Import this (not auth-server.ts) from any React component or hook.
  *
- * The baseURL points to the Netlify Function that proxies all /api/auth/* routes.
+ * The baseURL points to the same-origin Vercel Function for all /api/auth/* routes.
  */
 import { createAuthClient } from 'better-auth/react';
 
@@ -19,6 +19,8 @@ function getBaseURL(): string {
 export const authClient = createAuthClient({
   baseURL: getBaseURL(),
 });
+
+export const googleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true';
 
 // Convenience re-exports so consumers only need one import
 export const {

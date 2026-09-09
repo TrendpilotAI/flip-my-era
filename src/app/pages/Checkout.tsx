@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { SEO } from '@/modules/shared/components/SEO';
 import { useNavigate, useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/integrations/supabase/client';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/modules/shared/components/ui/radio-group';
@@ -11,6 +11,7 @@ import { Input } from '@/modules/shared/components/ui/input';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Loader2, CheckCircle, Shield, CreditCard } from "lucide-react";
 import { STRIPE_PRODUCTS } from '@/config/stripe-products';
+import type { CheckoutFunctionResponse } from '@/core/integrations/supabase/functionResponses';
 
  
 
@@ -20,87 +21,113 @@ interface PlanOption {
   price: number;
   description: string;
   features: string[];
-  stripeProductId: string;
+  productType: 'credits' | 'subscription';
+  billingLabel: string;
 }
 
-// Use centralized Stripe product configuration
-const planOptions: PlanOption[] = [
+const monthlyPlanOptions: PlanOption[] = [
   {
-    id: "starter",
-    name: STRIPE_PRODUCTS.subscriptions.starter.name || "Swiftie Starter",
-    price: STRIPE_PRODUCTS.subscriptions.starter.price,
-    description: STRIPE_PRODUCTS.subscriptions.starter.description || "Perfect for Taylor Swift fans",
-    features: STRIPE_PRODUCTS.subscriptions.starter.features || [
-      "30 credits per month",
-      "Taylor Swift era templates",
-      "High-quality illustrations",
-      "Character portraits",
-      "Priority support"
-    ],
-    stripeProductId: STRIPE_PRODUCTS.subscriptions.starter.productId,
+    id: "speakNow",
+    name: STRIPE_PRODUCTS.subscriptions.speakNow.name || "Speak Now",
+    price: STRIPE_PRODUCTS.subscriptions.speakNow.price,
+    description: STRIPE_PRODUCTS.subscriptions.speakNow.description || "Find your voice",
+    features: STRIPE_PRODUCTS.subscriptions.speakNow.features || [],
+    productType: 'subscription',
+    billingLabel: '/month',
   },
   {
-    id: "deluxe",
-    name: STRIPE_PRODUCTS.subscriptions.deluxe.name || "Swiftie Deluxe",
-    price: STRIPE_PRODUCTS.subscriptions.deluxe.price,
-    description: STRIPE_PRODUCTS.subscriptions.deluxe.description || "For content creators",
-    features: STRIPE_PRODUCTS.subscriptions.deluxe.features || [
-      "75 credits per month",
-      "Everything in Starter",
-      "Cinematic spreads",
-      "TikTok-ready animations",
-      "Priority GPU processing",
-      "Commercial licensing",
-      "30% off extra credits"
-    ],
-    stripeProductId: STRIPE_PRODUCTS.subscriptions.deluxe.productId,
+    id: "midnights",
+    name: STRIPE_PRODUCTS.subscriptions.midnights.name || "Midnights",
+    price: STRIPE_PRODUCTS.subscriptions.midnights.price,
+    description: STRIPE_PRODUCTS.subscriptions.midnights.description || "You're the main character",
+    features: STRIPE_PRODUCTS.subscriptions.midnights.features || [],
+    productType: 'subscription',
+    billingLabel: '/month',
   },
   {
-    id: "vip",
-    name: STRIPE_PRODUCTS.subscriptions.vip.name || "Opus VIP",
-    price: STRIPE_PRODUCTS.subscriptions.vip.price,
-    description: STRIPE_PRODUCTS.subscriptions.vip.description || "For professional creators",
-    features: STRIPE_PRODUCTS.subscriptions.vip.features || [
-      "150 credits per month",
-      "Everything in Deluxe",
-      "AI audio narration",
-      "Analytics dashboard",
-      "Commercial distribution tools",
-      "Sell on Kindle, Gumroad, etc.",
-      "Custom creator features"
-    ],
-    stripeProductId: STRIPE_PRODUCTS.subscriptions.vip.productId,
+    id: "erasTour",
+    name: STRIPE_PRODUCTS.subscriptions.erasTour.name || "The Eras Tour",
+    price: STRIPE_PRODUCTS.subscriptions.erasTour.price,
+    description: STRIPE_PRODUCTS.subscriptions.erasTour.description || "Our highest monthly credit allowance",
+    features: STRIPE_PRODUCTS.subscriptions.erasTour.features || [],
+    productType: 'subscription',
+    billingLabel: '/month',
   }
 ];
+
+const annualPlanOptions: PlanOption[] = [
+  {
+    id: 'speakNowAnnual',
+    name: STRIPE_PRODUCTS.subscriptions.speakNowAnnual.name || 'Speak Now (Annual)',
+    price: 95.88,
+    description: STRIPE_PRODUCTS.subscriptions.speakNowAnnual.description || 'Annual Speak Now membership',
+    features: STRIPE_PRODUCTS.subscriptions.speakNowAnnual.features || [],
+    productType: 'subscription',
+    billingLabel: '/year',
+  },
+  {
+    id: 'midnightsAnnual',
+    name: STRIPE_PRODUCTS.subscriptions.midnightsAnnual.name || 'Midnights (Annual)',
+    price: 191.88,
+    description: STRIPE_PRODUCTS.subscriptions.midnightsAnnual.description || 'Annual Midnights membership',
+    features: STRIPE_PRODUCTS.subscriptions.midnightsAnnual.features || [],
+    productType: 'subscription',
+    billingLabel: '/year',
+  },
+  {
+    id: 'erasTourAnnual',
+    name: STRIPE_PRODUCTS.subscriptions.erasTourAnnual.name || 'The Eras Tour (Annual)',
+    price: 479.88,
+    description: STRIPE_PRODUCTS.subscriptions.erasTourAnnual.description || 'Annual Eras Tour membership',
+    features: STRIPE_PRODUCTS.subscriptions.erasTourAnnual.features || [],
+    productType: 'subscription',
+    billingLabel: '/year',
+  },
+];
+
+const creditPackOptions: PlanOption[] = Object.entries(STRIPE_PRODUCTS.credits)
+  .filter(([id]) => ['single', 'album', 'tour'].includes(id))
+  .map(([id, pack]) => ({
+    id,
+    name: pack.name || id,
+    price: pack.price,
+    description: pack.description || `${pack.credits} credits`,
+    features: [`${pack.credits} credits`, 'Credits never expire'],
+    productType: 'credits' as const,
+    billingLabel: ' one-time',
+  }));
+
+const allPlanOptions = [...monthlyPlanOptions, ...annualPlanOptions, ...creditPackOptions];
 
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, getToken } = useClerkAuth();
   const { toast } = useToast();
-  const [selectedPlan, setSelectedPlan] = useState<string>("premium");
+  const [selectedPlan, setSelectedPlan] = useState<string>("speakNow");
   const [couponCode, setCouponCode] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   // Get the selected plan from the URL query params if available
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const planFromUrl = params.get("plan");
-    if (planFromUrl && planOptions.some(plan => plan.id === planFromUrl)) {
-      setSelectedPlan(planFromUrl);
+    const requestedProduct = params.get("pack") || params.get("plan");
+    if (requestedProduct && allPlanOptions.some(plan => plan.id === requestedProduct)) {
+      setSelectedPlan(requestedProduct);
     }
   }, [location.search]);
+
+  const selectedPlanOption = allPlanOptions.find(plan => plan.id === selectedPlan) || monthlyPlanOptions[0];
+  const planOptions = selectedPlanOption.productType === 'credits'
+    ? creditPackOptions
+    : selectedPlan.endsWith('Annual')
+      ? annualPlanOptions
+      : monthlyPlanOptions;
 
   const handleProceedToCheckout = async () => {
     setIsProcessing(true);
     
     try {
-      const selectedPlanOption = planOptions.find(plan => plan.id === selectedPlan);
-      
-      if (!selectedPlanOption) {
-        throw new Error("Invalid plan selected");
-      }
-
       // Validate user data before proceeding
       if (!user?.email) {
         throw new Error("User email is required for checkout");
@@ -115,9 +142,9 @@ const Checkout = () => {
       const token = await getToken();
       if (!token) throw new Error("Please sign in again before checkout");
 
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const { data, error } = await invokeAuthenticatedFunction<CheckoutFunctionResponse>('create-checkout', {
         headers: { Authorization: `Bearer ${token}` },
-        body: { plan: selectedPlan }
+        body: { plan: selectedPlan, productType: selectedPlanOption.productType }
       });
 
       if (error) {
@@ -156,7 +183,9 @@ const Checkout = () => {
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold mb-2">Choose Your Plan</h1>
         <p className="text-gray-600">
-          Select the plan that works best for you and your storytelling needs
+          {selectedPlanOption.productType === 'credits'
+            ? 'Choose a one-time credit pack. Purchased credits never expire.'
+            : 'Select the membership that works best for your storytelling needs.'}
         </p>
       </div>
 
@@ -185,7 +214,7 @@ const Checkout = () => {
                         {plan.name}
                       </Label>
                     </div>
-                    <div className="text-2xl font-bold">${plan.price}/mo</div>
+                    <div className="text-2xl font-bold">${plan.price.toFixed(2)}{plan.billingLabel}</div>
                   </div>
                   <CardDescription>{plan.description}</CardDescription>
                 </CardHeader>

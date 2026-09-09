@@ -15,6 +15,7 @@ import { Input } from '@/modules/shared/components/ui/input';
 import { Label } from '@/modules/shared/components/ui/label';
 import { Sparkles, LogIn, UserPlus, Loader2 } from "lucide-react";
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { googleAuthEnabled } from '@/lib/auth-client';
 
 interface AuthDialogProps {
   trigger?: React.ReactNode | null;
@@ -91,7 +92,7 @@ export const AuthDialog = ({ trigger, onSuccess, open, onOpenChange }: AuthDialo
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-            <Sparkles className="h-6 w-6 text-purple-500" />
+            <Sparkles className="h-6 w-6 text-primary" />
             Welcome to Flip My Era
           </DialogTitle>
           <DialogDescription className="text-lg text-gray-600">
@@ -99,14 +100,17 @@ export const AuthDialog = ({ trigger, onSuccess, open, onOpenChange }: AuthDialo
           </DialogDescription>
         </DialogHeader>
         
-        <GoogleSignInButton className="w-full" />
-
-        <div className="relative my-2">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or</span>
-          </div>
-        </div>
+        {googleAuthEnabled && (
+          <>
+            <GoogleSignInButton className="w-full" />
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+          </>
+        )}
 
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -124,7 +128,7 @@ export const AuthDialog = ({ trigger, onSuccess, open, onOpenChange }: AuthDialo
                 <Label htmlFor="dialog-password">Password</Label>
                 <Input id="dialog-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing In...</> : <><LogIn className="h-4 w-4 mr-2" /> Sign In</>}
               </Button>
             </form>
@@ -144,7 +148,7 @@ export const AuthDialog = ({ trigger, onSuccess, open, onOpenChange }: AuthDialo
                 <Label htmlFor="dialog-signup-password">Password</Label>
                 <Input id="dialog-signup-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : <><UserPlus className="h-4 w-4 mr-2" /> Create Account</>}
               </Button>
             </form>

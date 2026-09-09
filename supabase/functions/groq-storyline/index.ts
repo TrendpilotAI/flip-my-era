@@ -1,45 +1,15 @@
 // @ts-ignore -- Deno Edge Function imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore -- Deno Edge Function imports
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 // @ts-ignore -- Deno Edge Function imports
-import { verifyAuth } from "../_shared/utils.ts";
+import { getCorsHeaders, handleCors, verifyAuth } from "../_shared/utils.ts";
+// @ts-ignore -- Deno Edge Function imports
+import { getRateLimitRecord } from "../_shared/rateLimitStorage.ts";
 
-// Credits charged per storyline generation
 const STORYLINE_GENERATION_CREDITS = 2;
-
-const ALLOWED_ORIGINS = [
-  'http://localhost:8081',
-  'https://flip-my-era.netlify.app',
-  'https://flipmyera.com',
-  'https://www.flipmyera.com',
-];
-
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get('Origin') || '';
-  return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
-
-// Import rate limiting utility
-// @ts-ignore -- Deno import
-import { getRateLimitRecord } from '../_shared/rateLimitStorage.ts';
-
-const RATE_LIMIT = {
-  maxRequests: 10, // More restrictive for storyline generation
-  windowMs: 3600000, // 1 hour
-};
-
-const REQUEST_TIMEOUT_MS = 60000; // 60 seconds (longer for storyline generation)
-
-// verifyAuth is imported from _shared/utils.ts — cryptographically verifies JWT
-
-// Debug logging removed for security - was sending to hardcoded localhost endpoint
+const REQUEST_TIMEOUT_MS = 60000;
+const RATE_LIMIT = { maxRequests: 10, windowMs: 3600000 };
 
 interface GenerateStorylineRequest {
   era: string;
@@ -50,390 +20,278 @@ interface GenerateStorylineRequest {
   promptDescription: string;
   customPrompt?: string;
   systemPrompt: string;
-  idempotency_key?: string; // Client-generated UUID to prevent double-charging
-  pre_authorized_transaction_id?: string; // If provided, credits were already deducted by credits-validate — skip deduction here
+  idempotency_key?: string;
 }
 
 interface Storyline {
   logline: string;
   threeActStructure: {
-    act1: {
-      setup: string;
-      incitingIncident: string;
-      firstPlotPoint: string;
-    };
-    act2: {
-      risingAction: string;
-      midpoint: string;
-      darkNightOfTheSoul: string;
-    };
-    act3: {
-      climax: string;
-      resolution: string;
-      closingImage: string;
-    };
+    act1: { setup: string; incitingIncident: string; firstPlotPoint: string };
+    act2: { risingAction: string; midpoint: string; darkNightOfTheSoul: string };
+    act3: { climax: string; resolution: string; closingImage: string };
   };
-  chapters: Array<{
-    number: number;
-    title: string;
-    summary: string;
-    wordCountTarget: number;
-  }>;
+  chapters: Array<{ number: number; title: string; summary: string; wordCountTarget: number }>;
   themes: string[];
   wordCountTotal: number;
 }
 
+interface GenerationClaim {
+  outcome: 'claimed' | 'replay' | 'in_progress' | 'insufficient' | 'failed';
+  current_balance: number | string | null;
+  response_cache: Record<string, unknown> | null;
+  lease_token: string | null;
+  lease_expires_at: string | null;
+}
+
+function jsonResponse(
+  body: Record<string, unknown>,
+  status: number,
+  corsHeaders: Record<string, string>,
+  idempotencyKey?: string,
+  headers: Record<string, string> = {},
+): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      ...(idempotencyKey ? { 'X-Idempotency-Key': idempotencyKey } : {}),
+      ...headers,
+    },
+  });
+}
+
+function sanitizeForPrompt(input: string, maxLength: number): string {
+  return input
+    .replace(/ignore\s+(previous|above|all)\s+instructions/gi, '')
+    .replace(/system\s*:/gi, '')
+    .replace(/user\s*:/gi, '')
+    .replace(/assistant\s*:/gi, '')
+    .replace(/```/g, '')
+    .trim()
+    .substring(0, maxLength);
+}
+
+function validateInput(params: GenerateStorylineRequest): string | null {
+  if (!params.era || typeof params.era !== 'string' || !params.era.trim()) {
+    return 'Era is required and must be a non-empty string';
+  }
+  if (params.era.length > 100) return 'Era must be 100 characters or less';
+  if (!params.characterName || typeof params.characterName !== 'string' || !params.characterName.trim()) {
+    return 'Character name is required and cannot be empty';
+  }
+  if (params.characterName.length > 50) return 'Character name must be 50 characters or less';
+  if (typeof params.characterArchetype !== 'string' || params.characterArchetype.length > 100) {
+    return 'Character archetype must be a string of at most 100 characters';
+  }
+  if (!params.location || typeof params.location !== 'string' || !params.location.trim()) {
+    return 'Location is required and cannot be empty';
+  }
+  if (params.location.length > 100) return 'Location must be 100 characters or less';
+  if (!['same', 'flip', 'neutral'].includes(params.gender)) {
+    return 'Gender must be same, flip, or neutral';
+  }
+  if (typeof params.promptDescription !== 'string' || params.promptDescription.length > 2000) {
+    return 'Prompt description must be a string of at most 2,000 characters';
+  }
+  if (params.customPrompt !== undefined && (typeof params.customPrompt !== 'string' || params.customPrompt.length > 2000)) {
+    return 'Custom prompt must be a string of at most 2,000 characters';
+  }
+  if (!params.systemPrompt || typeof params.systemPrompt !== 'string' || !params.systemPrompt.trim()) {
+    return 'System prompt is required';
+  }
+  if (params.systemPrompt.length > 10000) return 'System prompt must be 10,000 characters or less';
+  return null;
+}
+
 serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
   const corsHeaders = getCorsHeaders(req);
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method !== 'POST') {
+    return jsonResponse({ error: 'METHOD_NOT_ALLOWED', message: 'Only POST is supported' }, 405, corsHeaders);
   }
 
+  let userId: string | null = null;
+  let idempotencyKey: string | null = null;
+  let leaseToken: string | null = null;
+  let claimWasCharged = false;
+  let adminClient: SupabaseClient<any> | null = null;
+
+  const failClaim = async (errorCode: string, errorMessage: string): Promise<boolean> => {
+    if (!claimWasCharged || !adminClient || !userId || !idempotencyKey || !leaseToken) {
+      return true;
+    }
+
+    const { data, error } = await adminClient
+      .rpc('fail_generation_request', {
+        p_user_id: userId,
+        p_idempotency_key: idempotencyKey,
+        p_lease_token: leaseToken,
+        p_error_code: errorCode,
+        p_error_message: errorMessage,
+      })
+      .single();
+
+    const failureResult = data as { success?: boolean } | null;
+    if (error || !failureResult?.success) {
+      console.error('Unable to finalize failed storyline request:', error ?? data);
+      return false;
+    }
+
+    claimWasCharged = false;
+    return true;
+  };
+
   try {
-    // Get Groq API key from environment
+    userId = await verifyAuth(req);
+    if (!userId) {
+      return jsonResponse({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' }, 401, corsHeaders);
+    }
+
     const groqApiKey = Deno.env.get('GROQ_API_KEY');
     if (!groqApiKey) {
-      console.error('GROQ_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'GROQ_API_KEY_MISSING', message: 'Groq API key not configured' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      return jsonResponse({ error: 'GROQ_API_KEY_MISSING', message: 'Groq API key not configured' }, 500, corsHeaders);
     }
 
-    // Verify JWT cryptographically via Supabase auth.getUser()
-    const userId = await verifyAuth(req);
-
-    if (!userId) {
-      return new Response(
-        JSON.stringify({ error: 'UNAUTHORIZED', message: 'Invalid or expired token' }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    let params: GenerateStorylineRequest;
+    try {
+      params = await req.json();
+    } catch {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Request body must be valid JSON' }, 400, corsHeaders);
     }
 
-    // Rate limiting check for storyline generation
-    const rateLimitKey = `groq-storyline:${userId}`;
-    const rateLimitRecord = await getRateLimitRecord(rateLimitKey, RATE_LIMIT);
+    const validationError = validateInput(params);
+    if (validationError) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: validationError }, 400, corsHeaders);
+    }
+
+    idempotencyKey = (
+      params.idempotency_key
+      ?? req.headers.get('Idempotency-Key')
+      ?? crypto.randomUUID()
+    ).trim();
+    if (!idempotencyKey || idempotencyKey.length > 200) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Idempotency key must contain 1 to 200 characters' }, 400, corsHeaders);
+    }
+
+    const rateLimitRecord = await getRateLimitRecord(`groq-storyline:${userId}`, RATE_LIMIT);
     if (!rateLimitRecord.allowed) {
-      return new Response(
-        JSON.stringify({
-          error: 'RATE_LIMIT_EXCEEDED',
-          message: 'Too many storyline generation requests. Please try again later.',
-          retryAfter: Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000),
-        }),
+      const retryAfter = Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000);
+      return jsonResponse(
+        { error: 'RATE_LIMIT_EXCEEDED', message: 'Too many storyline generation requests. Please try again later.', retryAfter },
+        429,
+        corsHeaders,
+        idempotencyKey,
         {
-          status: 429,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-            'Retry-After': String(Math.ceil((rateLimitRecord.resetAt - Date.now()) / 1000)),
-            'X-RateLimit-Limit': String(RATE_LIMIT.maxRequests),
-            'X-RateLimit-Remaining': String(rateLimitRecord.remaining),
-            'X-RateLimit-Reset': String(rateLimitRecord.resetAt),
-          },
-        }
+          'Retry-After': String(retryAfter),
+          'X-RateLimit-Limit': String(RATE_LIMIT.maxRequests),
+          'X-RateLimit-Remaining': String(rateLimitRecord.remaining),
+          'X-RateLimit-Reset': String(rateLimitRecord.resetAt),
+        },
       );
     }
 
-    // Parse request body
-    const params: GenerateStorylineRequest & { pre_authorized_transaction_id?: string } = await req.json();
-    const {
-      era,
-      characterName,
-      characterArchetype,
-      gender,
-      location,
-      promptDescription,
-      customPrompt,
-      systemPrompt,
-      idempotency_key,
-      pre_authorized_transaction_id,
-    } = params;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceKey) {
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Credit service is not configured' }, 503, corsHeaders, idempotencyKey);
+    }
+    adminClient = createClient<any>(supabaseUrl, serviceKey);
 
-    // --- SERVER-SIDE CREDIT SYSTEM ---
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    const adminClient = createClient(supabaseUrl, serviceKey);
+    const sanitizedCharacterName = sanitizeForPrompt(params.characterName, 50);
+    const sanitizedLocation = sanitizeForPrompt(params.location, 100);
+    const sanitizedPromptDescription = sanitizeForPrompt(params.promptDescription, 2000);
+    const sanitizedCustomPrompt = params.customPrompt ? sanitizeForPrompt(params.customPrompt, 2000) : '';
+    const sanitizedSystemPrompt = sanitizeForPrompt(params.systemPrompt, 10000);
+    const sanitizedEra = sanitizeForPrompt(params.era, 100);
+    const sanitizedArchetype = sanitizeForPrompt(params.characterArchetype || 'protagonist', 100);
 
-    // 1. Idempotency check — return cached response if already processed
-    if (idempotency_key) {
-      const { data: existingRequest } = await adminClient
-        .from('generation_requests')
-        .select('status, response_cache')
-        .eq('idempotency_key', idempotency_key)
-        .eq('user_id', userId)
-        .single();
-
-      if (existingRequest) {
-        if (existingRequest.status === 'completed' && existingRequest.response_cache) {
-          console.log(`Idempotent replay for storyline key ${idempotency_key}, user ${userId}`);
-          return new Response(
-            JSON.stringify(existingRequest.response_cache),
-            {
-              status: 200,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Idempotent-Replay': 'true' },
-            }
-          );
-        }
-        if (existingRequest.status === 'pending') {
-          return new Response(
-            JSON.stringify({ error: 'REQUEST_IN_PROGRESS', message: 'A storyline generation with this key is already in progress.' }),
-            {
-              status: 409,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            }
-          );
-        }
-      }
+    if (!sanitizedCharacterName || !sanitizedLocation || !sanitizedSystemPrompt) {
+      return jsonResponse({ error: 'BAD_REQUEST', message: 'Required prompt fields became empty after sanitization' }, 400, corsHeaders, idempotencyKey);
     }
 
-    // 2. Credit handling — either verify pre-authorization or deduct now
-    let transactionId: string | null = null;
+    const { data: claimData, error: claimError } = await adminClient
+      .rpc('claim_generation_request', {
+        p_user_id: userId,
+        p_idempotency_key: idempotencyKey,
+        p_operation_type: 'storyline_generation',
+        p_credits: STORYLINE_GENERATION_CREDITS,
+        p_metadata: { era: sanitizedEra },
+      })
+      .single();
 
-    if (pre_authorized_transaction_id) {
-      // Credits were already deducted by credits-validate. Verify the transaction exists and belongs to this user.
-      const { data: existingTx, error: txLookupError } = await adminClient
-        .from('credit_transactions')
-        .select('id, user_id, amount')
-        .eq('id', pre_authorized_transaction_id)
-        .eq('user_id', userId)
-        .single();
-
-      if (txLookupError || !existingTx) {
-        console.error('Pre-authorized transaction not found or does not belong to user:', {
-          pre_authorized_transaction_id, userId, error: txLookupError?.message
-        });
-        return new Response(
-          JSON.stringify({ error: 'INVALID_TRANSACTION', message: 'Pre-authorized transaction is invalid. Please try again.' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      transactionId = pre_authorized_transaction_id;
-      console.log(`Using pre-authorized transaction ${transactionId} for user ${userId} — skipping deduction`);
-    } else {
-      // No pre-authorization — this is a direct call, deduct credits now
-      const { data: deductResult, error: deductError } = await adminClient
-        .rpc('deduct_credits', {
-          p_user_id: userId,
-          p_amount: STORYLINE_GENERATION_CREDITS,
-          p_description: 'Storyline generation',
-          p_metadata: {
-            operation_type: 'storyline_generation',
-            idempotency_key: idempotency_key || null,
-          },
-        })
-        .single();
-
-      if (deductError) {
-        console.error('Credit deduction error for storyline:', deductError);
-        return new Response(
-          JSON.stringify({ error: 'CREDIT_SERVICE_ERROR', message: 'Unable to process credits. Please try again.' }),
-          {
-            status: 503,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      if (!deductResult?.success) {
-        const { data: balanceData } = await adminClient
-          .from('user_credits')
-          .select('balance')
-          .eq('user_id', userId)
-          .single();
-
-        return new Response(
-          JSON.stringify({
-            error: 'INSUFFICIENT_CREDITS',
-            message: 'You do not have enough credits to generate a storyline.',
-            current_balance: balanceData?.balance ?? 0,
-            required: STORYLINE_GENERATION_CREDITS,
-          }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      transactionId = deductResult.transaction_id;
+    if (claimError || !claimData) {
+      console.error('Storyline claim failed:', claimError);
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Unable to process credits. Please try again.' }, 503, corsHeaders, idempotencyKey);
     }
 
-    // 3. Register idempotency record as 'pending'
-    let generationRequestId: string | null = null;
-    if (idempotency_key) {
-      const { data: genReq } = await adminClient
-        .from('generation_requests')
-        .insert({
-          idempotency_key,
-          user_id: userId,
-          operation_type: 'storyline_generation',
-          credits_charged: STORYLINE_GENERATION_CREDITS,
-          transaction_id: transactionId,
-          status: 'pending',
-        })
-        .select('id')
-        .single();
-      generationRequestId = genReq?.id ?? null;
+    const claim = claimData as GenerationClaim;
+    if (claim.outcome === 'replay' && claim.response_cache) {
+      return jsonResponse(claim.response_cache, 200, corsHeaders, idempotencyKey, { 'X-Idempotent-Replay': 'true' });
     }
-
-    // Input validation
-    if (!era || typeof era !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Era is required and must be a string' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+    if (claim.outcome === 'in_progress') {
+      return jsonResponse(
+        { error: 'REQUEST_IN_PROGRESS', message: 'A storyline generation with this key is already in progress.' },
+        409,
+        corsHeaders,
+        idempotencyKey,
       );
     }
-
-    if (!characterName || typeof characterName !== 'string' || characterName.trim().length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Character name is required and cannot be empty' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
+    if (claim.outcome === 'insufficient') {
+      return jsonResponse({
+        error: 'INSUFFICIENT_CREDITS',
+        message: 'You do not have enough credits to generate a storyline.',
+        current_balance: Number(claim.current_balance ?? 0),
+        required: STORYLINE_GENERATION_CREDITS,
+      }, 402, corsHeaders, idempotencyKey);
+    }
+    if (claim.outcome === 'failed') {
+      return jsonResponse(
+        { error: 'REQUEST_PREVIOUSLY_FAILED', message: 'This storyline attempt failed. Retry with a new idempotency key.' },
+        409,
+        corsHeaders,
+        idempotencyKey,
       );
     }
-
-    if (characterName.length > 50) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Character name must be 50 characters or less' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (claim.outcome !== 'claimed') {
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Unexpected generation claim state' }, 503, corsHeaders, idempotencyKey);
     }
-
-    if (!location || typeof location !== 'string' || location.trim().length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Location is required and cannot be empty' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+    if (!claim.lease_token) {
+      return jsonResponse({ error: 'CREDIT_SERVICE_ERROR', message: 'Storyline claim did not provide a lease' }, 503, corsHeaders, idempotencyKey);
     }
+    leaseToken = claim.lease_token;
+    claimWasCharged = true;
 
-    if (location.length > 100) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Location must be 100 characters or less' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    if (!['same', 'flip', 'neutral'].includes(gender)) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'Gender must be same, flip, or neutral' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Validate systemPrompt
-    if (!systemPrompt || typeof systemPrompt !== 'string' || systemPrompt.trim().length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'BAD_REQUEST', message: 'System prompt is required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // Enhanced sanitization to prevent prompt injection
-    const sanitizeForPrompt = (input: string, maxLength: number): string => {
-      return input
-        .replace(/ignore\s+(previous|above|all)\s+instructions/gi, '')
-        .replace(/system\s*:/gi, '')
-        .replace(/user\s*:/gi, '')
-        .replace(/assistant\s*:/gi, '')
-        .replace(/```/g, '')
-        .trim()
-        .substring(0, maxLength);
-    };
-
-    const sanitizedCharacterName = sanitizeForPrompt(characterName, 50);
-    const sanitizedLocation = sanitizeForPrompt(location, 100);
-    const sanitizedPromptDescription = promptDescription ? sanitizeForPrompt(promptDescription, 2000) : '';
-    const sanitizedCustomPrompt = customPrompt ? sanitizeForPrompt(customPrompt, 2000) : '';
-    const sanitizedSystemPrompt = sanitizeForPrompt(systemPrompt, 10000);
-
-    // Construct user request with sanitized inputs
     const userRequest = `
 Create a structured storyline following the Master System Prompt framework for the following story:
 
 ## Story Details:
 - **Character Name**: ${sanitizedCharacterName}
-- **Character Archetype**: ${characterArchetype || 'protagonist'}
-- **Gender Presentation**: ${gender}
+- **Character Archetype**: ${sanitizedArchetype}
+- **Gender Presentation**: ${params.gender}
 - **Location**: ${sanitizedLocation}
 - **Story Prompt**: ${sanitizedCustomPrompt || sanitizedPromptDescription}
 
 ## Required Output Format:
-Please provide a complete storyline structure in the following JSON format:
-
-\`\`\`json
+Return JSON with this exact top-level shape:
 {
-  "logline": "A compelling one-sentence logline following the formula: When [INCITING INCIDENT], a [CHARACTER DESCRIPTION] must [OBJECTIVE] or else [STAKES], but faces [CENTRAL OBSTACLE].",
+  "logline": "string",
   "threeActStructure": {
-    "act1": {
-      "setup": "Description of the opening and world establishment",
-      "incitingIncident": "The event that disrupts the status quo",
-      "firstPlotPoint": "The moment the character commits to the journey"
-    },
-    "act2": {
-      "risingAction": "Description of escalating challenges and obstacles",
-      "midpoint": "Major twist or revelation at the story's center",
-      "darkNightOfTheSoul": "The lowest point where character faces deepest fears"
-    },
-    "act3": {
-      "climax": "Final confrontation with the central conflict",
-      "resolution": "New equilibrium established",
-      "closingImage": "Ending that mirrors or contrasts with the opening"
-    }
+    "act1": { "setup": "string", "incitingIncident": "string", "firstPlotPoint": "string" },
+    "act2": { "risingAction": "string", "midpoint": "string", "darkNightOfTheSoul": "string" },
+    "act3": { "climax": "string", "resolution": "string", "closingImage": "string" }
   },
-  "chapters": [
-    {
-      "number": 1,
-      "title": "Chapter title",
-      "summary": "Brief summary of chapter content and key events",
-      "wordCountTarget": 800
-    }
-  ],
-  "themes": ["Theme 1", "Theme 2", "Theme 3"],
+  "chapters": [{ "number": 1, "title": "string", "summary": "string", "wordCountTarget": 800 }],
+  "themes": ["string"],
   "wordCountTotal": 5000
 }
-\`\`\`
 
-Ensure the storyline:
-1. Captures the essence of the ${era} era
-2. Features ${sanitizedCharacterName} as the ${characterArchetype || 'protagonist'}
-3. Is set in ${sanitizedLocation}
-4. Follows the three-act structure
-5. Includes 3-6 chapters with appropriate pacing
-6. Incorporates themes relevant to the era and story
+The storyline must capture the ${sanitizedEra} era, feature ${sanitizedCharacterName},
+be set in ${sanitizedLocation}, follow a three-act structure, and include 3-6 chapters.
 `;
 
-    // Call Groq API with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -447,14 +305,8 @@ Ensure the storyline:
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [
-            {
-              role: 'system',
-              content: sanitizedSystemPrompt,
-            },
-            {
-              role: 'user',
-              content: userRequest,
-            },
+            { role: 'system', content: sanitizedSystemPrompt },
+            { role: 'user', content: userRequest },
           ],
           temperature: 0.7,
           max_tokens: 4096,
@@ -463,108 +315,83 @@ Ensure the storyline:
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
       if (!groqResponse.ok) {
         const errorData = await groqResponse.json().catch(() => ({}));
-        const errorMessage = errorData.error?.message || 'Groq API request failed';
-        console.error('Groq API error:', groqResponse.status, errorMessage);
-        return new Response(
-          JSON.stringify({
-            error: 'GROQ_API_ERROR',
-            message: errorMessage,
-            status: groqResponse.status,
-          }),
-          {
-            status: groqResponse.status >= 500 ? 500 : groqResponse.status,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
+        const message = errorData.error?.message || 'Groq API request failed';
+        const refunded = await failClaim('GROQ_API_ERROR', message);
+        if (!refunded) {
+          return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'Storyline generation failed and its credit refund could not be confirmed.' }, 503, corsHeaders, idempotencyKey);
+        }
+        return jsonResponse(
+          { error: 'GROQ_API_ERROR', message, status: groqResponse.status },
+          groqResponse.status >= 500 ? 500 : groqResponse.status,
+          corsHeaders,
+          idempotencyKey,
         );
       }
 
       const data = await groqResponse.json();
       const responseText = data.choices[0]?.message?.content || '';
-
-      // Extract JSON from response (it might be wrapped in markdown code blocks)
-      let jsonText = responseText;
       const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        jsonText = jsonMatch[1];
-      }
+      const storyline = JSON.parse(jsonMatch ? jsonMatch[1] : responseText) as Storyline;
 
-      // Parse the JSON response
-      const storyline = JSON.parse(jsonText) as Storyline;
-
-      // Validate the structure
-      if (!storyline.logline || !storyline.threeActStructure || !storyline.chapters) {
-        console.error('Invalid storyline structure returned from AI');
-        return new Response(
-          JSON.stringify({
-            error: 'INVALID_STORYLINE',
-            message: 'Invalid storyline structure returned from AI',
-          }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+      if (!storyline.logline
+          || !storyline.threeActStructure?.act1
+          || !storyline.threeActStructure?.act2
+          || !storyline.threeActStructure?.act3
+          || !Array.isArray(storyline.chapters)
+          || storyline.chapters.length === 0
+          || !Array.isArray(storyline.themes)
+          || !Number.isFinite(storyline.wordCountTotal)) {
+        const refunded = await failClaim('INVALID_STORYLINE', 'Invalid storyline structure returned from AI');
+        if (!refunded) {
+          return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'Invalid storyline response and its credit refund could not be confirmed.' }, 503, corsHeaders, idempotencyKey);
+        }
+        return jsonResponse({ error: 'INVALID_STORYLINE', message: 'Invalid storyline structure returned from AI' }, 500, corsHeaders, idempotencyKey);
       }
 
       const responsePayload = { storyline };
+      const { data: completed, error: completeError } = await adminClient
+        .rpc('complete_generation_request', {
+          p_user_id: userId,
+          p_idempotency_key: idempotencyKey,
+          p_response_cache: responsePayload,
+          p_lease_token: leaseToken,
+        })
+        .single();
 
-      // Mark idempotency record as completed and cache response
-      if (generationRequestId) {
-        await adminClient
-          .from('generation_requests')
-          .update({
-            status: 'completed',
-            response_cache: responsePayload,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', generationRequestId);
+      const completeResult = completed as { success?: boolean } | null;
+      if (completeError || !completeResult?.success) {
+        console.error('Unable to complete storyline request:', completeError ?? completed);
+        await failClaim('COMPLETION_ERROR', 'Unable to persist completed storyline response');
+        return jsonResponse({ error: 'GENERATION_STATE_ERROR', message: 'Storyline completed but its result could not be finalized. Retry with the same key.' }, 503, corsHeaders, idempotencyKey);
       }
 
-      return new Response(
-        JSON.stringify(responsePayload),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
+      claimWasCharged = false;
+      return jsonResponse(responsePayload, 200, corsHeaders, idempotencyKey);
     } catch (error) {
-      clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.error('Groq request timeout');
-        if (generationRequestId) {
-          await adminClient
-            .from('generation_requests')
-            .update({ status: 'failed', completed_at: new Date().toISOString() })
-            .eq('id', generationRequestId);
-        }
-        return new Response(
-          JSON.stringify({
-            error: 'REQUEST_TIMEOUT',
-            message: 'Storyline generation took too long. Please try again.',
-          }),
-          {
-            status: 408,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
+      const isTimeout = error instanceof Error && error.name === 'AbortError';
+      const isParseError = error instanceof SyntaxError;
+      const code = isTimeout ? 'REQUEST_TIMEOUT' : isParseError ? 'INVALID_STORYLINE' : 'GENERATION_ERROR';
+      const message = isTimeout
+        ? 'Storyline generation took too long. Please try again.'
+        : isParseError
+          ? 'Invalid storyline structure returned from AI'
+          : error instanceof Error ? error.message : 'Storyline generation failed';
+      const refunded = await failClaim(code, message);
+      if (!refunded) {
+        return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'Storyline generation failed and its credit refund could not be confirmed.' }, 503, corsHeaders, idempotencyKey);
       }
-      throw error; // Re-throw to outer catch block
+      return jsonResponse({ error: code, message }, isTimeout ? 408 : 500, corsHeaders, idempotencyKey);
+    } finally {
+      clearTimeout(timeoutId);
     }
   } catch (error) {
-    console.error('Unhandled error during storyline generation:', error);
-    return new Response(
-      JSON.stringify({
-        error: 'INTERNAL_ERROR',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const refunded = await failClaim('INTERNAL_ERROR', message);
+    if (!refunded) {
+      return jsonResponse({ error: 'CREDIT_REFUND_ERROR', message: 'The request failed and its credit refund could not be confirmed.' }, 503, corsHeaders, idempotencyKey ?? undefined);
+    }
+    return jsonResponse({ error: 'INTERNAL_ERROR', message }, 500, corsHeaders, idempotencyKey ?? undefined);
   }
 });

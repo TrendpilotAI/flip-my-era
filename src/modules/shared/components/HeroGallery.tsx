@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { cn } from "@/core/lib/utils";
 import { Button } from "@/modules/shared/components/ui/button";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, CheckCircle2 } from "lucide-react";
+import { FREE_SIGNUP_CREDITS } from "@/config/stripe-products";
 
 export const HeroGallery = ({
   animationDelay = 0.5,
@@ -32,7 +33,7 @@ export const HeroGallery = ({
     };
   }, [animationDelay]);
 
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -43,7 +44,7 @@ export const HeroGallery = ({
     },
   };
 
-  const photoVariants = {
+  const photoVariants: Variants = {
     hidden: () => ({
       x: 0,
       y: 80,
@@ -198,21 +199,15 @@ export const HeroGallery = ({
 
   return (
     <div className="relative mt-32">
-      <div className="absolute inset-0 -z-20 bg-gradient-to-b from-[#fde2ff] via-[#f3e8ff] to-[#ede9fe] opacity-90" />
-      <div className="absolute inset-[8%] -z-10 rounded-[56px] bg-[radial-gradient(circle_at_top,#f6d3ff_0%,transparent_65%)] opacity-70 blur-[40px]" />
-      <div className="absolute inset-0 max-md:hidden top-[180px] -z-10 h-[340px] w-full bg-transparent bg-[linear-gradient(to_right,rgba(147,51,234,0.25)_1px,transparent_1px),linear-gradient(to_bottom,rgba(236,72,153,0.2)_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-70 [mask-image:radial-gradient(ellipse_90%_60%_at_50%_-10%,#000_60%,transparent_110%)]" />
-
-      <p className="lg:text-md my-2 text-center text-xs font-light uppercase tracking-widest text-purple-600 dark:text-purple-400">
-        A Journey Through Taylor Swift's Eras
-      </p>
+      <div className="absolute inset-0 -z-20 bg-gradient-to-b from-rose-50/90 via-background to-sky-50/80 dark:from-neutral-950 dark:via-neutral-900 dark:to-slate-950" />
       
-      <h1 className="z-20 mx-auto max-w-4xl justify-center bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text py-3 text-center text-4xl text-transparent dark:bg-gradient-to-r dark:from-purple-100 dark:via-pink-200 dark:to-blue-100 md:text-7xl font-bold">
-        Flip My <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text">Era</span>
+      <h1 className="z-20 mx-auto max-w-4xl justify-center py-3 text-center text-4xl font-bold text-foreground md:text-7xl">
+        Flip My <span className="text-primary">Era</span>
       </h1>
       
       {/* h2 for SEO keyword hierarchy — targets "personalized Taylor Swift eras tour storybook" */}
       <h2 className="text-center text-gray-600 dark:text-gray-400 mt-4 text-lg max-w-2xl mx-auto px-4 font-normal">
-        Create your personalized Taylor Swift Eras Tour storybook — upload your photo, pick your era, and get a beautifully illustrated story in under 60 seconds.
+        Create your personalized era-inspired storybook. Upload your photo, choose a theme, and follow the generation progress from story to illustrated ebook.
       </h2>
 
       <div className="relative mb-10 h-[460px] w-full items-center justify-center lg:flex">
@@ -261,13 +256,14 @@ export const HeroGallery = ({
         <Button
           size="lg"
           onClick={onGetStarted}
-          className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white hover:from-purple-700 hover:to-pink-600 px-10 py-7 text-lg font-bold shadow-2xl hover:shadow-purple-500/25 transition-all"
+          className="bg-primary px-10 py-7 text-lg font-bold text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
         >
           Create Your Story Free
           <ArrowDown className="ml-2 h-5 w-5" />
         </Button>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          ✨ No credit card required • 10 free credits to start
+        <p className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+          No credit card required · {FREE_SIGNUP_CREDITS} free credits at signup
         </p>
       </div>
     </div>

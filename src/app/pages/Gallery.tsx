@@ -5,40 +5,11 @@ import { Input } from '@/modules/shared/components/ui/input';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/modules/shared/components/ui/tabs';
 import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction, supabase } from '@/core/integrations/supabase/client';
 import { Search, BookOpen, Loader2, LockKeyhole, Library, Globe2, ShieldCheck } from 'lucide-react';
 import type { Json } from '@/integrations/supabase/types';
 
 const PAGE_SIZE = 24;
-const MEMORY_BOOK_SELECT =
-  'id, title, subtitle, author_name, cover_image_url, generation_settings, style_preferences, chapter_count, word_count, created_at, published_at, status, ebook_generation_id, chapters';
-
-interface CommunityBookRow {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  author_name: string | null;
-  cover_image_url: string | null;
-  generation_settings: Json | null;
-  style_preferences: Json | null;
-  chapter_count: number | null;
-  word_count: number | null;
-  created_at: string;
-  published_at: string | null;
-  status: string;
-  ebook_generation_id?: string | null;
-  chapters?: Json;
-}
-
-interface UserEbookRow {
-  id: string;
-  title: string;
-  content: Json | string;
-  story_type: string | null;
-  chapter_count: number | null;
-  word_count: number | null;
-  created_at: string;
-}
 
 interface GalleryBook {
   id: string;
@@ -54,7 +25,79 @@ interface GalleryBook {
   status: 'private' | 'published' | 'generated';
   ebookGenerationId: string | null;
   publishedAt: string | null;
+  version: number | null;
 }
+
+interface CommunityBookRow {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  author_name: string | null;
+  cover_image_url: string | null;
+  chapter_count: number | null;
+  word_count: number | null;
+  published_at: string;
+  created_at: string;
+  status: 'published';
+}
+
+interface UserMemoryBookRow {
+  id: string;
+  user_id: string;
+  original_story_id: string | null;
+  ebook_generation_id: string | null;
+  title: string;
+  description: string | null;
+  subtitle: string | null;
+  author_name: string | null;
+  chapters: Json;
+  table_of_contents: Json | null;
+  cover_image_url: string | null;
+  generation_settings: Json | null;
+  style_preferences: Json | null;
+  chapter_count: number | null;
+  word_count: number | null;
+  status: string;
+  published_at: string | null;
+  generation_completed_at: string | null;
+  view_count: number | null;
+  download_count: number | null;
+  share_count: number | null;
+  rating_average: number | null;
+  rating_count: number | null;
+  created_at: string;
+  updated_at: string;
+  version: number;
+}
+
+interface UserEbookGenerationRow {
+  id: string;
+  user_id: string;
+  story_id: string | null;
+  title: string;
+  content: Json | string;
+  status: string | null;
+  credits_used: number | null;
+  paid_with_credits: boolean | null;
+  transaction_id: string | null;
+  story_type: string | null;
+  chapter_count: number | null;
+  word_count: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface OwnerBooksResponse {
+  books?: UserMemoryBookRow[];
+  memoryBooks?: UserMemoryBookRow[];
+  legacyBooks: UserEbookGenerationRow[];
+}
+
+interface BookMutationResponse {
+  book: UserMemoryBookRow;
+}
+
+type BookMutationResult = BookMutationResponse | UserMemoryBookRow;
 
 type GalleryTab = GalleryBook['source'];
 
@@ -154,7 +197,7 @@ function normalizeCommunityBook(row: CommunityBookRow): GalleryBook {
     id: row.id,
     title: row.title,
     coverUrl: row.cover_image_url,
-    era: getEraFromSettings(row.generation_settings),
+    era: 'Flip My Era',
     creator: row.author_name || 'Community creator',
     chapterCount: row.chapter_count ?? 0,
     wordCount: row.word_count ?? 0,
@@ -162,12 +205,13 @@ function normalizeCommunityBook(row: CommunityBookRow): GalleryBook {
     source: 'community',
     origin: 'memory_books',
     status: 'published',
-    ebookGenerationId: row.ebook_generation_id ?? null,
+    ebookGenerationId: null,
     publishedAt: row.published_at,
+    version: null,
   };
 }
 
-function normalizeUserMemoryBook(row: CommunityBookRow): GalleryBook {
+function normalizeUserMemoryBook(row: UserMemoryBookRow): GalleryBook {
   return {
     id: row.id,
     title: row.title,
@@ -182,10 +226,11 @@ function normalizeUserMemoryBook(row: CommunityBookRow): GalleryBook {
     status: row.status === 'published' ? 'published' : 'private',
     ebookGenerationId: row.ebook_generation_id ?? null,
     publishedAt: row.published_at,
+    version: row.version,
   };
 }
 
-function normalizeLegacyUserEbook(row: UserEbookRow): GalleryBook {
+function normalizeLegacyUserEbook(row: UserEbookGenerationRow): GalleryBook {
   return {
     id: row.id,
     title: row.title,
@@ -200,11 +245,49 @@ function normalizeLegacyUserEbook(row: UserEbookRow): GalleryBook {
     status: 'generated',
     ebookGenerationId: row.id,
     publishedAt: null,
+    version: null,
   };
 }
 
-function isMissingTableError(error: { code?: string; message?: string }) {
-  return error.code === '42P01' || error.message?.includes('does not exist');
+async function fetchCommunityBooks(): Promise<CommunityBookRow[]> {
+  const { data, error } = await supabase
+    .from('community_books')
+    .select('id,title,subtitle,author_name,cover_image_url,chapter_count,word_count,published_at,created_at,status')
+    .order('published_at', { ascending: false })
+    .limit(PAGE_SIZE);
+  if (error) throw error;
+  return (data ?? []) as CommunityBookRow[];
+}
+
+async function fetchOwnerBooks(): Promise<OwnerBooksResponse> {
+  const { data, error } = await invokeAuthenticatedFunction<OwnerBooksResponse>(
+    'gallery-books',
+    { method: 'GET' },
+  );
+  if (error) throw error;
+  if (!data) throw new Error('Gallery returned no owner library');
+  return data;
+}
+
+function normalizeOwnerBooks(data: OwnerBooksResponse): GalleryBook[] {
+  const memoryBooks = data.books ?? data.memoryBooks ?? [];
+  return [
+    ...memoryBooks.map(normalizeUserMemoryBook),
+    ...data.legacyBooks.map(normalizeLegacyUserEbook),
+  ]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, PAGE_SIZE);
+}
+
+function getErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const candidate = error as { status?: unknown; context?: { status?: unknown } };
+  if (typeof candidate.status === 'number') return candidate.status;
+  return typeof candidate.context?.status === 'number' ? candidate.context.status : undefined;
+}
+
+function getMutatedBook(data: BookMutationResult): UserMemoryBookRow {
+  return 'book' in data ? data.book : data;
 }
 
 function countLabel(label: string, count: number | null) {
@@ -216,7 +299,7 @@ function formatCount(value: number, noun: string) {
 }
 
 export function Gallery() {
-  const { isSignedIn, user } = useSupabaseAuth();
+  const { isSignedIn } = useSupabaseAuth();
   const [activeTab, setActiveTab] = useState<GalleryTab>('community');
   const [search, setSearch] = useState('');
   const [filterEra, setFilterEra] = useState<string | null>(null);
@@ -226,6 +309,7 @@ export function Gallery() {
   const [myBooksLoading, setMyBooksLoading] = useState(true);
   const [communityError, setCommunityError] = useState<string | null>(null);
   const [myBooksError, setMyBooksError] = useState<string | null>(null);
+  const [myBooksActionError, setMyBooksActionError] = useState<string | null>(null);
   const [publishingBookId, setPublishingBookId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -235,24 +319,15 @@ export function Gallery() {
       setCommunityLoading(true);
       setCommunityError(null);
 
-      const { data, error } = await supabase
-        .from('memory_books')
-        .select(MEMORY_BOOK_SELECT)
-        .eq('status', 'published')
-        .order('published_at', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE);
-
-      if (cancelled) return;
-
-      if (error && isMissingTableError(error)) {
-        setCommunityBooks([]);
-      } else if (error) {
+      try {
+        const data = await fetchCommunityBooks();
+        if (cancelled) return;
+        setCommunityBooks(data.map(normalizeCommunityBook));
+      } catch (error) {
+        if (cancelled) return;
         console.error('Failed to load community books:', error);
         setCommunityError('Community ebooks could not be loaded.');
         setCommunityBooks([]);
-      } else {
-        setCommunityBooks(((data ?? []) as CommunityBookRow[]).map(normalizeCommunityBook));
       }
 
       setCommunityLoading(false);
@@ -271,7 +346,7 @@ export function Gallery() {
     async function loadMyBooks() {
       setMyBooksError(null);
 
-      if (!isSignedIn || !user?.id) {
+      if (!isSignedIn) {
         setMyBooks([]);
         setMyBooksLoading(false);
         return;
@@ -279,54 +354,15 @@ export function Gallery() {
 
       setMyBooksLoading(true);
 
-      const { data: memoryBookData, error: memoryBookError } = await supabase
-        .from('memory_books')
-        .select(MEMORY_BOOK_SELECT)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE);
-
-      if (cancelled) return;
-
-      if (memoryBookError && !isMissingTableError(memoryBookError)) {
-        console.error('Failed to load user memory books:', memoryBookError);
+      try {
+        const data = await fetchOwnerBooks();
+        if (cancelled) return;
+        setMyBooks(normalizeOwnerBooks(data));
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Failed to load user ebooks:', error);
         setMyBooksError('Your ebooks could not be loaded.');
         setMyBooks([]);
-        setMyBooksLoading(false);
-        return;
-      }
-
-      const memoryBooks = memoryBookError ? [] : ((memoryBookData ?? []) as CommunityBookRow[]);
-      const memoryGenerationIds = new Set(
-        memoryBooks
-          .map((book) => book.ebook_generation_id)
-          .filter((id): id is string => Boolean(id)),
-      );
-
-      const { data: legacyData, error: legacyError } = await supabase
-        .from('ebook_generations')
-        .select('id, title, content, story_type, chapter_count, word_count, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE);
-
-      if (cancelled) return;
-
-      if (legacyError) {
-        console.error('Failed to load legacy user ebooks:', legacyError);
-      }
-
-      const legacyBooks = legacyError
-        ? []
-        : ((legacyData ?? []) as UserEbookRow[]).filter((book) => !memoryGenerationIds.has(book.id));
-
-      setMyBooks([
-        ...memoryBooks.map(normalizeUserMemoryBook),
-        ...legacyBooks.map(normalizeLegacyUserEbook),
-      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, PAGE_SIZE));
-
-      if (legacyError && memoryBooks.length === 0) {
-        setMyBooksError('Your older generated ebooks could not be loaded.');
       }
 
       setMyBooksLoading(false);
@@ -337,7 +373,7 @@ export function Gallery() {
     return () => {
       cancelled = true;
     };
-  }, [isSignedIn, user?.id]);
+  }, [isSignedIn]);
 
   const activeBooks = activeTab === 'community' ? communityBooks : myBooks;
   const activeLoading = activeTab === 'community' ? communityLoading : myBooksLoading;
@@ -362,49 +398,56 @@ export function Gallery() {
   }, [activeBooks, filterEra, search]);
 
   async function refreshCommunityBooks() {
-    const { data, error } = await supabase
-      .from('memory_books')
-      .select(MEMORY_BOOK_SELECT)
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(PAGE_SIZE);
-
-    if (error) {
+    try {
+      const data = await fetchCommunityBooks();
+      setCommunityBooks(data.map(normalizeCommunityBook));
+    } catch (error) {
       console.error('Failed to refresh community books:', error);
-      return;
     }
+  }
 
-    setCommunityBooks(((data ?? []) as CommunityBookRow[]).map(normalizeCommunityBook));
+  async function refreshMyBooks() {
+    if (!isSignedIn) return;
+    const data = await fetchOwnerBooks();
+    setMyBooks(normalizeOwnerBooks(data));
   }
 
   async function handlePublishToggle(book: GalleryBook) {
     if (book.source !== 'mine' || book.origin !== 'memory_books') return;
 
-    const nextIsPublished = book.status !== 'published';
+    const nextStatus = book.status === 'published' ? 'completed' : 'published';
     setPublishingBookId(book.id);
-    setMyBooksError(null);
+    setMyBooksActionError(null);
 
-    const { data, error } = await supabase
-      .from('memory_books')
-      .update({
-        status: nextIsPublished ? 'published' : 'completed',
-        published_at: nextIsPublished ? new Date().toISOString() : null,
-      })
-      .eq('id', book.id)
-      .select(MEMORY_BOOK_SELECT)
-      .single();
-
-    if (error) {
+    try {
+      if (book.version === null) throw new Error('Book version is missing');
+      const { data, error } = await invokeAuthenticatedFunction<BookMutationResult>(
+        'gallery-books',
+        {
+          method: 'PATCH',
+          body: { bookId: book.id, status: nextStatus, version: book.version },
+        },
+      );
+      if (error) throw error;
+      if (!data) throw new Error('Gallery returned no updated book');
+      const updated = normalizeUserMemoryBook(getMutatedBook(data));
+      setMyBooks((books) => books.map((item) => (item.id === book.id ? updated : item)));
+      await refreshCommunityBooks();
+    } catch (error) {
       console.error('Failed to update ebook publish status:', error);
-      setMyBooksError(nextIsPublished ? 'Your ebook could not be published.' : 'Your ebook could not be unpublished.');
-      setPublishingBookId(null);
-      return;
+      if (getErrorStatus(error) === 409) {
+        try {
+          await refreshMyBooks();
+        } catch (refreshError) {
+          console.error('Failed to refresh stale ebook state:', refreshError);
+        }
+      }
+      setMyBooksActionError(
+        nextStatus === 'published'
+          ? 'Your ebook could not be published.'
+          : 'Your ebook could not be unpublished.',
+      );
     }
-
-    const updated = normalizeUserMemoryBook(data as CommunityBookRow);
-    setMyBooks((books) => books.map((item) => (item.id === book.id ? updated : item)));
-    await refreshCommunityBooks();
     setPublishingBookId(null);
   }
 
@@ -470,15 +513,22 @@ export function Gallery() {
           {!isSignedIn ? (
             <SignedOutState />
           ) : (
-            <GalleryTabContent
-              books={filtered}
-              loading={activeLoading}
-              error={activeError}
-              emptyTitle="No ebooks in your library yet"
-              emptyDescription="Generate an ebook and it will show up here."
-              publishingBookId={publishingBookId}
-              onPublishToggle={handlePublishToggle}
-            />
+            <div className="space-y-4">
+              {myBooksActionError ? (
+                <p role="alert" className="text-center text-sm text-destructive">
+                  {myBooksActionError}
+                </p>
+              ) : null}
+              <GalleryTabContent
+                books={filtered}
+                loading={activeLoading}
+                error={activeError}
+                emptyTitle="No ebooks in your library yet"
+                emptyDescription="Generate an ebook and it will show up here."
+                publishingBookId={publishingBookId}
+                onPublishToggle={handlePublishToggle}
+              />
+            </div>
           )}
         </TabsContent>
       </Tabs>

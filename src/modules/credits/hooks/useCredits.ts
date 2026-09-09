@@ -5,8 +5,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
 import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
+import type { CreditsFunctionResponse } from '@/core/integrations/supabase/functionResponses';
 
 export interface CreditsState {
   balance: number;
@@ -34,7 +35,7 @@ export function useCredits(): CreditsState {
 
     try {
       const token = await getToken();
-      const { data, error } = await supabase.functions.invoke('credits', {
+      const { data, error } = await invokeAuthenticatedFunction<CreditsFunctionResponse>('credits', {
         method: 'GET',
         headers: token
           ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -42,8 +43,8 @@ export function useCredits(): CreditsState {
       });
 
       if (!error && data?.data) {
-        const bal = data.data?.balance?.balance ?? 0;
-        const sub = data.data?.balance?.subscription_type ?? null;
+        const bal = data.data.balance.balance;
+        const sub = data.data.balance.subscription_type;
         setBalance(bal);
         setSubscriptionType(sub);
       }

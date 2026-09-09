@@ -3,7 +3,8 @@ import {
   handleCors, 
   initSupabaseClient, 
   formatErrorResponse, 
-  formatSuccessResponse 
+  formatSuccessResponse,
+  verifyAuth,
 } from "../_shared/utils.ts"
 
 interface ShareAnalyticsRequest {
@@ -17,7 +18,16 @@ serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  if (req.method !== 'POST') {
+    return formatErrorResponse(new Error('Method not allowed'), 405, req);
+  }
+
   try {
+    const userId = await verifyAuth(req);
+    if (!userId) {
+      return formatErrorResponse(new Error('Unauthorized'), 401, req);
+    }
+
     const { text, videoUrl, musicUrl } = await req.json() as ShareAnalyticsRequest;
 
     if (!text || !videoUrl) {
@@ -32,6 +42,7 @@ serve(async (req) => {
       .from('tiktok_shares')
       .insert([
         {
+          user_id: userId,
           text_snippet: text.substring(0, 255),
           video_url: videoUrl,
           music_url: musicUrl,
@@ -43,8 +54,8 @@ serve(async (req) => {
       throw new Error(`Database error: ${error.message}`);
     }
 
-    return formatSuccessResponse({ message: 'Share analytics recorded successfully' });
+    return formatSuccessResponse({ message: 'Share analytics recorded successfully' }, 200, req);
   } catch (error) {
-    return formatErrorResponse(error);
+    return formatErrorResponse(error instanceof Error ? error : new Error(String(error)), 500, req);
   }
 });

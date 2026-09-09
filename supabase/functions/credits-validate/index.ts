@@ -1,13 +1,13 @@
 // Supabase Edge Function: Credit Validation
-// Validates and reserves credits for ebook generation
+// Validates credit availability without reserving or deducting credits.
 // Phase 1A: Enhanced E-Book Generation System
 // MODIFIED FOR CLERK INTEGRATION: Properly handles Clerk user IDs as TEXT fields
 
 // Using Deno's built-in HTTP server API
-// @ts-expect-error -- HTTPS imports are supported in Deno Edge Functions runtime
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-// @ts-expect-error -- Deno Edge Function imports
-import { verifyAuth } from "../_shared/utils.ts";
+// @ts-ignore -- HTTPS imports are supported in Deno Edge Functions runtime
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+// @ts-ignore -- Deno Edge Function imports
+import { getCorsHeaders, handleCors, verifyAuth } from "../_shared/utils.ts";
 
 // Import credit pricing logic (inlined for Edge Function compatibility)
 const CREDIT_PRICING = {
@@ -41,25 +41,34 @@ const CREDIT_PRICING = {
   background_music: { basic: 0.8, advanced: 1.5, ultra: 3 }
 };
 
+type Quality = 'basic' | 'advanced' | 'ultra';
+type TierPricing = Record<string, Record<Quality, number>>;
+
 function calculateCreditCost(operation: Operation): number {
-  const { type, quality = 'basic', speedPriority = false, commercialLicense = false, quantity = 1 } = operation;
+  const type = operation.operationType ?? operation.type ?? 'story_generation';
+  const quality = operation.modelQuality ?? operation.quality ?? 'basic';
+  const { speedPriority = false, commercialLicense = false, quantity = 1 } = operation;
 
   let baseCost = 0;
 
   // Get base cost from pricing table
   if (type === 'image_generation') {
-    baseCost = CREDIT_PRICING.image_generation[operation.subject || 'story_illustration'][quality] || 1;
+    const pricing = CREDIT_PRICING.image_generation as TierPricing;
+    baseCost = pricing[operation.subject || 'story_illustration']?.[quality] ?? 1;
   } else if (type === 'video_generation') {
-    baseCost = CREDIT_PRICING.video_generation[operation.videoType || 'story_recrap'][quality] || 5;
+    const pricing = CREDIT_PRICING.video_generation as TierPricing;
+    baseCost = pricing[operation.videoType || 'story_recrap']?.[quality] ?? 5;
   } else if (type.includes('audio')) {
     const duration = operation.durationMinutes || 1;
     if (type === 'audio_narration') {
       baseCost = CREDIT_PRICING.audio_narration[quality] * duration;
     } else {
-      baseCost = CREDIT_PRICING[type][quality] || 1;
+      const pricing = CREDIT_PRICING as unknown as TierPricing;
+      baseCost = pricing[type]?.[quality] ?? 1;
     }
   } else {
-    baseCost = CREDIT_PRICING[type]?.[quality] || 1;
+    const pricing = CREDIT_PRICING as unknown as TierPricing;
+    baseCost = pricing[type]?.[quality] ?? 1;
   }
 
   // Apply quantity
@@ -84,26 +93,10 @@ function calculateCreditCost(operation: Operation): number {
   return Math.max(0.1, Math.round(baseCost * 100) / 100);
 }
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:8081',
-  'https://flip-my-era.netlify.app',
-  'https://flipmyera.com',
-  'https://www.flipmyera.com',
-];
-
-const getCorsHeaders = (req: Request) => {
-  const origin = req.headers.get('Origin') || '';
-  return {
-    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-};
-
 interface Operation {
-  type: string;
+  operationType?: string;
+  modelQuality?: 'basic' | 'advanced' | 'ultra';
+  type?: string;
   quality?: 'basic' | 'advanced' | 'ultra';
   speedPriority?: boolean;
   commercialLicense?: boolean;
@@ -117,6 +110,8 @@ interface ValidationRequest {
   credits_required?: number; // Legacy support
   story_type?: string; // Legacy support
   generation_id?: string;
+  operationType?: string;
+  modelQuality?: 'basic' | 'advanced' | 'ultra';
   operations?: Operation[]; // New operation-based pricing
 }
 
@@ -125,8 +120,8 @@ interface ValidationResponse {
   data?: {
     has_sufficient_credits: boolean;
     current_balance: number;
+    required_credits: number;
     subscription_type: string | null;
-    transaction_id?: string;
     bypass_credits?: boolean;
   };
   error?: string;
@@ -134,8 +129,9 @@ interface ValidationResponse {
 
 // verifyAuth is imported from _shared/utils.ts — cryptographically verifies JWT
 
-// Validate and atomically deduct credits using a database function.
-// This eliminates the TOCTOU race condition from the previous read-then-write pattern.
+// This endpoint is deliberately read-only. The generation function claims its
+// idempotency key and charges in one database transaction immediately before it
+// invokes the external model.
 const validateCreditsWithSupabase = async (userId: string, creditsRequired: number): Promise<ValidationResponse['data'] | null> => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -147,61 +143,20 @@ const validateCreditsWithSupabase = async (userId: string, creditsRequired: numb
       .from('user_credits')
       .select('balance, subscription_type')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (creditError) {
       console.error('Error fetching credit data:', creditError);
       return null;
     }
 
-    const currentBalance = creditData?.balance || 0;
-
-    if (currentBalance < creditsRequired) {
-      return {
-        has_sufficient_credits: false,
-        current_balance: currentBalance,
-        subscription_type: creditData?.subscription_type,
-        bypass_credits: false
-      };
-    }
-
-    // Atomic deduction via database function — prevents double-spend
-    const { data: result, error: rpcError } = await supabase
-      .rpc('deduct_credits', {
-        p_user_id: userId,
-        p_amount: creditsRequired,
-        p_description: `Ebook generation - ${creditsRequired} credits`,
-        p_metadata: { story_type: 'ebook_generation' }
-      })
-      .single();
-
-    if (rpcError) {
-      console.error('Error in atomic credit deduction:', rpcError);
-      return null;
-    }
-
-    if (!result?.success) {
-      // Race condition caught — balance was deducted by another request
-      // Re-read the actual current balance
-      const { data: refreshed } = await supabase
-        .from('user_credits')
-        .select('balance, subscription_type')
-        .eq('user_id', userId)
-        .single();
-
-      return {
-        has_sufficient_credits: false,
-        current_balance: refreshed?.balance || 0,
-        subscription_type: refreshed?.subscription_type,
-        bypass_credits: false
-      };
-    }
+    const currentBalance = Number(creditData?.balance ?? 0);
 
     return {
-      has_sufficient_credits: true,
-      current_balance: result.new_balance,
-      subscription_type: creditData?.subscription_type,
-      transaction_id: result.transaction_id,
+      has_sufficient_credits: currentBalance >= creditsRequired,
+      current_balance: currentBalance,
+      required_credits: creditsRequired,
+      subscription_type: creditData?.subscription_type ?? null,
       bypass_credits: false
     };
   } catch (error) {
@@ -210,15 +165,11 @@ const validateCreditsWithSupabase = async (userId: string, creditsRequired: numb
   }
 };
 
-// @ts-expect-error -- Deno.serve is available in Supabase Edge Functions runtime
 Deno.serve(async (req: Request) => {
-  // Get dynamic CORS headers based on request
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
   const dynamicCorsHeaders = getCorsHeaders(req);
-  
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: dynamicCorsHeaders });
-  }
 
   try {
     // Verify JWT and extract authenticated user ID
@@ -237,37 +188,24 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(`Validating credits for Clerk user: ${userId}`);
+    console.log(`Validating credits for authenticated user: ${userId}`);
 
     if (req.method === 'POST') {
       let body: ValidationRequest;
       try {
-        // Check if request has content
-        const contentLength = req.headers.get('content-length');
-        if (!contentLength || parseInt(contentLength) === 0) {
-          console.log('Empty request body received, using default values');
-          body = {
-            credits_required: 1,
-            story_type: 'short_story',
-            generation_id: undefined
-          };
-        } else {
-          body = await req.json();
-        }
+        body = await req.json();
       } catch (err) {
-        console.error('Failed to parse JSON body:', err);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Invalid JSON body or empty request. Please send a JSON object with credits_required, story_type, and generation_id fields.' 
-          }),
-          { status: 400, headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } }
-        );
+        console.log('Empty request body received, using default values', err);
+        body = { credits_required: 1, story_type: 'short_story' };
       }
       
       // Handle both legacy and new pricing systems
       let totalCreditsRequired = 0;
-      const operations = body.operations || [];
+      const operations = body.operations?.length
+        ? body.operations
+        : body.operationType
+          ? [{ operationType: body.operationType, modelQuality: body.modelQuality }]
+          : [];
 
       if (operations.length > 0) {
         // New operation-based pricing
@@ -277,12 +215,17 @@ Deno.serve(async (req: Request) => {
         console.log(`Validating ${totalCreditsRequired} credits for ${operations.length} operations`);
       } else {
         // Legacy pricing (backward compatibility)
-        totalCreditsRequired = body.credits_required || 1;
+        totalCreditsRequired = body.credits_required ?? 1;
         const storyType = body.story_type || 'short_story';
         console.log(`Validating ${totalCreditsRequired} credits for ${storyType} (legacy)`);
       }
 
-      const generationId = body.generation_id;
+      if (!Number.isFinite(totalCreditsRequired) || totalCreditsRequired <= 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Credit requirement must be greater than zero' }),
+          { status: 400, headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Validate credits with Supabase
       const validationData = await validateCreditsWithSupabase(userId, totalCreditsRequired);

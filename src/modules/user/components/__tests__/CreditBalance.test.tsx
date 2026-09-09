@@ -31,6 +31,7 @@ vi.mock('@/core/integrations/better-auth/AuthProvider', () => ({
 }));
 
 vi.mock('@/core/integrations/supabase/client', () => ({
+  invokeAuthenticatedFunction: (...args: any[]) => mockInvoke(...args),
   supabase: {
     functions: {
       invoke: (...args: any[]) => mockInvoke(...args),

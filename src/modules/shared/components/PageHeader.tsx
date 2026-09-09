@@ -1,9 +1,9 @@
 
 import { Sparkles, Clock, BookOpen } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 
 export const PageHeader = () => {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -14,7 +14,7 @@ export const PageHeader = () => {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -26,7 +26,7 @@ export const PageHeader = () => {
     }
   };
 
-  const titleVariants = {
+  const titleVariants: Variants = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: {
       opacity: 1,
@@ -49,41 +49,11 @@ export const PageHeader = () => {
     >
       <motion.div className="space-y-4" variants={itemVariants}>
         <motion.h1
-          className="text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 font-bold relative"
+          className="flex flex-wrap items-center justify-center gap-3 text-5xl font-bold text-foreground md:text-6xl"
           variants={titleVariants}
         >
-          <motion.span
-            className="inline-block"
-            animate={{
-              backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            style={{
-              background: "linear-gradient(45deg, #9333ea, #ec4899, #3b82f6)",
-              backgroundSize: "200% 200%",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent"
-            }}
-          >
-            ✨ FlipMyEra ✨
-          </motion.span>
-          <motion.div
-            className="absolute -inset-2 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-blue-600/20 rounded-lg blur-xl -z-10"
-            animate={{
-              scale: [1, 1.05, 1],
-              opacity: [0.5, 0.8, 0.5]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
+          <Sparkles className="h-10 w-10 text-primary" aria-hidden="true" />
+          <span>FlipMyEra</span>
         </motion.h1>
         <motion.p
           className="text-xl text-gray-700 max-w-2xl mx-auto"
@@ -91,7 +61,7 @@ export const PageHeader = () => {
         >
           Rewrite your story in a kinder, pre-2020 timeline
           <motion.span
-            className="block mt-2 text-lg italic text-purple-600"
+            className="mt-2 block text-lg italic text-primary"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.5, duration: 0.8 }}

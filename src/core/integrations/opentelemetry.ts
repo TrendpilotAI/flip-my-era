@@ -8,6 +8,7 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { CompressionAlgorithm } from '@opentelemetry/otlp-exporter-base';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -63,7 +64,7 @@ export function initOpenTelemetry(): void {
       // SENTRY_AUTH_TOKEN is a privileged server-side token and must NEVER be sent
       // from the client bundle. Do not add an Authorization header here.
       // Compression is recommended for production
-      compression: 'gzip',
+      compression: CompressionAlgorithm.GZIP,
     });
 
     // Create tracer provider
@@ -131,31 +132,8 @@ export { trace } from '@opentelemetry/api';
  * });
  * ```
  */
-import { trace as otelTrace, Span, Tracer } from '@opentelemetry/api';
+import { trace as otelTrace, type Tracer } from '@opentelemetry/api';
 
 export function getTracer(name: string, version?: string): Tracer {
-  try {
-    return otelTrace.getTracer(name, version);
-  } catch {
-    // No-op tracer fallback
-    const noOpSpan: Partial<Span> = {
-      setAttribute: () => {},
-      end: () => {},
-      setStatus: () => {},
-      recordException: () => {},
-    };
-    return {
-      startSpan: () => noOpSpan as Span,
-      startActiveSpan: (_n: string, fn: (span: Span) => void | Promise<void>) => {
-        try {
-          const result = fn(noOpSpan as Span);
-          if (result && typeof (result as Promise<void>).then === 'function') {
-            (result as Promise<void>).catch(() => {});
-          }
-        } catch {
-          // ignore
-        }
-      },
-    } as unknown as Tracer;
-  }
+  return otelTrace.getTracer(name, version);
 }

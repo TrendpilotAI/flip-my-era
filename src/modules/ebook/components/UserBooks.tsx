@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
-import { supabase } from "@/core/integrations/supabase/client";
+import {
+  listOwnBooks,
+  type UserEbookGenerationRow,
+  type UserMemoryBookRow,
+} from '@/core/integrations/supabase/userData';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
@@ -58,6 +62,54 @@ interface UserBooksProps {
   onBookSelect?: (book: MemoryBook) => void;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizeChapters(value: unknown): MemoryBook['chapters'] {
+  return typeof value === 'string' || Array.isArray(value) || isRecord(value) ? value : [];
+}
+
+function normalizeMemoryBook(book: UserMemoryBookRow): MemoryBook {
+  return {
+    id: book.id,
+    title: book.title,
+    description: book.description || book.title || 'Generated ebook',
+    chapters: normalizeChapters(book.chapters),
+    chapter_count: book.chapter_count ?? 0,
+    word_count: book.word_count ?? 0,
+    status: book.status || 'completed',
+    created_at: book.created_at,
+    generation_settings: isRecord(book.generation_settings) ? book.generation_settings : {},
+    style_preferences: isRecord(book.style_preferences) ? book.style_preferences : {},
+    view_count: book.view_count ?? 0,
+    download_count: book.download_count ?? 0,
+    share_count: book.share_count ?? 0,
+    rating_average: book.rating_average ?? 0,
+    rating_count: book.rating_count ?? 0,
+  };
+}
+
+function normalizeLegacyBook(book: UserEbookGenerationRow): MemoryBook {
+  return {
+    id: book.id,
+    title: book.title,
+    description: book.title || 'Generated ebook',
+    chapters: normalizeChapters(book.content),
+    chapter_count: book.chapter_count ?? 0,
+    word_count: book.word_count ?? 0,
+    status: book.status || 'completed',
+    created_at: book.created_at,
+    generation_settings: {},
+    style_preferences: {},
+    view_count: 0,
+    download_count: 0,
+    share_count: 0,
+    rating_average: 0,
+    rating_count: 0,
+  };
+}
+
 export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
   const { isSignedIn, getToken } = useSupabaseAuth();
   const { toast } = useToast();
@@ -100,48 +152,11 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
         return;
       }
       
-      // Create authenticated Supabase client
-      
-      
-      // First, try to fetch from ebook_generations which is the primary table
-      // memory_books is a future feature that may not be deployed yet
-      const { data: ebookData, error } = await supabase
-        .from('ebook_generations')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // Handle errors immediately after the query
-      if (error) {
-        console.error('Error fetching ebooks:', error);
-        setError('Failed to load your books');
-        toast({
-          title: "Error",
-          description: "Failed to load your books. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Process data only if no error occurred
-      let data = null;
-      if (ebookData && ebookData.length > 0) {
-        // Map ebook_generations data to a common format
-        data = ebookData.map(book => ({
-          ...book,
-          chapters: book.content, // content field maps to chapters
-          description: book.title || 'Generated ebook',
-          status: book.status || 'completed',
-          generation_settings: {},
-          style_preferences: {},
-          view_count: 0,
-          download_count: 0,
-          share_count: 0,
-          rating_average: 0,
-          rating_count: 0
-        }));
-      }
-
-      setBooks(data || []);
+      const { memoryBooks, legacyBooks } = await listOwnBooks(100, token);
+      setBooks([
+        ...memoryBooks.map(normalizeMemoryBook),
+        ...legacyBooks.map(normalizeLegacyBook),
+      ]);
     } catch (err) {
       console.error('Error fetching books:', err);
       setError('Failed to load your books');
@@ -462,4 +477,4 @@ export const UserBooks = ({ className, onBookSelect }: UserBooksProps) => {
       )}
     </div>
   );
-}; 
+};

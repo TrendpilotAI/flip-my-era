@@ -18,6 +18,13 @@ interface ImageReviewPageProps {
   className?: string;
 }
 
+interface ImageSelection {
+  url: string;
+  seed: number;
+  isAiSelected: boolean;
+  manuallySelected?: boolean;
+}
+
 export const ImageReviewPage: React.FC<ImageReviewPageProps> = ({
   heroGalleryResults,
   eraResults,
@@ -140,7 +147,7 @@ export const ImageReviewPage: React.FC<ImageReviewPageProps> = ({
   };
 
   const handleSaveSelections = () => {
-    const selections: Record<string, { url: string; seed: number; isAiSelected: boolean }> = {};
+    const selections: Record<string, ImageSelection> = {};
     
     [...updatedResults.heroGallery, ...updatedResults.eras, ...updatedResults.prompts].forEach(result => {
       const selectedIndex = selectedImageIds[result.id] ?? result.bestImageIndex;
@@ -161,7 +168,7 @@ export const ImageReviewPage: React.FC<ImageReviewPageProps> = ({
   };
 
   const handleDownloadSelections = () => {
-    const selections: Record<string, { url: string; seed: number; isAiSelected: boolean }> = {};
+    const selections: Record<string, ImageSelection> = {};
     
     [...updatedResults.heroGallery, ...updatedResults.eras, ...updatedResults.prompts].forEach(result => {
       const selectedIndex = selectedImageIds[result.id] ?? result.bestImageIndex;

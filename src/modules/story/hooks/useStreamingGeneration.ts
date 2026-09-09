@@ -31,6 +31,7 @@ interface StreamingState {
 }
 
 interface StreamingGenerationOptions {
+  idempotencyKey?: string;
   originalStory: string;
   useTaylorSwiftThemes: boolean;
   selectedTheme?: TaylorSwiftTheme;
@@ -50,6 +51,56 @@ interface StreamingGenerationOptions {
   onImageGenerationStart?: (chapterIndex: number) => void;
   onImageGenerationComplete?: (chapterIndex: number, imageUrl: string) => void;
   onImageGenerationError?: (chapterIndex: number, error: string) => void;
+}
+
+interface StreamEvent {
+  type: 'status' | 'progress' | 'chapter' | 'complete' | 'error';
+  status?: 'claimed' | 'replay';
+  replay?: boolean;
+  currentChapter?: number;
+  totalChapters?: number;
+  chapterTitle?: string;
+  chapterContent?: string;
+  progress?: number;
+  message?: string;
+  code?: string;
+  estimatedTimeRemaining?: number;
+}
+
+interface StreamErrorResponse {
+  error?: string;
+  status?: 'in_progress' | 'insufficient' | 'failed';
+  message?: string;
+  current_balance?: number;
+  required?: number;
+  retry_after?: number;
+}
+
+function createGenerationIdempotencyKey(): string {
+  return `stream-chapters:${crypto.randomUUID()}`;
+}
+
+function getStreamResponseError(status: number, payload: StreamErrorResponse): string {
+  if (status === 402 || payload.error === 'INSUFFICIENT_CREDITS' || payload.status === 'insufficient') {
+    const balance = typeof payload.current_balance === 'number' ? ` Current balance: ${payload.current_balance}.` : '';
+    const required = typeof payload.required === 'number' ? ` Required: ${payload.required}.` : '';
+    return `Insufficient credits to generate chapters.${balance}${required}`;
+  }
+
+  if (status === 409 && (payload.error === 'GENERATION_IN_PROGRESS' || payload.status === 'in_progress')) {
+    const retry = typeof payload.retry_after === 'number' ? ` Try again in about ${payload.retry_after} seconds.` : '';
+    return `This chapter generation is already in progress.${retry}`;
+  }
+
+  if (status === 409 && (payload.error === 'REQUEST_PREVIOUSLY_FAILED' || payload.status === 'failed')) {
+    return 'The previous chapter generation attempt failed. Start a new attempt to retry.';
+  }
+
+  if (status === 401) return 'Authentication failed. Please sign in and try again.';
+  if (status === 403) return 'Access denied. Please check your permissions.';
+  if (status === 429) return 'Rate limit exceeded. Please wait a moment and try again.';
+  if (status >= 500) return payload.message || 'Server error. Please try again later.';
+  return payload.message || 'Invalid request. Please check your settings and try again.';
 }
 
 export const useStreamingGeneration = () => {
@@ -163,6 +214,7 @@ export const useStreamingGeneration = () => {
       onComplete,
       onError
     } = options;
+    const idempotencyKey = options.idempotencyKey ?? createGenerationIdempotencyKey();
 
     // Add breadcrumb for generation start
     sentryService.addBreadcrumb({
@@ -235,7 +287,8 @@ export const useStreamingGeneration = () => {
           selectedTheme,
           selectedFormat,
           numChapters,
-          storyline: options.storyline
+          storyline: options.storyline,
+          idempotencyKey,
         }),
         signal: controller.signal
       });
@@ -244,22 +297,21 @@ export const useStreamingGeneration = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Streaming response error:', response.status, errorText);
-        
-        // Provide more specific error messages based on status code
-        let errorMessage = 'Failed to start generation';
-        if (response.status === 401) {
-          errorMessage = 'Authentication failed. Please sign in and try again.';
-        } else if (response.status === 403) {
-          errorMessage = 'Access denied. Please check your permissions.';
-        } else if (response.status === 429) {
-          errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
-        } else if (response.status === 500) {
-          errorMessage = 'Server error. Please try again later.';
-        } else if (response.status >= 400 && response.status < 500) {
-          errorMessage = 'Invalid request. Please check your settings and try again.';
+
+        let errorPayload: StreamErrorResponse = {};
+        try {
+          errorPayload = JSON.parse(errorText) as StreamErrorResponse;
+        } catch {
+          // Non-JSON upstream responses still receive a status-specific message.
         }
-        
-        throw new Error(`${errorMessage} (${response.status})`);
+
+        if (response.status === 402 || errorPayload.status === 'insufficient') {
+          window.dispatchEvent(new CustomEvent('credits:exhausted', {
+            detail: { balance: errorPayload.current_balance ?? 0 },
+          }));
+        }
+
+        throw new Error(getStreamResponseError(response.status, errorPayload));
       }
 
       const reader = response.body?.getReader();
@@ -267,222 +319,160 @@ export const useStreamingGeneration = () => {
 
       if (reader) {
         const chapters: Chapter[] = [];
-        
-        const readStream = async () => {
-          let buffer = ''; // Buffer for incomplete lines
-          
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              
-              if (done) break;
-              
-              const chunk = decoder.decode(value);
-              buffer += chunk;
-              
-              // Split by newlines and process complete lines
-              const lines = buffer.split('\n');
-              buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
-              
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  try {
-                    // Clean the line before parsing
-                    const cleanLine = line.slice(6).trim();
-                    if (!cleanLine) return; // Skip empty lines
-                    
-                    const data = JSON.parse(cleanLine);
-                    
-                    switch (data.type) {
-                      case 'progress':
-                        setState(prev => ({
-                          ...prev,
-                          currentChapter: data.currentChapter || 0,
-                          totalChapters: data.totalChapters || prev.totalChapters,
-                          progress: data.progress || 0,
-                          message: data.message || "",
-                          estimatedTimeRemaining: data.estimatedTimeRemaining
-                        }));
-                        break;
-                        
-                      case 'chapter': {
-                        const newChapter: Chapter = {
-                          title: data.chapterTitle,
-                          content: data.chapterContent,
-                          id: `chapter-${data.currentChapter}`
-                        };
-                        
-                        chapters.push(newChapter);
-                        chaptersCompleted = chapters.length;
-                        
-                        setState(prev => ({
-                          ...prev,
-                          chapters: [...chapters],
-                          currentChapter: data.currentChapter,
-                          progress: data.progress || 0
-                        }));
-                        
-                        // Add breadcrumb for chapter completion
-                        sentryService.addBreadcrumb({
-                          category: 'story-generation',
-                          message: `Chapter ${data.currentChapter} completed`,
-                          level: 'info',
-                          data: { 
-                            chapterNumber: data.currentChapter,
-                            chapterTitle: data.chapterTitle,
-                            totalChapters: data.totalChapters || numChapters || 3,
-                            progress: data.progress || 0,
-                          },
-                        });
-                        
-                        posthogEvents.chapterCompleted(
-                          data.currentChapter,
-                          data.totalChapters || numChapters || 3,
-                          {
-                            chapterTitle: data.chapterTitle,
-                            format: selectedFormat,
-                          }
-                        );
-                        
-                        onChapterComplete?.(newChapter);
-                        
-                        toast({
-                          title: `Chapter ${data.currentChapter} Complete`,
-                          description: `"${data.chapterTitle}" has been generated`,
-                        });
-                        break;
-                      }
-                        
-                      case 'complete':
-                        setState(prev => ({
-                          ...prev,
-                          isGenerating: false,
-                          isComplete: true,
-                          progress: 100,
-                          message: "Generation complete!"
-                        }));
-                        
-                        // Add breadcrumb for generation completion
-                        sentryService.addBreadcrumb({
-                          category: 'story-generation',
-                          message: 'Story generation completed successfully',
-                          level: 'info',
-                          data: { 
-                            totalChapters: chapters.length,
-                            format: selectedFormat,
-                          },
-                        });
-                        transaction.finish();
-                        
-                        posthogEvents.storyGenerationCompleted({
-                          totalChapters: chapters.length,
-                          format: selectedFormat,
-                        });
-                        
-                        onComplete?.(chapters);
-                        
-                        toast({
-                          title: "Story Generation Complete! ?",
-                          description: `All ${chapters.length} chapters have been generated successfully.`,
-                        });
-                        break;
-                        
-                      case 'error':
-                        console.error('Streaming error received:', data.message);
-                        sentryService.addBreadcrumb({
-                          category: 'story-generation',
-                          message: 'Streaming error received from server',
-                          level: 'error',
-                          data: { 
-                            errorMessage: data.message,
-                            currentChapter: data.currentChapter,
-                            progress: data.progress,
-                          },
-                        });
-                        posthogEvents.storyGenerationFailed(data.message || 'Unknown error', {
-                          currentChapter: data.currentChapter,
-                          progress: data.progress,
-                          format: selectedFormat,
-                        });
-                        throw new Error(data.message || 'Generation failed');
-                    }
-                  } catch (parseError) {
-                    console.error('Error parsing stream data:', parseError);
-                    console.error('Raw line:', line);
-                    console.error('Line length:', line.length);
-                    console.error('Line slice (6):', line.slice(6));
-                    
-                    // Try to extract more information about the problematic content
-                    if (line.includes('chapterContent')) {
-                      const contentMatch = line.match(/"chapterContent":"([^"]*)"/);
-                      if (contentMatch) {
-                        console.error('Problematic content preview:', contentMatch[1].substring(0, 100));
-                      }
-                    }
-                    
-                    // Don't throw here, just log and continue to avoid breaking the stream
-                    // The backend should handle serialization issues and send proper error events
-                    console.warn('Continuing stream despite parse error');
-                  }
-                }
+        let receivedCompletion = false;
+
+        const handleStreamEvent = (data: StreamEvent) => {
+          switch (data.type) {
+            case 'status':
+              setState(prev => ({
+                ...prev,
+                totalChapters: data.totalChapters ?? prev.totalChapters,
+                message: data.status === 'replay'
+                  ? 'Restoring your completed chapters...'
+                  : (data.message ?? prev.message),
+              }));
+              break;
+
+            case 'progress':
+              setState(prev => ({
+                ...prev,
+                currentChapter: data.currentChapter ?? 0,
+                totalChapters: data.totalChapters ?? prev.totalChapters,
+                progress: data.progress ?? 0,
+                message: data.message ?? '',
+                estimatedTimeRemaining: data.estimatedTimeRemaining,
+              }));
+              break;
+
+            case 'chapter': {
+              if (
+                typeof data.currentChapter !== 'number'
+                || typeof data.chapterTitle !== 'string'
+                || typeof data.chapterContent !== 'string'
+              ) {
+                throw new Error('Received an invalid chapter from the generation stream');
               }
-            }
-            
-            // Process any remaining buffer content
-            if (buffer.trim()) {
-              const line = buffer.trim();
-              if (line.startsWith('data: ')) {
-                try {
-                  const cleanLine = line.slice(6).trim();
-                  if (cleanLine) {
-                    const data = JSON.parse(cleanLine);
-                    
-                    // Handle the final data based on its type
-                    switch (data.type) {
-                      case 'complete':
-                        setState(prev => ({
-                          ...prev,
-                          isGenerating: false,
-                          isComplete: true,
-                          progress: 100,
-                          message: "Generation complete!"
-                        }));
-                        
-                        sentryService.addBreadcrumb({
-                          category: 'story-generation',
-                          message: 'Story generation completed successfully',
-                          level: 'info',
-                          data: { totalChapters: chapters.length },
-                        });
-                        transaction.finish();
-                        
-                        onComplete?.(chapters);
-                        break;
-                      case 'error':
-                        console.error('Final streaming error received:', data.message);
-                        sentryService.addBreadcrumb({
-                          category: 'story-generation',
-                          message: 'Final streaming error received',
-                          level: 'error',
-                          data: { errorMessage: data.message },
-                        });
-                        throw new Error(data.message || 'Generation failed');
-                    }
-                  }
-                } catch (parseError) {
-                  console.error('Error parsing final stream data:', parseError);
-                  // Don't throw here either, just log the error
-                  console.warn('Continuing despite final parse error');
-                }
+
+              const newChapter: Chapter = {
+                title: data.chapterTitle,
+                content: data.chapterContent,
+                id: `chapter-${data.currentChapter}`,
+              };
+              const chapterIndex = Math.max(0, data.currentChapter - 1);
+              chapters[chapterIndex] = newChapter;
+              const completedChapters = chapters.filter(Boolean);
+              chaptersCompleted = completedChapters.length;
+
+              setState(prev => ({
+                ...prev,
+                chapters: [...completedChapters],
+                currentChapter: data.currentChapter ?? prev.currentChapter,
+                progress: data.progress ?? prev.progress,
+              }));
+
+              sentryService.addBreadcrumb({
+                category: 'story-generation',
+                message: `Chapter ${data.currentChapter} completed`,
+                level: 'info',
+                data: {
+                  chapterNumber: data.currentChapter,
+                  chapterTitle: data.chapterTitle,
+                  totalChapters: data.totalChapters ?? numChapters ?? 3,
+                  progress: data.progress ?? 0,
+                  replay: data.replay === true,
+                },
+              });
+
+              if (!data.replay) {
+                posthogEvents.chapterCompleted(
+                  data.currentChapter,
+                  data.totalChapters ?? numChapters ?? 3,
+                  { chapterTitle: data.chapterTitle, format: selectedFormat },
+                );
               }
+
+              onChapterComplete?.(newChapter);
+              toast({
+                title: data.replay ? `Chapter ${data.currentChapter} Restored` : `Chapter ${data.currentChapter} Complete`,
+                description: `"${data.chapterTitle}" ${data.replay ? 'was restored' : 'has been generated'}`,
+              });
+              break;
             }
-          } catch (streamError) {
-            console.error('Stream reading error:', streamError);
-            throw streamError;
+
+            case 'complete':
+              receivedCompletion = true;
+              setState(prev => ({
+                ...prev,
+                isGenerating: false,
+                isComplete: true,
+                progress: 100,
+                message: data.replay ? 'Generation restored!' : 'Generation complete!',
+              }));
+
+              sentryService.addBreadcrumb({
+                category: 'story-generation',
+                message: data.replay ? 'Story generation replay restored' : 'Story generation completed successfully',
+                level: 'info',
+                data: { totalChapters: chapters.length, format: selectedFormat, replay: data.replay === true },
+              });
+              transaction.finish();
+
+              if (!data.replay) {
+                posthogEvents.storyGenerationCompleted({
+                  totalChapters: chapters.length,
+                  format: selectedFormat,
+                });
+              }
+
+              onComplete?.(chapters.filter(Boolean));
+              toast({
+                title: data.replay ? 'Story Restored' : 'Story Generation Complete',
+                description: `All ${chaptersCompleted} chapters ${data.replay ? 'were restored' : 'were generated successfully'}.`,
+              });
+              break;
+
+            case 'error':
+              sentryService.addBreadcrumb({
+                category: 'story-generation',
+                message: 'Streaming error received from server',
+                level: 'error',
+                data: { errorMessage: data.message, errorCode: data.code },
+              });
+              throw new Error(data.message || 'Chapter generation failed');
           }
         };
 
-        await readStream();
+        const processLine = (line: string) => {
+          if (!line.startsWith('data:')) return;
+          const eventJson = line.slice(5).trim();
+          if (!eventJson) return;
+
+          let data: StreamEvent;
+          try {
+            data = JSON.parse(eventJson) as StreamEvent;
+          } catch (parseError) {
+            console.error('Ignoring malformed stream event:', parseError, line);
+            return;
+          }
+          handleStreamEvent(data);
+        };
+
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() ?? '';
+          lines.forEach(processLine);
+        }
+
+        buffer += decoder.decode();
+        if (buffer.trim()) processLine(buffer.trim());
+        if (!receivedCompletion) {
+          throw new Error('Chapter generation stream ended before completion');
+        }
       } else {
         throw new Error('No response body available for streaming');
       }

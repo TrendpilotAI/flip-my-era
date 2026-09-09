@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { corsHeaders, handleCors, formatErrorResponse, formatSuccessResponse } from "../_shared/utils.ts";
+import { formatErrorResponse, formatSuccessResponse, getCorsHeaders, handleCors, verifyAuth } from "../_shared/utils.ts";
 
 interface RunwareProxyRequest {
   action?: "generate-image" | "generate-multiple";
@@ -98,31 +98,35 @@ serve(async (req) => {
   if (cors) return cors;
 
   if (req.method !== "POST") {
-    return new Response(null, { status: 405, headers: corsHeaders });
+    return new Response(null, { status: 405, headers: getCorsHeaders(req) });
+  }
+
+  if (!await verifyAuth(req)) {
+    return formatErrorResponse(new Error("Unauthorized"), 401, req);
   }
 
   let payload: RunwareProxyRequest;
   try {
     payload = await req.json();
-  } catch (error) {
-    return formatErrorResponse(new Error("Invalid JSON payload"), 400);
+  } catch {
+    return formatErrorResponse(new Error("Invalid JSON payload"), 400, req);
   }
 
   const apiKey = Deno.env.get("RUNWARE_API_KEY") || Deno.env.get("RUNWARE_SERVICE_ROLE_KEY");
   if (!apiKey) {
-    return formatErrorResponse(new Error("RUNWARE_API_KEY is not configured"), 500);
+    return formatErrorResponse(new Error("RUNWARE_API_KEY is not configured"), 500, req);
   }
 
   const action = payload.action ?? "generate-image";
   if (!payload.params?.positivePrompt) {
-    return formatErrorResponse(new Error("positivePrompt is required"), 400);
+    return formatErrorResponse(new Error("positivePrompt is required"), 400, req);
   }
 
   try {
     const results = await generateRunwareImages(apiKey, payload.params, action === "generate-multiple");
-    return formatSuccessResponse({ images: results });
+    return formatSuccessResponse({ images: results }, 200, req);
   } catch (error) {
-    return formatErrorResponse(error instanceof Error ? error : new Error(String(error)), 502);
+    return formatErrorResponse(error instanceof Error ? error : new Error(String(error)), 502, req);
   }
 });
 
@@ -258,7 +262,7 @@ function buildImageRequest(taskUUID: string, params: RunwareImageParams): Runwar
     negativePrompt: params.negativePrompt,
   };
 
-  for (const key of Object.keys(request)) {
+  for (const key of Object.keys(request) as Array<keyof typeof request>) {
     const value = request[key];
     if (value === undefined || value === null) {
       delete request[key];

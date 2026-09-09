@@ -7,7 +7,8 @@ import { Coins, Crown, RefreshCw } from 'lucide-react';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
+import type { CreditsFunctionResponse } from '@/core/integrations/supabase/functionResponses';
 import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { CreditPurchaseModal } from './CreditPurchaseModal';
 
@@ -52,7 +53,7 @@ export const CreditBalance: React.FC<{
 
       const token = await getToken();
 
-      const { data, error } = await supabase.functions.invoke('credits', {
+      const { data, error } = await invokeAuthenticatedFunction<CreditsFunctionResponse>('credits', {
         method: 'GET',
         headers: token ? {
           Authorization: `Bearer ${token}`,

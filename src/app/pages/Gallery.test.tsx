@@ -1,40 +1,34 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { render, screen, waitFor } from '@/test/test-utils';
-import { __testSupabaseMocks__ } from '@/test/setup';
 import { Gallery } from './Gallery';
 
-const authState = vi.hoisted(() => ({
-  isSignedIn: true,
-  user: { id: 'user-1' },
-}));
-
-vi.mock('@/core/integrations/better-auth/AuthProvider', () => ({
-  useSupabaseAuth: () => ({
-    isSignedIn: authState.isSignedIn,
-    user: authState.user,
+const authState = vi.hoisted(() => ({ isSignedIn: true }));
+const edgeTransport = vi.hoisted(() => ({ invokeAuthenticatedFunction: vi.fn() }));
+const publicCommunityTransport = vi.hoisted(() => ({ from: vi.fn() }));
+const legacyBoundary = vi.hoisted(() => ({
+  called: vi.fn((name: string) => {
+    throw new Error(`Forbidden legacy Gallery boundary called: ${name}`);
   }),
 }));
 
-interface TableQueryMock {
-  select: ReturnType<typeof vi.fn>;
-  update: ReturnType<typeof vi.fn>;
-  eq: ReturnType<typeof vi.fn>;
-  order: ReturnType<typeof vi.fn>;
-  limit: ReturnType<typeof vi.fn>;
-  single: ReturnType<typeof vi.fn>;
-}
+vi.mock('@/core/integrations/better-auth/AuthProvider', () => ({
+  useSupabaseAuth: () => ({ isSignedIn: authState.isSignedIn }),
+}));
 
-function createTableQueryMock(data: unknown[], error: unknown = null, singleData: unknown = null): TableQueryMock {
-  const query = {} as TableQueryMock;
-  query.select = vi.fn(() => query);
-  query.update = vi.fn(() => query);
-  query.eq = vi.fn(() => query);
-  query.order = vi.fn(() => query);
-  query.limit = vi.fn(async () => ({ data, error }));
-  query.single = vi.fn(async () => ({ data: singleData, error }));
-  return query;
-}
+vi.mock('@/core/integrations/supabase/client', () => ({
+  supabase: { from: publicCommunityTransport.from },
+  invokeAuthenticatedFunction: edgeTransport.invokeAuthenticatedFunction,
+}));
+
+// This module must never become a disguised Gallery persistence boundary again.
+vi.mock('@/core/integrations/supabase/userData', () => ({
+  listCommunityBooks: () => legacyBoundary.called('listCommunityBooks'),
+  listOwnBooks: () => legacyBoundary.called('listOwnBooks'),
+  setBookPublished: () => legacyBoundary.called('setBookPublished'),
+}));
 
 const communityBook = {
   id: 'community-1',
@@ -42,257 +36,279 @@ const communityBook = {
   subtitle: null,
   author_name: 'Swiftie Writer',
   cover_image_url: 'https://example.com/cover.jpg',
-  generation_settings: { selectedTheme: 'coming-of-age' },
-  style_preferences: null,
   chapter_count: 5,
   word_count: 4200,
   created_at: '2026-01-01T00:00:00Z',
   published_at: '2026-01-02T00:00:00Z',
-  status: 'published',
-  ebook_generation_id: 'generation-community-1',
-  chapters: [{ title: 'Chapter 1', content: 'One two three four five' }],
+  status: 'published' as const,
+};
+
+const strangerPublishedBook = {
+  ...communityBook,
+  id: 'community-stranger-1',
+  title: 'A Stranger Published Era',
+  author_name: 'Someone Else',
 };
 
 const privateMemoryBook = {
-  id: 'memory-1',
+  id: '11111111-1111-4111-8111-111111111111',
+  original_story_id: null,
+  ebook_generation_id: '22222222-2222-4222-8222-222222222222',
   title: 'My Private Era',
+  description: null,
   subtitle: null,
   author_name: null,
   cover_image_url: null,
+  chapters: [{ title: 'Chapter 1', content: 'One two three four' }],
+  table_of_contents: null,
   generation_settings: { selectedTheme: 'first-love' },
   style_preferences: null,
   chapter_count: 1,
   word_count: 4,
-  created_at: '2026-01-03T00:00:00Z',
-  published_at: null,
   status: 'completed',
-  ebook_generation_id: 'mine-1',
-  chapters: [{ title: 'Chapter 1', content: 'One two three four' }],
+  published_at: null,
+  generation_completed_at: '2026-01-03T00:00:00Z',
+  view_count: 0,
+  download_count: 0,
+  share_count: 0,
+  rating_average: 0,
+  rating_count: 0,
+  created_at: '2026-01-03T00:00:00Z',
+  updated_at: '2026-01-03T00:00:00Z',
+  version: 7,
 };
 
 const publishedMemoryBook = {
   ...privateMemoryBook,
-  id: 'memory-2',
+  id: '44444444-4444-4444-8444-444444444444',
+  ebook_generation_id: '55555555-5555-4555-8555-555555555555',
   title: 'My Published Era',
   status: 'published',
   published_at: '2026-01-04T00:00:00Z',
-  ebook_generation_id: 'mine-2',
+  version: 8,
 };
 
-const userBook = {
-  id: 'mine-1',
-  title: 'My Generated Era',
+const legacyBook = {
+  id: '33333333-3333-4333-8333-333333333333',
+  story_id: null,
+  title: 'Older Generated Era',
   content: JSON.stringify([{ title: 'Chapter 1', content: 'One two three four' }]),
+  status: 'completed',
+  credits_used: 1,
+  paid_with_credits: true,
+  transaction_id: null,
   story_type: 'taylor-swift-first-love-short-story',
   chapter_count: 1,
   word_count: 4,
-  created_at: '2026-01-03T00:00:00Z',
+  created_at: '2026-01-02T00:00:00Z',
+  updated_at: '2026-01-02T00:00:00Z',
 };
 
-function mockGalleryQueries({
-  community = [communityBook],
-  memoryBooks = [privateMemoryBook],
-  legacyBooks = [userBook],
-  communityError = null,
-  memoryBooksError = null,
-  legacyBooksError = null,
-  publishResponse = publishedMemoryBook,
-}: {
-  community?: unknown[];
+interface GalleryTransportOptions {
+  communityBooks?: unknown[];
   memoryBooks?: unknown[];
   legacyBooks?: unknown[];
-  communityError?: unknown;
-  memoryBooksError?: unknown;
-  legacyBooksError?: unknown;
-  publishResponse?: unknown;
-} = {}) {
-  const communityQuery = createTableQueryMock(community, communityError);
-  const myMemoryBooksQuery = createTableQueryMock(memoryBooks, memoryBooksError, publishResponse);
-  const publishQuery = createTableQueryMock([], null, publishResponse);
-  const refreshCommunityQuery = createTableQueryMock(community, communityError);
-  const legacyBooksQuery = createTableQueryMock(legacyBooks, legacyBooksError);
-  const memoryBooksQueries = [communityQuery, myMemoryBooksQuery, publishQuery, refreshCommunityQuery];
+  stalePatch?: boolean;
+}
 
-  __testSupabaseMocks__.supabaseFromMock.mockImplementation((table: string) => {
-    if (table === 'memory_books') return memoryBooksQueries.shift() ?? communityQuery;
-    if (table === 'ebook_generations') return legacyBooksQuery;
-    return createTableQueryMock([]);
+function configureGalleryTransport({
+  communityBooks = [communityBook],
+  memoryBooks = [privateMemoryBook],
+  legacyBooks = [],
+  stalePatch = false,
+}: GalleryTransportOptions = {}) {
+  let currentCommunityBooks = communityBooks;
+  let currentMemoryBooks = memoryBooks;
+
+  publicCommunityTransport.from.mockImplementation((table: string) => {
+    if (table !== 'community_books') throw new Error(`Unexpected public table: ${table}`);
+    const query = {
+      order: vi.fn(() => query),
+      limit: vi.fn(async () => ({ data: currentCommunityBooks, error: null })),
+    };
+    return { select: vi.fn(() => query) };
   });
 
-  return { communityQuery, myMemoryBooksQuery, legacyBooksQuery, publishQuery, refreshCommunityQuery };
+  edgeTransport.invokeAuthenticatedFunction.mockImplementation(
+    async (functionName: string, options?: { method?: string; body?: Record<string, unknown> }) => {
+      if (functionName !== 'gallery-books') {
+        return { data: null, error: new Error(`Unexpected function ${functionName}`) };
+      }
+
+      if (options?.method === 'GET') {
+        const canonicalGenerationIds = new Set(
+          currentMemoryBooks.map((book) => (book as { ebook_generation_id?: string | null }).ebook_generation_id),
+        );
+        return {
+          data: {
+            memoryBooks: currentMemoryBooks,
+            legacyBooks: legacyBooks.filter(
+              (book) => !canonicalGenerationIds.has((book as { id?: string }).id),
+            ),
+          },
+          error: null,
+        };
+      }
+
+      if (options?.method === 'PATCH') {
+        if (stalePatch) {
+          return { data: null, error: Object.assign(new Error('Book changed elsewhere'), { status: 409 }) };
+        }
+
+        const { bookId, status, version } = options.body ?? {};
+        const existingBook = currentMemoryBooks.find(
+          (book) => (book as { id?: string }).id === bookId,
+        ) as typeof privateMemoryBook | undefined;
+        if (!existingBook || version !== existingBook.version) {
+          return { data: null, error: Object.assign(new Error('Book changed elsewhere'), { status: 409 }) };
+        }
+
+        const updatedBook = {
+          ...existingBook,
+          status,
+          published_at: status === 'published' ? publishedMemoryBook.published_at : null,
+          version: existingBook.version + 1,
+        };
+        currentMemoryBooks = currentMemoryBooks.map((book) => (
+          (book as { id?: string }).id === updatedBook.id ? updatedBook : book
+        ));
+        currentCommunityBooks = status === 'published'
+          ? [...currentCommunityBooks, { ...updatedBook, author_name: 'You' }]
+          : currentCommunityBooks.filter((book) => (book as { id?: string }).id !== updatedBook.id);
+        return { data: updatedBook, error: null };
+      }
+
+      return { data: null, error: new Error(`Unexpected gallery-books method ${options?.method}`) };
+    },
+  );
+}
+
+async function expectNoLegacyBoundaryCalls() {
+  await waitFor(() => expect(legacyBoundary.called).not.toHaveBeenCalled());
 }
 
 describe('Gallery', () => {
   beforeEach(() => {
     authState.isSignedIn = true;
-    authState.user = { id: 'user-1' };
-    mockGalleryQueries();
+    edgeTransport.invokeAuthenticatedFunction.mockReset();
+    publicCommunityTransport.from.mockReset();
+    legacyBoundary.called.mockReset();
+    configureGalleryTransport();
   });
 
-  it('renders Community and My eBooks tab triggers with loaded counts', async () => {
+  it('keeps Community on the fixed public community_books projection and leaves its cards read-only', async () => {
+    configureGalleryTransport({ communityBooks: [communityBook, strangerPublishedBook] });
     render(<Gallery />);
 
-    expect(await screen.findByRole('tab', { name: 'Community (1)' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'My eBooks (1)' })).toBeInTheDocument();
+    await expectNoLegacyBoundaryCalls();
+    expect(await screen.findByRole('tab', { name: 'Community (2)' })).toBeInTheDocument();
+    expect(screen.getByText('Midnight Memory')).toBeInTheDocument();
+    expect(screen.getByText('A Stranger Published Era')).toBeInTheDocument();
+    expect(screen.getByText(/by Someone Else/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /publish/i })).not.toBeInTheDocument();
+    expect(publicCommunityTransport.from).toHaveBeenCalledWith('community_books');
+    expect(legacyBoundary.called).not.toHaveBeenCalled();
   });
 
-  it('loads published memory_books into Community', async () => {
-    const { communityQuery } = mockGalleryQueries();
-
-    render(<Gallery />);
-
-    expect(await screen.findByText('Midnight Memory')).toBeInTheDocument();
-    expect(screen.getByText(/by Swiftie Writer/)).toBeInTheDocument();
-    expect(screen.getByText('5 chapters')).toBeInTheDocument();
-    expect(communityQuery.eq).toHaveBeenCalledWith('status', 'published');
-    expect(communityQuery.order).toHaveBeenCalledWith('published_at', { ascending: false });
-    expect(communityQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(communityQuery.limit).toHaveBeenCalledWith(24);
-  });
-
-  it('loads authenticated memory_books into My eBooks with private and published states', async () => {
+  it('loads only the server-authorized owner library, preserves server publish fields, and de-duplicates legacy fallback', async () => {
     const user = userEvent.setup();
-    const { myMemoryBooksQuery, legacyBooksQuery } = mockGalleryQueries({
+    configureGalleryTransport({
+      communityBooks: [communityBook, strangerPublishedBook],
       memoryBooks: [privateMemoryBook, publishedMemoryBook],
-      legacyBooks: [userBook],
+      legacyBooks: [
+        { ...legacyBook, id: privateMemoryBook.ebook_generation_id, title: 'Duplicate Legacy Copy' },
+        legacyBook,
+      ],
     });
-
     render(<Gallery />);
-
-    await user.click(await screen.findByRole('tab', { name: 'My eBooks (2)' }));
+    await expectNoLegacyBoundaryCalls();
+    await user.click(await screen.findByRole('tab', { name: 'My eBooks (3)' }));
 
     expect(await screen.findByText('My Private Era')).toBeInTheDocument();
     expect(screen.getByText('My Published Era')).toBeInTheDocument();
-    expect(screen.getAllByText(/by You/)).toHaveLength(2);
-    expect(screen.getAllByText('First Love').length).toBeGreaterThan(0);
+    expect(screen.getByText('Older Generated Era')).toBeInTheDocument();
+    expect(screen.queryByText('Duplicate Legacy Copy')).not.toBeInTheDocument();
+    expect(screen.queryByText('A Stranger Published Era')).not.toBeInTheDocument();
     expect(screen.getByText('Private')).toBeInTheDocument();
     expect(screen.getByText('Published')).toBeInTheDocument();
+    expect(screen.getByText('Generated')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Publish' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Unpublish' })).toBeInTheDocument();
-    expect(myMemoryBooksQuery.eq).toHaveBeenCalledWith('user_id', 'user-1');
-    expect(myMemoryBooksQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(myMemoryBooksQuery.limit).toHaveBeenCalledWith(24);
-    expect(legacyBooksQuery.eq).toHaveBeenCalledWith('user_id', 'user-1');
-    expect(legacyBooksQuery.order).toHaveBeenCalledWith('created_at', { ascending: false });
+    expect(edgeTransport.invokeAuthenticatedFunction).toHaveBeenCalledWith('gallery-books', { method: 'GET' });
+    expect(legacyBoundary.called).not.toHaveBeenCalled();
   });
 
-  it('renders legacy ebook_generations only when no matching memory_books row exists', async () => {
+  it('publishes with the authoritative version and server-owned published_at state', async () => {
     const user = userEvent.setup();
-    mockGalleryQueries({
-      memoryBooks: [privateMemoryBook],
-      legacyBooks: [
-        userBook,
-        { ...userBook, id: 'legacy-only', title: 'Older Generated Era' },
-      ],
-    });
-
+    configureGalleryTransport({ communityBooks: [], memoryBooks: [privateMemoryBook] });
     render(<Gallery />);
+    await expectNoLegacyBoundaryCalls();
+    await user.click(await screen.findByRole('tab', { name: 'My eBooks (1)' }));
+    await user.click(await screen.findByRole('button', { name: 'Publish' }));
 
-    await user.click(await screen.findByRole('tab', { name: 'My eBooks (2)' }));
-
+    expect(await screen.findByRole('button', { name: 'Unpublish' })).toBeInTheDocument();
+    expect(edgeTransport.invokeAuthenticatedFunction).toHaveBeenCalledWith('gallery-books', {
+      method: 'PATCH',
+      body: { bookId: privateMemoryBook.id, status: 'published', version: privateMemoryBook.version },
+    });
+    await user.click(screen.getByRole('tab', { name: /Community/ }));
     expect(await screen.findByText('My Private Era')).toBeInTheDocument();
-    expect(screen.queryByText('My Generated Era')).not.toBeInTheDocument();
-    expect(screen.getByText('Older Generated Era')).toBeInTheDocument();
-    expect(screen.getByText('Generated')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Publish' })).toHaveLength(1);
   });
 
-  it('publishes a private memory_book and refreshes Community', async () => {
+  it('unpublishes with the authoritative version and removes the server-unpublished book from Community', async () => {
     const user = userEvent.setup();
-    const { publishQuery } = mockGalleryQueries({
-      community: [],
-      memoryBooks: [privateMemoryBook],
-      legacyBooks: [],
-      publishResponse: publishedMemoryBook,
+    configureGalleryTransport({
+      communityBooks: [{ ...publishedMemoryBook, author_name: 'You' }],
+      memoryBooks: [publishedMemoryBook],
     });
-
     render(<Gallery />);
+    await expectNoLegacyBoundaryCalls();
+    await user.click(await screen.findByRole('tab', { name: 'My eBooks (1)' }));
+    await user.click(await screen.findByRole('button', { name: 'Unpublish' }));
 
+    expect(await screen.findByRole('button', { name: 'Publish' })).toBeInTheDocument();
+    expect(edgeTransport.invokeAuthenticatedFunction).toHaveBeenCalledWith('gallery-books', {
+      method: 'PATCH',
+      body: { bookId: publishedMemoryBook.id, status: 'completed', version: publishedMemoryBook.version },
+    });
+    await user.click(screen.getByRole('tab', { name: /Community/ }));
+    await waitFor(() => expect(screen.queryByText('My Published Era')).not.toBeInTheDocument());
+  });
+
+  it('refreshes authoritative owner state after a 409 instead of treating a stale publish as successful', async () => {
+    const user = userEvent.setup();
+    configureGalleryTransport({ communityBooks: [], memoryBooks: [privateMemoryBook], stalePatch: true });
+    render(<Gallery />);
+    await expectNoLegacyBoundaryCalls();
     await user.click(await screen.findByRole('tab', { name: 'My eBooks (1)' }));
     await user.click(await screen.findByRole('button', { name: 'Publish' }));
 
     await waitFor(() => {
-      expect(publishQuery.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          status: 'published',
-          published_at: expect.any(String),
-        }),
-      );
+      expect(edgeTransport.invokeAuthenticatedFunction).toHaveBeenNthCalledWith(3, 'gallery-books', { method: 'GET' });
     });
-    expect(publishQuery.eq).toHaveBeenCalledWith('id', privateMemoryBook.id);
-    expect(await screen.findByRole('button', { name: 'Unpublish' })).toBeInTheDocument();
+    expect(screen.getByText('Private')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Unpublish' })).not.toBeInTheDocument();
   });
 
-  it('unpublishes a published memory_book and refreshes Community', async () => {
-    const user = userEvent.setup();
-    const unpublishedBook = { ...publishedMemoryBook, status: 'completed', published_at: null };
-    const { publishQuery } = mockGalleryQueries({
-      memoryBooks: [publishedMemoryBook],
-      legacyBooks: [],
-      publishResponse: unpublishedBook,
-    });
-
-    render(<Gallery />);
-
-    await user.click(await screen.findByRole('tab', { name: 'My eBooks (1)' }));
-    await user.click(await screen.findByRole('button', { name: 'Unpublish' }));
-
-    await waitFor(() => {
-      expect(publishQuery.update).toHaveBeenCalledWith({
-        status: 'completed',
-        published_at: null,
-      });
-    });
-    expect(await screen.findByRole('button', { name: 'Publish' })).toBeInTheDocument();
-  });
-
-  it('shows sign-in CTA in My eBooks when signed out', async () => {
+  it('does not request the private library while signed out', async () => {
     const user = userEvent.setup();
     authState.isSignedIn = false;
-    const { myMemoryBooksQuery, legacyBooksQuery } = mockGalleryQueries();
-
     render(<Gallery />);
-
+    await expectNoLegacyBoundaryCalls();
     await user.click(await screen.findByRole('tab', { name: 'My eBooks (0)' }));
 
     expect(screen.getByText('Sign in to view your ebooks')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute('href', '/auth');
-    expect(myMemoryBooksQuery.select).not.toHaveBeenCalled();
-    expect(legacyBooksQuery.select).not.toHaveBeenCalled();
+    expect(edgeTransport.invokeAuthenticatedFunction).not.toHaveBeenCalledWith('gallery-books', { method: 'GET' });
   });
 
-  it('search filters the active tab results', async () => {
-    const user = userEvent.setup();
-    mockGalleryQueries({
-      community: [
-        communityBook,
-        { ...communityBook, id: 'community-2', title: 'Folklore Letters', author_name: 'Betty' },
-      ],
-    });
-
-    render(<Gallery />);
-
-    expect(await screen.findByText('Midnight Memory')).toBeInTheDocument();
-    expect(screen.getByText('Folklore Letters')).toBeInTheDocument();
-
-    await user.type(screen.getByPlaceholderText('Search ebooks...'), 'folklore');
-
-    expect(screen.queryByText('Midnight Memory')).not.toBeInTheDocument();
-    expect(screen.getByText('Folklore Letters')).toBeInTheDocument();
-  });
-
-  it('shows distinct empty states for Community and My eBooks', async () => {
-    const user = userEvent.setup();
-    mockGalleryQueries({ community: [], memoryBooks: [], legacyBooks: [] });
-
-    render(<Gallery />);
-
-    expect(await screen.findByText('No community ebooks yet')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('tab', { name: 'My eBooks (0)' }));
-
-    await waitFor(() => {
-      expect(screen.getByText('No ebooks in your library yet')).toBeInTheDocument();
-    });
+  it('rejects legacy private transports and browser PostgREST from the Gallery source', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/app/pages/Gallery.tsx'), 'utf8');
+    expect(source).toContain("from('community_books'");
+    expect(source).toContain("'gallery-books'");
+    expect(source).toContain('invokeAuthenticatedFunction');
+    expect(source).not.toContain('integrations/supabase/userData');
+    expect(source).not.toMatch(/\.from\(\s*['"](?:memory_books|ebook_generations)['"]\s*\)/);
+    expect(source).not.toMatch(/listOwnBooks|setBookPublished|listCommunityBooks/);
   });
 });

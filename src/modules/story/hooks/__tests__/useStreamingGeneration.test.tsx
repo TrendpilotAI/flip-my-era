@@ -45,6 +45,7 @@ vi.mock('@/core/integrations/posthog', () => ({
     chapterCompleted: vi.fn(),
     storyGenerationCompleted: vi.fn(),
     storyGenerationFailed: vi.fn(),
+    storyGenerationAborted: vi.fn(),
   },
 }));
 
@@ -117,12 +118,14 @@ describe('useStreamingGeneration', () => {
     await waitFor(() => expect(screen.getByTestId('done').textContent).toBe('true'));
     expect(screen.getByTestId('title').textContent).toBe('Ch 1');
     expect(screen.getByTestId('pos').textContent).toBe('1/1');
+
+    const fetchMock = vi.mocked(globalThis.fetch);
+    const request = fetchMock.mock.calls[0]?.[1];
+    const body = JSON.parse(String(request?.body)) as { idempotencyKey?: string };
+    expect(body.idempotencyKey).toMatch(/^stream-chapters:.+/);
   });
 
-  it('receives stream error events without crashing', async () => {
-    // BUG: The hook's error event throw is caught by the parse error handler,
-    // so isGenerating stays true when the stream closes without a 'complete' event.
-    // This test verifies the hook doesn't crash on error events and updates progress.
+  it('treats a stream error event as a terminal failure', async () => {
     (globalThis as any).fetch = vi.fn(async () =>
       makeSseResponse([
         { type: 'progress', currentChapter: 0, totalChapters: 1, progress: 0, message: 'init' },
@@ -131,10 +134,9 @@ describe('useStreamingGeneration', () => {
     );
 
     render(<TestHarness />);
-    // The progress event should have updated the message
-    await waitFor(() => expect(screen.getByTestId('msg').textContent).toBe('init'), { timeout: 5000 });
-    // No 'complete' event, so isComplete stays false
+    await waitFor(() => expect(screen.getByTestId('gen').textContent).toBe('false'), { timeout: 5000 });
     expect(screen.getByTestId('done').textContent).toBe('false');
+    expect(screen.getByTestId('msg').textContent).toMatch(/Upstream error/);
   });
 
   it('continues on parse errors in the stream', async () => {
@@ -162,7 +164,67 @@ describe('useStreamingGeneration', () => {
     render(<TestHarness />);
     await waitFor(() => expect(screen.getByTestId('gen').textContent).toBe('false'), { timeout: 5000 });
     expect(screen.getByTestId('done').textContent).toBe('false');
-    expect(screen.getByTestId('msg').textContent).toMatch(/401/);
+    expect(screen.getByTestId('msg').textContent).toMatch(/Authentication failed/);
+  });
+
+  it('restores a completed replay stream', async () => {
+    (globalThis as any).fetch = vi.fn(async () =>
+      makeSseResponse([
+        { type: 'status', status: 'replay', replay: true, totalChapters: 1 },
+        {
+          type: 'chapter',
+          replay: true,
+          currentChapter: 1,
+          totalChapters: 1,
+          chapterTitle: 'Cached chapter',
+          chapterContent: 'Cached content',
+        },
+        { type: 'complete', replay: true, totalChapters: 1, progress: 100 },
+      ])
+    );
+
+    render(<TestHarness />);
+    await waitFor(() => expect(screen.getByTestId('done').textContent).toBe('true'), { timeout: 5000 });
+    expect(screen.getByTestId('count').textContent).toBe('1');
+    expect(screen.getByTestId('title').textContent).toBe('Cached chapter');
+    expect(screen.getByTestId('msg').textContent).toMatch(/restored/i);
+  });
+
+  it('surfaces an in-progress lease without starting a stream', async () => {
+    (globalThis as any).fetch = vi.fn(async () => new Response(JSON.stringify({
+      error: 'GENERATION_IN_PROGRESS',
+      status: 'in_progress',
+      retry_after: 12,
+    }), {
+      status: 409,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    render(<TestHarness />);
+    await waitFor(() => expect(screen.getByTestId('gen').textContent).toBe('false'), { timeout: 5000 });
+    expect(screen.getByTestId('done').textContent).toBe('false');
+    expect(screen.getByTestId('msg').textContent).toMatch(/already in progress.*12 seconds/i);
+  });
+
+  it('surfaces insufficient credits and emits the credit-wall event', async () => {
+    const exhaustedListener = vi.fn();
+    window.addEventListener('credits:exhausted', exhaustedListener);
+    (globalThis as any).fetch = vi.fn(async () => new Response(JSON.stringify({
+      error: 'INSUFFICIENT_CREDITS',
+      status: 'insufficient',
+      current_balance: 1,
+      required: 3,
+    }), {
+      status: 402,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    render(<TestHarness />);
+    await waitFor(() => expect(screen.getByTestId('gen').textContent).toBe('false'), { timeout: 5000 });
+    expect(screen.getByTestId('done').textContent).toBe('false');
+    expect(screen.getByTestId('msg').textContent).toMatch(/Insufficient credits.*Current balance: 1.*Required: 3/i);
+    expect(exhaustedListener).toHaveBeenCalledTimes(1);
+    window.removeEventListener('credits:exhausted', exhaustedListener);
   });
 
   it('aborts generation via stopGeneration', async () => {

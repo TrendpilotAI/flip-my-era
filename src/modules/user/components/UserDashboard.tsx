@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
+import type { PortalFunctionResponse } from '@/core/integrations/supabase/functionResponses';
+import { listOwnStories } from '@/core/integrations/supabase/userData';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/modules/shared/components/ui/tabs';
@@ -20,7 +22,6 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { UserBooks } from '@/modules/ebook/components/UserBooks';
-import { CreatorAnalytics } from '@/modules/creator/CreatorAnalytics';
 import { withErrorBoundary } from '@/modules/shared/components/ErrorBoundary';
 
 interface Story {
@@ -52,9 +53,11 @@ const UserDashboard = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['overview', 'stories', 'books', 'analytics', 'account', 'billing'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
+    const enabledTabs = ['overview', 'stories', 'books', 'account', 'billing'];
+    setActiveTab((currentTab) => {
+      if (tabParam && enabledTabs.includes(tabParam)) return tabParam;
+      return currentTab;
+    });
 
     // Post-checkout feedback
     if (params.get('upgrade') === 'success') {
@@ -82,15 +85,17 @@ const UserDashboard = () => {
 
   const loadStories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(6); // Show only recent stories
-
-      if (error) throw error;
-      setStories(data || []);
+      const token = await getToken();
+      if (!token) throw new Error('Authentication required');
+      const data = await listOwnStories(6, token);
+      setStories(data.map((story) => ({
+        id: story.id,
+        title: story.title || 'Untitled Story',
+        name: story.name || '',
+        birth_date: story.birth_date,
+        initial_story: story.initial_story,
+        created_at: story.created_at,
+      })));
     } catch (error: unknown) {
       toast({
         title: "Error loading stories",
@@ -160,11 +165,10 @@ const UserDashboard = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="stories">My Stories</TabsTrigger>
             <TabsTrigger value="books">My Books</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
@@ -351,11 +355,6 @@ const UserDashboard = () => {
             <UserBooks />
           </TabsContent>
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <CreatorAnalytics />
-          </TabsContent>
-
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-6">
             <Card>
@@ -420,7 +419,7 @@ const UserDashboard = () => {
                         setLoading(true);
                         const token = await getToken();
                         if (!token) throw new Error('Missing auth token');
-                        const { data, error } = await supabase.functions.invoke('stripe-portal', {
+                        const { data, error } = await invokeAuthenticatedFunction<PortalFunctionResponse>('stripe-portal', {
                           method: 'POST',
                           headers: { Authorization: `Bearer ${token}` },
                         });

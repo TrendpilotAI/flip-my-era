@@ -38,6 +38,7 @@ describe('generateWithGroq', () => {
       temperature: 0.5,
       maxTokens: 2048,
       systemPrompt: 'custom system prompt',
+      idempotencyKey: 'generation-attempt-42',
     });
 
     expect(__testSupabaseMocks__.supabase.functions.invoke).toHaveBeenCalledWith(
@@ -48,7 +49,23 @@ describe('generateWithGroq', () => {
           temperature: 0.5,
           maxTokens: 2048,
           systemPrompt: 'custom system prompt',
+          idempotency_key: 'generation-attempt-42',
         }),
+        headers: expect.objectContaining({
+          Authorization: 'Bearer mock-token',
+          'Idempotency-Key': 'generation-attempt-42',
+        }),
+      }),
+    );
+  });
+
+  it('preserves an explicit zero temperature', async () => {
+    await generateWithGroq('Test prompt', 'mock-token', { temperature: 0 });
+
+    expect(__testSupabaseMocks__.supabase.functions.invoke).toHaveBeenCalledWith(
+      'groq-api',
+      expect.objectContaining({
+        body: expect.objectContaining({ temperature: 0 }),
       }),
     );
   });

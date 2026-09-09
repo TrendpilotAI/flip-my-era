@@ -4,6 +4,7 @@ import { type EraType, ERA_CONFIG } from '@/modules/story/types/eras';
 import eraImages from '@/modules/story/data/eraImages.json';
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import { Button } from '@/modules/shared/components/ui/button';
+import { FREE_SIGNUP_CREDITS } from '@/config/stripe-products';
 
 interface SamplePreviewProps {
   era: EraType;
@@ -79,8 +80,8 @@ export function SamplePreview({ era, onCreateEbook }: SamplePreviewProps) {
 
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-bold text-center mb-2 bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text text-transparent dark:from-purple-100 dark:via-pink-200 dark:to-blue-100">
-        Preview: {config.displayName} Era 📖
+      <h2 className="mb-2 text-center text-2xl font-bold text-foreground md:text-3xl">
+        Preview: {config.displayName} Era
       </h2>
       <p className="text-center text-gray-500 dark:text-gray-400 mb-6 text-sm">
         Here's a taste of what your personalized ebook will look like
@@ -123,7 +124,8 @@ export function SamplePreview({ era, onCreateEbook }: SamplePreviewProps) {
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
+                aria-label="Previous preview page"
+                className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-800"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -133,7 +135,8 @@ export function SamplePreview({ era, onCreateEbook }: SamplePreviewProps) {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page === totalPages - 1}
-                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 transition-colors"
+                aria-label="Next preview page"
+                className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-800"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -147,8 +150,8 @@ export function SamplePreview({ era, onCreateEbook }: SamplePreviewProps) {
             <p className="text-sm text-gray-500">The story continues with beautiful AI-generated illustrations and personalized chapters...</p>
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-white dark:bg-gray-900 rounded-lg px-4 py-2 shadow-lg border border-purple-200 dark:border-purple-800">
-              <p className="text-xs font-medium text-purple-700 dark:text-purple-300 flex items-center gap-1">
+            <div className="rounded-lg border border-border bg-white px-4 py-2 shadow-lg dark:bg-gray-900">
+              <p className="flex items-center gap-1 text-xs font-medium text-primary">
                 <BookOpen className="w-3.5 h-3.5" />
                 Full story unlocked when you create
               </p>
@@ -162,13 +165,13 @@ export function SamplePreview({ era, onCreateEbook }: SamplePreviewProps) {
         <Button
           onClick={onCreateEbook}
           size="lg"
-          className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white hover:from-purple-700 hover:to-pink-600 px-10 py-6 text-lg font-semibold shadow-lg"
+          className="px-10 py-6 text-lg font-semibold shadow-lg"
         >
           <BookOpen className="mr-2 h-5 w-5" />
-          Create Your First Ebook — Free
+          Create Your First Ebook Free
         </Button>
         <p className="text-xs text-gray-400 mt-2">
-          Uses 2 credits • You have 10 free credits
+          Uses 2 credits · You receive {FREE_SIGNUP_CREDITS} free credits at signup
         </p>
       </div>
     </div>

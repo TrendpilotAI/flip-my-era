@@ -8,6 +8,7 @@ import { Label } from '@/modules/shared/components/ui/label';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Loader2 } from "lucide-react";
 import { GoogleSignInButton } from '@/modules/shared/components/GoogleSignInButton';
+import { googleAuthEnabled } from '@/lib/auth-client';
 
 interface LocationState {
   returnTo?: string;
@@ -104,16 +105,19 @@ const Auth = () => {
               </Button>
             </div>
 
-            <GoogleSignInButton className="w-full mb-4" />
-
-            <div className="relative mb-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
-              </div>
-            </div>
+            {googleAuthEnabled && (
+              <>
+                <GoogleSignInButton className="w-full mb-4" />
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {activeTab === "login" ? (
               <form onSubmit={handleSignIn} className="space-y-4">
