@@ -129,7 +129,7 @@ export async function generateImageWithVariations(
     };
   }
 
-  let results: Array<{ imageURL: string; seed: number; cost?: number }>;
+  let results: GeneratedImage[];
 
     // Determine if this is an ERA or story prompt image
     if (params.vibeCheck && params.swiftieSignal && params.eraType) {
@@ -154,11 +154,15 @@ export async function generateImageWithVariations(
     }
 
     // Extract variations from results
-    const variations: ImageVariation[] = results.map(r => ({
-      url: r.imageURL,
-      seed: r.seed,
-      cost: r.cost
-    }));
+    const variations: ImageVariation[] = results.flatMap((result) =>
+      result.imageURL
+        ? [{ url: result.imageURL, seed: result.seed, cost: result.cost }]
+        : [],
+    );
+
+    if (variations.length === 0) {
+      throw new Error('Image generation returned no usable image URLs');
+    }
 
     // Analyze and select best image (requires Clerk token)
     const analysis = await analyzeAndSelectBestImage(variations, params.title, params.prompt, clerkToken || null);

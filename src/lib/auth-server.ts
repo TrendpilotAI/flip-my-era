@@ -1,41 +1,40 @@
 /**
  * BetterAuth server configuration.
  *
- * This module is imported by the Netlify Function handler (`netlify/functions/auth.ts`).
+ * This module is imported by the Vercel Function handler (`api/auth/[...path].ts`).
  * It must NOT be imported by any browser-side code — Vite's build will tree-shake it
  * out because it is never reachable from the SPA entry point, but to be safe the file
  * only imports Node/Deno-compatible modules.
  *
- * Environment variables (set in Netlify dashboard / .env):
+ * Environment variables (set in Vercel / local development):
  *   DATABASE_URL          — Postgres connection string (Supabase pooler recommended)
+ *   DATABASE_CA_CERT      — Trusted Postgres CA as PEM, escaped PEM, or base64:PEM
  *   BETTER_AUTH_SECRET    — 32+ char random secret for signing tokens
- *   BETTER_AUTH_URL       — Public base URL of the app (defaults to Netlify deploy URL)
+ *   BETTER_AUTH_URL       — Public base URL of the app (defaults to the Vercel deploy URL)
  *   GOOGLE_CLIENT_ID      — OAuth2 client id
  *   GOOGLE_CLIENT_SECRET  — OAuth2 client secret
  */
 import { betterAuth } from 'better-auth';
 import { Pool } from 'pg';
+import { getBetterAuthTrustedOrigins, getBetterAuthUrl } from './deployment-url.js';
+import { createPostgresPoolConfig } from './postgres-pool-config.js';
 
 // ---------------------------------------------------------------------------
 // Database adapter
 // ---------------------------------------------------------------------------
-
-function getBetterAuthUrl() {
-  return process.env.BETTER_AUTH_URL
-    || process.env.DEPLOY_PRIME_URL
-    || process.env.URL
-    || 'https://flipmyera.com';
-}
 
 function createPool() {
   const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (!connectionString) {
     throw new Error('DATABASE_URL or POSTGRES_URL environment variable is required for BetterAuth');
   }
-  return new Pool({ connectionString, max: 5, idleTimeoutMillis: 30_000 });
+  return new Pool(createPostgresPoolConfig(connectionString, process.env.DATABASE_CA_CERT));
 }
 
 const betterAuthUrl = getBetterAuthUrl();
+const trustedOrigins = getBetterAuthTrustedOrigins(betterAuthUrl);
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
 // ---------------------------------------------------------------------------
 // Auth instance
@@ -48,6 +47,7 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: betterAuthUrl,
   basePath: '/api/auth',
+  trustedOrigins,
 
   // ---------------------------------------------------------------------------
   // Email + password
@@ -61,13 +61,15 @@ export const auth = betterAuth({
   // ---------------------------------------------------------------------------
   // Social providers
   // ---------------------------------------------------------------------------
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirectURI: `${betterAuthUrl}/api/auth/callback/google`,
-    },
-  },
+  socialProviders: googleClientId && googleClientSecret
+    ? {
+        google: {
+          clientId: googleClientId,
+          clientSecret: googleClientSecret,
+          redirectURI: `${betterAuthUrl}/api/auth/callback/google`,
+        },
+      }
+    : {},
 
   // ---------------------------------------------------------------------------
   // Session configuration
@@ -86,23 +88,21 @@ export const auth = betterAuth({
   // ---------------------------------------------------------------------------
   user: {
     additionalFields: {
-      name: {
-        type: 'string',
-        required: false,
-        defaultValue: '',
-      },
       avatar_url: {
         type: 'string',
+        input: false,
         required: false,
         defaultValue: '',
       },
       subscription_status: {
         type: 'string',
+        input: false,
         required: false,
         defaultValue: 'free',
       },
       credits: {
         type: 'number',
+        input: false,
         required: false,
         defaultValue: 0,
       },

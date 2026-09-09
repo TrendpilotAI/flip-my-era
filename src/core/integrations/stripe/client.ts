@@ -1,4 +1,8 @@
 import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
+import type {
+  CheckoutFunctionResponse,
+  PortalFunctionResponse,
+} from '@/core/integrations/supabase/functionResponses';
 
 export interface StripeCheckoutOptions {
   plan: string;
@@ -24,7 +28,7 @@ export class StripeClient {
   }
 
   async redirectToCheckout(options: StripeCheckoutOptions): Promise<void> {
-    const { data, error } = await invokeAuthenticatedFunction('create-checkout', {
+    const { data, error } = await invokeAuthenticatedFunction<CheckoutFunctionResponse>('create-checkout', {
       body: {
         plan: options.plan,
         productType: options.productType,
@@ -46,7 +50,7 @@ export class StripeClient {
 
   async redirectToBillingPortal(options: StripeBillingPortalOptions): Promise<void> {
     // Call the Supabase edge function to create a billing portal session
-    const { data, error } = await invokeAuthenticatedFunction('stripe-portal', {
+    const { data, error } = await invokeAuthenticatedFunction<PortalFunctionResponse>('stripe-portal', {
       method: 'POST',
       body: JSON.stringify({
         returnUrl: options.returnUrl,

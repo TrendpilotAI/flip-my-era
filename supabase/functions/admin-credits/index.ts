@@ -3,41 +3,11 @@
 // Phase 1A: Enhanced E-Book Generation System
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-// @ts-expect-error -- Deno Edge Function imports
-import { verifyAuth } from "../_shared/utils.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
-
-const getCorsHeaders = (req: Request) => {
-  const origin = req.headers.get('Origin') || '*';
-  const allowedOrigins = [
-    'http://localhost:8080',
-    'http://localhost:8081',
-    'http://localhost:8082',
-    'http://localhost:8083',
-    'http://localhost:8084',
-    'http://localhost:3000',
-    'https://flip-my-era.netlify.app',
-    'https://flipmyera.com',
-    'https://www.flipmyera.com'
-  ];
-  
-  return {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-};
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { getCorsHeaders, handleCors, verifyAuth } from "../_shared/utils.ts";
 
 interface AdminCreditRequest {
+  action?: 'list_users' | 'get_transactions' | 'adjust';
   user_id: string;
   credits_to_add: number;
   reason: string;
@@ -65,22 +35,22 @@ interface ApiResponse {
   error?: string;
 }
 
+interface AdminCreditTransactionResult {
+  success: boolean;
+  new_balance: number;
+  transaction_id: string;
+}
+
 serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
   const dynamicCorsHeaders = getCorsHeaders(req);
-  
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: dynamicCorsHeaders });
-  }
 
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
     // Verify JWT cryptographically via Supabase auth.getUser()
@@ -223,8 +193,62 @@ serve(async (req) => {
       );
 
     } else if (req.method === 'POST') {
-      // Add credits to user
       const body: AdminCreditRequest = await req.json();
+
+      if (body.action === 'list_users') {
+        const { data: profiles, error: profilesError } = await supabaseClient
+          .from('profiles')
+          .select('id, email, full_name, name, created_at')
+          .order('created_at', { ascending: false });
+        if (profilesError) throw profilesError;
+
+        const { data: credits, error: creditsError } = await supabaseClient
+          .from('user_credits')
+          .select('user_id, balance, subscription_type, total_earned, total_spent');
+        if (creditsError) throw creditsError;
+
+        const creditByUser = new Map((credits || []).map((row) => [row.user_id, row]));
+        const users = (profiles || []).map((profile) => {
+          const credit = creditByUser.get(profile.id);
+          return {
+            id: profile.id,
+            email: profile.email,
+            full_name: profile.full_name || profile.name || 'Unknown',
+            created_at: profile.created_at,
+            credit_balance: credit?.balance || 0,
+            subscription_type: credit?.subscription_type || null,
+            total_earned: credit?.total_earned || 0,
+            total_spent: credit?.total_spent || 0,
+          };
+        });
+
+        return new Response(JSON.stringify({ success: true, data: { users } }), {
+          status: 200,
+          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (body.action === 'get_transactions') {
+        if (!body.user_id) {
+          return new Response(JSON.stringify({ success: false, error: 'Missing user_id' }), {
+            status: 400,
+            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const { data: transactions, error } = await supabaseClient
+          .from('credit_transactions')
+          .select('id, amount, description, created_at, metadata')
+          .eq('user_id', body.user_id)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        return new Response(JSON.stringify({ success: true, data: { transactions } }), {
+          status: 200,
+          headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Add credits to a user.
       
       if (!body.user_id || !body.credits_to_add || !body.reason) {
         return new Response(
@@ -252,6 +276,20 @@ serve(async (req) => {
         );
       }
 
+      const requestIdempotencyKey = req.headers.get('Idempotency-Key')?.trim();
+      if (!requestIdempotencyKey || requestIdempotencyKey.length > 200) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'A valid Idempotency-Key header is required for credit adjustments',
+          }),
+          {
+            status: 400,
+            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' },
+          },
+        );
+      }
+
       // Verify target user exists
       const { data: targetUser, error: userError } = await supabaseClient
         .from('profiles')
@@ -259,7 +297,7 @@ serve(async (req) => {
         .eq('id', body.user_id)
         .single();
 
-      if (userError) {
+      if (userError || !targetUser) {
         console.error('Error fetching target user:', userError);
         return new Response(
           JSON.stringify({
@@ -273,108 +311,30 @@ serve(async (req) => {
         );
       }
 
-      // Get or create user's credit record
-      const { data: creditData, error: creditError } = await supabaseClient
-        .from('user_credits')
-        .select('balance, subscription_type')
-        .eq('user_id', body.user_id)
-        .single();
-
-      let currentBalance = 0;
-      let subscriptionType = null;
-
-      if (creditError && creditError.code === 'PGRST116') {
-        // Create new credit record
-        const { data: newCredit, error: createError } = await supabaseClient
-          .from('user_credits')
-          .insert({
-            user_id: body.user_id,
-            balance: body.credits_to_add,
-            subscription_type: null
-          })
-          .select('balance, subscription_type')
-          .single();
-
-        if (createError) {
-          console.error('Error creating credit record:', createError);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Failed to initialize credit account'
-            }),
-            { 
-              status: 500, 
-              headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-
-        currentBalance = newCredit.balance;
-        subscriptionType = newCredit.subscription_type;
-      } else if (!creditError) {
-        // Update existing credit record
-        currentBalance = creditData.balance + body.credits_to_add;
-        subscriptionType = creditData.subscription_type;
-
-        const { error: updateError } = await supabaseClient
-          .from('user_credits')
-          .update({
-            balance: currentBalance,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', body.user_id);
-
-        if (updateError) {
-          console.error('Error updating credit balance:', updateError);
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'Failed to update credit balance'
-            }),
-            { 
-              status: 500, 
-              headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
-            }
-          );
-        }
-      } else {
-        console.error('Error fetching credit record:', creditError);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Failed to fetch credit information'
-          }),
-          { 
-            status: 500, 
-            headers: { ...dynamicCorsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-
-      // Create credit transaction record
-      const { data: transaction, error: transactionError } = await supabaseClient
-        .from('credit_transactions')
-        .insert({
-          user_id: body.user_id,
-          amount: body.credits_to_add,
-          transaction_type: 'adjustment',
-          description: `Admin credit addition: ${body.reason}`,
-          metadata: {
+      // Balance mutation and ledger insertion are one database transaction.
+      const { data: transactionData, error: transactionError } = await supabaseClient
+        .rpc('apply_credit_transaction', {
+          p_user_id: body.user_id,
+          p_amount: body.credits_to_add,
+          p_transaction_type: 'adjustment',
+          p_description: `Admin credit addition: ${body.reason}`,
+          p_metadata: {
             admin_user_id: adminUserId,
             admin_email: adminProfile.email,
             reason: body.reason,
-            admin_note: body.admin_note || null
-          }
+            admin_note: body.admin_note || null,
+          },
+          p_idempotency_key: `admin:${adminUserId}:${body.user_id}:${requestIdempotencyKey}`,
         })
-        .select('id')
         .single();
+      const transaction = transactionData as AdminCreditTransactionResult | null;
 
-      if (transactionError) {
-        console.error('Error creating credit transaction:', transactionError);
+      if (transactionError || !transaction?.success) {
+        console.error('Error applying credit transaction:', transactionError);
         return new Response(
           JSON.stringify({
             success: false,
-            error: 'Failed to record transaction'
+            error: 'Failed to apply credit adjustment'
           }),
           { 
             status: 500, 
@@ -386,12 +346,12 @@ serve(async (req) => {
       const response: ApiResponse = {
         success: true,
         data: {
-          new_balance: currentBalance,
-          transaction_id: transaction.id
+          new_balance: transaction.new_balance,
+          transaction_id: transaction.transaction_id
         }
       };
 
-      console.log(`Admin ${adminProfile.email} added ${body.credits_to_add} credits to user ${targetUser.email}. New balance: ${currentBalance}`);
+      console.log(`Admin ${adminProfile.email} added ${body.credits_to_add} credits to user ${targetUser.email}. New balance: ${transaction.new_balance}`);
 
       return new Response(
         JSON.stringify(response),
@@ -427,4 +387,4 @@ serve(async (req) => {
       }
     );
   }
-}); 
+});

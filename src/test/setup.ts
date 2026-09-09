@@ -5,6 +5,13 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 import * as axeMatchers from 'vitest-axe/matchers';
 import { server } from './msw/server';
 
+let testUuidSequence = 0;
+
+function nextTestUuid() {
+  testUuidSequence += 1;
+  return `00000000-0000-4000-8000-${testUuidSequence.toString().padStart(12, '0')}`;
+}
+
 const createMemoryStorage = (): Storage => {
   const store = new Map<string, string>();
 
@@ -78,6 +85,7 @@ afterAll(() => {
 
 // Cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {
+  testUuidSequence = 0;
   server.resetHandlers();
   cleanup();
   vi.clearAllMocks();
@@ -132,7 +140,7 @@ Object.defineProperty(window, 'scrollTo', {
 // Mock crypto.randomUUID
 Object.defineProperty(global, 'crypto', {
   value: {
-    randomUUID: vi.fn(() => 'test-uuid-123')
+    randomUUID: vi.fn(nextTestUuid)
   }
 });
 
@@ -241,11 +249,19 @@ const supabaseClientMock = {
 
 const createSupabaseClientLegacyMock = vi.fn(() => supabaseClientMock);
 const getSupabaseSessionMock = vi.fn();
+const getBetterAuthTokenMock = vi.fn();
+const invokeAuthenticatedFunctionMock = vi.fn(
+  (functionName: string, options?: Record<string, unknown>) => (
+    supabaseClientMock.functions.invoke(functionName, options)
+  ),
+);
 const signOutFromSupabaseMock = vi.fn();
 
 vi.mock('@/core/integrations/supabase/client', () => ({
   supabase: supabaseClientMock,
   getSupabaseSession: getSupabaseSessionMock,
+  getBetterAuthToken: getBetterAuthTokenMock,
+  invokeAuthenticatedFunction: invokeAuthenticatedFunctionMock,
   signOutFromSupabase: signOutFromSupabaseMock,
   createSupabaseClientLegacy: createSupabaseClientLegacyMock,
 }));
@@ -255,6 +271,8 @@ export const __testSupabaseMocks__ = {
   supabase: supabaseClientMock,
   createSupabaseClientLegacyMock,
   getSupabaseSessionMock,
+  getBetterAuthTokenMock,
+  invokeAuthenticatedFunctionMock,
   signOutFromSupabaseMock,
   supabaseAuthMock,
   supabaseFromMock,

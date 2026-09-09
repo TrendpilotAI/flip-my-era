@@ -6,6 +6,115 @@ on:
     branches: [main]
 
 jobs:
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.7.5
+      - name: Type-check Edge Functions
+        run: |
+          mapfile -t edge_functions < <(
+            find supabase/functions -mindepth 2 -maxdepth 2 -name index.ts -print | sort
+          )
+          deno check --config supabase/functions/deno.json "${edge_functions[@]}"
+      - name: Start clean Supabase database
+        run: supabase start
+      - name: Replay migrations from zero
+        run: supabase db reset --local --no-seed
+      - name: Run database contract tests
+        run: supabase test db --local
+      - name: Run Edge Function boundary tests
+        run: |
+          set -euo pipefail
+          edge_env="$RUNNER_TEMP/flipmyera-edge.env"
+          edge_log="$RUNNER_TEMP/flipmyera-edge.log"
+          proxy_name="flipmyera-edge-proxy"
+          stripe_proxy_name="flipmyera-stripe-test-proxy"
+          function_pid=""
+
+          cleanup() {
+            status=$?
+            trap - EXIT
+            docker rm -f "$proxy_name" >/dev/null 2>&1 || true
+            docker rm -f "$stripe_proxy_name" >/dev/null 2>&1 || true
+            if [ -n "$function_pid" ]; then
+              kill "$function_pid" >/dev/null 2>&1 || true
+              wait "$function_pid" >/dev/null 2>&1 || true
+            fi
+            if [ "$status" -ne 0 ] && [ -f "$edge_log" ]; then
+              tail -n 200 "$edge_log"
+            fi
+            rm -f "$edge_env" "$edge_log"
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          docker run --rm -d --name "$stripe_proxy_name" \
+            --network supabase_network_alternate-timelines \
+            --network-alias stripe-test-api \
+            --add-host host.docker.internal:host-gateway \
+            alpine/socat TCP-LISTEN:5566,fork,reuseaddr \
+            TCP:host.docker.internal:5566 >/dev/null
+
+          printf 'ENVIRONMENT=development\nSTRIPE_SECRET_KEY=sk_%s\nSTRIPE_API_BASE=http://stripe-test-api:5566/v1\n' \
+            'test_ci_placeholder' > "$edge_env"
+          supabase functions serve --env-file "$edge_env" --no-verify-jwt \
+            > "$edge_log" 2>&1 &
+          function_pid=$!
+
+          edge_container=""
+          for _ in $(seq 1 60); do
+            edge_container=$(docker ps \
+              --filter 'name=supabase_edge_runtime_alternate-timelines' \
+              --format '{{.Names}}' | head -n 1)
+            if [ -n "$edge_container" ]; then break; fi
+            if ! kill -0 "$function_pid" 2>/dev/null; then
+              echo 'Supabase Functions exited before becoming ready'
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ -z "$edge_container" ]; then
+            echo 'Supabase Edge Runtime did not become ready'
+            exit 1
+          fi
+
+          docker run --rm -d --name "$proxy_name" \
+            --network supabase_network_alternate-timelines \
+            -p 54329:54329 alpine/socat \
+            TCP-LISTEN:54329,fork,reuseaddr "TCP:${edge_container}:8081" >/dev/null
+
+          for _ in $(seq 1 60); do
+            if curl --silent --output /dev/null --max-time 2 \
+              http://127.0.0.1:54329/credits; then
+              break
+            fi
+            sleep 1
+          done
+
+          eval "$(supabase status -o env 2>/dev/null)"
+          export SUPABASE_URL="$API_URL"
+          export SUPABASE_ANON_KEY="$ANON_KEY"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          export SUPABASE_FUNCTIONS_URL="http://127.0.0.1:54329"
+          export STRIPE_TEST_API_BASE="http://127.0.0.1:5566/v1"
+
+          deno test --config supabase/functions/deno.json \
+            --allow-net --allow-env --allow-read \
+            supabase/functions/tests/betterauth_boundary_test.ts \
+            supabase/functions/tests/cors_origins_test.ts \
+            supabase/functions/tests/stripe_checkout_settlement_test.ts \
+            supabase/functions/user-data/index_test.ts
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
+
   ci:
     runs-on: ubuntu-latest
     steps:

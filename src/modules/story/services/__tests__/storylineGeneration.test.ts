@@ -157,6 +157,19 @@ describe('generateStoryline', () => {
     );
   });
 
+  it('passes a caller-supplied idempotency key without a pre-authorized transaction', async () => {
+    await generateStoryline(defaultParams, 'opaque-session-token', {
+      idempotencyKey: 'storyline-attempt-42',
+    });
+
+    const options = __testSupabaseMocks__.supabase.functions.invoke.mock.calls[0]?.[1];
+    expect(options).toEqual(expect.objectContaining({
+      body: expect.objectContaining({ idempotency_key: 'storyline-attempt-42' }),
+      headers: expect.objectContaining({ Authorization: 'Bearer opaque-session-token' }),
+    }));
+    expect(options?.body).not.toHaveProperty('pre_authorized_transaction_id');
+  });
+
   it('should report errors to Sentry', async () => {
     const { sentryService } = await import('@/core/integrations/sentry');
     __testSupabaseMocks__.supabase.functions.invoke.mockResolvedValue({

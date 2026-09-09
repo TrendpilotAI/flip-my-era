@@ -21,6 +21,7 @@ interface ImportMetaEnv {
   // readonly VITE_SAMCART_CHECKOUT_ENDPOINT?: string;
   readonly VITE_PUBLIC_POSTHOG_KEY: string;
   readonly VITE_PUBLIC_POSTHOG_HOST: string;
+  readonly VITE_GOOGLE_AUTH_ENABLED?: 'true' | 'false';
   
   // SECURITY: GROQ_API_KEY and OPENAI_API_KEY must NEVER be exposed as VITE_ variables.
   // They are server-side secrets set only in Supabase Edge Function environment.

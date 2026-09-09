@@ -13,10 +13,11 @@ import {
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
 import { Badge } from '@/modules/shared/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/integrations/supabase/client';
 import { useClerkAuth } from '@/modules/auth/contexts';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { STRIPE_PRODUCTS } from '@/config/stripe-products';
+import type { CheckoutFunctionResponse } from '@/core/integrations/supabase/functionResponses';
 
 interface CreditPurchaseModalProps {
   isOpen: boolean;
@@ -37,7 +38,6 @@ export interface PricingTier {
   bestValue?: boolean;
   type: 'credits' | 'subscription';
   billingCycle?: string;
-  stripeProductId: string;
 }
 
 // À la carte credit packs from centralized config
@@ -50,7 +50,6 @@ export const pricingTiers: PricingTier[] = [
     description: STRIPE_PRODUCTS.credits.single.description!,
     features: ['5 Credits', 'Never expires', 'Use anytime', '$0.60 per credit'],
     type: 'credits',
-    stripeProductId: STRIPE_PRODUCTS.credits.single.productId,
   },
   {
     id: 'album',
@@ -61,7 +60,6 @@ export const pricingTiers: PricingTier[] = [
     features: ['20 Credits', 'Never expires', 'Great for a full project', '$0.50 per credit'],
     popular: true,
     type: 'credits',
-    stripeProductId: STRIPE_PRODUCTS.credits.album.productId,
   },
   {
     id: 'tour',
@@ -72,7 +70,6 @@ export const pricingTiers: PricingTier[] = [
     features: ['50 Credits', 'Never expires', 'Best long-term value', '$0.40 per credit'],
     bestValue: true,
     type: 'credits',
-    stripeProductId: STRIPE_PRODUCTS.credits.tour.productId,
   },
 ];
 
@@ -106,7 +103,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       });
 
       const token = await getToken();
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const { data, error } = await invokeAuthenticatedFunction<CheckoutFunctionResponse>('create-checkout', {
         headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' },
         body: {
           plan: tier.id,

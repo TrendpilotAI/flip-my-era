@@ -94,7 +94,7 @@ export const BookReader = ({
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [isReading, setIsReading] = useState(false);
   const [speechSynthesis, setSpeechSynthesis] = useState<SpeechSynthesis | null>(null);
-  const readingTimerRef = useRef<number | null>(null);
+  const readingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Reading state
   const [readingState, setReadingState] = useState<ReadingState>({

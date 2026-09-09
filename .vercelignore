@@ -1,0 +1,14 @@
+.env
+.env.*
+.git
+.netlify
+.supabase
+.vercel
+coverage
+dist
+node_modules
+playwright-report
+supabase/.temp
+test-results
+test-results.log
+*.log

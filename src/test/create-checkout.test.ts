@@ -8,66 +8,29 @@
  * not the actual Deno HTTP server. All Stripe and Supabase calls are mocked.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  CHECKOUT_CATALOG,
+  resolveCheckoutProduct,
+} from '../../supabase/functions/_shared/checkoutCatalog';
 
-// ─── Price ID mappings (mirrored from the edge function) ─────────────────────
-
-const SUBSCRIPTION_PRICE_IDS: Record<string, { priceId: string; credits: number }> = {
-  speakNow:  { priceId: 'price_1S9zK15U03MNTw3qAO5JnplW', credits: 15 },
-  midnights: { priceId: 'price_1S9zK25U03MNTw3qdDnUn7hk', credits: 40 },
-  // Legacy aliases
-  starter:   { priceId: 'price_1S9zK15U03MNTw3qAO5JnplW', credits: 15 },
-  deluxe:    { priceId: 'price_1S9zK25U03MNTw3qdDnUn7hk', credits: 40 },
-  vip:       { priceId: 'price_1S9zK25U03MNTw3qoCHo9KzE', credits: 40 },
+const TEST_PRICE_IDS: Record<string, string> = {
+  STRIPE_PRICE_SINGLE: 'price_test_single',
+  STRIPE_PRICE_ALBUM: 'price_test_album',
+  STRIPE_PRICE_TOUR: 'price_test_tour',
+  STRIPE_PRICE_SPEAK_NOW_MONTHLY: 'price_test_speak_now_monthly',
+  STRIPE_PRICE_MIDNIGHTS_MONTHLY: 'price_test_midnights_monthly',
+  STRIPE_PRICE_ERAS_TOUR_MONTHLY: 'price_test_eras_tour_monthly',
+  STRIPE_PRICE_SPEAK_NOW_ANNUAL: 'price_test_speak_now_annual',
+  STRIPE_PRICE_MIDNIGHTS_ANNUAL: 'price_test_midnights_annual',
+  STRIPE_PRICE_ERAS_TOUR_ANNUAL: 'price_test_eras_tour_annual',
 };
-
-const ANNUAL_PRICE_IDS: Record<string, { priceId: string; credits: number }> = {
-  speakNowAnnual:  { priceId: 'price_speak_now_annual', credits: 15 },
-  midnightsAnnual: { priceId: 'price_midnights_annual', credits: 40 },
-};
-
-const CREDIT_PACK_PRICE_IDS: Record<string, { priceId: string; credits: number }> = {
-  single: { priceId: 'price_1S9zK25U03MNTw3qMH90DnC1', credits: 5 },
-  album:  { priceId: 'price_1S9zK25U03MNTw3qFkq00yiu', credits: 20 },
-  tour:   { priceId: 'price_1S9zK35U03MNTw3qpmqEDL80', credits: 50 },
-  // Legacy aliases
-  'starter-pack':  { priceId: 'price_1S9zK25U03MNTw3qMH90DnC1', credits: 5 },
-  'creator-pack':  { priceId: 'price_1S9zK25U03MNTw3qFkq00yiu', credits: 20 },
-  'studio-pack':   { priceId: 'price_1S9zK35U03MNTw3qpmqEDL80', credits: 50 },
-};
-
-// ─── Extracted resolution logic (mirrors edge function) ──────────────────────
-
-interface ResolvedProduct {
-  priceId: string;
-  credits: number;
-}
-
-type CheckoutMode = 'subscription' | 'payment';
-
-interface ResolveResult {
-  product: ResolvedProduct;
-  mode: CheckoutMode;
-}
 
 function resolvePriceId(
   plan: string,
   productType?: string
-): ResolveResult | null {
-  // 1. Credit packs
-  if (productType === 'credits' || CREDIT_PACK_PRICE_IDS[plan]) {
-    const product = CREDIT_PACK_PRICE_IDS[plan];
-    if (!product) return null;
-    return { product, mode: 'payment' };
-  }
-  // 2. Annual subscriptions
-  if (ANNUAL_PRICE_IDS[plan]) {
-    return { product: ANNUAL_PRICE_IDS[plan], mode: 'subscription' };
-  }
-  // 3. Monthly subscriptions
-  if (SUBSCRIPTION_PRICE_IDS[plan]) {
-    return { product: SUBSCRIPTION_PRICE_IDS[plan], mode: 'subscription' };
-  }
-  return null;
+) {
+  const product = resolveCheckoutProduct(plan, productType, (name) => TEST_PRICE_IDS[name]);
+  return product ? { product, mode: product.mode } : null;
 }
 
 function buildIdempotencyKey(userId: string, priceId: string, now = Date.now()): string {
@@ -166,7 +129,7 @@ async function handleCreateCheckout(
   // 2. Auth check
   const auth = verifyAuthForTest(authHeader, verifiedUserId);
   if (!auth.userId) {
-    return { status: 500, body: { error: auth.error } }; // edge fn returns 500 for throw
+    return { status: 401, body: { error: auth.error } };
   }
 
   // 3. Lookup user profile
@@ -177,7 +140,7 @@ async function handleCreateCheckout(
     .single();
 
   if (profileErr || !profile?.email) {
-    return { status: 500, body: { error: 'User profile not found or missing email' } };
+    return { status: 404, body: { error: 'User profile not found or missing email' } };
   }
 
   const user = { id: auth.userId, email: profile.email as string };
@@ -185,14 +148,9 @@ async function handleCreateCheckout(
   // 4. Resolve price ID
   const resolved = resolvePriceId(plan, productType);
   if (!resolved) {
-    const validPlans = [
-      ...Object.keys(CREDIT_PACK_PRICE_IDS),
-      ...Object.keys(SUBSCRIPTION_PRICE_IDS),
-      ...Object.keys(ANNUAL_PRICE_IDS),
-    ].join(', ');
     return {
-      status: 500,
-      body: { error: `Invalid plan: "${plan}". Valid plans: ${validPlans}` },
+      status: 400,
+      body: { error: `Invalid plan: "${plan}"`, validPlans: Object.keys(CHECKOUT_CATALOG) },
     };
   }
 
@@ -204,13 +162,24 @@ async function handleCreateCheckout(
     {
       customer_email: user.email,
       line_items: [{ price: resolved.product.priceId, quantity: 1 }],
-      mode: resolved.mode,
+      mode: resolved.product.mode,
+      payment_method_types: ['card'],
       metadata: {
         userId: user.id,
-        type: resolved.mode === 'subscription' ? 'subscription' : 'credits',
+        type: resolved.product.productType,
         plan,
         credits: resolved.product.credits.toString(),
       },
+      subscription_data: resolved.product.mode === 'subscription'
+        ? {
+            metadata: {
+              userId: user.id,
+              type: resolved.product.productType,
+              plan,
+              credits: resolved.product.credits.toString(),
+            },
+          }
+        : undefined,
     },
     { idempotencyKey }
   );
@@ -237,24 +206,36 @@ describe('create-checkout Edge Function', () => {
     it('resolves speakNow to correct Stripe price ID', () => {
       const result = resolvePriceId('speakNow');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK15U03MNTw3qAO5JnplW');
-      expect(result!.product.credits).toBe(15);
+      expect(result!.product.priceId).toBe('price_test_speak_now_monthly');
+      expect(result!.product.credits).toBe(30);
       expect(result!.mode).toBe('subscription');
     });
 
     it('resolves midnights to correct Stripe price ID', () => {
       const result = resolvePriceId('midnights');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK25U03MNTw3qdDnUn7hk');
-      expect(result!.product.credits).toBe(40);
+      expect(result!.product.priceId).toBe('price_test_midnights_monthly');
+      expect(result!.product.credits).toBe(75);
       expect(result!.mode).toBe('subscription');
     });
 
     it('resolves annual speakNowAnnual plan', () => {
       const result = resolvePriceId('speakNowAnnual');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_speak_now_annual');
+      expect(result!.product.priceId).toBe('price_test_speak_now_annual');
+      expect(result!.product.credits).toBe(360);
       expect(result!.mode).toBe('subscription');
+    });
+
+    it('resolves the Eras Tour monthly and annual plans', () => {
+      expect(resolvePriceId('erasTour')?.product).toMatchObject({
+        priceId: 'price_test_eras_tour_monthly',
+        credits: 150,
+      });
+      expect(resolvePriceId('erasTourAnnual')?.product).toMatchObject({
+        priceId: 'price_test_eras_tour_annual',
+        credits: 1800,
+      });
     });
   });
 
@@ -262,7 +243,7 @@ describe('create-checkout Edge Function', () => {
     it('resolves single credit pack to correct price ID', () => {
       const result = resolvePriceId('single');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK25U03MNTw3qMH90DnC1');
+      expect(result!.product.priceId).toBe('price_test_single');
       expect(result!.product.credits).toBe(5);
       expect(result!.mode).toBe('payment');
     });
@@ -270,7 +251,7 @@ describe('create-checkout Edge Function', () => {
     it('resolves album credit pack to correct price ID', () => {
       const result = resolvePriceId('album');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK25U03MNTw3qFkq00yiu');
+      expect(result!.product.priceId).toBe('price_test_album');
       expect(result!.product.credits).toBe(20);
       expect(result!.mode).toBe('payment');
     });
@@ -278,15 +259,24 @@ describe('create-checkout Edge Function', () => {
     it('resolves tour credit pack to correct price ID', () => {
       const result = resolvePriceId('tour');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK35U03MNTw3qpmqEDL80');
+      expect(result!.product.priceId).toBe('price_test_tour');
       expect(result!.product.credits).toBe(50);
       expect(result!.mode).toBe('payment');
     });
 
-    it('resolves plan with productType=credits forcing payment mode', () => {
-      // Even if plan is a subscription name, productType=credits wins for credit pack lookup
+    it('accepts a matching product type', () => {
       const result = resolvePriceId('single', 'credits');
       expect(result!.mode).toBe('payment');
+    });
+
+    it('rejects a product type that does not match the server catalog', () => {
+      expect(resolvePriceId('speakNow', 'credits')).toBeNull();
+      expect(resolvePriceId('single', 'subscription')).toBeNull();
+    });
+
+    it('fails closed when the configured Stripe price is missing', () => {
+      expect(() => resolveCheckoutProduct('single', 'credits', () => undefined))
+        .toThrow('Stripe price is not configured for plan: single');
     });
   });
 
@@ -294,42 +284,42 @@ describe('create-checkout Edge Function', () => {
     it('maps legacy starter to speakNow price ID', () => {
       const result = resolvePriceId('starter');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK15U03MNTw3qAO5JnplW');
+      expect(result!.product.priceId).toBe('price_test_speak_now_monthly');
       expect(result!.mode).toBe('subscription');
     });
 
     it('maps legacy deluxe to midnights price ID', () => {
       const result = resolvePriceId('deluxe');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK25U03MNTw3qdDnUn7hk');
+      expect(result!.product.priceId).toBe('price_test_midnights_monthly');
       expect(result!.mode).toBe('subscription');
     });
 
     it('maps legacy vip plan', () => {
       const result = resolvePriceId('vip');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK25U03MNTw3qoCHo9KzE');
+      expect(result!.product.priceId).toBe('price_test_eras_tour_monthly');
       expect(result!.mode).toBe('subscription');
     });
 
     it('maps legacy starter-pack to single credits price ID', () => {
       const result = resolvePriceId('starter-pack');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK25U03MNTw3qMH90DnC1');
+      expect(result!.product.priceId).toBe('price_test_single');
       expect(result!.mode).toBe('payment');
     });
 
     it('maps legacy creator-pack to album credits price ID', () => {
       const result = resolvePriceId('creator-pack');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK25U03MNTw3qFkq00yiu');
+      expect(result!.product.priceId).toBe('price_test_album');
       expect(result!.mode).toBe('payment');
     });
 
     it('maps legacy studio-pack to tour credits price ID', () => {
       const result = resolvePriceId('studio-pack');
       expect(result).not.toBeNull();
-      expect(result!.product.priceId).toBe('price_1S9zK35U03MNTw3qpmqEDL80');
+      expect(result!.product.priceId).toBe('price_test_tour');
       expect(result!.mode).toBe('payment');
     });
   });
@@ -358,24 +348,24 @@ describe('create-checkout Edge Function', () => {
       expect(result.userId).toBe('user-abc');
     });
 
-    it('handler returns 500 (thrown error) for missing auth header', async () => {
+    it('handler returns 401 for missing auth header', async () => {
       const result = await handleCreateCheckout(supabase, {
         authHeader: null,
         plan: 'speakNow',
         stripeSecretKey: 'sk_test_123',
       });
-      expect(result.status).toBe(500);
+      expect(result.status).toBe(401);
       expect(result.body.error).toContain('Invalid or expired token');
     });
 
-    it('handler returns 500 when shared verifyAuth rejects the token', async () => {
+    it('handler returns 401 when shared verifyAuth rejects the token', async () => {
       const result = await handleCreateCheckout(supabase, {
         authHeader: 'Bearer invalid-token',
         plan: 'speakNow',
         stripeSecretKey: 'sk_test_123',
         verifiedUserId: null,
       });
-      expect(result.status).toBe(500);
+      expect(result.status).toBe(401);
       expect(result.body.error).toContain('Invalid or expired token');
     });
   });
@@ -392,10 +382,10 @@ describe('create-checkout Edge Function', () => {
         plan: 'bogus_plan',
         stripeSecretKey: 'sk_test_123',
       });
-      expect(result.status).toBe(500);
+      expect(result.status).toBe(400);
       expect(result.body.error as string).toContain('Invalid plan: "bogus_plan"');
-      expect(result.body.error as string).toContain('speakNow');
-      expect(result.body.error as string).toContain('single');
+      expect(result.body.validPlans).toContain('speakNow');
+      expect(result.body.validPlans).toContain('single');
     });
 
     it('empty plan name returns error', () => {
@@ -434,7 +424,7 @@ describe('create-checkout Edge Function', () => {
         plan: 'speakNow',
         stripeSecretKey: 'sk_test_123',
       });
-      expect(result.status).toBe(500);
+      expect(result.status).toBe(404);
       expect(result.body.error as string).toContain('profile');
     });
   });
@@ -513,6 +503,13 @@ describe('create-checkout Edge Function', () => {
         expect.objectContaining({
           mode: 'subscription',
           metadata: expect.objectContaining({ type: 'subscription' }),
+          subscription_data: {
+            metadata: expect.objectContaining({
+              type: 'subscription',
+              plan: 'speakNow',
+              credits: '30',
+            }),
+          },
         }),
         expect.any(Object)
       );
@@ -528,7 +525,7 @@ describe('create-checkout Edge Function', () => {
 
       expect(mockCreateSession).toHaveBeenCalledWith(
         expect.objectContaining({
-          line_items: [{ price: 'price_1S9zK25U03MNTw3qMH90DnC1', quantity: 1 }],
+          line_items: [{ price: 'price_test_single', quantity: 1 }],
         }),
         expect.any(Object)
       );
@@ -550,7 +547,9 @@ describe('create-checkout Edge Function', () => {
       expect(mockCreateSession).toHaveBeenCalledWith(
         expect.objectContaining({
           mode: 'payment',
+          payment_method_types: ['card'],
           metadata: expect.objectContaining({ type: 'credits' }),
+          subscription_data: undefined,
         }),
         expect.any(Object)
       );

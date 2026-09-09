@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/modules/shared/components/ui/textarea';
 import { Label } from '@/modules/shared/components/ui/label';
 import { useToast } from '@/modules/shared/hooks/use-toast';
-import { useClerkAuth } from '@/modules/auth/contexts';
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
 import AdminNav from '@/modules/shared/components/AdminNav';
 import { 
   ArrowLeft, 
@@ -51,7 +50,6 @@ interface CreditTransaction {
 const AdminCredits = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getToken } = useClerkAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<User[]>([]);
@@ -66,55 +64,12 @@ const AdminCredits = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const token = await getToken();
-      
-      // Get all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, created_at')
-        .order('created_at', { ascending: false });
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        toast({
-          title: "Error",
-          description: "Failed to fetch users",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get credit information for all users
-      const { data: credits, error: creditsError } = await supabase
-        .from('user_credits')
-        .select('user_id, balance, subscription_type, total_earned, total_spent');
-
-      if (creditsError) {
-        console.error('Error fetching credits:', creditsError);
-        toast({
-          title: "Error",
-          description: "Failed to fetch credit information",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Combine profile and credit data
-      const usersWithCredits = profiles.map(profile => {
-        const creditData = credits.find(c => c.user_id === profile.id);
-        return {
-          id: profile.id,
-          email: profile.email,
-          full_name: profile.full_name || 'Unknown',
-          created_at: profile.created_at,
-          credit_balance: creditData?.balance || 0,
-          subscription_type: creditData?.subscription_type || null,
-          total_earned: creditData?.total_earned || 0,
-          total_spent: creditData?.total_spent || 0,
-        };
+      const { data, error } = await invokeAuthenticatedFunction<{ success: boolean; data?: { users?: User[] }; error?: string }>('admin-credits', {
+        method: 'POST',
+        body: { action: 'list_users' },
       });
-
-      setUsers(usersWithCredits as User[]);
+      if (error || !data?.success) throw error || new Error(data?.error || 'Failed to fetch users');
+      setUsers(data.data?.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -130,19 +85,12 @@ const AdminCredits = () => {
   // Fetch user's credit transactions
   const fetchUserTransactions = async (userId: string) => {
     try {
-      const { data: transactions, error } = await supabase
-        .from('credit_transactions')
-        .select('id, amount, description, created_at, metadata')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        return;
-      }
-
-      setUserTransactions((transactions || []) as CreditTransaction[]);
+      const { data, error } = await invokeAuthenticatedFunction<{ success: boolean; data?: { transactions?: CreditTransaction[] } }>('admin-credits', {
+        method: 'POST',
+        body: { action: 'get_transactions', user_id: userId },
+      });
+      if (error || !data?.success) throw error || new Error('Failed to fetch transactions');
+      setUserTransactions(data.data?.transactions || []);
     } catch (error) {
       console.error('Error fetching transactions:', error);
     }
@@ -170,19 +118,20 @@ const AdminCredits = () => {
 
     setIsAddingCredits(true);
     try {
-      const token = await getToken();
-      
-      const { data, error } = await supabase.functions.invoke('admin-credits', {
+      const { data, error } = await invokeAuthenticatedFunction<{
+        success: boolean;
+        data?: { new_balance: number; transaction_id: string };
+        error?: string;
+      }>('admin-credits', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
+        body: {
+          action: 'adjust',
           user_id: selectedUser.id,
           credits_to_add: creditsToAdd,
           reason: reason.trim(),
           admin_note: adminNote.trim() || undefined
-        })
+        }
       });
 
       if (error) {
@@ -195,7 +144,7 @@ const AdminCredits = () => {
         return;
       }
 
-      if (data?.success) {
+      if (data?.success && data.data) {
         toast({
           title: "Success",
           description: `Added ${creditsToAdd} credits to ${selectedUser.email}. New balance: ${data.data.new_balance}`,
@@ -227,33 +176,6 @@ const AdminCredits = () => {
       });
     } finally {
       setIsAddingCredits(false);
-    }
-  };
-
-  // Get user credit information
-  const getUserCreditInfo = async (userId: string) => {
-    try {
-      const token = await getToken();
-      
-      const { data, error } = await supabase.functions.invoke('admin-credits', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: {
-          user_id: userId
-        }
-      });
-
-      if (error) {
-        console.error('Error fetching user credit info:', error);
-        return null;
-      }
-
-      return data?.data?.user_info || null;
-    } catch (error) {
-      console.error('Error fetching user credit info:', error);
-      return null;
     }
   };
 
@@ -580,4 +502,4 @@ const AdminCredits = () => {
   );
 };
 
-export default AdminCredits; 
+export default AdminCredits;

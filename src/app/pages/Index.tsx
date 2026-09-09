@@ -11,16 +11,15 @@ import { StoryWizard } from "@/modules/story/components/StoryWizard";
 import { StoryWizardProvider } from "@/modules/story/contexts/StoryWizardContext";
 import { AnimatedShaderBackground } from "@/modules/shared/components/AnimatedShaderBackground";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/modules/shared/components/ui/accordion";
-import { BookOpen, Sparkles, User, Star, Shield, Clock, Zap, Heart, CheckCircle, ArrowRight } from "lucide-react";
-import { FeaturedCreators } from "@/modules/creator/FeaturedCreators";
-import { FeatureGate } from "@/modules/shared/components/FeatureGate";
+import { BookOpen, Sparkles, User, Shield, Zap, Heart, CheckCircle, ArrowRight } from "lucide-react";
 import { OnboardingFlow } from "@/modules/onboarding";
+import { FREE_SIGNUP_CREDITS } from "@/config/stripe-products";
 
 const PRODUCT_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "Product",
-  "name": "FlipMyEra — Personalized Taylor Swift Eras Tour Storybook",
-  "description": "Create a personalized Taylor Swift Eras Tour storybook starring YOU. Upload your photo, pick your era (Folklore, Midnights, 1989, Red, Reputation, Lover), and get a beautifully AI-illustrated storybook in under 60 seconds.",
+  "name": "FlipMyEra Personalized Era-Inspired Storybook Creator",
+  "description": "Create a personalized era-inspired storybook starring you. Upload your photo, choose a theme, and generate an illustrated storybook.",
   "url": "https://flipmyera.com",
   "image": "https://flipmyera.com/og-image.png",
   "brand": { "@type": "Brand", "name": "FlipMyEra" },
@@ -31,12 +30,7 @@ const PRODUCT_SCHEMA = {
     "priceValidUntil": "2027-01-01",
     "availability": "https://schema.org/InStock",
     "url": "https://flipmyera.com",
-    "description": "Free to start — 10 credits included. No credit card required."
-  },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.9",
-    "reviewCount": "10000"
+    "description": `Free to start with ${FREE_SIGNUP_CREDITS} credits at signup. No credit card required.`
   },
   "keywords": "Taylor Swift era storybook, Eras Tour keepsake, personalized Swiftie gift, folklore storybook, midnights photo book, friendship bracelet book"
 };
@@ -48,17 +42,17 @@ const FAQ_SCHEMA = {
     {
       "@type": "Question",
       "name": "Is FlipMyEra really free to start?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Yes! Every new account gets 10 free credits per month — enough to create 3-5 complete storybooks with AI illustrations. No credit card required." }
+      "acceptedAnswer": { "@type": "Answer", "text": `Yes. Every new account gets ${FREE_SIGNUP_CREDITS} credits at signup. No credit card is required.` }
     },
     {
       "@type": "Question",
       "name": "How long does it take to create a storybook?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Most storybooks are generated in under 60 seconds. Premium plan users get priority processing that's 3x faster during peak hours." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Generation time varies with story length, illustration choices, and service demand. FlipMyEra shows progress while your storybook is created." }
     },
     {
       "@type": "Question",
       "name": "What Taylor Swift eras and themes are available?",
-      "acceptedAnswer": { "@type": "Answer", "text": "We have 50+ era-inspired templates including Folklore, Midnights, 1989, Red, Reputation, Lover, and many more. New eras are added regularly!" }
+      "acceptedAnswer": { "@type": "Answer", "text": "The creator displays the era-inspired themes currently available, including Folklore/Evermore, Midnights, 1989, Red, Reputation, Lover, and Showgirl." }
     },
     {
       "@type": "Question",
@@ -68,12 +62,7 @@ const FAQ_SCHEMA = {
     {
       "@type": "Question",
       "name": "Is my payment information secure?",
-      "acceptedAnswer": { "@type": "Answer", "text": "100%. We use Stripe's PCI-compliant payment processing and never store your card details. Plus, all plans come with a 30-day money-back guarantee." }
-    },
-    {
-      "@type": "Question",
-      "name": "Can I use my storybooks commercially?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Swiftie Deluxe ($25/mo) and Opus VIP ($49.99/mo) plans include commercial licensing rights to sell or monetize your Taylor Swift era storybook creations." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Stripe-hosted Checkout handles card entry, so FlipMyEra does not receive or store your full card details." }
     }
   ]
 };
@@ -88,11 +77,11 @@ const Index = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-blue-50/80 dark:from-gray-900/90 dark:via-purple-950/90 dark:to-gray-900/90">
+    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-br from-rose-50/70 via-background to-sky-50/70 dark:from-neutral-950 dark:via-neutral-900 dark:to-slate-950">
       <SEO
         title="Taylor Swift Eras Tour Personalized Storybook Creator"
         url="/"
-        description="Create a personalized Taylor Swift Eras Tour storybook starring YOU. Upload your photo, pick your era (Folklore, Midnights, 1989), and get a beautifully illustrated AI storybook in under 60 seconds. Free to start!"
+        description="Create a personalized era-inspired storybook starring you. Upload your photo, choose a theme, and generate an illustrated ebook. Free to start."
         jsonLd={[PRODUCT_SCHEMA, FAQ_SCHEMA]}
       />
       {/* First-time user onboarding flow */}
@@ -105,34 +94,10 @@ const Index = () => {
         {/* Hero Section */}
         <HeroGallery animationDelay={0.3} onGetStarted={scrollToWizard} />
 
-        {/* Social Proof Bar */}
-        <section className="py-8 border-y border-purple-100 dark:border-purple-900/50 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm">
-          <div className="container max-w-5xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <p className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">10K+</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Stories Created</p>
-              </div>
-              <div>
-                <p className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-pink-500 to-orange-400 bg-clip-text text-transparent">4.9★</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Average Rating</p>
-              </div>
-              <div>
-                <p className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-400 to-purple-600 bg-clip-text text-transparent">50+</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Era Templates</p>
-              </div>
-              <div>
-                <p className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">&lt;60s</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Generation Time</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* How It Works */}
         <section className="py-16 md:py-20">
           <div className="container max-w-5xl mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text text-transparent dark:from-purple-100 dark:via-pink-200 dark:to-blue-100">
+            <h2 className="mb-4 text-center text-3xl font-bold text-foreground md:text-4xl">
               Create Your Story in 3 Simple Steps
             </h2>
             <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
@@ -140,14 +105,14 @@ const Index = () => {
             </p>
             <div className="grid md:grid-cols-3 gap-8">
               {[
-                { icon: User, title: "1. Upload Your Photo", desc: "Add a selfie or portrait — our AI places you right into the story as the main character." },
-                { icon: Sparkles, title: "2. Pick Your Era", desc: "Choose from Folklore, Midnights, 1989, Red, and dozens more era-inspired themes." },
-                { icon: BookOpen, title: "3. Get Your Storybook", desc: "In under 60 seconds, receive a beautifully illustrated personalized storybook you can share or print." },
+                { icon: User, title: "1. Upload Your Photo", desc: "Add a selfie or portrait so you can appear as the main character.", surface: "bg-rose-100 dark:bg-rose-950/50", color: "text-rose-700 dark:text-rose-300" },
+                { icon: Sparkles, title: "2. Pick Your Era", desc: "Choose from the era-inspired themes available in the creator.", surface: "bg-sky-100 dark:bg-sky-950/50", color: "text-sky-700 dark:text-sky-300" },
+                { icon: BookOpen, title: "3. Get Your Storybook", desc: "Follow generation progress, then read, save, share, or download your illustrated storybook.", surface: "bg-amber-100 dark:bg-amber-950/50", color: "text-amber-700 dark:text-amber-300" },
               ].map((step) => (
-                <Card key={step.title} className="border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-xl transition-shadow">
+                <Card key={step.title} className="border-border bg-card shadow-sm transition-shadow hover:shadow-md">
                   <CardContent className="p-8 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 flex items-center justify-center">
-                      <step.icon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                    <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg ${step.surface}`}>
+                      <step.icon className={`h-8 w-8 ${step.color}`} />
                     </div>
                     <h3 className="text-lg font-bold mb-2">{step.title}</h3>
                     <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{step.desc}</p>
@@ -159,68 +124,39 @@ const Index = () => {
               <Button
                 size="lg"
                 onClick={scrollToWizard}
-                className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white hover:from-purple-700 hover:to-pink-600 px-10 py-6 text-lg shadow-lg"
+                className="bg-primary px-10 py-6 text-lg text-primary-foreground shadow-lg hover:bg-primary/90"
               >
-                Start Creating — It's Free
+                Start Creating. It's Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">No credit card required • 10 free credits</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section className="py-16 bg-gradient-to-b from-purple-50/50 to-pink-50/50 dark:from-purple-950/30 dark:to-gray-900/30">
-          <div className="container max-w-5xl mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text text-transparent dark:from-purple-100 dark:via-pink-200 dark:to-blue-100">
-              Loved by Swifties Everywhere
-            </h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                { name: "Emily R.", quote: "I made a Folklore-era storybook for my best friend's birthday. She literally cried. Best gift ever!", rating: 5 },
-                { name: "Jess K.", quote: "The illustrations are INSANE. I've made storybooks for every era and they all look like actual published books.", rating: 5 },
-                { name: "Sarah M.", quote: "My daughter and I create bedtime stories together using this. She picks the era, I pick the plot. Pure magic.", rating: 5 },
-              ].map((t, i) => (
-                <Card key={i} className="border-0 shadow-md bg-white/90 dark:bg-gray-800/90">
-                  <CardContent className="p-6">
-                    <div className="flex gap-1 mb-3">
-                      {Array.from({ length: t.rating }).map((_, j) => (
-                        <Star key={j} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm italic mb-4">"{t.quote}"</p>
-                    <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">{t.name}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                No credit card required · {FREE_SIGNUP_CREDITS} free credits at signup
+              </p>
             </div>
           </div>
         </section>
 
         {/* Featured Creators (feature-flagged) */}
-        <FeatureGate flag="creator_profiles">
-          <FeaturedCreators />
-        </FeatureGate>
 
         {/* Trust Signals */}
-        <section className="py-10 border-y border-purple-100 dark:border-purple-900/50">
+        <section className="border-y border-border py-10">
           <div className="container max-w-4xl mx-auto px-4">
             <div className="flex flex-wrap justify-center gap-6 md:gap-10 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-green-500" />
-                <span>Secure Stripe Payments</span>
+                <Shield className="h-5 w-5 text-emerald-600" />
+                <span>Stripe-hosted checkout</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-500" />
-                <span>30-Day Money Back</span>
+                <CheckCircle className="h-5 w-5 text-emerald-600" />
+                <span>Cost shown before generation</span>
               </div>
               <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-purple-500" />
-                <span>AI-Powered in &lt;60s</span>
+                <Zap className="h-5 w-5 text-sky-600" />
+                <span>Live generation progress</span>
               </div>
               <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-pink-500" />
-                <span>Made for Swifties</span>
+                <Heart className="h-5 w-5 text-primary" />
+                <span>Private and community libraries</span>
               </div>
             </div>
           </div>
@@ -229,7 +165,7 @@ const Index = () => {
         {/* Inline FAQ */}
         <section className="py-16 md:py-20">
           <div className="container max-w-3xl mx-auto px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 bg-gradient-to-r from-purple-900 via-pink-800 to-blue-900 bg-clip-text text-transparent dark:from-purple-100 dark:via-pink-200 dark:to-blue-100">
+            <h2 className="mb-4 text-center text-3xl font-bold text-foreground md:text-4xl">
               Frequently Asked Questions
             </h2>
             <p className="text-center text-gray-600 dark:text-gray-400 mb-10">
@@ -239,42 +175,36 @@ const Index = () => {
               <AccordionItem value="faq-1">
                 <AccordionTrigger>Is FlipMyEra really free to start?</AccordionTrigger>
                 <AccordionContent>
-                  Yes! Every new account gets 10 free credits per month — enough to create 3-5 complete storybooks with illustrations. No credit card required.
+                  Yes. Every new account gets {FREE_SIGNUP_CREDITS} free credits at signup. No credit card is required.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="faq-2">
                 <AccordionTrigger>How long does it take to create a storybook?</AccordionTrigger>
                 <AccordionContent>
-                  Most storybooks are generated in under 60 seconds. Premium plan users get priority processing that's 3x faster during peak hours.
+                  Generation time varies with story length, illustration choices, and service demand. FlipMyEra shows progress while your storybook is created.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="faq-3">
                 <AccordionTrigger>What eras and themes are available?</AccordionTrigger>
                 <AccordionContent>
-                  We have 50+ era-inspired templates including Folklore, Midnights, 1989, Red, Reputation, Lover, and many more. New eras are added regularly!
+                  The creator shows every theme currently available, including Folklore/Evermore, Midnights, 1989, Red, Reputation, Lover, and Showgirl.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="faq-4">
                 <AccordionTrigger>Can I print or share my storybooks?</AccordionTrigger>
                 <AccordionContent>
-                  Absolutely! All plans include PDF exports perfect for printing. Share digitally or create beautiful physical copies of your stories.
+                  You can read saved ebooks in your library, publish them to the community gallery, and use the available download options.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="faq-5">
                 <AccordionTrigger>Is my payment information secure?</AccordionTrigger>
                 <AccordionContent>
-                  100%. We use Stripe's PCI-compliant payment processing and never store your card details. Plus, all plans come with a 30-day money-back guarantee.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="faq-6">
-                <AccordionTrigger>Can I use my storybooks commercially?</AccordionTrigger>
-                <AccordionContent>
-                  Swiftie Deluxe ($25/mo) and Opus VIP ($49.99/mo) plans include commercial licensing rights to sell or monetize your creations.
+                  Stripe-hosted Checkout handles card entry, so FlipMyEra does not receive or store your full card details.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
             <p className="text-center mt-6">
-              <Link to="/faq" className="text-purple-600 dark:text-purple-400 hover:underline text-sm font-medium">
+              <Link to="/faq" className="text-sm font-medium text-primary hover:underline">
                 View all FAQs →
               </Link>
             </p>
@@ -282,24 +212,24 @@ const Index = () => {
         </section>
 
         {/* Final CTA */}
-        <section className="py-16 md:py-24 bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 text-white">
+        <section className="bg-foreground py-16 text-background md:py-24">
           <div className="container max-w-3xl mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Ready to Flip Your Era?</h2>
             <p className="text-lg md:text-xl opacity-90 mb-8 max-w-xl mx-auto">
-              Join thousands of Swifties creating personalized storybooks. Start free — no credit card needed.
+              Create a personalized era-inspired storybook and start with {FREE_SIGNUP_CREDITS} credits. No credit card needed.
             </p>
             <Button
               size="lg"
               onClick={scrollToWizard}
-              className="bg-white text-purple-700 hover:bg-gray-100 px-12 py-7 text-lg font-bold shadow-2xl"
+              className="bg-background px-12 py-7 text-lg font-bold text-foreground shadow-lg hover:bg-background/90"
             >
               Create Your First Story Free
               <Sparkles className="ml-2 h-5 w-5" />
             </Button>
             <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm opacity-80">
-              <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> 10 free credits</span>
+              <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> {FREE_SIGNUP_CREDITS} credits at signup</span>
               <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> No credit card</span>
-              <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Ready in 60 seconds</span>
+              <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Progress shown while generating</span>
             </div>
           </div>
         </section>

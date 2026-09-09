@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSupabaseAuth } from '@/core/integrations/better-auth/AuthProvider';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/modules/shared/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/integrations/supabase/client';
 
 interface SupabaseError {
   message: string;
@@ -45,7 +45,7 @@ const TestCreditsPage = () => {
       // Test 5: Call credits function with token
       if (token) {
         results.push('📡 Calling credits function...');
-        const { data, error } = await supabase.functions.invoke('credits', {
+        const { data, error } = await invokeAuthenticatedFunction('credits', {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -127,4 +127,3 @@ const TestCreditsPage = () => {
 };
 
 export default TestCreditsPage;
-

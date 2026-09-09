@@ -56,7 +56,11 @@ ruvector.db
 .supabase
 supabase/.temp/
 
-# Local Netlify folder
+# Local hosting metadata
 .netlify
+.vercel
 
 .env.local
+.env*
+.impeccable/hook.cache.json
+/deno.lock

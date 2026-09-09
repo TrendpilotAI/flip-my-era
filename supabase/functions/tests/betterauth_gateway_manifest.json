@@ -1,0 +1,21 @@
+{
+  "gatewayFunctions": [
+    "admin-credits",
+    "check-subscription",
+    "create-checkout",
+    "credits",
+    "credits-validate",
+    "customer-portal",
+    "gallery-books",
+    "generate-video",
+    "groq-api",
+    "groq-storyline",
+    "provision-profile",
+    "runware-proxy",
+    "stream-chapters",
+    "stripe-portal",
+    "tiktok-auth",
+    "tiktok-share-analytics",
+    "user-data"
+  ]
+}

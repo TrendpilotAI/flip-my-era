@@ -1,5 +1,5 @@
 
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
 
 interface TikTokShareOptions {
   videoUrl?: string;
@@ -19,7 +19,7 @@ const REDIRECT_URI = `${window.location.origin}/auth/tiktok/callback`;
 
 export const initTikTokAuth = async () => {
   // Fetch the client key from Supabase edge function
-  const { data: { key }, error } = await supabase.functions.invoke('tiktok-auth', {
+  const { data: { key }, error } = await invokeAuthenticatedFunction('tiktok-auth', {
     body: { action: 'get_client_key' }
   });
 
@@ -47,7 +47,7 @@ export const handleTikTokCallback = async (code: string, state: string) => {
     throw new Error('Invalid state parameter');
   }
   
-  const { data, error } = await supabase.functions.invoke('tiktok-auth', {
+  const { data, error } = await invokeAuthenticatedFunction('tiktok-auth', {
     body: { code, action: 'handle_callback' }
   });
 
@@ -58,7 +58,7 @@ export const handleTikTokCallback = async (code: string, state: string) => {
 };
 
 const generateVideo = async (text: string, template: 'story' | 'quote' | 'slideshow' = 'story') => {
-  const { data, error } = await supabase.functions.invoke('generate-video', {
+  const { data, error } = await invokeAuthenticatedFunction('generate-video', {
     body: { text, template }
   });
 
@@ -91,7 +91,7 @@ export const shareToTikTok = async ({ text, hashtags = [], videoUrl, musicUrl, t
     window.open(shareUrl.toString(), '_blank');
     
     // Track the share in analytics
-    await supabase.functions.invoke('tiktok-share-analytics', {
+    await invokeAuthenticatedFunction('tiktok-share-analytics', {
       body: { text: formattedText, videoUrl, musicUrl }
     });
 

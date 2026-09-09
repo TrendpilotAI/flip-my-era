@@ -297,7 +297,7 @@ export const StoryAutoGeneration = () => {
           originalStory,
           useTaylorSwiftThemes: true,
           selectedTheme,
-          selectedFormat,
+          selectedFormat: selectedFormat === 'preview' ? 'short-story' : selectedFormat,
           numChapters: totalChapters,
           storyline,
           onChapterComplete: handleChapterComplete,
@@ -573,4 +573,3 @@ export const StoryAutoGeneration = () => {
 };
 
 export default StoryAutoGeneration;
-

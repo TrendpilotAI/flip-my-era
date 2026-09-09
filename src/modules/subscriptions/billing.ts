@@ -8,6 +8,10 @@
  */
 
 import { invokeAuthenticatedFunction, supabase } from '@/integrations/supabase/client';
+import type {
+  CheckoutFunctionResponse,
+  EdgeFunctionErrorPayload,
+} from '@/core/integrations/supabase/functionResponses';
 import { SubscriptionTierId, SUBSCRIPTION_PLANS, canCreateEbook } from './tiers';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -187,7 +191,7 @@ export async function createSubscriptionCheckout(
   successUrl: string,
   cancelUrl: string,
 ): Promise<{ sessionId: string; url: string }> {
-  const { data, error } = await invokeAuthenticatedFunction('create-checkout', {
+  const { data, error } = await invokeAuthenticatedFunction<CheckoutFunctionResponse>('create-checkout', {
     body: { plan, successUrl, cancelUrl },
   });
 
@@ -207,7 +211,16 @@ export async function createSubscriptionCheckout(
  * Get subscription info for a user from the `check-subscription` edge function.
  */
 export async function getSubscriptionInfo(userId: string): Promise<StripeSubscriptionInfo | null> {
-  const { data, error } = await invokeAuthenticatedFunction('check-subscription', {
+  const { data, error } = await invokeAuthenticatedFunction<EdgeFunctionErrorPayload & {
+    subscribed?: boolean;
+    subscription_id?: string;
+    customer_id?: string;
+    plan?: string;
+    status?: StripeSubscriptionInfo['status'];
+    current_period_start?: string;
+    subscription_end?: string;
+    cancel_at_period_end?: boolean;
+  }>('check-subscription', {
     body: { userId },
   });
 

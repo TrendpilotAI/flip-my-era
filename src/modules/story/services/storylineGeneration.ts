@@ -5,7 +5,7 @@
 
 import { EraType } from '../types/eras';
 import { getCombinedSystemPrompt } from '../utils/promptLoader';
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
 import { sentryService } from '@/core/integrations/sentry';
 import { posthogEvents } from '@/core/integrations/posthog';
 
@@ -48,10 +48,18 @@ export interface GenerateStorylineParams {
   customPrompt?: string;
 }
 
+export interface GenerateStorylineOptions {
+  idempotencyKey?: string;
+}
+
 /**
  * Generate a structured storyline using Groq AI via Edge Function
  */
-export async function generateStoryline(params: GenerateStorylineParams, clerkToken: string | null, preAuthorizedTransactionId?: string): Promise<Storyline> {
+export async function generateStoryline(
+  params: GenerateStorylineParams,
+  clerkToken: string | null,
+  options: GenerateStorylineOptions = {},
+): Promise<Storyline> {
   const {
     era,
     characterName,
@@ -154,9 +162,13 @@ Ensure the storyline:
     transaction.setTag('characterArchetype', characterArchetype);
     
     // Generate idempotency key to prevent double-charging on retry/double-click
-    const idempotency_key = crypto.randomUUID();
+    const idempotency_key = options.idempotencyKey ?? crypto.randomUUID();
 
-    const { data, error } = await supabase.functions.invoke('groq-storyline', {
+    const { data, error } = await invokeAuthenticatedFunction<{
+      storyline?: Storyline;
+      error?: string;
+      message?: string;
+    }>('groq-storyline', {
       body: {
         era,
         characterName,
@@ -167,9 +179,6 @@ Ensure the storyline:
         customPrompt,
         systemPrompt,
         idempotency_key,
-        // Pass pre-authorized transaction ID to prevent double-charging.
-        // If credits-validate already deducted credits, groq-storyline will skip its own deduction.
-        ...(preAuthorizedTransactionId ? { pre_authorized_transaction_id: preAuthorizedTransactionId } : {}),
       },
       headers: {
         Authorization: `Bearer ${clerkToken}`,

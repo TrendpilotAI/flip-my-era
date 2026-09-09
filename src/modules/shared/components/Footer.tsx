@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, Heart, BookOpen, Mail, ExternalLink } from "lucide-react";
+import { Sparkles, Heart, BookOpen, Mail } from "lucide-react";
 
 export const Footer = () => {
   const footerVariants = {
@@ -26,7 +26,7 @@ export const Footer = () => {
 
   return (
     <motion.footer
-      className="bg-gradient-to-r from-purple-50 via-pink-50 to-blue-50 border-t border-gray-200/50 mt-16"
+      className="bg-white border-t border-gray-200 mt-16"
       variants={footerVariants}
       initial="hidden"
       whileInView="visible"
@@ -49,23 +49,13 @@ export const Footer = () => {
               >
                 <Sparkles className="h-6 w-6 text-purple-500" />
               </motion.div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+              <span className="text-xl font-bold text-gray-900">
                 FlipMyEra
               </span>
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
               Rewrite your story in a kinder, pre-2020 timeline where dreams felt limitless.
             </p>
-            <div className="flex space-x-3">
-              <motion.a
-                href="#"
-                className="text-gray-400 hover:text-purple-500 transition-colors"
-                whileHover={{ scale: 1.2 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <ExternalLink className="h-5 w-5" />
-              </motion.a>
-            </div>
           </motion.div>
 
           {/* Product Links */}
@@ -82,7 +72,7 @@ export const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/plans"
+                  to="/pricing"
                   className="text-gray-600 hover:text-purple-600 transition-colors hover:underline"
                 >
                   Pricing Plans
@@ -121,7 +111,12 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <span className="text-gray-600">Community</span>
+                <Link
+                  to="/gallery"
+                  className="text-gray-600 hover:text-purple-600 transition-colors hover:underline"
+                >
+                  Community
+                </Link>
               </li>
             </ul>
           </motion.div>
@@ -172,7 +167,7 @@ export const Footer = () => {
           </div>
 
           <div className="flex items-center space-x-4 text-sm text-gray-600">
-            <span>© 2025 FlipMyEra. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} FlipMyEra. All rights reserved.</span>
             <motion.div
               className="flex items-center space-x-1"
               animate={{

@@ -21,6 +21,7 @@ export default tseslint.config(
       "playwright-report/**",
       "reports/**",
       "screenshots/**",
+      "supabase/.temp/**",
       "supabase/functions/**",
       "test-results/**",
       "test-results.log",

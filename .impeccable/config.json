@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          "src/app/pages/Gallery.tsx"
+        ],
+        "createdAt": "2026-09-08T23:51:17.730Z",
+        "reason": "Agent: gallery gradients encode named era identities across a deliberately varied multi-era palette"
+      },
+      {
+        "rule": "ai-color-palette",
+        "value": "*",
+        "files": [
+          "src/modules/shared/components/PricingPage.tsx"
+        ],
+        "createdAt": "2026-09-08T23:51:17.870Z",
+        "reason": "Agent: Speak Now and Midnights colors encode the named subscription era identities"
+      }
+    ]
+  }
+}

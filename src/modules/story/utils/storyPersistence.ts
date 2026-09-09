@@ -1,4 +1,8 @@
-import { supabase } from '@/core/integrations/supabase/client';
+import {
+  getOwnStory,
+  listOwnStories,
+  saveOwnStory,
+} from '@/core/integrations/supabase/userData';
 import { getSession } from '@/lib/auth-client';
 
 // Local storage keys
@@ -38,10 +42,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function getBetterAuthUserId(sessionResult: unknown): string | null {
-  if (!isRecord(sessionResult) || !isRecord(sessionResult.data)) return null;
-  if (!isRecord(sessionResult.data.user)) return null;
-  return typeof sessionResult.data.user.id === 'string' ? sessionResult.data.user.id : null;
+function hasBetterAuthSession(sessionResult: unknown): boolean {
+  if (!isRecord(sessionResult) || !isRecord(sessionResult.data)) return false;
+  if (!isRecord(sessionResult.data.user)) return false;
+  return typeof sessionResult.data.session === 'object' && sessionResult.data.session !== null;
 }
 
 // Save story to Supabase and localStorage
@@ -49,31 +53,25 @@ export const saveStory = async (story: string, name: string, date?: Date, prompt
   try {
     // First try to save to Supabase if user is authenticated
     const sessionResult = await getSession();
-    const userId = getBetterAuthUserId(sessionResult);
 
     let savedData;
 
-    if (userId) {
-      // User is authenticated, save to Supabase
-      const { data, error } = await supabase
-        .from('stories')
-        .insert({
+    if (hasBetterAuthSession(sessionResult)) {
+      try {
+        savedData = await saveOwnStory({
           name,
-          birth_date: date?.toISOString(),
-          initial_story: story,
-          prompt: prompt,
-          user_id: userId,
-          ...additionalData
-        })
-        .select()
-        .single();
-
-      if (error) {
+          birthDate: date?.toISOString(),
+          initialStory: story,
+          prompt,
+          transformedName: additionalData?.transformedName,
+          gender: additionalData?.gender,
+          personalityType: additionalData?.personalityType,
+          location: additionalData?.location,
+        });
+        console.log("Story saved to Supabase");
+      } catch (error) {
         console.error("Error saving story to Supabase:", error);
         // Continue to save locally even if Supabase fails
-      } else {
-        savedData = data;
-        console.log("Story saved to Supabase:", data);
       }
     }
     
@@ -145,26 +143,14 @@ export const getUserPreferences = (): UserPreferences | null => {
 export const getUserStories = async () => {
   try {
     const sessionResult = await getSession();
-    const userId = getBetterAuthUserId(sessionResult);
 
-    if (!userId) {
+    if (!hasBetterAuthSession(sessionResult)) {
       console.log("No active session, returning local story only");
       const localStory = getLocalStory();
       return localStory ? [localStory] : [];
     }
 
-    const { data, error } = await supabase
-      .from('stories')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-      
-    if (error) {
-      console.error("Error fetching user stories:", error);
-      throw error;
-    }
-    
-    return data || [];
+    return await listOwnStories();
   } catch (error) {
     console.error("Error in getUserStories:", error);
     throw error;
@@ -175,15 +161,8 @@ export const getUserStories = async () => {
 export const getStoryById = async (storyId: string) => {
   // First try to fetch from Supabase
   try {
-    const { data, error } = await supabase
-      .from('stories')
-      .select('*')
-      .eq('id', storyId)
-      .single();
-      
-    if (!error && data) {
-      return data;
-    }
+    const data = await getOwnStory(storyId);
+    if (data) return data;
   } catch (error) {
     console.error("Error fetching story from Supabase:", error);
   }
@@ -195,16 +174,9 @@ export const getStoryById = async (storyId: string) => {
 
 // Update user subscription status
 export const updateSubscription = async (userId: string, subscriptionStatus: "free" | "basic" | "premium") => {
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ subscription_status: subscriptionStatus })
-      .eq('id', userId);
-
-    if (error) throw error;
-    return { error: null };
-  } catch (error) {
-    console.error("Error updating subscription:", error);
-    return { error: error as Error };
-  }
+  void userId;
+  void subscriptionStatus;
+  const error = new Error('Subscription status can only be updated by the billing service');
+  console.error("Error updating subscription:", error);
+  return { error };
 };

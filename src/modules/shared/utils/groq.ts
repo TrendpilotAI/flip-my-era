@@ -1,4 +1,5 @@
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
+import type { GroqFunctionResponse } from '@/core/integrations/supabase/functionResponses';
 
 /**
  * Generate a UUID v4 for idempotency keys.
@@ -27,18 +28,19 @@ export const generateWithGroq = async (
   const idempotency_key = options?.idempotencyKey ?? generateIdempotencyKey();
 
   try {
-    const { data, error } = await supabase.functions.invoke('groq-api', {
+    const { data, error } = await invokeAuthenticatedFunction<GroqFunctionResponse>('groq-api', {
       body: {
         prompt,
-        model: options?.model || 'openai/gpt-oss-120b',
-        temperature: options?.temperature || 0.7,
-        maxTokens: options?.maxTokens || 4096,
-        systemPrompt: options?.systemPrompt || 'You are a creative writer specializing in humorous alternate reality stories and chapter generation.',
+        model: options?.model ?? 'openai/gpt-oss-120b',
+        temperature: options?.temperature ?? 0.7,
+        maxTokens: options?.maxTokens ?? 4096,
+        systemPrompt: options?.systemPrompt ?? 'You are a creative writer specializing in humorous alternate reality stories and chapter generation.',
         idempotency_key,
       },
       headers: {
         Authorization: `Bearer ${clerkToken}`,
         'Content-Type': 'application/json',
+        'Idempotency-Key': idempotency_key,
       },
     });
 
@@ -52,6 +54,8 @@ export const generateWithGroq = async (
         throw new Error('GROQ_API_KEY_MISSING');
       } else if (error.message?.includes('INSUFFICIENT_CREDITS') || error.message?.includes('402')) {
         throw new Error('INSUFFICIENT_CREDITS');
+      } else if (error.message?.includes('REQUEST_IN_PROGRESS') || error.message?.includes('409')) {
+        throw new Error('REQUEST_IN_PROGRESS');
       } else {
         throw new Error(error.message || 'API_ERROR');
       }
@@ -59,6 +63,10 @@ export const generateWithGroq = async (
 
     if (data?.error === 'INSUFFICIENT_CREDITS') {
       throw new Error('INSUFFICIENT_CREDITS');
+    }
+
+    if (data?.error === 'REQUEST_IN_PROGRESS') {
+      throw new Error('REQUEST_IN_PROGRESS');
     }
 
     if (!data || data.error) {

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 // UserProfile was from Clerk — removed during Supabase Auth migration
-import { supabase } from '@/core/integrations/supabase/client';
+import { invokeAuthenticatedFunction } from '@/core/integrations/supabase/client';
+import type { PortalFunctionResponse } from '@/core/integrations/supabase/functionResponses';
+import { getOwnProfile, updateOwnProfile } from '@/core/integrations/supabase/userData';
 import { useToast } from '@/modules/shared/hooks/use-toast';
 import { Button } from '@/modules/shared/components/ui/button';
 import { Input } from '@/modules/shared/components/ui/input';
@@ -40,14 +42,10 @@ const Profile = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data as Profile);
+      const token = await getToken();
+      if (!token) throw new Error('Authentication required');
+      const data = await getOwnProfile(token);
+      setProfile(data as Profile | null);
     } catch (error: unknown) {
       toast({
         title: "Error fetching profile",
@@ -65,15 +63,13 @@ const Profile = () => {
 
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: profile.username,
-          bio: profile.bio,
-        })
-        .eq('id', profile.id);
-
-      if (error) throw error;
+      const token = await getToken();
+      if (!token) throw new Error('Authentication required');
+      const updated = await updateOwnProfile({
+        username: profile.username,
+        bio: profile.bio,
+      }, token);
+      setProfile(updated as Profile);
 
       toast({
         title: "Profile updated",
@@ -144,7 +140,7 @@ const Profile = () => {
                 try {
                   const token = await getToken();
                   if (!token) throw new Error('Missing auth token');
-                  const { data, error } = await supabase.functions.invoke('stripe-portal', {
+                  const { data, error } = await invokeAuthenticatedFunction<PortalFunctionResponse>('stripe-portal', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${token}` },
                   });

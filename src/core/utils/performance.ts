@@ -99,10 +99,10 @@ class PerformanceMonitor {
           this.recordMetric('TTFB', entry.responseStart - entry.requestStart, 'ms');
           
           // DOM Content Loaded
-          this.recordMetric('DOMContentLoaded', entry.domContentLoadedEventEnd - entry.navigationStart, 'ms');
+          this.recordMetric('DOMContentLoaded', entry.domContentLoadedEventEnd - entry.startTime, 'ms');
           
           // Load Complete
-          this.recordMetric('LoadComplete', entry.loadEventEnd - entry.navigationStart, 'ms');
+          this.recordMetric('LoadComplete', entry.loadEventEnd - entry.startTime, 'ms');
         });
       });
       observer.observe({ entryTypes: ['navigation'] });

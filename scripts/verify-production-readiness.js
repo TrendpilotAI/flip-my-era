@@ -85,20 +85,23 @@ if (fs.existsSync(mainFile)) {
   allChecksPassed = false;
 }
 
-// Check 4: Netlify configuration
-console.log('\n4. Checking Netlify configuration...');
-const netlifyFile = 'netlify.toml';
-if (fs.existsSync(netlifyFile)) {
-  console.log('   ✅ netlify.toml exists');
-  const netlifyConfig = fs.readFileSync(netlifyFile, 'utf8');
-  
-  if (netlifyConfig.includes('X-Frame-Options')) {
+// Check 4: Vercel configuration
+console.log('\n4. Checking Vercel configuration...');
+const vercelFile = 'vercel.json';
+const vercelAuthHandler = 'api/auth/[...path].ts';
+if (fs.existsSync(vercelFile) && fs.existsSync(vercelAuthHandler)) {
+  console.log('   ✅ Vercel config and BetterAuth handler exist');
+  const vercelConfig = fs.readFileSync(vercelFile, 'utf8');
+
+  if (vercelConfig.includes('X-Frame-Options') && vercelConfig.includes('Content-Security-Policy')) {
     console.log('   ✅ Security headers configured');
   } else {
-    console.log('   ⚠️  Security headers may be missing');
+    console.log('   ❌ Required security headers are missing');
+    allChecksPassed = false;
   }
 } else {
-  console.log('   ⚠️  netlify.toml not found');
+  console.log('   ❌ Vercel config or BetterAuth handler not found');
+  allChecksPassed = false;
 }
 
 // Check 5: PostHog configuration
@@ -162,10 +165,10 @@ if (fs.existsSync(mainFile)) {
 console.log('\n' + '='.repeat(50));
 console.log('\n📋 Manual Steps Required:');
 console.log('\n   1. Get Sentry DSN from Sentry.io dashboard');
-console.log('   2. Add VITE_SENTRY_DSN to Netlify environment variables');
+console.log('   2. Add VITE_SENTRY_DSN to Vercel environment variables');
 console.log('   3. Get PostHog API key from PostHog dashboard');
-console.log('   4. Add VITE_POSTHOG_KEY to Netlify environment variables');
-console.log('   5. Verify all environment variables are set in Netlify');
+console.log('   4. Add VITE_POSTHOG_KEY to Vercel environment variables');
+console.log('   5. Verify all environment variables are set in Vercel');
 console.log('   6. Verify Supabase Edge Functions are deployed');
 console.log('   7. Deploy to production');
 console.log('   8. Run smoke tests');

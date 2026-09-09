@@ -66,10 +66,14 @@ export async function invokeAuthenticatedFunction<T = unknown>(
   options: Parameters<typeof supabase.functions.invoke>[1] = {},
 ) {
   const token = await getBetterAuthToken();
-  const headers = {
-    ...(options.headers ?? {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  if (!token) throw new Error('An authenticated session is required');
+
+  const headers = Object.fromEntries(
+    Object.entries(options.headers ?? {}).filter(
+      ([headerName]) => headerName.toLowerCase() !== 'authorization',
+    ),
+  );
+  headers.Authorization = `Bearer ${token}`;
 
   return supabase.functions.invoke<T>(functionName, {
     ...options,

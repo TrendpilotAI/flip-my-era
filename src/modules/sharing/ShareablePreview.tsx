@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { supabase } from '@/core/integrations/supabase/client';
+import { getCommunityBook } from '@/core/integrations/supabase/userData';
 import { Card, CardContent } from '@/modules/shared/components/ui/card';
 import { Button } from '@/modules/shared/components/ui/button';
 import { ShareButtons } from './ShareButtons';
@@ -31,14 +31,15 @@ export const ShareablePreview = () => {
       }
 
       try {
-        const { data, error: fetchError } = await supabase
-          .from('ebooks')
-          .select('id, title, era, cover_image_url, creator_name, description')
-          .eq('id', id)
-          .single();
-
-        if (fetchError) throw fetchError;
-        setEbook(data);
+        const data = await getCommunityBook(id);
+        if (!data) throw new Error('Ebook not found');
+        setEbook({
+          id: data.id,
+          title: data.title,
+          era: 'Flip My Era',
+          cover_image_url: data.cover_image_url || undefined,
+          creator_name: data.author_name || undefined,
+        });
       } catch {
         setError('Ebook not found');
       } finally {

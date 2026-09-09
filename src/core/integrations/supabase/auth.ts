@@ -20,7 +20,8 @@ import {
   type ReactNode,
 } from 'react';
 import { createElement } from 'react';
-import { supabase } from './client';
+import { invokeAuthenticatedFunction, supabase } from './client';
+import type { CreditsFunctionResponse } from './functionResponses';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -178,7 +179,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     isFetchingCreditsRef.current = true;
     try {
       const token = currentSession.access_token;
-      const { data, error } = await supabase.functions.invoke('credits', {
+      const { data, error } = await invokeAuthenticatedFunction<CreditsFunctionResponse>('credits', {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
@@ -187,12 +188,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         return 0;
       }
 
-      let balance = 0;
-      if (data.success && data.data?.balance) {
-        balance = typeof data.data.balance === 'number' ? data.data.balance : (data.data.balance.balance || 0);
-      } else if (data.balance) {
-        balance = data.balance;
-      }
+      const balance = data.success && data.data ? data.data.balance.balance : 0;
 
       if (isMountedRef.current) {
         setCreditBalance(balance);
@@ -200,12 +196,16 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Persist to profiles in background (fire-and-forget, not awaited)
-      supabase
-        .from('profiles')
-        .update({ credits: balance })
-        .eq('id', currentSession.user.id)
-        .then(() => {})
-        .catch(() => {});
+      void (async () => {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ credits: balance })
+            .eq('id', currentSession.user.id);
+        } catch {
+          // The Edge Function remains authoritative if this cache write fails.
+        }
+      })();
 
       return balance;
     } catch {

@@ -1,278 +1,199 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/**
- * Payment Flow Edge Case Tests
- * Tests for idempotency, refunds, failed payments, race conditions, and subscription lifecycle
- */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  isCheckoutSessionPaid,
+  isPaidSubscriptionInvoice,
+} from '../../supabase/functions/_shared/checkoutSettlement';
 
-// ─── Mock Supabase ───────────────────────────────────────────
-const createMockSupabase = () => {
-  const store: Record<string, any[]> = {
-    webhook_events: [],
-    credit_transactions: [],
-    user_credits: [{ user_id: 'user-1', balance: 50, subscription_status: 'active' }],
-    profiles: [{ id: 'user-1', email: 'test@example.com', stripe_customer_id: 'cus_123' }],
-  };
-
-  return {
-    from: vi.fn((table: string) => ({
-      select: vi.fn(() => ({
-        eq: vi.fn((_col: string, val: string) => ({
-          single: vi.fn(async () => {
-            const row = store[table]?.find((r: any) => Object.values(r).includes(val));
-            return { data: row || null, error: row ? null : { message: 'Not found', code: 'PGRST116' } };
-          }),
-          eq: vi.fn(() => ({
-            single: vi.fn(async () => ({ data: null, error: null })),
-          })),
-        })),
-      })),
-      insert: vi.fn((row: any) => {
-        store[table] = store[table] || [];
-        store[table].push(row);
-        return {
-          select: vi.fn(() => ({ single: vi.fn(async () => ({ data: { id: 'tx-new' }, error: null })) })),
-          error: null,
-        };
-      }),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => ({ error: null })),
-      })),
-      upsert: vi.fn(() => ({ error: null })),
-    })),
-    _store: store,
-  };
-};
-
-// ─── Replicated handler logic for testing ────────────────────
-
-async function checkIdempotency(supabase: any, eventId: string): Promise<boolean> {
-  const result = await supabase.from('webhook_events').select('id').eq('stripe_event_id', eventId).single();
-  return !!result.data;
+function eventCreditKey(eventId: string, action: string): string {
+  if (!eventId || !action) throw new Error('event ID and action are required');
+  return `stripe:event:${eventId}:${action}`;
 }
 
-async function checkCreditIdempotency(supabase: any, sessionId: string): Promise<boolean> {
-  const result = await supabase.from('credit_transactions').select('id').eq('stripe_session_id', sessionId).single();
-  return !!result.data;
+function subscriptionAllocationKey(input: {
+  subscriptionId: string;
+  invoiceId: string;
+}): string {
+  return `stripe:subscription:${input.subscriptionId}:invoice:${input.invoiceId}:monthly-allocation`;
+}
+
+function parseCredits(value: string): number {
+  const normalized = value.trim();
+  const amount = Number(normalized);
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(normalized) || amount <= 0) {
+    throw new Error('invalid credit amount');
+  }
+  return amount;
+}
+
+function calculateRefundCredits(
+  originalCredits: number,
+  originalChargeAmount: number,
+  refundAmount: number,
+): number {
+  if (originalCredits <= 0 || originalChargeAmount <= 0) throw new Error('invalid original purchase');
+  if (refundAmount <= 0 || refundAmount > originalChargeAmount) throw new Error('invalid refund');
+  return Math.min(
+    originalCredits,
+    Math.round((originalCredits * refundAmount / originalChargeAmount) * 100) / 100,
+  );
 }
 
 function mapSubscriptionStatus(stripeStatus: string): string {
-  if (stripeStatus === 'active') return 'active';
+  if (stripeStatus === 'active' || stripeStatus === 'trialing') return 'active';
   if (stripeStatus === 'canceled') return 'cancelled';
-  if (stripeStatus === 'past_due') return 'past_due';
-  if (stripeStatus === 'unpaid') return 'past_due';
+  if (stripeStatus === 'past_due' || stripeStatus === 'unpaid') return 'past_due';
   return 'none';
 }
 
-function calculateRefundCredits(originalAmount: number, refundedAmount: number, totalCredits: number): number {
-  // Proportional refund: if 50% refunded, revoke 50% of credits
-  if (originalAmount <= 0) return 0;
-  const ratio = refundedAmount / originalAmount;
-  return Math.ceil(totalCredits * ratio);
-}
-
-// ─── Tests ───────────────────────────────────────────────────
-
-describe('Payment Edge Cases', () => {
-  let supabase: ReturnType<typeof createMockSupabase>;
-
-  beforeEach(() => {
-    supabase = createMockSupabase();
+describe('Stripe payment edge cases', () => {
+  it('grants purchased credits only after Stripe marks the checkout paid', () => {
+    expect(isCheckoutSessionPaid({ payment_status: 'paid' })).toBe(true);
+    expect(isCheckoutSessionPaid({ payment_status: 'unpaid' })).toBe(false);
+    expect(isCheckoutSessionPaid({ payment_status: 'no_payment_required' })).toBe(false);
+    expect(isCheckoutSessionPaid({})).toBe(false);
   });
 
-  describe('Webhook Idempotency', () => {
-    it('should detect duplicate webhook events', async () => {
-      // First time: not a duplicate
-      const first = await checkIdempotency(supabase, 'evt_new_123');
-      expect(first).toBe(false);
-
-      // Insert the event
-      supabase._store.webhook_events.push({ stripe_event_id: 'evt_exists' });
-
-      // Already exists
-      const second = await checkIdempotency(supabase, 'evt_exists');
-      expect(second).toBe(true);
-    });
-
-    it('should detect duplicate credit transactions for same session', async () => {
-      const first = await checkCreditIdempotency(supabase, 'cs_new');
-      expect(first).toBe(false);
-
-      supabase._store.credit_transactions.push({
-        stripe_session_id: 'cs_exists',
-        transaction_type: 'purchase',
-      });
-
-      const second = await checkCreditIdempotency(supabase, 'cs_exists');
-      expect(second).toBe(true);
-    });
+  it('uses the verified Stripe event ID for purchase, failure, and refund idempotency', () => {
+    expect(eventCreditKey('evt_123', 'purchase')).toBe('stripe:event:evt_123:purchase');
+    expect(eventCreditKey('evt_123', 'payment-failed')).toBe('stripe:event:evt_123:payment-failed');
+    expect(eventCreditKey('evt_123', 'refund')).toBe('stripe:event:evt_123:refund');
   });
 
-  describe('Subscription Status Mapping', () => {
-    it('maps active correctly', () => {
-      expect(mapSubscriptionStatus('active')).toBe('active');
+  it('deduplicates monthly allocations across different events for the same invoice', () => {
+    const createdEventKey = subscriptionAllocationKey({
+      subscriptionId: 'sub_1',
+      invoiceId: 'in_1',
+    });
+    const updatedEventKey = subscriptionAllocationKey({
+      subscriptionId: 'sub_1',
+      invoiceId: 'in_1',
     });
 
-    it('maps canceled correctly', () => {
-      expect(mapSubscriptionStatus('canceled')).toBe('cancelled');
-    });
-
-    it('maps past_due correctly', () => {
-      expect(mapSubscriptionStatus('past_due')).toBe('past_due');
-    });
-
-    it('maps unpaid to past_due', () => {
-      expect(mapSubscriptionStatus('unpaid')).toBe('past_due');
-    });
-
-    it('maps unknown status to none', () => {
-      expect(mapSubscriptionStatus('incomplete')).toBe('none');
-      expect(mapSubscriptionStatus('unknown_status')).toBe('none');
-    });
+    expect(createdEventKey).toBe(updatedEventKey);
   });
 
-  describe('Refund Calculations', () => {
-    it('calculates full refund correctly', () => {
-      expect(calculateRefundCredits(1000, 1000, 10)).toBe(10);
+  it('changes the monthly allocation key for the next paid invoice', () => {
+    const firstInvoice = subscriptionAllocationKey({
+      subscriptionId: 'sub_1',
+      invoiceId: 'in_1',
+    });
+    const repeatedInvoice = subscriptionAllocationKey({
+      subscriptionId: 'sub_1',
+      invoiceId: 'in_1',
+    });
+    const nextInvoice = subscriptionAllocationKey({
+      subscriptionId: 'sub_1',
+      invoiceId: 'in_2',
     });
 
-    it('calculates partial refund correctly', () => {
-      expect(calculateRefundCredits(1000, 500, 10)).toBe(5);
-    });
-
-    it('rounds up partial credit revocations', () => {
-      // 33% refund of 10 credits = 3.3 → rounds to 4
-      expect(calculateRefundCredits(1000, 333, 10)).toBe(4);
-    });
-
-    it('handles zero original amount', () => {
-      expect(calculateRefundCredits(0, 0, 10)).toBe(0);
-    });
-
-    it('handles zero credits', () => {
-      expect(calculateRefundCredits(1000, 1000, 0)).toBe(0);
-    });
+    expect(firstInvoice).toBe(repeatedInvoice);
+    expect(nextInvoice).not.toBe(firstInvoice);
   });
 
-  describe('Failed Payment Handling', () => {
-    it('should mark subscription as past_due on payment failure', () => {
-      const status = mapSubscriptionStatus('past_due');
-      expect(status).toBe('past_due');
-    });
-
-    it('should not revoke credits on failed renewal (graceful degradation)', () => {
-      // Credits from previous period should remain usable during grace period
-      const userCredits = { balance: 30, subscription_status: 'past_due' };
-      expect(userCredits.balance).toBeGreaterThan(0);
-      // Credits remain until subscription is actually deleted
-    });
+  it('allocates subscription credits only for a paid invoice tied to a subscription', () => {
+    expect(isPaidSubscriptionInvoice({
+      billing_reason: 'subscription_cycle',
+      paid: true,
+      subscription: 'sub_1',
+    })).toBe(true);
+    expect(isPaidSubscriptionInvoice({
+      billing_reason: 'subscription_cycle',
+      paid: false,
+      subscription: 'sub_1',
+    })).toBe(false);
+    expect(isPaidSubscriptionInvoice({
+      billing_reason: 'subscription_cycle',
+      paid: true,
+      subscription: null,
+    })).toBe(false);
+    expect(isPaidSubscriptionInvoice({
+      billing_reason: 'subscription_update',
+      paid: true,
+      subscription: 'sub_1',
+    })).toBe(false);
+    expect(isPaidSubscriptionInvoice({})).toBe(false);
   });
 
-  describe('Race Condition Prevention', () => {
-    it('should handle concurrent credit deductions safely', async () => {
-      // Simulate two concurrent requests trying to deduct 30 credits from a 50-credit balance
-      const balance = 50;
-      const deduction = 30;
-
-      // Without atomic operations, both would see balance=50 and both succeed
-      // With proper handling, only one should succeed
-      const request1CanProceed = balance >= deduction;
-      const balanceAfter1 = balance - deduction; // 20
-
-      const request2CanProceed = balanceAfter1 >= deduction; // false: 20 < 30
-      expect(request1CanProceed).toBe(true);
-      expect(request2CanProceed).toBe(false);
-      expect(balanceAfter1).toBe(20);
-    });
-
-    it('should prevent negative credit balance', () => {
-      const balance = 5;
-      const deduction = 10;
-      const newBalance = Math.max(0, balance - deduction);
-      expect(newBalance).toBe(0);
-    });
+  it('rejects missing, malformed, negative, and over-precision credit metadata', () => {
+    for (const value of ['', 'five', '-1', '0', '1.001', '5credits']) {
+      expect(() => parseCredits(value)).toThrow('invalid credit amount');
+    }
+    expect(parseCredits('2.5')).toBe(2.5);
+    expect(parseCredits('2.55')).toBe(2.55);
   });
 
-  describe('Checkout Double-Submit Protection', () => {
-    it('should generate consistent idempotency keys within time window', () => {
-      const userId = 'user-1';
-      const priceId = 'price_123';
-      const now = Date.now();
-
-      // Keys within same 30s window should match
-      const key1 = `checkout_${userId}_${priceId}_${Math.floor(now / 30000)}`;
-      const key2 = `checkout_${userId}_${priceId}_${Math.floor(now / 30000)}`;
-      expect(key1).toBe(key2);
-    });
-
-    it('should generate different keys for different users', () => {
-      const now = Math.floor(Date.now() / 30000);
-      const key1 = `checkout_user-1_price_123_${now}`;
-      const key2 = `checkout_user-2_price_123_${now}`;
-      expect(key1).not.toBe(key2);
-    });
-
-    it('should generate different keys for different prices', () => {
-      const now = Math.floor(Date.now() / 30000);
-      const key1 = `checkout_user-1_price_123_${now}`;
-      const key2 = `checkout_user-1_price_456_${now}`;
-      expect(key1).not.toBe(key2);
-    });
+  it('calculates full and proportional refunds without exceeding the purchase', () => {
+    expect(calculateRefundCredits(10, 1_000, 1_000)).toBe(10);
+    expect(calculateRefundCredits(10, 1_000, 333)).toBe(3.33);
+    expect(() => calculateRefundCredits(10, 1_000, 1_001)).toThrow('invalid refund');
   });
 
-  describe('Webhook Signature Verification', () => {
-    it('should reject missing signature', () => {
-      const signature = null;
-      expect(signature).toBeNull();
-    });
+  it('maps Stripe lifecycle states without granting access for unknown states', () => {
+    expect(mapSubscriptionStatus('active')).toBe('active');
+    expect(mapSubscriptionStatus('trialing')).toBe('active');
+    expect(mapSubscriptionStatus('past_due')).toBe('past_due');
+    expect(mapSubscriptionStatus('unpaid')).toBe('past_due');
+    expect(mapSubscriptionStatus('canceled')).toBe('cancelled');
+    expect(mapSubscriptionStatus('incomplete')).toBe('none');
+  });
+});
 
-    it('should reject empty signature', () => {
-      const signature = '';
-      expect(signature).toBeFalsy();
-    });
+describe('Stripe webhook implementation guardrails', () => {
+  const handlerSource = readFileSync(
+    join(process.cwd(), 'supabase/functions/stripe-webhook/index.ts'),
+    'utf8',
+  );
+  const migrationSource = readFileSync(
+    join(process.cwd(), 'supabase/migrations/20260824043000_stripe_webhook_state_machine.sql'),
+    'utf8',
+  );
+
+  it('uses claim, atomic-credit, complete, and fail RPCs', () => {
+    for (const functionName of [
+      'claim_webhook_event',
+      'apply_credit_transaction',
+      'complete_webhook_event',
+      'fail_webhook_event',
+    ]) {
+      expect(handlerSource).toMatch(new RegExp(`\\.rpc\\(\\s*["']${functionName}["']`));
+    }
   });
 
-  describe('Credit Transaction Types', () => {
-    it('should categorize purchase transactions as positive', () => {
-      const tx = { amount: 10, transaction_type: 'purchase' };
-      expect(tx.amount).toBeGreaterThan(0);
-    });
-
-    it('should categorize usage transactions as negative', () => {
-      const tx = { amount: -2, transaction_type: 'ebook_generation' };
-      expect(tx.amount).toBeLessThan(0);
-    });
-
-    it('should categorize refund transactions as negative', () => {
-      const tx = { amount: -10, transaction_type: 'refund' };
-      expect(tx.amount).toBeLessThan(0);
-    });
-
-    it('should categorize monthly_allocation as positive', () => {
-      const tx = { amount: 30, transaction_type: 'monthly_allocation' };
-      expect(tx.amount).toBeGreaterThan(0);
-    });
-
-    it('should log payment_failed with zero amount', () => {
-      const tx = { amount: 0, transaction_type: 'payment_failed' };
-      expect(tx.amount).toBe(0);
-    });
+  it('does not directly insert ledger rows or manually mutate balances', () => {
+    expect(handlerSource).not.toMatch(/from\(["']credit_transactions["']\)[\s\S]{0,120}\.insert\(/);
+    expect(handlerSource).not.toMatch(/\.update\(\{\s*balance\s*:/);
   });
 
-  describe('Subscription Lifecycle', () => {
-    it('should handle full lifecycle: created → active → past_due → canceled → deleted', () => {
-      const states = ['active', 'past_due', 'canceled'];
-      const mapped = states.map(mapSubscriptionStatus);
-      expect(mapped).toEqual(['active', 'past_due', 'cancelled']);
-    });
+  it('locks down all webhook state transitions to service-role security-definer RPCs', () => {
+    expect(migrationSource.match(/SECURITY DEFINER/g)).toHaveLength(3);
+    expect(migrationSource).toContain("CHECK (status IN ('processing', 'completed', 'failed'))");
+    expect(migrationSource).toContain('FROM PUBLIC, anon, authenticated');
+    expect(migrationSource).toContain('TO service_role');
+  });
 
-    it('should handle reactivation after past_due', () => {
-      // User pays overdue invoice
-      const beforeStatus = mapSubscriptionStatus('past_due');
-      expect(beforeStatus).toBe('past_due');
+  it('uses a bounded processing lease while preserving payload mismatch protection', () => {
+    expect(migrationSource).toContain("INTERVAL '15 minutes'");
+    expect(migrationSource).toContain("v_event.status = 'processing'");
+    expect(migrationSource).toContain('Stripe event ID was already used for a different payload');
+    expect(migrationSource).toContain("v_event.status = 'failed'");
+  });
 
-      const afterStatus = mapSubscriptionStatus('active');
-      expect(afterStatus).toBe('active');
-    });
+  it('handles delayed-payment settlement without granting an unpaid checkout', () => {
+    expect(handlerSource).toContain('checkout.session.async_payment_succeeded');
+    expect(handlerSource).toContain('isCheckoutSessionPaid(session)');
+  });
+
+  it('grants recurring credits from invoice.paid, never subscription.updated', () => {
+    expect(handlerSource).toContain('case "invoice.paid"');
+    expect(handlerSource).toContain('isPaidSubscriptionInvoice(invoice)');
+
+    const subscriptionHandler = handlerSource.slice(
+      handlerSource.indexOf('async function handleSubscriptionChange'),
+      handlerSource.indexOf('async function handleInvoicePaid'),
+    );
+    expect(subscriptionHandler).not.toContain('monthly_allocation');
+    expect(subscriptionHandler).not.toContain('applyCreditTransaction');
   });
 });

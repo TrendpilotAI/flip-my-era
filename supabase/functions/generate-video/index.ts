@@ -3,13 +3,13 @@ import {
   handleCors, 
   initSupabaseClient, 
   formatErrorResponse, 
-  formatSuccessResponse 
+  formatSuccessResponse,
+  verifyAuth,
 } from "../_shared/utils.ts";
 
 interface VideoRequest {
   text: string;
   template: 'story' | 'quote' | 'slideshow';
-  userId?: string;
 }
 
 serve(async (req) => {
@@ -17,10 +17,19 @@ serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  if (req.method !== 'POST') {
+    return formatErrorResponse(new Error('Method not allowed'), 405, req);
+  }
+
   try {
+    const userId = await verifyAuth(req);
+    if (!userId) {
+      return formatErrorResponse(new Error('Unauthorized'), 401, req);
+    }
+
     // Parse request body
     const requestData = await req.json() as VideoRequest;
-    const { text, template, userId } = requestData;
+    const { text, template } = requestData;
     
     if (!text || !template) {
       throw new Error('Missing required fields: text and template are required');
@@ -44,7 +53,7 @@ serve(async (req) => {
     const { data: videoRecord, error: dbError } = await supabase
       .from('videos')
       .insert({
-        user_id: userId || 'anonymous',
+        user_id: userId,
         filename,
         template,
         text_prompt: text,
@@ -80,8 +89,8 @@ serve(async (req) => {
       message: 'Video generation started',
       videoId: videoRecord.id,
       estimatedCompletionTime: '15 seconds'
-    }, 202); // Accepted
+    }, 202, req); // Accepted
   } catch (error) {
-    return formatErrorResponse(error as Error);
+    return formatErrorResponse(error as Error, 500, req);
   }
 });

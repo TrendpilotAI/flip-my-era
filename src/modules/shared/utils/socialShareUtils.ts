@@ -1,4 +1,4 @@
-import { supabase } from '@/core/integrations/supabase/client';
+import { recordUserActivity } from '@/core/integrations/supabase/userData';
 
 export interface ShareContent {
   title: string;
@@ -18,6 +18,7 @@ export interface ShareOptions {
 }
 
 export interface ShareAnalytics {
+  /** @deprecated Identity is derived from the BetterAuth session. */
   userId?: string;
   contentType: 'story' | 'ebook';
   contentId: string;
@@ -29,47 +30,16 @@ export interface ShareAnalytics {
 // Track share analytics
 export const trackShare = async (analytics: ShareAnalytics) => {
   try {
-    const { error } = await supabase
-      .from('user_activities')
-      .insert({
-        user_id: analytics.userId,
-        activity_type: 'share',
-        activity_data: {
-          content_type: analytics.contentType,
-          content_id: analytics.contentId,
-          platform: analytics.platform,
-          shared_at: analytics.sharedAt,
-          share_method: analytics.shareMethod
-        },
-        resource_type: analytics.contentType,
-        resource_id: analytics.contentId,
-        created_at: new Date().toISOString()
-      });
-
-    if (error) {
-      console.error('Error tracking share:', error);
-    }
-
-    // Update share count in the respective table
-    if (analytics.contentType === 'ebook') {
-      await supabase
-        .from('ebook_generations')
-        .update({ 
-          share_count: supabase.raw('share_count + 1') 
-        })
-        .eq('id', analytics.contentId);
-    }
-
-    // Also track in TikTok shares table for backward compatibility
-    if (analytics.platform === 'tiktok') {
-      await supabase
-        .from('tiktok_shares')
-        .insert({
-          user_id: analytics.userId,
-          text_snippet: analytics.contentId,
-          created_at: analytics.sharedAt
-        });
-    }
+    await recordUserActivity({
+      activityType: 'share',
+      contentType: analytics.contentType,
+      contentId: analytics.contentId,
+      metadata: {
+        platform: analytics.platform,
+        shared_at: analytics.sharedAt,
+        share_method: analytics.shareMethod,
+      },
+    });
   } catch (error) {
     console.error('Error tracking share analytics:', error);
   }
@@ -495,4 +465,4 @@ export const generateShareableVideo = async (
   // This would integrate with a video generation service
   // For now, return a placeholder
   return `https://example.com/video/${content.title.replace(/\s+/g, '-').toLowerCase()}.mp4`;
-}; 
+};

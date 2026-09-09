@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { 
   handleCors, 
   formatErrorResponse, 
-  formatSuccessResponse 
+  formatSuccessResponse,
+  verifyAuth,
 } from "../_shared/utils.ts"
 
 interface TikTokAuthRequest {
@@ -15,7 +16,15 @@ serve(async (req) => {
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
+  if (req.method !== 'POST') {
+    return formatErrorResponse(new Error('Method not allowed'), 405, req)
+  }
+
   try {
+    if (!await verifyAuth(req)) {
+      return formatErrorResponse(new Error('Unauthorized'), 401, req)
+    }
+
     const { action, code } = await req.json() as TikTokAuthRequest
     
     // Handle getting the client key
@@ -24,7 +33,7 @@ serve(async (req) => {
       if (!clientKey) {
         throw new Error('TikTok client key not found')
       }
-      return formatSuccessResponse({ key: clientKey })
+      return formatSuccessResponse({ key: clientKey }, 200, req)
     }
     
     // Handle auth callback
@@ -62,11 +71,11 @@ serve(async (req) => {
         throw new Error(`TikTok API error: ${JSON.stringify(data)}`)
       }
       
-      return formatSuccessResponse(data)
+      return formatSuccessResponse(data, 200, req)
     }
     
     throw new Error('Invalid action')
   } catch (error) {
-    return formatErrorResponse(error instanceof Error ? error : new Error(String(error)))
+    return formatErrorResponse(error instanceof Error ? error : new Error(String(error)), 500, req)
   }
 })

@@ -26,7 +26,7 @@ enabled = true
 port = 54323
 api_url = "http://localhost"
 
-[inbucket]
+[local_smtp]
 enabled = true
 port = 54324
 smtp_port = 54325
@@ -42,7 +42,6 @@ site_url = "http://localhost:8084"
 additional_redirect_urls = ["http://localhost:8084", "https://localhost:8084"]
 jwt_expiry = 3600
 enable_signup = true
-jwt_secret = "env(SUPABASE_JWT_SECRET)"
 
 [auth.email]
 enable_signup = true
@@ -57,46 +56,59 @@ backend = "postgres"
 
 [functions]
 
-[functions.brevo-email]
-verify_jwt = true
+# BetterAuth issues opaque session tokens. These handlers authenticate through
+# _shared/verifyAuth, so the gateway must not parse the bearer token as a JWT.
+[functions.admin-credits]
+verify_jwt = false
 
-[functions.migrate-email-templates]
-verify_jwt = true
+[functions.check-subscription]
+verify_jwt = false
 
-[functions.text-to-speech]
-verify_jwt = true
-
-[functions.tiktok-auth]
-verify_jwt = true
-
-[functions.generate-video]
-verify_jwt = true
-
-[functions.tiktok-share-analytics]
-verify_jwt = true
+[functions.create-checkout]
+verify_jwt = false
 
 [functions.credits]
-verify_jwt = true
+verify_jwt = false
 
 [functions.credits-validate]
-verify_jwt = true
+verify_jwt = false
 
-[functions.stream-chapters]
-verify_jwt = true
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.generate-video]
+verify_jwt = false
+
+[functions.gallery-books]
+verify_jwt = false
 
 [functions.groq-api]
-verify_jwt = true
+verify_jwt = false
 
 [functions.groq-storyline]
-verify_jwt = true
+verify_jwt = false
 
-[functions.ebook-generation]
-enabled = true
-verify_jwt = true
-import_map = "./functions/ebook-generation/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/ebook-generation/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/ebook-generation/*.html" ]
+[functions.provision-profile]
+verify_jwt = false
+
+[functions.runware-proxy]
+verify_jwt = false
+
+[functions.stream-chapters]
+verify_jwt = false
+
+[functions.stripe-portal]
+verify_jwt = false
+
+[functions.tiktok-auth]
+verify_jwt = false
+
+[functions.tiktok-share-analytics]
+verify_jwt = false
+
+[functions.user-data]
+verify_jwt = false
+
+# External callbacks verify their own secret.
+[functions.stripe-webhook]
+verify_jwt = false

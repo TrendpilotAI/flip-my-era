@@ -1,5 +1,6 @@
 import { SEO } from '@/modules/shared/components/SEO';
 import { Link } from 'react-router-dom';
+import { FREE_SIGNUP_CREDITS } from '@/config/stripe-products';
 
 const ARTICLE_SCHEMA = {
   "@context": "https://schema.org",
@@ -115,7 +116,7 @@ const ErasTourMemoriesBook = () => {
         <div className="bg-gradient-to-r from-violet-600 to-pink-500 text-white rounded-2xl p-8 text-center mb-12">
           <h2 className="text-2xl font-bold mb-3 text-white">Preserve Your Eras Tour Memories</h2>
           <p className="text-lg mb-6 text-white/90">
-            Before the details fade, turn them into a beautiful book. Start free with 10 credits.
+            Before the details fade, turn them into a beautiful book. Start with {FREE_SIGNUP_CREDITS} free credits at signup.
           </p>
           <Link
             to="/auth"
